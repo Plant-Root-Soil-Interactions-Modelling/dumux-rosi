@@ -20,7 +20,7 @@ class RichardsWrapper(SolverWrapper):
         self.soils = []
         self.param_group = "Soil."
         self.useMoles = usemoles
-        self.molarMassC = 12.011 # g/mol
+        # self.molarMassC = 12.011 # g/mol
 
     def setParameterGroup(self, group:str):
         """ sets the DuMux paramter group, must end with a dot, e.g. 'Soil.' """
@@ -357,13 +357,13 @@ class RichardsWrapper(SolverWrapper):
             source_map[cellId] = value * unitConversion     
         self.base.setSource(source_map, eq_idx) # 
 
-    def applySource(self, dt, source_map, crit_p):
-        """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
-        self.checkGridInitialized()
-        assert not self.useMoles
-        for key, value in source_map.items():
-            source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
-        self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
+    # def applySource(self, dt, source_map, crit_p):
+    #     """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
+    #     self.checkGridInitialized()
+    #     assert not self.useMoles
+    #     for key, value in source_map.items():
+    #         source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
+    #     self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
 
     def setCriticalPressure(self, critical):
         """ Sets the critical pressure to limit flow for boundary conditions constantFlow, constantFlowCyl, and atmospheric """
@@ -501,30 +501,39 @@ class RichardsWrapper(SolverWrapper):
         f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])
         # get global index
         dofind = np.array(self.base.getDofIndices())
-        f2cidx_g = dofind[f2cidx] 
+        f2cidx_g = [] # give correct inner shape, needed by solverbase::allgatherv()
+        if len(f2cidx) > 0:
+            f2cidx_g = dofind[f2cidx] 
         # gather
-        f2cidx_gAll = self.allgatherv(f2cidx_g)
-        ff10c_All = self.allgatherv(ff10c)
-        
-        # some faces are computed on several threads, so take out duplicates
-        f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)))        
-        ff10c_All_unique = np.array([ff10c_All[max(np.where(f2cidx_gAll == idx_)[0])] for idx_ in f2cidx_gAll_unique])
-        
-        flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
+        f2cidx_gAll = comm.gather(f2cidx_g,root=0) # self.allgatherv(f2cidx_g)
+        ff10c_All = comm.gather(ff10c,root=0) # self.allgatherv(ff10c)
         if rank == 0:
-            assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
-        
-        # mol to cm3 for water
-        molarMassWat = 18. # [g/mol]
-        densityWat = 1. #[g/cm3]
-        # [mol/cm3] = [g/cm3] /  [g/mol] 
-        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
-        flux10cCell[0] /=  molarDensityWat  
-        
-        if rank == 0:
-            # assert size = (num solutes + water ) * num cells
+            # get arrays 
+            ff10c_All = np.vstack([i for i in ff10c_All if len(i) >0]) # 'if len(i) >0' in case some threads have no cells
+            f2cidx_gAll = list( np.concatenate([i for i in f2cidx_gAll],dtype=object)) # empty lists ([], for threads with no cells) are automatically taken out
+            # some cells are computed on several threads, so take out duplicates
+            f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)),dtype=int)
+            ff10c_All_unique = np.array([ff10c_All[
+              max(np.where(
+                np.array(f2cidx_gAll, dtype=int) == idx_)[0])
+                ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
+
+            flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
             assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
             
+            # mol to cm3 for water
+            molarMassWat = 18. # [g/mol]
+            densityWat = 1. #[g/cm3]
+            # [mol/cm3] = [g/cm3] /  [g/mol] 
+            molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+            flux10cCell[0] /=  molarDensityWat  
+        
+        else:
+            flux10cCell = None
+        
+        flux10cCell = comm.bcast(flux10cCell,root=0)
+        
+        
         return flux10cCell
         
     

@@ -232,11 +232,11 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    # low MaxRelativeShift == higher precision in dumux
-    s.MaxRelativeShift = 1e-12
-    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
+    
+    s.setParameter("Problem.dobioChemicalReaction",False)
     s.setParameter("Problem.verbose", "0")
     
+    s.setParameter("Newton.Verbosity", "0") 
     # force solute mole fraction > 0 and water in possible pressure ranges
     s.setParameter("Newton.EnableChop", "true")
     
@@ -260,6 +260,8 @@ def setDefault(s):
     s.MaxSteps = 18
     s.setParameter("Newton.MaxSteps",
                      str( s.MaxSteps) )  
+    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
+    
     return s
 
 def getSoilTextureAndShape():  
@@ -268,7 +270,7 @@ def getSoilTextureAndShape():
     """
     min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
+    cell_number = np.array( [3,12,40])# np.array( [3,12,40]) #np.array([3,4,4])# np.array( [1,1,1]) # 1cm3 #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -313,7 +315,8 @@ def create_soil_model3D( usemoles, results_dir ,
 
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
-                     noAds = False, ICcc = None, doSoluteFlow = True):
+                     noAds = False, ICcc = None, doSoluteFlow = True,
+                     MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         homogeneous domain 
@@ -327,6 +330,9 @@ def create_soil_model( usemoles, results_dir ,
         
     s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
+    # low MaxRelativeShift == higher precision in dumux
+    s.MaxRelativeShift = MaxRelativeShift
+    s.MaxRelativeShift_1DS = 1e-12
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
@@ -395,7 +401,8 @@ def setupOther(s, p_mean_):
             print(type(p_mean_))
             raise Exception
             
-    s.maxDt =  250/(3600*24)
+    s.maxDt =  250./(3600.*24.) # [s]
+    s.maxDt_1DS = s.maxDt/10. # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
     s.eps_regularization = 1e-10
     s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be low when using sand parameters. 
@@ -497,6 +504,11 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     # cumulative transpiration
     plantModel.TranspirationCumul = 0 # real cumulative transpiration
     plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
+    # cumulative flow    
+    plantModel.seg_fluxes0Cumul = np.array([])
+    plantModel.seg_fluxes1Cumul = np.array([])
+    plantModel.seg_fluxes2Cumul = np.array([])
+    
     
     return perirhizalModel, plantModel
     

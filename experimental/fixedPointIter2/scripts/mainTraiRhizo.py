@@ -34,7 +34,7 @@ import scenario_setup
 def XcGrowth(initsim, simMax,paramIndx_,spellData): 
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
     xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
-    MaxRelativeShift = 1e-8 if paramIndx_ != 44 else 1e-10
+    MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
@@ -45,6 +45,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
+    doBiochemicalReaction = True
+    doSoluteUptake = False # active uptake?
     noAds = False # stop adsorption?
     doPhloemFlow = True
     doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
@@ -107,6 +109,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
+                                         doBiochemicalReaction = doBiochemicalReaction,
                                         MaxRelativeShift = MaxRelativeShift)
 
     
@@ -123,6 +126,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
+    perirhizalModel.doBiochemicalReaction = doBiochemicalReaction
+    perirhizalModel.doSoluteUptake = doSoluteUptake
     
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
@@ -256,7 +261,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 if rank==0:
                     print("error too high, decrease dt to",perirhizalModel.dt_inner)
                 # reset data to the beginning of the iteration loops
-                
+                raise Exception
                 helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.

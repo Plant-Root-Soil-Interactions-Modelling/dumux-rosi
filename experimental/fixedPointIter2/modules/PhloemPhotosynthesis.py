@@ -309,7 +309,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     elif perirhizalModel.rsiCompMethod <= 1:
         fpit_Helper.rsx_input = fpit_Helper.rsx_old * ( perirhizalModel.rsiCompMethod) + fpit_Helper.rsx_init * (1. - perirhizalModel.rsiCompMethod)
     else:
-        if fpit_Helper.n_iter < 2:
+        if fpit_Helper.n_iter < 4:
             fpit_Helper.rsx_input = fpit_Helper.rsx_old
             
         elif  perirhizalModel.rsiCompMethod == 2: # mean of the last 2 values
@@ -349,7 +349,8 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
 
         if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
             fpit_Helper.soilK[perirhizalModel.airSegs] = np.Inf
-        
+
+
 
     if perirhizalModel.doPhotosynthesis:
         if (rank == 0):
@@ -368,10 +369,17 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                          wilting_point = plantModel.wilting_point,
                           soil_k = fpit_Helper.soilK)
             plantModel.psiXyl = rx
-            seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
-            rx = list(rx), sx= list(fpit_Helper.rsx_input), 
+
+            if (perirhizalModel.spellData['scenario'] == 'none') or ((perirhizalModel.spellData['scenario'] != 'baseline') and (rs_age_i_dt > perirhizalModel.spellData['spellStart']) and (rs_age_i_dt <= perirhizalModel.spellData['spellEnd'])):
+                seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
+                            rx = list(rx), sx= list(fpit_Helper.rsx_input), 
                                                approx=False, cells=False, #approx, cells
-                                               soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate  
+                                               soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate
+            else:
+                seg_fluxes = np.full((len(plantModel.psiXyl)-1),0.)
+            
+            
+
         else :
             plantModel.psiXyl = None
             seg_fluxes = None

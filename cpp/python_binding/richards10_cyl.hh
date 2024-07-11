@@ -137,7 +137,23 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
     	this->problem->verbose = verbose;
     }
 	
-	
+    std::vector<int> getSTopBCType() {
+    	this->checkGridInitialized();
+    	return this->problem->bcSTopType_;
+    }
+    std::vector<int> getSBotBCType() {
+    	this->checkGridInitialized();
+    	return this->problem->bcSBotType_;
+    }
+    std::vector<double> getSTopBCValue() {
+    	this->checkGridInitialized();
+    	return this->problem->bcSTopValue_;
+    }
+    std::vector<double> getSBotBCValue() {
+    	this->checkGridInitialized();
+    	return this->problem->bcSBotValue_;
+    }
+
 	
 };
 
@@ -172,6 +188,12 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("setBotBC",&RichardsFoam::setBotBC)
    .def("setSTopBC",&RichardsFoam::setSTopBC)
    .def("setSBotBC",&RichardsFoam::setSBotBC)
+   
+   .def("getSTopBCType",&RichardsFoam::getSTopBCType)
+   .def("getSBotBCType",&RichardsFoam::getSBotBCType)
+   .def("getSTopBCValue",&RichardsFoam::getSTopBCValue)
+   .def("getSBotBCValue",&RichardsFoam::getSBotBCValue)
+   
    .def("getInnerFlux",&RichardsFoam::getInnerFlux, py::arg("eqIdx") = 0)
    .def("getOuterFlux",&RichardsFoam::getOuterFlux, py::arg("eqIdx") = 0)
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)

@@ -13,6 +13,10 @@ import numbers
 import tempfile
 import signal
 
+import threading
+import multiprocessing
+
+
 class TimeoutException(Exception):
     pass
 
@@ -23,9 +27,42 @@ def timeout_handler(signum, frame):
 signal.signal(signal.SIGALRM, timeout_handler)
 
 
+def check_os():
+    if os.name == 'nt':
+        return "Windows"
+    elif os.name == 'posix':
+        return "Linux/Unix"
+    else:
+        return "Unknown OS"
+
+
+def run_with_timeout__(timeout, func, *args, **kwargs):
+    class FuncThread(threading.Thread):
+        def __init__(self):
+            super().__init__()
+            self.result = None
+            self.exception = None
+
+        def run(self):
+            try:
+                self.result = func(*args, **kwargs)
+            except Exception as e:
+                self.exception = e
+
+    thread = FuncThread()
+    thread.start()
+    thread.join(timeout)
+
+    if thread.is_alive():
+        raise TimeoutException("Function call timed out")
+    elif thread.exception:
+        raise thread.exception
+    else:
+        return thread.result
+
 def run_with_timeout(timeout, func, *args, **kwargs):
     # Start the timer
-    signal.alarm(timeout)
+    signal.alarm(int(timeout))
     try:
         result = func(*args, **kwargs)
     finally:
@@ -43,6 +80,7 @@ class StdoutRedirector:
         self.libc = ctypes.CDLL(None)
         self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
         self.buffer = None
+        self.filepath = None
 
     def __enter__(self):
         self.old_stdout_fd = os.dup(1)
@@ -56,12 +94,16 @@ class StdoutRedirector:
         os.close(self.old_stdout_fd)
         self.temp_file.close()
 
+        with open(self.temp_file.name, 'r') as temp_file:
+            self.buffer = temp_file.read()
+
+        os.remove(self.temp_file.name)
+
         if exc_type is not None:
-            self.buffer = open(self.temp_file.name, 'r').read()
             with open(self.filepath, 'w') as f:
                 f.write(self.buffer)
-        os.remove(self.temp_file.name)
-        
+
+        return False  # Do not suppress exceptions
         
 def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
     """
@@ -155,6 +197,7 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
 
 def setupDir(results_dir):
     """if results directory already exists, make it empty"""
+
     if rank == 0:
         for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/", "fpit/cyl_val/"]:
             if not os.path.exists(results_dir+extraText):
@@ -166,7 +209,6 @@ def setupDir(results_dir):
                         os.remove(results_dir+extraText+item)
                     except:
                         pass
-
 
 
 def sinusoidal3(t, dt):
@@ -198,16 +240,19 @@ def continueLoop(perirhizalModel,s,n_iter, dt_inner: float,failedLoop: bool,
 
 
     cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or  perirhizalModel.solve_gave_up or failedLoop
-            or (s.bulkMassErrorWater_rel > s.bulkMassErrorWater_relLim*10)
-            or (perirhizalModel.rhizoMassWError_rel > perirhizalModel.rhizoMassWError_relLim*10)
-            or (perirhizalModel.errWrsi > 11.)
-            or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.001) 
-            or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.001) 
+            #or (s.bulkMassErrorWater_rel > s.bulkMassErrorWater_relLim*10)
+            #or (perirhizalModel.rhizoMassWError_rel >
+            #perirhizalModel.rhizoMassWError_relLim*10)
+            #or (perirhizalModel.errWrsi > 1.)#already added in 'err' metric
+            or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
+            or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
             or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)  
             or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
 
     if (rank == 0) and isInner:
-        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}, {perirhizalModel.errWrsi:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+        print(f'continue loop? {bool(cL)}\n\t\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}, solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}\n\t\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\t\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+        print('\t\tD(psi_rsi)',f'{perirhizalModel.errWrsi:.2e},',
+              "psi_{rsi,in} vs psi_{rsi,out}:",f'{perirhizalModel.errWrsiRealInput:.2e}')
 
     cL = comm.bcast(cL,root = 0)
     failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
@@ -274,6 +319,9 @@ def resetAndSaveData1(perirhizalModel):
     return n_iter, failedLoop, keepGoing
 
 def resetAndSaveData2(plantModel, perirhizalModel, s):
+    plantModel.seg_fluxes0Cumul_inner = 0
+    plantModel.seg_fluxes1Cumul_inner = 0
+    plantModel.seg_fluxes2Cumul_inner = 0
     plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
     plantModel.AnCumul_inner = 0 # reset transpiration of inner time step to 0
 
@@ -284,6 +332,9 @@ def resetAndSaveData2(plantModel, perirhizalModel, s):
     perirhizalModel.enteredSpellBU = perirhizalModel.enteredSpell
 
 def resetAndSaveData3(plantModel, perirhizalModel, s):
+    plantModel.seg_fluxes0Cumul_inner = 0
+    plantModel.seg_fluxes1Cumul_inner = 0
+    plantModel.seg_fluxes2Cumul_inner = 0
     plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
     plantModel.AnCumul_inner = 0 # reset transpiration of inner time step to 0
     s.resetManual()
@@ -297,6 +348,23 @@ def resetAndSaveData3(plantModel, perirhizalModel, s):
     
 
 def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
+    if rank == 0:
+        #print('plantModel.seg_fluxes0Cumul,plantModel.seg_fluxes0Cumul_inner',
+        #      plantModel.seg_fluxes0Cumul,plantModel.seg_fluxes0Cumul_inner)
+        deltalen = len(plantModel.seg_fluxes0Cumul_inner)-len(plantModel.seg_fluxes0Cumul)# plant grew?
+        if deltalen > 0:
+            plantModel.seg_fluxes0Cumul = np.concatenate((plantModel.seg_fluxes0Cumul, np.zeros(deltalen))) 
+            plantModel.seg_fluxes1Cumul = np.concatenate((plantModel.seg_fluxes1Cumul, np.zeros(deltalen))) 
+            plantModel.seg_fluxes2Cumul = np.concatenate((plantModel.seg_fluxes2Cumul, np.zeros(deltalen))) 
+
+        plantModel.seg_fluxes0Cumul += plantModel.seg_fluxes0Cumul_inner 
+        plantModel.seg_fluxes1Cumul += plantModel.seg_fluxes1Cumul_inner
+        plantModel.seg_fluxes2Cumul += plantModel.seg_fluxes2Cumul_inner
+
+        plantModel.seg_fluxes0 = plantModel.seg_fluxes0Cumul_inner/dt
+        plantModel.seg_fluxes1 = plantModel.seg_fluxes1Cumul_inner/dt
+        plantModel.seg_fluxes2 = plantModel.seg_fluxes2Cumul_inner/dt
+    
     plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
     if perirhizalModel.doPhotosynthesis:
         if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
@@ -445,7 +513,7 @@ def distributeValSolute_(seg_values_content, volumes, source, dt, verbose: bool)
         verbose =True
         print("distributeVals sourceInit > source", 'dt',dt,
               'old source',sourceInit ,'new source',source,
-              'theta',seg_values_perVol_,'cylVol',
+              'Qsolute',seg_values_content,'cylVol',
              volumes)
         
     if (sum(seg_values_content) == 0.):# should normally only happen with source >= 0
@@ -469,7 +537,7 @@ def distributeValSolute_(seg_values_content, volumes, source, dt, verbose: bool)
             seg_values_content = np.maximum(seg_values_content,1.e-14)
             assert min(abs(seg_values_content)) != 0.
         weightVals = (1 / seg_values_content) / sum(1/seg_values_content)
-    return weightVals * source
+    return weightVals * source, source
     
     
 def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_wilting_point, verbose):    
@@ -490,7 +558,10 @@ def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_
             print("distributeVals sourceInit > source", 'dt',dt,
                   'old source',sourceInit ,'new source',source,
                   'theta',seg_values_perVol_,'cylVol',
-                 volumes)
+                 volumes,'availableSpaceOrWater',availableSpaceOrWater,
+                  'vg_soil.theta_S',vg_soil.theta_S,
+                  'theta_wilting_point',theta_wilting_point)
+            #raise Exception
 
     if sum(availableSpaceOrWater) > 0:
         if verbose:
@@ -509,6 +580,6 @@ def distributeValWater_(seg_values_perVol_, volumes, source, dt, vg_soil, theta_
                         sum(availableSpaceOrWater /sum(availableSpaceOrWater)),
                   repr(availableSpaceOrWater /sum(availableSpaceOrWater)))
 
-        return (availableSpaceOrWater /sum(availableSpaceOrWater)) * source # mol/day
+        return (availableSpaceOrWater /sum(availableSpaceOrWater)) * source, source # mol/day
     else: # no water or space available
-        return np.full(len(availableSpaceOrWater),0.)
+        return np.full(len(availableSpaceOrWater),0.), source

@@ -11,6 +11,7 @@ import timeit
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
 import PhloemPhotosynthesis
+import helpfull
 
 class fixedPointIterationHelper():
     """
@@ -139,17 +140,23 @@ class fixedPointIterationHelper():
         if rank == 0:
             if max(abs(outer_R_bc_wat )) > 0:
                 assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
-                proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
+                try:
+                    proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
                                                         seg_values=self.thetaCyl_4splitSoilVals, 
                                                        seg_volume= self.cylVol,dt = dt,
                                                        isWater = True, 
                                                                       verbose = False) #cm3/day
+                except:
+                    print('thetaCyl_4splitSoilVals',min(self.thetaCyl_4splitSoilVals),max(self.thetaCyl_4splitSoilVals),
+                          'self.thetaCylOld',min(self.thetaCylOld),max(self.thetaCylOld))
+                    raise Exception                   
                                                  
             else:
                 proposed_outer_fluxes = np.full(self.numSegs, 0.)   
                 
             rhizoWAfter_eachCyl4splitVals = self.rhizoWAfter_eachCyl.copy()
-            rhizoWAfter_eachCyl4splitVals[np.array(perirhizalModel.organTypes) !=2]=1. # to avoind division by 0.
+            if len(perirhizalModel.airSegs) > 0:
+                rhizoWAfter_eachCyl4splitVals[perirhizalModel.airSegs]=1. # to avoind division by 0.
 
             if max(abs(outer_R_bc_sol[0] )) > 0:
                 proposed_outer_sol_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[0] / dt, 
@@ -190,8 +197,17 @@ class fixedPointIterationHelper():
             # self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
             # get all potentially available water == water after reset + water taken up by plant
             seg_fluxes_root  = self.seg_fluxes.copy()
-            seg_fluxes_root[np.where(np.array(perirhizalModel.organTypes)!=2)]  = 0.
+            if len(perirhizalModel.airSegs) > 0:
+                seg_fluxes_root[perirhizalModel.airSegs]  = 0.
             self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + (seg_fluxes_root + perirhizalModel.flow1d1d_w)* dt )/self.cylVol
+            #because of unlimited flow (seg_fluxes_root + perirhizalModel.flow1d1d_w), might get values out of the [theta_r, theta_s] bounds
+            self.thetaCyl_4splitSoilVals = np.maximum(np.minimum(
+                                                    self.thetaCyl_4splitSoilVals, 
+                                                      perirhizalModel.vg_soil.theta_S),
+                                                     perirhizalModel.theta_wilting_point)
+            if len(perirhizalModel.airSegs) > 0:
+                self.thetaCyl_4splitSoilVals[perirhizalModel.airSegs]  = 0.
+            
        
         # get data before doing the 'reset' => values at the end of the time step
         self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
@@ -390,7 +406,9 @@ class fixedPointIterationHelper():
                     print(soil_sources_limited[idComp], SSL,dt,  min(maxPotentialAvailable + SSL*dt) )
                     write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
                     raise Exception
-                    
+            if idComp < 2:
+                write_file_array("setsourceLim3_" + str(idComp), SSL,
+                                 directory_=results_dir, fileType=".csv")
             self.sendSource2dumux(SSL, idComp)
             
            
@@ -421,19 +439,33 @@ class fixedPointIterationHelper():
         perirhizalModel=self.perirhizalModel
         s = self.s
         
+        
         k_soil_solve = 0
         redoSolve = True
         maxRelShift = s.MaxRelativeShift
+
+        # todo: probably to adapt
+        assert dt >= 10/(24*3600)
+        s.ddt = min(max(s.ddt, 1/(24*3600)), dt/10.)
+        #s.maxDt = max(min(s.maxDt, dt/4.), s.ddt)
+        assert dt > s.ddt
+        assert s.maxDt > s.ddt
+        #print('troubleshoot data',
+        #      'time',s.ddt, s.maxDt, dt)
+        #print('params',s.getParameter("Newton.MaxRelativeShift"),
+        #      s.getParameter("Newton.MaxSteps"))
         while redoSolve:
-            s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
-            s.setMaxTimeStepSize(s.maxDt) # reset each time
+            #s.ddt =min( 1.e-5,s.ddt)#or just reset to 1e-5?
+            #s.setMaxTimeStepSize(s.maxDt) # reset each time
+            
             try:
                 decreaseMaxRelShift = False
                 if rank==0:
                     print("solve 3d soil")
                 #s.solve(dt)  # in modules/solverbase.py
-                helpfull.run_with_timeout(60.*15.,s.solve,dt) # time out error after Xmn
-                if  rank==0:
+
+                helpfull.run_with_timeout(60.*5,s.solve,dt) # time out error after Xmn
+                if rank==0:
                     print("solve 3d soil finished")
                 
                 # if we got solute content < 0, throw exception
@@ -457,7 +489,7 @@ class fixedPointIterationHelper():
                 s.setParameter("Newton.EnableAbsoluteResidualCriterion", "false")
                 s.setParameter("Newton.SatisfyResidualAndShiftCriterion", "false")
 
-                s.setParameter("Newton.MaxSteps", "18")
+                s.setParameter("Newton.MaxSteps", "100")
                 s.setParameter("Newton.MaxTimeStepDivisions", "10")
                 s.createNewtonSolver() # re-create Newton solver to implement the new newton parameters
                 
@@ -572,8 +604,9 @@ class fixedPointIterationHelper():
         
         
         # get error according to the proposed (==prescribed) flux
-        # need to be ~ 0 when leaving fixed point iteration 
-        errorsEachC = self.rhizoTotCAfter_eachCyl - ( self.rhizoTotCBefore_eachCyl + 
+        # need to be ~ 0 when leaving fixed point iteration
+        if not perirhizalModel.doSoluteUptake:
+            errorsEachC = self.rhizoTotCAfter_eachCyl - ( self.rhizoTotCBefore_eachCyl +
                                                      (self.seg_sol_fluxes+ 
                                                       self.proposed_outer_sol_fluxes+ 
                                                       perirhizalModel.flow1d1d_sol +
@@ -602,12 +635,12 @@ class fixedPointIterationHelper():
         
         # store absolute total error for limited flow
         perirhizalModel.rhizoMassWError_absLim = sum(abs(errorsEachW[rhizoSegsId]))
-        
-        
+        perirhizalModel.errorsEachWLim = errorsEachW
+
         # get error according to the proposed (==prescribed) flux
         # need to be ~ 0 when leaving fixed point iteration 
-        errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes+ perirhizalModel.flow1d1d_w)*dt)
-        perirhizalModel.rhizoMassWError_abs  = sum(abs(errorsEachW[rhizoSegsId]))
+        perirhizalModel.errorsEachW = self.rhizoWAfter_eachCyl - ( self.rhizoWBefore_eachCyl + (self.seg_fluxes+ self.proposed_outer_fluxes+ perirhizalModel.flow1d1d_w)*dt)
+        perirhizalModel.rhizoMassWError_abs  = sum(abs(perirhizalModel.errorsEachW[rhizoSegsId]))
         
         # store relative total error 
         perirhizalModel.rhizoMassWError_relLim = abs(perirhizalModel.rhizoMassWError_absLim/sum(self.rhizoWAfter_eachCyl)*100)
@@ -673,7 +706,7 @@ class fixedPointIterationHelper():
 
 
         s.bulkMassCErrorPlant_abs = abs(self.totC3dAfter - ( self.totC3dBefore + sum(self.Q_Exud_i) + sum(self.Q_mucil_i)))
-        if self.totC3dAfter > 0:
+        if (self.totC3dAfter > 0) and (not self.perirhizalModel.doSoluteUptake):
             s.bulkMassCErrorPlant_rel = abs(s.bulkMassCErrorPlant_abs/self.totC3dAfter*100)
         else:
             s.bulkMassCErrorPlant_rel = np.nan
@@ -694,10 +727,6 @@ class fixedPointIterationHelper():
         ### for each voxel
         s.bulkMassErrorWaterAll_abs = abs(self.soil_water3dAfter - (self.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
         s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /self.soil_water3dAfter )*100
-
-
-
-
 
 
 
@@ -742,17 +771,17 @@ class fixedPointIterationHelper():
         rsx =comm.bcast( perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX), root = 0)  # works for all threads
         rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
                                   rsx,self.rsx_input)
-        errWrsiRealInput =  abs((rsx - self.rsx_input)/rsx_divide)*100.
-        errWrsiRealInput[abs(rsx - self.rsx_input)<= 5]= 0.
-        errWrsiRealInputf = max(errWrsiRealInput)
+        perirhizalModel.errWrsiRealInputs =  abs((rsx - self.rsx_input)/rsx_divide)*100.
+        perirhizalModel.errWrsiRealInputs[abs(rsx - self.rsx_input)<= 5]= 0.
+        errWrsiRealInputf = max(perirhizalModel.errWrsiRealInputs)
         if rank == 0:
             print("errWrsiRealInput:",errWrsiRealInputf)
         perirhizalModel.errWrsiRealInput = errWrsiRealInputf
         
         rsx_divide = np.where(rsx!=0.,rsx,1.)
-        errWrsi =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
-        errWrsi[abs(rsx - self.rsx_old)<= 5]= 0.
-        errWrsi = max(errWrsi)
+        perirhizalModel.errWrsis =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
+        perirhizalModel.errWrsis[abs(rsx - self.rsx_old)<= 5]= 0.
+        errWrsi = max(perirhizalModel.errWrsis)
         self.rsx_old = rsx;
         self.rsx_olds.append(self.rsx_old)
         perirhizalModel.errWrsi = errWrsi
@@ -814,10 +843,13 @@ class fixedPointIterationHelper():
         perirhizalModel.solve_gave_up = (np.array(comm.bcast(comm.gather(perirhizalModel.solve_gave_up ,root = 0),root = 0))).any()
         
         # one metric to decide if we stay in the iteration loop or not
+        
         perirhizalModel.err = comm.bcast(max(errRxPlant,self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds,
+                                             errWrsi,errWrsiRealInputf,
                                 s.bulkMassErrorWater_rel, 
                                s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,
                                perirhizalModel.rhizoMassWError_rel,
+                               perirhizalModel.rhizoMassCError_rel,
                                #perirhizalModel.SinkLim3DS,
                         #perirhizalModel.SinkLim1DS
                         ),root= 0)

@@ -155,7 +155,6 @@ class SolverWrapper():
             @param data2share: (local) vector of the thread to share
             @param keepShape: the output vector has to be of the same shape as data2share
             @data2share_type_default: type of the data in data2share
-
         """
         try:
             assert isinstance(data2share, (list, type(np.array([]))))
@@ -176,7 +175,7 @@ class SolverWrapper():
             shape1 = (data2share).shape[1]
             data2share_type = type(data2share[0][0])
         elif len((data2share).shape) == 1:
-            local_size = (data2share).shape[0]
+            local_size = (data2share).shape[0] 
             shape0 = (data2share).shape[0]
             shape1 = 0
             if len(data2share) > 0:
@@ -228,7 +227,19 @@ class SolverWrapper():
             @param numberOfCells    resoultion [1]
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
-        self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
+        
+        
+        try:
+            with StdoutRedirector() as redirector:
+                self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., 
+                                     np.array(numberOfCells), periodic
+                                    )  # cm -> m
+        except Exception as e:
+            target_filepath = self.results_dir + 'stdcout_cpp'+str(self.pindx)+"_"+str(rank)+'.txt'
+            with open(target_filepath, 'w') as f:
+                f.write(redirector.buffer)
+            raise Exception
+            
         self.numberOfCellsTot = np.prod(self.numberOfCells)
         if self.dimWorld == 3:
             self.numberOfFacesTot = self.numberOfCellsTot * 6
@@ -255,15 +266,6 @@ class SolverWrapper():
         self.numberOfCellsTot = len(points) -1
         self.numberOfFacesTot = self.numberOfCellsTot * 2
 
-#     def createGrid3d(self, points, p0):
-#         """ todo
-#         """
-#         p, p0_ = [], []
-#         for v in points:
-#             p.append(list(v / 100.))  # cm -> m
-#         for v in p0:
-#             p0_.append(list(v / 100.))  # cm -> m
-#         self.base.createGrid3d(p, p0_)
 
     def readGrid(self, file:str):
         """ Creates a grid from a file (e.g. dgf or msh)"""

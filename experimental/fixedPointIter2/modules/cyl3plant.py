@@ -178,8 +178,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             plantModel.time_start_rhizo = timeit.default_timer()
 
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils ") 
+            if rank == 0:
+                print("solve all 1d soils ") 
                     
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
@@ -187,11 +187,13 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1
                                   fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
                                   fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
-                                  fpit_Helper.proposed_outer_mucil_fluxes # outer BC solute 2
+                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
+                                  # solute 2
+                                  fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils finished")
+            if rank == 0:
+                print("solve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
@@ -330,11 +332,12 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter)
             # end inner loop
             
-            if not perirhizalModel.doMinimumPrint:
+            if False:#not perirhizalModel.doMinimumPrint:
                 datas = []
                 datasName = [ ]
                 if rank == 0:   
-                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 # to check where a specific (problematic) segment is
+                    # to check where a specific (problematic) segment is
+                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 
                     datas = [#is569,
                              plantModel.psiXyl, 
                               fpit_Helper.rsx_old, 
@@ -360,6 +363,11 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
         
         if (rank == 0):
+            # root -soil exchange per root segment for water and solute 1 and 2
+            plantModel.seg_fluxes0Cumul_inner += perirhizalModel.seg_fluxes_limited * dt
+            plantModel.seg_fluxes1Cumul_inner += perirhizalModel.seg_fluxes_limited_sol_In * dt
+            plantModel.seg_fluxes2Cumul_inner += perirhizalModel.seg_fluxes_limited_mucil_In * dt
+                
             if perirhizalModel.doPhotosynthesis:
                 plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
                 plantModel.AnCumul_inner += np.array(plantModel.An ) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]

@@ -41,8 +41,8 @@ def getBiochemParam(s,paramIdx):
     """
     # file containing the TraiRhizo parameter sets
     paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
-    
-    s.mg_per_molC = 12000
+    s.molarMassC = 12.011
+    s.mg_per_molC = s.molarMassC * 1000.
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
 
@@ -92,7 +92,7 @@ def getBiochemParam(s,paramIdx):
     else:
         s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
-        CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/12.011)
+        CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
 
@@ -228,8 +228,8 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     s.setParameter("Problem.verbose", "0")
+    s.setParameter("Newton.Verbosity", "0") 
     
     # force solute mole fraction > 0 and water in possible pressure ranges
     s.setParameter("Newton.EnableChop", "true")
@@ -254,6 +254,7 @@ def setDefault(s):
     s.MaxSteps = 18
     s.setParameter("Newton.MaxSteps",
                      str( s.MaxSteps) )  
+    s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
     
     return s
 
@@ -309,6 +310,7 @@ def create_soil_model3D( usemoles, results_dir ,
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True,
+                       doBiochemicalReaction=True,
                      MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
@@ -326,6 +328,7 @@ def create_soil_model( usemoles, results_dir ,
     s.pindx = paramIndx
     
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
+    s.MaxRelativeShift_1DS = MaxRelativeShift
     
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
@@ -335,6 +338,7 @@ def create_soil_model( usemoles, results_dir ,
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
     s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
+    s.setParameter("Problem.dobioChemicalReaction",str(doBiochemicalReaction))
     
     s.initialize() 
     setDefault(s)
@@ -394,6 +398,7 @@ def setupOther(s, p_mean_):
             print(type(p_mean_))
             raise Exception
     s.maxDt =  250/(3600*24)
+    s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
     
     s.eps_regularization = None # pcEps, krEps
@@ -411,7 +416,7 @@ def setupOther(s, p_mean_):
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.wilting_point = -15000
     s.setCriticalPressure(s.wilting_point)  
-    s.ddt = 1.e-5  # [day] initial Dumux time step
+    s.ddt = 1.e-3  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
     s.bulkMassErrorWater_relLim = 0.    
     s.totC3dInit = sum(s.getTotCContent()) # mol    
@@ -493,6 +498,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     # cumulative transpiration
     plantModel.TranspirationCumul = 0 # real cumulative transpiration
     plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
+    # cumulative flow    
+    plantModel.seg_fluxes0Cumul = np.array([])
+    plantModel.seg_fluxes1Cumul = np.array([])
+    plantModel.seg_fluxes2Cumul = np.array([])
     
     return perirhizalModel, plantModel
     

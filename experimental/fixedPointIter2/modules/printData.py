@@ -128,6 +128,14 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
     """ print and save outputs of phloem flow and photosynthesis"""
     results_dir = perirhizalModel.results_dir
     
+    write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
+    write_file_array("seg_fluxes0", plantModel.seg_fluxes0 , directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes1", plantModel.seg_fluxes1 , directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes2", plantModel.seg_fluxes2, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes0Cumul", plantModel.seg_fluxes0Cumul, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes1Cumul", plantModel.seg_fluxes1Cumul, directory_ =results_dir, fileType = '.csv')
+    write_file_array("seg_fluxes2Cumul", plantModel.seg_fluxes2Cumul, directory_ =results_dir, fileType = '.csv')
+    
     print("\n\n\n\t\t", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn")
     if perirhizalModel.doPhloemFlow:
         print(round(plantModel.Qlight *1e6),"mumol m-2 s-1")
@@ -179,7 +187,6 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
         write_file_array("Q_Ag_dot", plantModel.AgPhl, directory_ =results_dir)
         write_file_array("C_rsi", np.array(plantModel.Csoil_seg ), 
                          directory_ =results_dir)#mmol/cm3
-        write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
         write_file_array("transrate",plantModel.Jw, directory_ =results_dir, fileType = '.csv')
         
         write_file_array("errorsPlant", np.array([phloemDataStorage.error_st_abs,
@@ -208,14 +215,17 @@ def printCylData(perirhizalModel, rs_age):
             write_file_array("Cyl_cellVol_"+str(gId),
                              cyl.getCellVolumes().flatten(), 
                              directory_ =results_dir+'cyl_val/', allranks = True)
-            if perirhizalModel.doSoluteFlow:
+            if (perirhizalModel.doSoluteFlow) or (perirhizalModel.doSoluteUptake):
                 for ccc in range(perirhizalModel.numSoluteComp):
                     sol0 = np.array(cyl.getContent(ccc +1)).flatten()
                     write_file_array("Cyl_content"+str(ccc+1)+"_"+str(gId)+"", 
                                  sol0, 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
+                    if min(sol0) < 0.:
+                        print('issue sol0',sol0, 'solid',ccc+1)
+                        raise Exception
             if max(pHead) > 0:
-                print('issue phead',gId,rank, pHead, sol0 )
+                print('issue phead',gId,rank, pHead )
                 raise Exception
                 
 def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
@@ -298,6 +308,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                 filename="vtpvti/soil_rx"+ str(vtpindx),sol_ind =-1,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
+        
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):
                 extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
@@ -376,7 +387,7 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                 write_file_array("fpit_Cyl_pressureHead_"+str(gId),pHead, 
                                  directory_ =results_dir+'cyl_val/', allranks = True)
                 if max(pHead) > 0:
-                    print('issue phead',gId,rank, pHead, sol0 )
+                    print('issue phead',gId,rank, pHead)
                     raise Exception
                     
 
@@ -390,7 +401,8 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                         int(plantModel.rs.subTypes[seg_ind]), 
                         2, 
                         seg_ind, 
-                        cells = False) for seg_ind in range(len(plantModel.rs.segments))])  # c++ conductivity call back functions
+                        # cells = False to add
+                        ) for seg_ind in range(len(plantModel.rs.segments))])  # c++ conductivity call back functions
             write_file_array("fpit_kr_plant",krplant,
                          directory_ =results_dir, fileType = '.csv') 
                          
@@ -404,6 +416,20 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
             write_file_array("fpit_proposed_outer_fluxes", fpit_Helper.proposed_outer_fluxes,
                          directory_ =results_dir, fileType = '.csv')
 
+            write_file_array("fpit_errorsEach1DSWLim",
+                             perirhizalModel.errorsEachWLim,
+                             directory_ =results_dir, fileType = '.csv')
+            write_file_array("fpit_errorsEach1DSW",
+                             perirhizalModel.errorsEachW,
+                             directory_ =results_dir, fileType = '.csv')
+
+            write_file_array("fpit_psi_sri_oldvsnew",
+                             perirhizalModel.errWrsis,
+                             directory_ =results_dir, fileType = '.csv')
+
+            write_file_array("fpit_psi_sri_realvsinput",
+                             perirhizalModel.errWrsiRealInputs,
+                             directory_ =results_dir, fileType = '.csv')
             write_file_array("fpit_psi_sri_input", fpit_Helper.rsx_input, directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_psi_sri_real", fpit_Helper.rsx_old, directory_ =results_dir, fileType = '.csv')   
         

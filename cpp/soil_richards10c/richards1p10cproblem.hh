@@ -345,7 +345,12 @@ public:
 		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
 		reactionExclusive=   getParam<bool>("Problem.reactionExclusive",(dimWorld > 1));
 				dzScaling = getParam<int>("Soil.BC.dzScaling", 2); 
+		dobioChemicalReaction_ = getParam<bool>("Problem.dobioChemicalReaction",true);
 		
+		
+		// Uptake params
+		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
+		km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
 		
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
@@ -513,11 +518,15 @@ public:
 
 	double getCellVolumesCyl(int dofIndex) const
 	{
+		
 		if(!computedCellVolumesCyl) // if we want to change the segLEngth without recreating the object?
 		{
-			const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
-			this->setVolumesCyl(computeCellVolumesCyl_());
-			const_cast<bool&>(computedCellVolumesCyl )  = true;
+			DUNE_THROW(Dune::InvalidStateException, "getCellVolumesCyl: cellVolumesCyl not set");
+			// only use Dumux::getParam in the initialization function: these are global parameter
+			// common for all 1d models and for all 3d models (but different between 1d and 3d models--don t know why)
+			// const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
+			// this->setVolumesCyl(computeCellVolumesCyl_());
+			// const_cast<bool&>(computedCellVolumesCyl )  = true;
 		}
 		return cellVolumesCyl.at(dofIndex);
 	}
@@ -631,7 +640,7 @@ public:
 				double C_SfrW = std::max(massOrMoleFraction(volVars,h2OIdx, compIdx, true), 0.);					//mol C/mol soil water
 				double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
 				double theta =  volVars.saturation(h2OIdx) * volVars.porosity();
-				// [-] * [m3 solid / m3 scv] * [m3 scv /m3 wat] * [mol C/m3 solid] / [mol C/m3 wat] = [-]							//m3 water /m3 scv				
+				// [-] * [m3 solid / m3 scv] * [m3 scv /m3 wat] * [mol C/m3 solid] / [mol C/m3 wat] = [-]	//m3 water /m3 scv				
 				
 				// [m3 scv zone 1/m3 scv] * [m3 scv/m3 wat] * [mol C/m3 scv zone 1] / [mol C/m3 wat] = [-]	
                
@@ -813,7 +822,7 @@ public:
 		 *  WATER
 		 */
 		double f = 0.; // return value [kg m-2 s-1)] or [mol m-2 s-1]
-		int pos0 = 1;
+		double pos0 = 1;
 		if(dimWorld == 1){pos0 =pos[0]; }
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
@@ -876,7 +885,7 @@ public:
                         
 						if ((f!= 0)&&verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, finput: "<<bcTopValues_[pressureIdx]
+							std::cout<<"onUpperBoundary_constantFluxCyl, finput: "<<bcTopValues_[pressureIdx]
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
@@ -1033,6 +1042,11 @@ public:
 					flux[i] = input*pos0;
 					break;
 				}
+				case michaelisMenten: {	
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					break;
+				}
 				default:
 					DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute) unknown: "+std::to_string(bcSTopType_.at(i_s)));
 				}
@@ -1070,7 +1084,7 @@ public:
                         Scalar omax = (de * (massOrMolFraction*rhoW - minCvalue*rhoW) / dz + flux[h2OIdx] * massOrMolFraction);
 						if (verbose)
 						{
-							std::cout<<"onLowerBoundary_constantFluxCyl, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow "<<
+							std::cout<<"onLowerBoundary_constantFluxCyl, solute, Fs: "<<bcSBotValue_.at(i_s)<<" soluteFlow "<<
                             soluteFlow<<", omax: "<<omax<<" min "<<std::min(soluteFlow, omax)<<", massOrMolFraction: "<<massOrMolFraction
 							<<" unitConversion "<<unitConversion<<" pos[0] "<<pos[0]<<std::endl;
 						}
@@ -1090,6 +1104,11 @@ public:
 				case outflowCyl: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n"; rho_
 					flux[i] = f * massOrMolFraction*pos0;
+					break;
+				}
+				case michaelisMenten: {	
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -1115,7 +1134,7 @@ public:
 			const SubControlVolume &scv) const {
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
-		bool dobioChemicalReaction = true; //by default, do biochemical reactions
+		bool dobioChemicalReaction = dobioChemicalReaction_; //by default, do biochemical reactions
 		double pos0; 
         double svc_volume;
         int dofIndex = scv.dofIndex();
@@ -1176,6 +1195,16 @@ public:
 		}
 		
 		setSource(source/pos0, dofIndex);// [ mol / (m^3 \cdot s)]
+	
+		if(verbose)
+		{
+			std::cout << "source() ";
+			for(int i = 0;i < numComponents_;i++)
+			{
+				std::cout<<source[i]<<" ";
+			}			
+			std::cout << std::endl;
+		}
 		
 		return source;
 	}
@@ -1350,7 +1379,7 @@ public:
 		q[CSS2Idx] +=  dtCSS2 * pos0 ;
 		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
 			
-			if(verbose)
+			if(verbose>1)
 			{
                 std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
@@ -1615,7 +1644,7 @@ private:
 								 
 
 	bool gravityOn_;
-
+	bool dobioChemicalReaction_;
 	// Source
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
@@ -1657,6 +1686,10 @@ private:
 	double alpha_ = 0.1; //[d-1]
     double kads_ = 23265;//[cm3/mol/d] or [1/d]
     double kdes_=4;//[d-1]
+	
+	// active root solute uptake
+	Scalar vMax_; // Michaelis Menten Parameter [mol m-2 s-1]
+	Scalar km_;  // Michaelis Menten Parameter  [mol m-3]
 	
 	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
 	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 

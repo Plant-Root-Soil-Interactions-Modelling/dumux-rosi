@@ -360,6 +360,7 @@ public:
      * i.e. can be analyzed using getSolution().
      */
     virtual void initializeProblem(double maxDt = -1) {
+		maxDt_ = maxDt;
         problem = std::make_shared<Problem>(gridGeometry);
         int dof = gridGeometry->numDofs();
         x = SolutionVector(dof);
@@ -389,16 +390,16 @@ public:
             int gIdx = pointIdx->index(v);
             globalPointIdx[vIdx] = gIdx;
         }
-		if (maxDt<0) { // per default value take from parameter tree
-            maxDt = Dumux::getParam<double>("TimeLoop.MaxTimeStepSize", 3600.); // if none, default is 1h
+		if (maxDt_<0) { // per default value take from parameter tree
+            maxDt_ = Dumux::getParam<double>("TimeLoop.MaxTimeStepSize", 3600.); // if none, default is 1h
         }
         if (ddt<1.e-6) { // happens at the first call
-            ddt = Dumux::getParam<double>("TimeLoop.DtInitial",maxDt/10); // from params, or guess something
+            ddt = Dumux::getParam<double>("TimeLoop.DtInitial",maxDt_/10); // from params, or guess something
         }
 
         timeLoop = std::make_shared<Dumux::CheckPointTimeLoop<double>>(/*start time*/0., ddt, /*final time*/ 3600., false); // the main time loop is moved to Python
         
-        timeLoop->setMaxTimeStepSize(maxDt);
+        timeLoop->setMaxTimeStepSize(maxDt_);
 
         assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, x); // dynamic
         
@@ -445,19 +446,22 @@ public:
         auto xOld = x;
 		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
         timeLoop->reset(/*start time*/0., ddt, /*final time*/ dt, /*verbose*/ false);
+        timeLoop->setMaxTimeStepSize(maxDt_);
 
         timeLoop->start();
 		double minddt = std::min(1.,dt);//in case we have a time step < 1s																	
         do {
-			// because suggestTimeStepSize() is used after timeStepSize(), the results could be > maxDt
-			// manually limit again according to maxDt?
+			// because suggestTimeStepSize() is used after timeStepSize(), the results could be > maxDt_
+			// manually limit again according to maxDt_?
 			if (doMPIsolve) {
 				ddt = nonLinearSolver->suggestTimeStepSize(timeLoop->timeStepSize());
 			} else {
 				ddt = nonLinearSolverNoMPI->suggestTimeStepSize(timeLoop->timeStepSize());
 			}
             ddt = std::max(ddt, minddt); // limit minimal suggestion
-            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver
+            
+            timeLoop->setTimeStepSize(ddt); // set new dt as suggested by the newton solver, limit according to simTime
+			ddt = timeLoop->timeStepSize(); // time step to use
             problem->setTime(simTime + timeLoop->time(), ddt); // pass current time to the problem ddt?
 
             assembler->setPreviousSolution(xOld); // set previous solution for storage evaluations
@@ -503,9 +507,10 @@ public:
 	void setMaxTimeStepSize(double maxDt)
 	{
         checkGridInitialized();
-		if(maxDt > 0.)
+		maxDt_ = maxDt;
+		if(maxDt_ > 0.)
 		{
-			timeLoop->setMaxTimeStepSize(maxDt);
+			timeLoop->setMaxTimeStepSize(maxDt_);
 		}
 	}
 	
@@ -1049,6 +1054,7 @@ protected:
     SolutionVector xBackUpManual;
     double simTimeBackUp;
     double simTimeBackUpManual;
+	double maxDt_;
 	
 	
     /**
