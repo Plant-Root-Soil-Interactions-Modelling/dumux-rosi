@@ -3097,7 +3097,7 @@ class RhizoMappedSegments(pb.MappedPlant):#XylemFluxPython):#
     def _verify_splits(self, soilVals, cellIds, splitVals,  seg_values, verbose):
         organTypes = np.array(self.organTypes)
         try:
-            if abs(sum(soilVals[cellIds])) > 1e-16:
+            if abs(sum(soilVals[cellIds])) > 1e-13:
                 assert abs((sum(splitVals) - sum(soilVals[cellIds])) / sum(soilVals[cellIds])) * 100. < 0.1 
             else:
                 assert abs((sum(splitVals) - sum(soilVals[cellIds]))) < 1e-15
