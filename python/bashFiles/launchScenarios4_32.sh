@@ -2,11 +2,11 @@
 
 
 # pset 5 fpit4_32cpu256 fpit4_32cpu128
-sbatch fpit4_32cpu256.sh 10 25 5 baseline  
+sbatch fpit4_32cpu128.sh 10 25 5 baseline  
 sbatch fpit4_32cpu128.sh 10 25 5 earlyDry
 sbatch fpit4_32cpu128.sh 10 25 5 lateDry
 # pset 44
-sbatch fpit4_32cpu256.sh 10 25 44 baseline  
+sbatch fpit4_32cpu128.sh 10 25 44 baseline  
 sbatch fpit4_32cpu128.sh 10 25 44 earlyDry  
 sbatch fpit4_32cpu128.sh 10 25 44 lateDry 
 # pset 49 
