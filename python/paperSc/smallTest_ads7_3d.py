@@ -51,7 +51,7 @@ p_mean = -100
 css1Function_ = 3
 paramIdx = 5
 dt = 1./3./24.
-times = np.array([0.,dt]) #,0.013888888888888888*2.,0.013888888888888888*3.,0.013888888888888888*4.] ) # days
+times = np.array([0.,dt])
 s, soil = scenario_setup.create_soil_model(soil_type, year, soil_,#comp, 
                 min_b, max_b, cell_number, demoType = mode, times = None, net_inf = None,
                 usemoles = usemoles, dirResults = results_dir, p_mean_ = p_mean, 
@@ -68,41 +68,6 @@ soil_water = np.multiply(water_content, cell_volumes)  # water per cell [cm3]
 soil_solute_conz = comm.bcast(np.array([np.array(
     s.getSolution(i+1)) for i in range(s.numComp)]),
                                     root = 0) # mol/mol
-# * 
-soil_solute_conz[:2] *= s.molarDensityWat_cm3
-soil_solute_conz[2:] *= s.bulkDensity_m3/1e6
-
-CSS1 = soil_solute_conz[-1] 
-CSW = soil_solute_conz[0] 
-CSS2 = soil_solute_conz[6] 
-CSWinit = 4.707833666666667e-06 #mol/cm3
-print('CSS1, CSW, CSS2',CSS1, CSW, CSS2, soil_solute_conz)
-print('CSS1[0], CSW[0], CSS2[0]',CSS1[0], CSW[0], CSS2[0])
-print(s.computeDtCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3, CSS2[0]* s.cm3_per_m3), "mol/cm3/d")
-print(s.computeDtCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3, CSS2[0]* s.cm3_per_m3)*1e6/(24*3600), "mol/m3/s")
-print('initcss2',s.computeInitCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3))
-print(s.computeDtCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3,
-                      s.computeInitCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3)* s.cm3_per_m3))
-#print(s.DtCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3, CSS2[0]* s.cm3_per_m3),"mol/m3/s")
-
-#print(s.DtCSS2(CSS1[0]* s.cm3_per_m3, CSW[0]* s.cm3_per_m3, CSS2[0]* s.cm3_per_m3),"mol/m3/s")
-#print(s.DtCSS2(CSS1[0]* s.cm3_per_m3, CSWinit* s.cm3_per_m3, CSS2[0]* s.cm3_per_m3),"mol/m3/s")
-
-print(s.k_sorp)
-print(s.CSSmax * s.cm3_per_m3 , 
-      ( CSW[0]* s.cm3_per_m3/( CSW[0]* s.cm3_per_m3+s.k_sorp* s.cm3_per_m3)) , 
-      ( CSWinit/( CSWinit+s.k_sorp)), 
-      CSS2[0]* s.cm3_per_m3)
-print('CSWinit',CSWinit,'CSW',CSW[0])
-print(( CSW[0]* s.cm3_per_m3/( CSW[0]* s.cm3_per_m3+s.k_sorp* s.cm3_per_m3))-0.5306318020538945)
-print(( CSWinit* s.cm3_per_m3/(CSWinit* s.cm3_per_m3+s.k_sorp* s.cm3_per_m3))-0.5306318020538945)
-#css2init = 
-print(s.CSS2_init-CSS2[0])
-# s.getCSS2Init =  lambda CSW: s.CSSmax * (CSW/(CSW+ s.k_sorp))#mol C/ cm3 scv
-# DtCSS2 =  lambda CSS1, CSW, CSS2: s.alpha /(24.*60.*60.) * (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3))- CSS2)
-# (s.CSSmax * cm3_per_m3 * (CSW/(CSW+s.k_sorp * cm3_per_m3)) - s.CSSmax * (CSW/(CSW+ s.k_sorp)) * cm3_per_m3)
 
 s.solve(30/(24*60))
-print(s.base.getReac_CSS2())
-
 s.base.printParams()
