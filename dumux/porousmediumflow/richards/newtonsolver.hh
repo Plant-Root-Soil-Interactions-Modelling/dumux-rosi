@@ -96,6 +96,11 @@ private:
                     // clamp the result
                     using std::clamp;
                     uCurrentIter[dofIdxGlobal][pressureIdx] = clamp(uCurrentIter[dofIdxGlobal][pressureIdx], pwMin, pwMax);
+
+                    for (int ncomp = pressureIdx +1 ;ncomp < uCurrentIter[dofIdxGlobal].size(); ncomp ++ )
+                    {
+                              uCurrentIter[dofIdxGlobal][ncomp] = std::max(uCurrentIter[dofIdxGlobal][ncomp], 0.);
+                    }
                 }
             }
         }
