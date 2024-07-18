@@ -1365,15 +1365,17 @@ public:
         MaterialLawParams params = this->spatialParams().materialLawParams(element);
         //Scalar psiPa = MaterialLaw::pc(params, sat) + pRef_;//water pressure, Pascal              
         Scalar p = MaterialLaw::pc(params, sat) + pRef_;//water pressure?
-        Scalar psicm = -toHead_(p); // to cm
+        Scalar psicm = std::min(-toHead_(p),0.); // to cm
         double psihPa = psicm*0.980665;// hPa
-        double psikPa = psihPa / 10;// kPa 
+        double psikPa = psihPa / 10.;// kPa 
         double psiMPa = psihPa * 1e-4;// MPa
         
         // clamp to the rang [0,1] to make sure (might have rounding error for f_A2Dm f_D2A and f_A is not limited)
+        double psikPa_ = std::max(std::min(psikPa, psikPa_opt),psikPa_th);
         double f_A = std::min(std::max(1-std::pow((
-                            (std::log10(psikPa)-std::log10(psikPa_opt)
-                        )/(std::log10(psikPa_th)-std::log10(psikPa_opt))),alpha_A),
+                            (std::log10(std::abs(psikPa_))-std::log10(std::abs(psikPa_opt))
+                        )/(std::log10(std::abs(psikPa_th))-std::log10(std::abs(psikPa_opt)))
+						),alpha_A),
                         0.),1.); // -
         double f_A2D = std::min(std::max(1/(1+std::pow((psiMPa_A2D/psiMPa),w_DA)),0.),1.); // -
         double f_D2A = std::min(std::max(1/(1+std::pow((psiMPa/(psiMPa_A2D*tau_DA)),w_DA)),0.),1.); // -
@@ -1457,7 +1459,7 @@ public:
 			}
 			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
 			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[i]  = std::max(f_A2D , (1 - phi[i] )) * k_D[i]  * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
+			F_deact[i]  = std::max(f_A2D , (1. - phi[i] )) * k_D[i]  * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
 			F_react[i]  = std::min(f_D2A, phi[i])  * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
 			
 			F_uptake_S += F_uptake_S_A[i] + F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
