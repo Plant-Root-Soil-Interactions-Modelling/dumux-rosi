@@ -23,8 +23,8 @@ simtime = 14  # [day] for task b
 
 """ root problem """
 r = XylemFluxPython("../../grids/RootSystem.rsml")
-r.setKr([kr])
-r.setKx([kz])
+r.setKr([[kr]])
+r.setKx([[kz]])
 
 r.test()
 
