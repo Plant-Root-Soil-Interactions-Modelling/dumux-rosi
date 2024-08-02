@@ -2,6 +2,7 @@ import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox")
 
 import plantbox as pb
 
+from functional.PlantHydraulicModel import HydraulicModel_Doussan
 from functional.PlantHydraulicModel import HydraulicModel_Meunier
 from functional.PlantHydraulicParameters import PlantHydraulicParameters
 import visualisation.vtk_plot as vp
@@ -54,14 +55,18 @@ rs = pb.MappedSegments(nodes, segs, radii)
 soil_index = lambda x, y, z: 0
 rs.setSoilGrid(soil_index)
 
-param = PlantHydraulicParameters()
-param.setKr([kr0])
-param.setKx([kz0])
+params = PlantHydraulicParameters(rs)
+params.setKr([kr0])
+params.setKx([kz0])
 
-r = HydraulicModel_Meunier(rs, param, cached = True)
-rx = r.solve_dirichlet(0., p0, [p_s], True)
+r = HydraulicModel_Doussan(rs, params, cached = True)
 
-trans = r.get_transpiration(0., rx, [p_s])
+kx = params.getKx(0.)
+print(kx)
+rx = r.solve_dirichlet(0., p0, [p_s], cells = True)
+print("rx", rx.shape)
+
+trans = r.get_transpiration(0., rx, [p_s], cells = True)
 print("Transpiration", trans, "cm3/day")
 plt.plot(rx, z_, "r*")
 
@@ -81,8 +86,13 @@ plt.plot(rx, z_, "r*")
 # pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx", "axial", "radial", "net"])
 # vp.plot_roots(pd, "net")  # axial, radial, rx
 
-rx = r.solve_neumann(0., -2., [p_s], True)
-trans = r.get_transpiration(0., rx, [p_s])
+rx = r.solve_neumann(0., -2., [p_s], cells = True)  # or solve ...
+
+print(r.last)
+print(type(rx))
+print(rx.shape)
+
+trans = r.get_transpiration(0., rx, [p_s], cells = True)
 print("Transpiration", trans, "cm3/day")
 plt.plot(rx, z_, "g*")
 
