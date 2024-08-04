@@ -105,7 +105,7 @@ def getBiochemParam(s,paramIdx):
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
 
         
-    s.css1Function = 9 # current adsorption function implemented.
+    s.css1Function = 10 # current adsorption function implemented.
     kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
     yr_per_d = 1/365 # [yr/d]
     m3_per_cm3 = 1e-6; # m3/cm3
@@ -503,6 +503,14 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     perirhizalModel.rhizoMassWError_relLim = 0.
     perirhizalModel.new_soil_solute = np.array([0.])
     
+
+    # for maiz:
+    #  https://link.springer.com/article/10.1007/BF02182000.
+    perirhizalModel.RS_Uptake_Vmax = 6.56 *  1e-12 * 24 * 3600 # pmol / cm² / s =>  mol / cm² / d
+    perirhizalModel.RS_Uptake_km =  7.1 *1e-3*1e-6# mumol/L=> mol/cm3
+    # to do: P sorbtion:
+    # https://agupubs.onlinelibrary.wiley.com/doi/full/10.1029/2021GB007061
+    ## https://www.ncbi.nlm.nih.gov/pmc/articles/PMC4661649/
     
     # to get time spent in each part of the code. TODO: currently, does not work well
     plantModel.time_start_global = timeit.default_timer()

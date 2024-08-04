@@ -15,8 +15,8 @@ import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
 from decimal import *
 from functional.xylem_flux import sinusoidal2, sinusoidal
-
-from helpfull import write_file_array, write_file_float, continueLoop
+import helpfull
+from helpfull import write_file_array, write_file_float
 from FPItHelper import fixedPointIterationHelper
 import PhloemPhotosynthesis
 import printData
@@ -25,14 +25,16 @@ from functional.xylem_flux import sinusoidal2
 from weatherFunctions import weather, weatherChange
 
 
-def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
-    N = int(np.ceil(sim_time / dt))  # number of iterations
-    for Ni in range(N):
+def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt):
 
+    results_dir = perirhizalModel.results_dir
+    N = int(np.ceil(sim_time / dt))  # number of iterations
+    n_iter_inner_max = 0
+    for Ni in range(N):
+        fpit_Helper.n_iter3 = 0
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
-        while helpfull.continueInnerLoop(perirhizalModel,fpit_Helper.n_iter_inner, dt,
-                                False,real_dtinner=float(Ni) * dt, name='inner2_loopdata', isInner = True, 
-                                plant = plantModel):
+        keepGoing = True
+        while keepGoing:
                                 
             
             perirhizalModel.solve_gave_up = False # we reset solve_gave_up (== did dumux fail?) each time
@@ -62,11 +64,13 @@ def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
             
             
             ##
-            # 2.2 reset 1d models + store data before solve, for post proccessing
+            # 2.2 reset 1d models + store data before solve, for post processing
             # 
             ##
             
-            if (fpit_Helper.n_iter > 0) : 
+            if ((fpit_Helper.n_iter3 > 0)|(fpit_Helper.n_iter2 > 0)|(
+                    fpit_Helper.n_iter > 0)):
+                print("\t\tdoreset")
                 perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
                     
             fpit_Helper.storeOldMassData1d()
@@ -80,7 +84,7 @@ def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
 
             
             if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils ") 
+                    print("\t\tsolve all 1d soils ")
                     
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
@@ -90,11 +94,11 @@ def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
                                   fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
                                   fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
                                   # solute 2
-                                  fpit_Helper.n_iter
+                                  # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
             
             if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("solve all 1d soils finished")
+                    print("\t\tsolve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
@@ -116,6 +120,47 @@ def innerLoop(plantModel, fpit_Helper, perirhizalModel , sim_time, dt):
             # 2.5 error rates
             ##
             fpit_Helper.massBalanceError1d(dt)
+
+
+            ###########
+            #       leave??
+            ##########
+            fpit_Helper.computeConvergence2()
+            keepGoing, gaveUp = helpfull.continueLoop(perirhizalModel, n_iter=
+                                fpit_Helper.n_iter3,
+                                                 dt_inner= dt,
+                         failedLoop = False, real_dt =float(Ni) * dt,
+                                                      name='inner_loopdata',
+                         isInner=True,
+                         plant=plantModel, FPIT_id = 3)
+
+            fpit_Helper.n_iter3 += 1
+
+        n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter3)
+            
+        # store transpiration and assimilation data    
+        if (rank == 0):
+            # root -soil exchange per root segment for water and solute 1 and 2
+            plantModel.seg_fluxes0Cumul_inner += perirhizalModel.seg_fluxes_limited * dt
+            plantModel.seg_fluxes1Cumul_inner += perirhizalModel.seg_fluxes_limited_sol_In * dt
+            plantModel.seg_fluxes2Cumul_inner += perirhizalModel.seg_fluxes_limited_mucil_In * dt
+
+            if perirhizalModel.doPhotosynthesis:
+                plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
+                plantModel.AnCumul_inner += np.array(plantModel.An ) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]
+                    
+                write_file_float("N_Transpiration_inner", sum(np.array(plantModel.Ev) * dt), directory_ =results_dir)
+                
+                write_file_array("N_Q_Ag_dot_inner", plantModel.AnCumul_inner/ (dt*24*3600), directory_ =results_dir)
+                write_file_array("N_Q_Ag_dot_innerbis", plantModel.An, directory_ =results_dir)
+            else:
+                rootSegs = np.array(perirhizalModel.organTypes) == pb.root
+                plantModel.TranspirationCumul_inner += sum(fpit_Helper.seg_fluxes[rootSegs]) * dt
+                
+            write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
+
+        dt_inner = float(Ni + 1) * float(dt)
+        return gaveUp, dt_inner, n_iter_inner_max
 
 
 def simulate_const(s, plantModel, sim_time, dt, rs_age, 
@@ -220,56 +265,60 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                                 seg_fluxes, outer_R_bc_wat, 
                                                 outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i,
                                                 dt,sim_time, emptyCells)
-        
-            
-        dt_inner = fpit_Helper.dt_inner
-        while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt_inner,
-                            False,real_dtinner=float(Ni) * dt_inner,name='inner_loopdata', isInner = True, 
-                            plant = plantModel):
-            
-            # nested inner loop
-            while keepGoing or failedInnerLoop:
-            
-                real_dtinner,failedInnerLoop, n_iter_inner_max  = innerLoop(plantModel, fpit_Helper, 
-                                                                    perirhizalModel , dt, dt_inner)
-                
-                
-                keepGoing = helpfull.continueInnerLoop(perirhizalModel=perirhizalModel,
-                                        n_iter=perirhizalModel.n_iter_inner, 
-                                     dt_inner=perirhizalModel.dt_inner2,
-                                     failedLoop=failedInnerLoop,real_dtinner=real_dtinner,name="Outer_data_fpit2",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
-                perirhizalModel.n_iter_inner += 1
+
+        # looping 1
+        keepGoing = True
+        while keepGoing:
+
+
+
+            # looping 2
+            #dt_inner = min(fpit_Helper.dt_inner2, fpit_Helper.dt_inner)
+            keepGoingInner = True
+            fpit_Helper.n_iter2 = 0
+                # nested inner loop
+            while keepGoingInner :
+
+                print("enter inner loop")
+                failedInnerLoop, real_dt, n_iter_inner_max2= innerLoop(
+                    plantModel = plantModel, rs_age = rs_age_i_dt,
+                    fpit_Helper  =fpit_Helper,perirhizalModel = perirhizalModel ,
+                    sim_time = dt, dt = perirhizalModel.dt_inner2)
+                print("leave inner loop")
+                keepGoingInner = (failedInnerLoop & (
+                            fpit_Helper.n_iter2 < perirhizalModel.k_iter))
+                fpit_Helper.n_iter2 += 1
             
                 # we leave the loop either because dumux threw an error or because
                 # we reached dt_inner
                 try:
-                    assert (abs(real_dtinner - dt_inner2) < perirhizalModel.dt_inner2 ) or failedInnerLoop                
+                    assert ((abs(real_dt - dt) < perirhizalModel.dt_inner2 ) or
+                            failedInnerLoop)
                 except:
-                    print('real_dtinner',real_dtinner ,dt_inner2, perirhizalModel.dt_inner2 , failedInnerLoop)
-                    write_file_array("real_dtinner_error", np.array([real_dtinner ,dt_inner2,
-                                                                     perirhizalModel.dt_inner2 , failedInnerLoop,abs((real_dtinner - dt_inner2)/dt_inner2*100.),rs_age]), 
+                    print('real_dtinner',real_dt ,dt, perirhizalModel.dt_inner2 ,
+                          failedInnerLoop)
+                    write_file_array("real_dtinner_error", np.array([dt,real_dt ,
+                                                                     perirhizalModel.dt_inner2 ,
+                                                                     failedInnerLoop,rs_age_i_dt,Ni]),
                                      directory_ =results_dir, fileType = '.csv') 
                     raise Exception
                     
                     
-                perirhizalModel.dt_inner2 = suggestNumStepsChange(dt_inner2,  failedInnerLoop, perirhizalModel, n_iter_inner_max)
+                perirhizalModel.dt_inner2 = helpfull.suggestNumStepsChange(
+                    perirhizalModel.dt_inner2 ,
+                                                                  failedInnerLoop, perirhizalModel,
+                                                                  n_iter_inner_max2)
                 
-                if keepGoing or failedInnerLoop:
+                if keepGoingInner:
                     
                     if rank==0:
-                        print("error too high, decrease dt_inner2 to",perirhizalModel.dt_inner2)
+                        print("error too high, restart loop with dt_inner2",
+                              perirhizalModel.dt_inner2)
                     # reset data to the beginning of the iteration loops
+                    helpfull.resetPlantWFlux(plantModel, perirhizalModel)
                     
-            assert helpfull.continueInnerLoop(perirhizalModel=perirhizalModel,
-                                        n_iter=perirhizalModel.n_iter_inner, 
-                                     dt_inner=perirhizalModel.dt_inner2,
-                                     failedLoop=failedInnerLoop,real_dtinner=real_dtinner,name="Outer_data_fpit2",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
+            assert not failedInnerLoop
+
                 
             """ 3. global soil models (3DS)"""
             
@@ -384,8 +433,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # store max number of iteration which occured in the inner iteration loop
             # for adaptation of the next inner time step (@see helpfull::suggestNumStepsChange())
             n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter)
-            # end inner loop
-            
+
+
+            # for debug
             if False:#not perirhizalModel.doMinimumPrint:
                 datas = []
                 datasName = [ ]
@@ -406,8 +456,16 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx of vtp plot
                                     perirhizalModel, plantModel,s, perirhizalModel.getSoilTextureAndShape(), 
                                     datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
-
-            
+            ###########
+            #       leave??
+            ##########
+            keepGoing, failedLoop = helpfull.continueLoop(perirhizalModel, n_iter=
+                                fpit_Helper.n_iter,
+                                                 dt_inner= dt,
+                         failedLoop = False, real_dt =float(Ni) * dt,
+                                                          name='inner_loopdata',
+                         isInner=True,
+                         plant=plantModel)
         ####
         #   error rates    
         ####
@@ -416,24 +474,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         perirhizalModel.check1d3dDiff()
         
         
-        if (rank == 0):
-            if perirhizalModel.doPhotosynthesis:
-                plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
-                plantModel.AnCumul_inner += np.array(plantModel.An ) * (dt*24*3600) # //[mol CO2 m-2 s-1] to [mol CO2 m-2]
-                    
-                write_file_float("N_Transpiration_inner", sum(np.array(plantModel.Ev) * dt), directory_ =results_dir)
-                
-                write_file_array("N_Q_Ag_dot_inner", plantModel.AnCumul_inner/ (dt*24*3600), directory_ =results_dir)
-                write_file_array("N_Q_Ag_dot_innerbis", plantModel.An, directory_ =results_dir)
-            else:
-                rootSegs = np.array(perirhizalModel.organTypes) == pb.root
-                plantModel.TranspirationCumul_inner += sum(fpit_Helper.seg_fluxes[rootSegs]) * dt
-                
-            write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
         
         # did we leave the inner loop because n_iter == k_iter (failedLoop = True)?
-        failedLoop = continueLoop(perirhizalModel,s,0, dt, False,Ni * dt,'inner_testdata', plant = plantModel)
-        
         if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
             if rank == 0:
                 print('Failed, no need to go on, leave inner loop now and reset lower time step')
