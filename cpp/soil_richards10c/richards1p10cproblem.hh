@@ -1629,6 +1629,8 @@ public:
             return kads * (CSSmax * CSW/(CSW+k_sorp )- CSS2);
         }
         if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
+        if(css1Function == 10){return kads * (CSSmax - CSS2) - kdes * CSS2;}
+        
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
     }
@@ -1738,12 +1740,14 @@ private:
 	double alpha;//[s-1]	
     double kads;//[m3/mol/s] or [1/s]
     double kdes;//[s-1]
+    
     double psikPa_opt = -3.;//[kPa]
     double psikPa_th = -15800.;//[kPa]
     double alpha_A = 1.47;//[s-1]
     double psiMPa_A2D = -0.46;//[MPa] psiMPa_A2D
     double tau_DA = 0.39;//[-]
     double w_DA = 3.38;//[-]
+    
 	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
 	std::vector<double>  m_maxBis ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
 	double  k_decay3 = 1;// for troubleshooting
