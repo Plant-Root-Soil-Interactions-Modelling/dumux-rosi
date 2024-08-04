@@ -21,11 +21,12 @@ import vtk_plot_adapted as vp
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 
-doFPIT3 = True
-if doFPIT3:
-    import FPIT2_FPIT3 as cyl3
-else:    
-    import cyl3plant as cyl3
+doNestedFixedPointIter = False
+if doNestedFixedPointIter:
+    import cyl3plant as fixedPointIter
+else:
+    import nestedFixedPointIter as fixedPointIter
+    
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
 from helpfull import continueLoop
@@ -143,8 +144,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     perirhizalModel.doPhloemFlow = doPhloemFlow
     perirhizalModel.doSoluteFlow = doSoluteFlow
     perirhizalModel.doMinimumPrint = doMinimumPrint
-    perirhizalModel.dt_inner = dt_inner_init#float(dt) # [d]
-    perirhizalModel.dt_inner2 = dt_inner2_init#float(dt) # [d]
+    perirhizalModel.dt_inner = dt_inner_init  # for outer fixed point iteration [d]
+    perirhizalModel.dt_inner2 = dt_inner2_init # for inner fixed point iteration [d]
     perirhizalModel.minIter=minIter
     perirhizalModel.k_iter=k_iter
     perirhizalModel.targetIter=targetIter
@@ -230,7 +231,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             else:
                 Q_plant_=[[],[]]
             
-            net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = cyl3.simulate_const(s,
+            net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
                                                     plantModel, 
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
                                                     rs_age=rs_age, 
@@ -250,7 +251,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 assert (abs(real_dt - dt) < perirhizalModel.dt_inner ) or failedLoop
             except:
                 print('real_dt',real_dt ,dt, perirhizalModel.dt_inner , failedLoop)
-                write_file_array("real_dtinner_error", np.array([real_dt,dt,
+                write_file_array("real_dt_error", np.array([real_dt,dt,
                                                                  perirhizalModel.dt_inner , failedLoop,abs((real_dt - dt)/dt*100.),rs_age]),
                                  directory_ =results_dir, fileType = '.csv') 
                 raise Exception
@@ -263,7 +264,6 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 if rank==0:
                     print("error too high, decrease dt to",perirhizalModel.dt_inner)
                 # reset data to the beginning of the iteration loops
-                raise Exception
                 helpfull.resetData(plantModel, perirhizalModel, s)
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
