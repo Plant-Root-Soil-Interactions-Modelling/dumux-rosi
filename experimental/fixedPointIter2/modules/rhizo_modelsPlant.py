@@ -1383,13 +1383,21 @@ class RhizoMappedSegments(pb.MappedPlant):
                         raise Exception
             
             if self.doSoluteUptake:
-                Vmax = 3.844e-10*(24*3600)/1e4# (kg m–2 s–1) * (s/d) * (m2/cm2) => (
+                # for maiz:
+                # http://dx.doi.org/10.1590/S0103-90162004000100012
+                #Vmax = 45,6 µmol / g /h
+                #Km = 33,7µmol / l
+                #average root surafce area: 818,33 cm²
+                #average root weight: 1,51 g
+                
+                
+                #Vmax = 3.844e-10*(24*3600)/1e4# (kg m–2 s–1) * (s/d) * (m2/cm2) => (
                 # kg cm–2 d–1)
-                Vmax = Vmax * 1000. / self.soilModel.molarMassC # (kg cm–2 d–1) * (g/kg) / (g/mol) => mol cm-2 d-1
-                cyl.setParameter("RootSystem.Uptake.Vmax", cyl.dumux_str(Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
-                km = 1.054e-4 * 1e-6 # (kg m–3) => kg cm-3
-                km = km * 1000. / self.soilModel.molarMassC # (kg cm-2 * (g/kg) / (g/mol)) 
-                cyl.setParameter("RootSystem.Uptake.Km", cyl.dumux_str(km))  # mol / cm3                
+                #Vmax = self.Vmax#Vmax * 1000. / self.soilModel.molarMassC # (kg cm–2 d–1) * (g/kg) / (g/mol) => mol cm-2 d-1
+                cyl.setParameter("RootSystem.Uptake.Vmax", cyl.dumux_str(self.RS_Uptake_Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
+                #km = 1.054e-4 * 1e-6 # (kg m–3) => kg cm-3
+                #km = km * 1000. / self.soilModel.molarMassC # (kg cm-2 * (g/kg) / (g/mol)) 
+                cyl.setParameter("RootSystem.Uptake.Km", cyl.dumux_str(self.RS_Uptake_km))  # mol / cm3                
                 cyl.setParameter( "Soil.BC.Bot.C1Type", str(8))
                           
             # Maximum uptake rate (kg m–2 s–1)	3.844e-10	(Teo et al. (1992a)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
