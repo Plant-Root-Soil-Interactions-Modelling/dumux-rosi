@@ -1285,14 +1285,14 @@ public:
 		PcKrSwCurve materialLaw_ = materialLaw(element);
 		Scalar p = materialLaw_.pc(sat) + pRef_;//water pressure?
         Scalar psicm = std::min(-toHead_(p),0.); // to cm
-			
         double psihPa = psicm*0.980665;// hPa
-        double psikPa = psihPa / 10;// kPa 
+        double psikPa = psihPa / 10.;// kPa 
         double psiMPa = psihPa * 1e-4;// MPa
         
         // clamp to the rang [0,1] to make sure (might have rounding error for f_A2Dm f_D2A and f_A is not limited)
+        double psikPa_ = std::max(std::min(psikPa, psikPa_opt),psikPa_th);
         double f_A = std::min(std::max(1-std::pow((
-                            (std::log10(std::abs(psikPa))-std::log10(std::abs(psikPa_opt))
+                            (std::log10(std::abs(psikPa_))-std::log10(std::abs(psikPa_opt))
                         )/(std::log10(std::abs(psikPa_th))-std::log10(std::abs(psikPa_opt)))
 						),alpha_A),
                         0.),1.); // -
@@ -1740,7 +1740,7 @@ private:
 	double alpha;//[s-1]	
     double kads;//[m3/mol/s] or [1/s]
     double kdes;//[s-1]
-	
+    
     double psikPa_opt = -3.;//[kPa]
     double psikPa_th = -15800.;//[kPa]
     double alpha_A = 1.47;//[s-1]

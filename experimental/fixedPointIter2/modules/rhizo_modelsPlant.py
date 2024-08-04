@@ -1727,7 +1727,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         proposed_outer_fluxes_sol = argv[3]
         proposed_inner_fluxes_mucil = argv[4]
         proposed_outer_fluxes_mucil = argv[5]
-        self.n_iter = argv[6]
+        #self.n_iter = argv[6]
         
         self._initialize_flux_storage()
         

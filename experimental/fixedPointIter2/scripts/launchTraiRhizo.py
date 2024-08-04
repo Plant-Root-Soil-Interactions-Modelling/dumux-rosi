@@ -4,7 +4,7 @@ os.chdir('/home/rbtlm640/dumux10c38/dumux/dumux-rosi/experimental/fixedPointIter
 sys.path.append('')
 import mainTraiRhizo
 
-spellData = {'scenario': 'baseline', 'spellStart': 11, 'spellEnd': 18,'condition': 'wet'}
-results_dir = mainTraiRhizo.XcGrowth(10., 25.,44,spellData )
+spellData = {'scenario': 'none', 'spellStart': 30, 'spellEnd': 35,'condition': 'wet'}
+results_dir = mainTraiRhizo.XcGrowth(9., 25.,44,spellData )
 # (initsim, simMax,paramIndx_,spellData)
 

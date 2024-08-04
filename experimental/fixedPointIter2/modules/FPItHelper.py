@@ -82,6 +82,7 @@ class fixedPointIterationHelper():
             
         ### loop and error values
         self.n_iter = 0 # number of iteration
+        self.err2 = 1.e6
         self.err = 1.e6 
         self.max_err = self.perirhizalModel.max_err 
         self.perirhizalModel.rhizoMassWError_abs =1.# 
@@ -652,7 +653,7 @@ class fixedPointIterationHelper():
         # perirhizalModel.rhizoMassCError_abs = comm.bcast(perirhizalModel.rhizoMassCError_abs,root= 0)
         
         if rank == 0:
-            print(f'relative error balance soil 1d (%)?\n\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e}, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e}, from PCU: {perirhizalModel.rhizoMassCError_rel:.2e}, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
+            print(f'\t\trelative error balance soil 1d (%)?\n\t\t\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e}, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e}, from PCU: {perirhizalModel.rhizoMassCError_rel:.2e}, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
                 )
 
         
@@ -749,7 +750,52 @@ class fixedPointIterationHelper():
             raise Exception
 
 
+    def computeConvergence2(self):
+        perirhizalModel = self.perirhizalModel
+        s = self.s
+        plantModel = self.plantModel
 
+        # convergence plant wat. pot
+        rx = comm.bcast(np.array(plantModel.psiXyl), root=0)
+        rx_divide = np.where(rx != 0, rx, 1.)
+        self.errRxPlant = max(abs((rx - self.rx_old) / rx_divide) * 100.)
+        self.rx_old = rx.copy()
+
+        # convergence wat. pot. at root-soil interface
+        rsx = comm.bcast(
+            perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX),
+            root=0)  # works for all threads
+        rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
+                              rsx, self.rsx_input)
+        perirhizalModel.errWrsiRealInputs = abs(
+            (rsx - self.rsx_input) / rsx_divide) * 100.
+        perirhizalModel.errWrsiRealInputs[abs(rsx - self.rsx_input) <= 5] = 0.
+        perirhizalModel.errWrsiRealInput = max(perirhizalModel.errWrsiRealInputs)
+        if rank == 0:
+            print("\t\t\t\terrWrsiRealInput:", perirhizalModel.errWrsiRealInput)
+
+        rsx_divide = np.where(rsx != 0., rsx, 1.)
+        perirhizalModel.errWrsis = abs((rsx - self.rsx_old) / rsx_divide) * 100.  # max()
+        perirhizalModel.errWrsis[abs(rsx - self.rsx_old) <= 5] = 0.
+        perirhizalModel.errWrsi =  max(perirhizalModel.errWrsis)
+        self.rsx_old = rsx;
+        self.rsx_olds.append(self.rsx_old)
+
+
+        # convergence BC flow 1d models
+        diffBCS1dsFluxIn = np.array(
+            self.seg_fluxes) - self.seg_fluxes_old  # only for water as plant exud is outside of loop
+
+        self.errBCS1dsFluxIn =max(abs((
+            diffBCS1dsFluxIn/ np.where(np.array(self.seg_fluxes),
+                                       np.array(self.seg_fluxes),1.))*100))
+
+
+        perirhizalModel.err2 = comm.bcast(max(self.errRxPlant,self.errW1ds, self.errC1ds,
+                                             perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
+                               perirhizalModel.rhizoMassWError_rel,
+                               perirhizalModel.rhizoMassCError_rel
+                        ),root= 0)
 
     def computeConvergence(self):
         """
@@ -758,45 +804,14 @@ class fixedPointIterationHelper():
         """
         perirhizalModel = self.perirhizalModel
         s = self.s
-        plantModel = self.plantModel
         
-        
-        # convergence plant wat. pot
-        rx = comm.bcast(np.array(plantModel.psiXyl), root = 0) 
-        rx_divide = np.where(rx !=0, rx, 1.)
-        errRxPlant = max(abs((rx - self.rx_old)/rx_divide)*100.)
-        self.rx_old = rx.copy()
-        
-        # convergence wat. pot. at root-soil interface            
-        rsx =comm.bcast( perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX), root = 0)  # works for all threads
-        rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
-                                  rsx,self.rsx_input)
-        perirhizalModel.errWrsiRealInputs =  abs((rsx - self.rsx_input)/rsx_divide)*100.
-        perirhizalModel.errWrsiRealInputs[abs(rsx - self.rsx_input)<= 5]= 0.
-        errWrsiRealInputf = max(perirhizalModel.errWrsiRealInputs)
-        if rank == 0:
-            print("errWrsiRealInput:",errWrsiRealInputf)
-        perirhizalModel.errWrsiRealInput = errWrsiRealInputf
-        
-        rsx_divide = np.where(rsx!=0.,rsx,1.)
-        perirhizalModel.errWrsis =  abs((rsx - self.rsx_old)/rsx_divide)*100.#max()
-        perirhizalModel.errWrsis[abs(rsx - self.rsx_old)<= 5]= 0.
-        errWrsi = max(perirhizalModel.errWrsis)
-        self.rsx_old = rsx;
-        self.rsx_olds.append(self.rsx_old)
-        perirhizalModel.errWrsi = errWrsi
 
-        # convergence BC flow 1d models
-        diffBCS1dsFluxIn =   np.array(self.seg_fluxes)  - self.seg_fluxes_old   #only for water as plant exud is outside of loop
         self.diffBCS1dsFluxOut =   self.proposed_outer_fluxes  - self.proposed_outer_fluxes_old 
         
                          
         diffBCS1dsFluxOut_sol =   self.proposed_outer_sol_fluxes  - self.proposed_outer_sol_fluxes_old 
         diffBCS1dsFluxOut_mucil =   self.proposed_outer_mucil_fluxes  - self.proposed_outer_mucil_fluxes_old
 
-        errBCS1dsFluxIn =max(abs((
-            diffBCS1dsFluxIn/ np.where(np.array(self.seg_fluxes),
-                                       np.array(self.seg_fluxes),1.))*100))
         errBCS1dsFluxOut = max(abs((
             self.diffBCS1dsFluxOut/ np.where(self.proposed_outer_fluxes,
                                         self.proposed_outer_fluxes,1.))*100))
@@ -844,20 +859,18 @@ class fixedPointIterationHelper():
         
         # one metric to decide if we stay in the iteration loop or not
         
-        perirhizalModel.err = comm.bcast(max(errRxPlant,self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds,
-                                             errWrsi,errWrsiRealInputf,
+        perirhizalModel.err = comm.bcast(max(perirhizalModel.err2,
                                 s.bulkMassErrorWater_rel, 
-                               s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel,
-                               perirhizalModel.rhizoMassWError_rel,
-                               perirhizalModel.rhizoMassCError_rel,
-                               #perirhizalModel.SinkLim3DS,
-                        #perirhizalModel.SinkLim1DS
+                               s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
                         ),root= 0)
         # one array to do printing
         perirhizalModel.errs =np.array([
                         # non-convergence metrics
-                        errRxPlant, self.errW1ds, self.errW3ds,self.errC1ds, self.errC3ds, errWrsi,errWrsiRealInputf,
-                        errBCS1dsFluxIn, errBCS1dsFluxOut,errBCS1dsFluxOut_sol, errBCS1dsFluxOut_mucil,
+                        self.errRxPlant, self.errW1ds, self.errW3ds,self.errC1ds,
+            self.errC3ds, perirhizalModel.errWrsi,
+            perirhizalModel.errWrsiRealInput,
+                        self.errBCS1dsFluxIn, errBCS1dsFluxOut,errBCS1dsFluxOut_sol,
+            errBCS1dsFluxOut_mucil,
                         errOuter_R_bc_wat, errOuter_R_bc_sol,
                         # realised vs prescribed fluxes and sinks
                         perirhizalModel.SinkLim3DS,
