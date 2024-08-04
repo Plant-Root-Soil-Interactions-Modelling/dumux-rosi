@@ -20,7 +20,12 @@ import vtk_plot_adapted as vp
 
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
-import cyl3plant as cyl3
+
+doFPIT3 = True
+if doFPIT3:
+    import FPIT2_FPIT3 as cyl3
+else:    
+    import cyl3plant as cyl3
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
 from helpfull import continueLoop
@@ -38,6 +43,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
+    dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
@@ -138,6 +144,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     perirhizalModel.doSoluteFlow = doSoluteFlow
     perirhizalModel.doMinimumPrint = doMinimumPrint
     perirhizalModel.dt_inner = dt_inner_init#float(dt) # [d]
+    perirhizalModel.dt_inner2 = dt_inner2_init#float(dt) # [d]
     perirhizalModel.minIter=minIter
     perirhizalModel.k_iter=k_iter
     perirhizalModel.targetIter=targetIter
@@ -211,11 +218,11 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             phloemData.Q_Exud_cumul += sum(phloemData.Q_Exud_i_seg); 
             phloemData.Q_Mucil_cumul += sum(phloemData.Q_Mucil_i_seg)
 
-        perirhizalModel.n_iter, failedLoop, keepGoing = helpfull.resetAndSaveData1(perirhizalModel)
+        perirhizalModel.n_iter, keepGoing = helpfull.resetAndSaveData(perirhizalModel)
         
-        while keepGoing or failedLoop:
+        while keepGoing:
             
-            helpfull.resetAndSaveData2(plantModel, perirhizalModel, s)
+            helpfull.saveData(plantModel, perirhizalModel, s)
             
             if perirhizalModel.doPhloemFlow:
                 Q_plant_=[phloemData.Q_Exud_i_seg, 
@@ -223,7 +230,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             else:
                 Q_plant_=[[],[]]
             
-            net_sol_flux, net_flux, seg_Wfluxes, real_dtinner,failedLoop, n_iter_inner_max = cyl3.simulate_const(s, 
+            net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = cyl3.simulate_const(s,
                                                     plantModel, 
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
                                                     rs_age=rs_age, 
@@ -234,47 +241,37 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
             
-            keepGoing = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=perirhizalModel.n_iter, 
-                                     dt_inner=perirhizalModel.dt_inner,
-                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="Outer_data",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
+            keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
             perirhizalModel.n_iter += 1
             
             # we leave the loop either becuse dumux threw an error or because
             # we reached dt
             try:
-                assert (abs(real_dtinner - dt) < perirhizalModel.dt_inner ) or failedLoop                
+                assert (abs(real_dt - dt) < perirhizalModel.dt_inner ) or failedLoop
             except:
-                print('real_dtinner',real_dtinner ,dt, perirhizalModel.dt_inner , failedLoop)
-                write_file_array("real_dtinner_error", np.array([real_dtinner ,dt,
-                                                                 perirhizalModel.dt_inner , failedLoop,abs((real_dtinner - dt)/dt*100.),rs_age]), 
+                print('real_dt',real_dt ,dt, perirhizalModel.dt_inner , failedLoop)
+                write_file_array("real_dtinner_error", np.array([real_dt,dt,
+                                                                 perirhizalModel.dt_inner , failedLoop,abs((real_dt - dt)/dt*100.),rs_age]),
                                  directory_ =results_dir, fileType = '.csv') 
                 raise Exception
                 
                 
             perirhizalModel.dt_inner = suggestNumStepsChange(dt,  failedLoop, perirhizalModel, n_iter_inner_max)
             
-            if keepGoing or failedLoop:
+            if keepGoing:
                 
                 if rank==0:
                     print("error too high, decrease dt to",perirhizalModel.dt_inner)
                 # reset data to the beginning of the iteration loops
                 raise Exception
-                helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
+                helpfull.resetData(plantModel, perirhizalModel, s)
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
         
-        keepGoing_ = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=0, 
-                                     dt_inner=perirhizalModel.dt_inner,
-                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="TestOuter_data",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
-        if keepGoing_:
-            print("None convergence error: only left the loop because reached the max number of iteration.")
+
+        if failedLoop:
+            print("convergence error: only left the loop because reached the max number of iteration.")
             raise Exception  
         
         printData.printTimeAndError(perirhizalModel, rs_age)
