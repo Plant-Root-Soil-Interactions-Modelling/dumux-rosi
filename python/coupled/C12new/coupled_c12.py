@@ -1,5 +1,5 @@
 """ 
-Benchmark M1.2 static root system in soil (root hydrualics with Meunier and the classic sink)
+Benchmark M1.2 static root system in soil (root hydrualics with Doussan or Meunier using the classic sink)
 
 also works parallel with mpiexec (slower, due to overhead?)
 """
@@ -68,7 +68,7 @@ sinusoidal = HydraulicModel_Doussan.sinusoidal  # rename
 params = PlantHydraulicParameters()
 init_conductivities(params, age_dependent)
 
-r = HydraulicModel_Meunier(fname, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
+r = HydraulicModel_Meunier(fname, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 
 r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
@@ -107,10 +107,13 @@ for i in range(0, N):
     fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
 
     water = s.getWaterVolume()
+
     s.setSource(fluxes.copy())
     s.solve(dt)
+
     old_sx = sx.copy()
     sx = s.getSolutionHead()
+
     soil_water = (s.getWaterVolume() - water) / dt  # since no-flux bc everywhere, change in water volume should equal transpirational flux
 
     if rank == 0 and i % skip == 0:
