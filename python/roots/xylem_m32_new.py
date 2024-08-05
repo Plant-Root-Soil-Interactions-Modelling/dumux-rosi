@@ -3,6 +3,7 @@ import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox")
 import plantbox as pb
 
 from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
+from functional.PlantHydraulicModel import HydraulicModel_Doussan
 from functional.PlantHydraulicModel import HydraulicModel_Meunier
 from functional.PlantHydraulicParameters import PlantHydraulicParameters
 
@@ -29,16 +30,16 @@ param = PlantHydraulicParameters()
 param.setKr([kr])
 param.setKx([kz])
 
-r = HydraulicModel_Meunier("../../grids/RootSystem.rsml", param, cached = True)
+r = HydraulicModel_Doussan("../../grids/RootSystem.rsml", param, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 r.test()
 
 nodes = r.get_nodes()
 soil_index = lambda x, y, z: 0
-r.rs.setSoilGrid(soil_index)
+r.ms.setSoilGrid(soil_index)
 
 """ Numerical solution (a) """
-rx_a = r.solve_dirichlet(0., p0, [p_s], True)
-print("Transpiration", r.get_transpiration(0., rx_a, [p_s]), "cm3/day")
+rx_a = r.solve_dirichlet(0., p0, [p_s], cells = True)
+print("Transpiration", r.get_transpiration(0., rx_a, [p_s], cells = True), "cm3/day")
 np.savetxt("results_m32a", np.vstack((nodes[:, 2], rx_a)), delimiter = ',')
 
 ax1.plot(rx_a, nodes[:, 2] , "r*")
@@ -57,8 +58,8 @@ kx0 = np.array([[0, 6.74e-02], [2, 7.48e-02], [4, 8.30e-02], [6, 9.21e-02], [8, 
 kx1 = np.array([[0, 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03], [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03], [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
 param.setKxTables([kx0[:, 1], kx0[:, 1], kx1[:, 1], kx1[:, 1]], [kx0[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0]])
 
-rx_b = r.solve_dirichlet(simtime, p0, [p_s], True)
-print("Transpiration", r.get_transpiration(simtime, rx_b, [p_s]), "cm3/day")
+rx_b = r.solve_dirichlet(simtime, p0, [p_s], cells = True)
+print("Transpiration", r.get_transpiration(simtime, rx_b, [p_s], cells = True), "cm3/day")
 np.savetxt("results_m32b", np.vstack((nodes[:, 2], rx_b)), delimiter = ',')
 
 ax2.plot(rx_b, nodes[:, 2] , "r*")

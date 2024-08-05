@@ -59,7 +59,7 @@ params = PlantHydraulicParameters(rs)
 params.setKr([kr0])
 params.setKx([kz0])
 
-r = HydraulicModel_Doussan(rs, params, cached = True)
+r = HydraulicModel_Doussan(rs, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 
 kx = params.getKx(0.)
 print(kx)
@@ -76,21 +76,17 @@ plt.plot(rx, z_, "r*")
 # simtime = 0.
 # radial_fluxes = r.radial_fluxes(simtime, rx, [p_s])
 # axial_fluxes = r.axial_fluxes(simtime, rx, [p_s])
-# axial_i = np.array([r.axial_flux(i, simtime, rx, [p_s], True, True) for i in range(0, len(axial_fluxes))])  # same as axial_fluxes, but in node j
-# axial_j = np.array([r.axial_flux(i, simtime, rx, [p_s], True, False) for i in range(0, len(axial_fluxes))])  # same as axial_fluxes, but in node j
-# ana = pb.SegmentAnalyser(r.rs)
+# # axial_i = np.array([r.axial_flux(i, simtime, rx, [p_s], True, True) for i in range(0, len(axial_fluxes))])  # same as axial_fluxes, but in node j
+# # axial_j = np.array([r.axial_flux(i, simtime, rx, [p_s], True, False) for i in range(0, len(axial_fluxes))])  # same as axial_fluxes, but in node j
+# ana = pb.SegmentAnalyser(r.ms)
 # ana.addData("rx", rx)  # node data are converted to segment data
 # ana.addData("radial", radial_fluxes)
 # ana.addData("axial", axial_fluxes)
-# ana.addData("net", axial_i - axial_j - radial_fluxes)
+# # ana.addData("net", axial_i - axial_j - radial_fluxes)
 # pd = vp.segs_to_polydata(ana, 1., ["radius", "subType", "creationTime", "length", "rx", "axial", "radial", "net"])
-# vp.plot_roots(pd, "net")  # axial, radial, rx
+# vp.plot_roots(pd, "radial")  # axial, radial, rx
 
 rx = r.solve_neumann(0., -2., [p_s], cells = True)  # or solve ...
-
-print(r.last)
-print(type(rx))
-print(rx.shape)
 
 trans = r.get_transpiration(0., rx, [p_s], cells = True)
 print("Transpiration", trans, "cm3/day")
