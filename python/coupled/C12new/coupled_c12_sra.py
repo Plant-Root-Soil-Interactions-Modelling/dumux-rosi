@@ -1,7 +1,5 @@
 """ 
 Benchmark M1.2 static root system in soil, root hydrualics with Meunier with rhizosphere (using steady rate approach)
-
-also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
