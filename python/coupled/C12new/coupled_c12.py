@@ -1,7 +1,12 @@
 """ 
-Benchmark M1.2 static root system in soil (root hydrualics with Doussan or Meunier using the classic sink)
+Benchmark M1.2 static root system in soil (root hydraulics with Doussan or Meunier using the classic sink)
 
-also works parallel with mpiexec (slower, due to overhead?)
+run times (for 7.1 days)
+Meunier               195s
+Meunier cached        200s (slower than direct...) 
+Doussan               213
+Doussan cached        186
+
 """
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
@@ -43,10 +48,10 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7.1  # [day] for task b
+sim_time = 7.1  # 7.1  # [day] for task b
 age_dependent = False  # conductivities
 dt = 120. / (24 * 3600)  # [days] Time step must be very small
-skip = 1
+skip = 10
 
 """ Initialize macroscopic soil model """
 sp = vg.Parameters(soil)  # for debugging
@@ -63,12 +68,12 @@ s.setParameter("Soil.SourceSlope", "100")  # turns regularisation of the source 
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
-""" Initialize xylem model (a) or (b)"""
+""" Initialize root hydraulic model (a) or (b)"""
 sinusoidal = HydraulicModel_Doussan.sinusoidal  # rename
 params = PlantHydraulicParameters()
 init_conductivities(params, age_dependent)
 
-r = HydraulicModel_Meunier(fname, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
+r = HydraulicModel_Meunier(fname, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 
 r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
@@ -149,8 +154,8 @@ if rank == 0:
     vp.plot_roots_and_soil(r.ms, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal(t))
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
-    sink1d = np.array(sink1d)
-    np.save("sink1d", sink1d)
-    print(sink1d.shape)
-    print(sink1d[-1])
+    # sink1d = np.array(sink1d)
+    # np.save("sink1d", sink1d)
+    # print(sink1d.shape)
+    # print(sink1d[-1])
 
