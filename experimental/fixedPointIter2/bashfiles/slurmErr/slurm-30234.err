@@ -1,0 +1,792 @@
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 227, in XcGrowth
+    net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
+    outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+TypeError: bad operand type for unary -: 'NoneType'

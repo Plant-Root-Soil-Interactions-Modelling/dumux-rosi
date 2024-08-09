@@ -1,6 +1,6 @@
 import os
 import sys
-os.chdir('/home/rbtlm640/dumux10c38/dumux/dumux-rosi/experimental/fixedPointIter2/scripts')
+#os.chdir('/home/rbtlm640/dumux10c38/dumux/dumux-rosi/experimental/fixedPointIter2/scripts')
 sys.path.append('')
 import mainTraiRhizo
 

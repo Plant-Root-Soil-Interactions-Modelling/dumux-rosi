@@ -20,10 +20,49 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.theta_wilting_point = np.nan #minimum acceptable theat value
         self.vg_soil = np.nan #t ostore  theta_S
 
+    def gather(self, data2gather):
+        return data2gather
 
     def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 
         """ dummy allgatherv function """
         return X_rhizo
+    
+    def _flat0(self, xx):
+        """flattens the gathered list in rank 0, empty list for other ranks """
+        if isinstance(xx[0], (list,type(np.array([])))) :
+            return np.array([item for sublist in xx for item in sublist])
+        else:
+            return xx
+    
+    def _map(self, x, type_, dtype = np.float64):
+        """Converts rows of x to numpy array and maps it to the right indices         
+        @param type_ 0 dof indices, 1 point (vertex) indices, 2 cell (element) indices   
+        """
+        verbose_ = False
+        if type_ == 0:  # auto (dof)
+            indices = self.getDofIndices() 
+        elif type_ == 1:  # points
+            indices = self.getPointIndices() 
+        elif type_ == 2:  # cells
+            indices =  self.getCellIndices() 
+        else:
+            raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
+            
+        try:
+            assert len(indices) == len(x), "_map: indices and values have different length"
+        except:
+            print('assert len(indices) == len(x)',
+                  len(indices) , len(x), indices)
+            raise Exception
+        ndof = max(indices) + 1
+        if isinstance(x[0], (list,type(np.array([])))) :
+            m = len(x[0])
+            p = np.zeros((ndof, m), dtype = dtype)
+            p[indices,:] = np.asarray(x, dtype = dtype)
+        else:
+            p = np.zeros(ndof, dtype = dtype)
+            p[indices] = np.asarray(x, dtype = dtype)
+        return p
 
     def initialize(self, args_ = [""], verbose = False, doMPI = False):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """

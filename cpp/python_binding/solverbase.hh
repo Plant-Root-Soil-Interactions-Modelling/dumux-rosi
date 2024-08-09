@@ -121,8 +121,7 @@ public:
      */
     virtual void initialize(std::vector<std::string> args_ = std::vector<std::string>(0), bool verbose = true, bool doMPI = true) {
     
-		int success = setenv("DUMUX_NUM_THREADS","1",0);// will not overwrite the DUMUX_NUM_THREADS value if it already exists.
-		assert((success==0)&&"default definition of DUMUX_NUM_THREADS failed");
+		setenv("DUMUX_NUM_THREADS","1",0);// will not overwrite the DUMUX_NUM_THREADS value if it already exists.
 		
 		if (const char* dumuxNumThreads = std::getenv("DUMUX_NUM_THREADS"))
 		{

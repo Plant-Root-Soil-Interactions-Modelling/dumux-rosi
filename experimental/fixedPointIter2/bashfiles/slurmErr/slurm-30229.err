@@ -1,0 +1,20 @@
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 203, in XcGrowth
+    perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/rhizo_modelsPlant.py", line 328, in check1d3dDiff
+    self.check_Ci_1d3dDiff(cellId, idComp, mol_total_[idComp -1][cellId], idCyls, diff1d3dCW_rel_lim)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/rhizo_modelsPlant.py", line 347, in check_Ci_1d3dDiff
+    mol_rhizo = self.getContentCyl(idCyls, idComp, doSum = True)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/rhizo_modelsPlant.py", line 791, in getContentCyl
+    mol_rhizo = np.array([sum(self.cyls[i].getContent( idComp)) for i in localIdCyls ]) #cm3
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/rhizo_modelsPlant.py", line 791, in <listcomp>
+    mol_rhizo = np.array([sum(self.cyls[i].getContent( idComp)) for i in localIdCyls ]) #cm3
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards.py", line 651, in getContent
+    return self._map(self._flat0(comm.gather(np.multiply(np.multiply(vols , watCont) , C_ ),root=0)),0)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards_no_mpi.py", line 30, in _flat0
+    return np.array([item for sublist in xx for item in sublist])
+TypeError: 'NoneType' object is not iterable
+mpirun: Forwarding signal 18 to job
+slurmstepd: error: *** JOB 30229 ON node14 CANCELLED AT 2024-08-09T10:28:39 ***

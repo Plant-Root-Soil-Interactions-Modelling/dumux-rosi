@@ -180,9 +180,11 @@ public:
 		for(int index_scvf = 0; index_scvf < FluxScvf_10c.size();index_scvf++)
 		{
 				int idxscv = idxScv4FluxScv_10c.at(index_scvf);//.at(local_index_scv);
+                if (idxscv >= 0)
+                {
 					NumEqVector value = FluxScvf_10c.at(index_scvf);//.at(local_index_scv);
 					FluxScv_10c.at(idxscv) += value;//check for the sign 
-			
+                    }			
 		}
 		return FluxScv_10c;
 	}
@@ -490,12 +492,16 @@ public:
 		resetSetFaceFlux();
 		idxScv4FluxScv_10c = std::vector<int>(nFaces,-1);
 		
-		 for (const auto& element : elements(gridView))
+		for (const auto& element : elements(gridView,Dune::Partitions::interior))
         {
-            fvGeometry.bindElement(element);
-            for (const auto& scvf : scvfs(fvGeometry))
+            if(element.partitionType() == Dune::InteriorEntity) //redundant I think
             {
-				idxScv4FluxScv_10c.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+                fvGeometry.bindElement(element);
+                for (const auto& scvf : scvfs(fvGeometry))
+                {
+                    // check here that face belongs to the thread?
+                    idxScv4FluxScv_10c.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+                }
             }
 			
         }

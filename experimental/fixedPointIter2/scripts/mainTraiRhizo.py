@@ -21,11 +21,7 @@ import vtk_plot_adapted as vp
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 
-doNestedFixedPointIter = False
-if doNestedFixedPointIter:
-    import cyl3plant as fixedPointIter
-else:
-    import nestedFixedPointIter as fixedPointIter
+import nestedFixedPointIter as fixedPointIter
     
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
@@ -38,6 +34,8 @@ import scenario_setup
     
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData): 
+    
+    doNestedFixedPointIter = True
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
     xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
@@ -52,7 +50,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
-    doBiochemicalReaction = True
+    doBioChemicalReaction = True
     doSoluteUptake = False # active uptake?
     noAds = False # stop adsorption?
     doPhloemFlow = True
@@ -73,16 +71,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
-    rsiCompMethod =4# 0.5 = mixed, 0 = init, 1 = end, -1: use mean of the last 2 iterations
-    # 2 : last two mean method
-    # 3 : mean(oldmean, lastval)
-    # 4 : mean(allvals)
-    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). 
-    # for eahc seg, not just the whole set
-    # 6: keep min obtained ksoil
-    # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
-    # or run plant model
-    # 8 call cpb in dumux ? inner fixed-point iteration?
+    rsiCompMethod = 0
+    # 0 : mean(allvals) after 4 iteration
+    # 1: use steady rate
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
@@ -94,7 +85,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod*10)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -116,7 +107,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
-                                         doBiochemicalReaction = doBiochemicalReaction,
+                                         doBioChemicalReaction = doBioChemicalReaction,
                                         MaxRelativeShift = MaxRelativeShift)
 
     
@@ -133,7 +124,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
-    perirhizalModel.doBiochemicalReaction = doBiochemicalReaction
+    
+    perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
+    perirhizalModel.doBioChemicalReaction = doBioChemicalReaction
     perirhizalModel.doSoluteUptake = doSoluteUptake
     
     perirhizalModel.do1d1dFlow = do1d1dFlow
@@ -257,7 +250,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 raise Exception
                 
                 
-            perirhizalModel.dt_inner = suggestNumStepsChange(dt,  failedLoop, perirhizalModel, n_iter_inner_max)
+            perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, 
+                                                             failedLoop, perirhizalModel, n_iter_inner_max)
             
             if keepGoing:
                 

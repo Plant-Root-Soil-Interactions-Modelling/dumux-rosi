@@ -1,0 +1,36 @@
+Traceback (most recent call last):
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/solverbase.py", line 646, in _map
+    assert len(indices) == len(x), "_map: indices and values have different length"
+AssertionError: _map: indices and values have different length
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "launchTillage.py", line 8, in <module>
+    results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/mainTillage.py", line 106, in XcGrowth
+    s = scenario_setup.create_soil_model(usemoles = usemoles, 
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../inputDataTillage/scenario_setup.py", line 356, in create_soil_model
+    s = setupOther(s, p_mean_)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../inputDataTillage/scenario_setup.py", line 429, in setupOther
+    s.totC3dInit = sum(s.getTotCContent()) # mol
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards.py", line 475, in getTotCContent
+    return self.getTotCContent_each().sum(axis=0)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards.py", line 461, in getTotCContent_each
+    totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards.py", line 461, in <listcomp>
+    totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/richards.py", line 651, in getContent
+    return self._map(comm.gather(np.multiply(np.multiply(vols , watCont) , C_ ),root=0),0)
+  File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/solverbase.py", line 650, in _map
+    raise Exception
+Exception
+mpirun: Forwarding signal 18 to job
+slurmstepd: error: *** JOB 30227 ON node14 CANCELLED AT 2024-08-08T19:05:40 ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 1 with PID 3423059 on node node14 exited on signal 15 (Terminated).
+--------------------------------------------------------------------------

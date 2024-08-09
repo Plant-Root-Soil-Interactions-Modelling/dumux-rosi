@@ -146,7 +146,9 @@ class SolverWrapper():
     def setVerbose(self, verbose:int):
         """ set verbose level """
         self.base.setVerbose(verbose)
-        
+
+    def gather(self, data2gather):
+        return comm.gather(data2gather, root=0)
     
     def allgatherv(self,data2share, keepShape = False, data2share_type_default = float): 
         """ own allgather() function for vectors
@@ -303,13 +305,22 @@ class SolverWrapper():
         self.pointIndices_ = self.base.getPointIndices()
         self.cellIndices_  = self.base.getCellIndices()
         # all indices
-        self.dofIndices   = self.allgatherv(self.dofIndices_, data2share_type_default = np.int64)
-        self.pointIndices = self.allgatherv(self.pointIndices_, data2share_type_default = np.int64)
-        self.cellIndices  = self.allgatherv(self.cellIndices_, data2share_type_default = np.int64)
-        # volumes
+        self.dofIndices   = self._flat0(self.gather(self.dofIndices_)) 
+        self.pointIndices = self._flat0(self.gather(self.pointIndices_)) 
+        self.cellIndices  = self._flat0(self.gather(self.cellIndices_)) 
+        self.cellsVertex = self._map(self._flat0(self.gather(self.base.getCells())), 2, np.int64)
+        if rank == 0:
+            print('len(self.dofIndices),len(self.pointIndices),len(self.cellIndices)',
+                  len(self.dofIndices),len(self.pointIndices),len(self.cellIndices))
+        # volumes, surface
         self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m2 -> cm2
-        self.CellVolumes = self._map(self.allgatherv(self.CellVolumes_), 2)   # m2 -> cm2
+        self.CellVolumes = self._map(self._flat0(self.gather(self.CellVolumes_)), 2)   # m2 -> cm2
+        # coordinates
+        self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm
+        self.cellCenters = self._map(self._flat0(self.gather(self.base.getCellCenters())), 2) * 100.  # m -> cm
+        self.dofCoordinates = self._map(self._flat0(self.gather(self.base.getDofCoordinates())), 0) * 100.  # m -> cm
 
+        #self.cellSurfacesCyl = self._map(self._flat0(self.gather(self.base.getCellSurfacesCyl())), 2) * 1.e4  # m2 -> cm2
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
@@ -336,7 +347,7 @@ class SolverWrapper():
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getPoints()), 1) * 100.  # m -> cm
+        return self.pointCoords
 
     def getPoints_(self):
         """nompi version of """
@@ -346,7 +357,7 @@ class SolverWrapper():
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getCellCenters()), 2) * 100.  # m -> cm
+        return self.cellCenters
 
     def getCellCenters_(self):
         """nompi version of getCellCenters"""
@@ -355,7 +366,7 @@ class SolverWrapper():
 
     def getDofCoordinates(self):
         """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof, 3) [cm]"""
-        return self._map(self.allgatherv(self.base.getDofCoordinates()), 0) * 100.  # m -> cm
+        return self.dofCoordinates
 
     def getDofCoordinates_(self):
         """nompi version of getDofCoordinates"""
@@ -364,19 +375,21 @@ class SolverWrapper():
 
     def getCells(self):
         """ Gathers dune elements (vtk cells) as list of list of vertex indices (vtk points) (Nc, Number of corners per cell) [1]"""
-        return self._map(self.allgatherv(self.base.getCells(), data2share_type_default = np.int64), 2, np.int64)
+        return self.cellsVertex
 
     def getCells_(self):
         """nompi version of getCells"""
         return np.array(self.base.getCells(), dtype = np.int64)
 
-    def getCellSurfacesCyl(self):
-        """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self.allgatherv(self.base.getCellSurfacesCyl()), 2) * 1.e4  # m3 -> cm3
+    #def getCellSurfacesCyl(self):
+    #    """ Gathers element volumes (Nc, 1) [cm3] """
+    #    raise Exception
+    #    #return self.cellSurfacesCyl 
 
-    def getCellSurfacesCyl_(self):
-        """nompi version of getCellSurfacesCyl"""
-        return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
+    #def getCellSurfacesCyl_(self):
+    #    """nompi version of getCellSurfacesCyl"""
+    #    raise Exception
+    #    #return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
         
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
@@ -388,11 +401,11 @@ class SolverWrapper():
 
     def getCellVolumesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
-        return self._map(self.allgatherv(self.base.getCellVolumesCyl()), 2) * 1.e6  # m3 -> cm3
+        return self.getCellVolumes()
 
     def getCellVolumesCyl_(self):
         """nompi version of  getCellVolumesCyl"""
-        return np.array(self.base.getCellVolumesCyl()) * 1.e6  # m3 -> cm3
+        return self.getCellVolumes_()#np.array(self.base.getCellVolumesCyl()) * 1.e6  # m3 -> cm3
 
     def getCellIndices(self):
         """Gathers dof indicds into rank 0, and converts it into numpy array (dof, 1)"""
@@ -418,23 +431,23 @@ class SolverWrapper():
     def getCellIndices_(self):
         """nompi version of  """
         self.checkGridInitialized()
-        return self.cellIndices
+        return self.cellIndices_
     
     def getPointIndices_(self):
         """nompi version of  """
         self.checkGridInitialized()
-        return self.pointIndices
+        return self.pointIndices_
     
     def getDofIndices_(self):
         """nompi version of  """
         self.checkGridInitialized()
-        return self.dofIndices
+        return self.dofIndices_
 
     def getSolution(self, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getSolution(eqIdx)),0)
+        return self._map(self._flat0(self.gather(self.base.getSolution(eqIdx))),0)
 
     def getAvgDensity_(self):
         """nompi version of  """
@@ -462,7 +475,7 @@ class SolverWrapper():
             ATT: only gives the current flux, NOT the mean flux computed by dumux during the last solve() call
         """
         assert not self.useMoles # need the update the unit change before using when useMoles==True
-        dics = comm.gather(self.base.getAllNeumann(eqIdx), root = 0)
+        dics = self.gather(self.base.getAllNeumann(eqIdx))
         flat_dic = {}
         for d in dics:
             flat_dic.update(d)
@@ -485,7 +498,7 @@ class SolverWrapper():
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
         assert not self.useMoles
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return self._map(self._flat0(self.gather(self.base.getNetFlux(eqIdx))), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """

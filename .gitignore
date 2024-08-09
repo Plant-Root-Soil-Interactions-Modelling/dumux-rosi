@@ -40,3 +40,10 @@ CMakeCache.txt
 *.npy
 *.vtp
 *.pvd
+
+Testing
+*.so
+src/CMakeFiles/
+src/Makefile
+src/cmake_install.cmake
+test/__pycache__/

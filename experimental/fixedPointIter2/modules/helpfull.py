@@ -105,7 +105,7 @@ class StdoutRedirector:
 
         return False  # Do not suppress exceptions
         
-def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
+def suggestNumStepsChange(dt, dt_inner, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
     """
      * \brief Suggest a new number of time steps
      *
@@ -122,7 +122,7 @@ def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# t
     n_iter_inner_max: max number of necessary iteration during the last fixed point iteration
     """
     targetIter_ = perirhizalModel.targetIter # objective max number of iteration for inner loop
-    dt_inner = perirhizalModel.dt_inner # time step of inner loop
+    #dt_inner = perirhizalModel.dt_inner # time step of inner loop
     results_dir = perirhizalModel.results_dir
     nOld = int(dt/dt_inner) # old number of step for inner loop
     if failedLoop:# if the inner computation failed, we also need to decrease the timestep
@@ -144,8 +144,14 @@ def suggestNumStepsChange(dt, failedLoop, perirhizalModel, n_iter_inner_max):# t
         print('nNew iisue',nNew , int(nNew), nOld,dt,dt_inner,
               (nOld == int(nOld)), (nNew == int(nNew)))
 
-
-    dt_inner = dt/float(nNew)
+    try:
+        dt_inner = dt/float(nNew)
+    except:
+        write_file_array("suggestNumStepsChangeError", np.array([dt, dt_inner, failedLoop,n_iter_inner_max,
+                                                                targetIter_,percent,change,nNew ,  nOld]), 
+                         directory_ =results_dir, fileType = '.csv') 
+        raise Exception
+        
     write_file_array("suggestNumStepsChange", np.array([numIter_,n_iter_inner_max,targetIter_,percent,change,
                                                     nNew ,  nOld,
                                                  dt, dt_inner , failedLoop]), 
@@ -199,7 +205,7 @@ def setupDir(results_dir):
     """if results directory already exists, make it empty"""
 
     if rank == 0:
-        for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/", "fpit/cyl_val/"]:
+        for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/","fpit2/", "fpit2/cyl_val/"]:
             if not os.path.exists(results_dir+extraText):
                 os.makedirs(results_dir+extraText)
             else:

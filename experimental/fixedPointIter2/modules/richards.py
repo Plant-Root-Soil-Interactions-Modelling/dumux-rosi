@@ -373,7 +373,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkGridInitialized()
-        return (self._map(self.allgatherv(self.base.getSolutionHead(eqIdx)), 0))#.flatten()
+        return self._map(self._flat0(self.gather(self.base.getSolutionHead(eqIdx))), 0)#.flatten()
 
     def getSolutionHead_(self, eqIdx = 0):
         """ no mpi version of getSolutionHead() """
@@ -387,18 +387,18 @@ class RichardsWrapper(SolverWrapper):
     def getKrw(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getKrw()), 0)
+        return self._map(self._flat0(self.gather(self.base.getKrw())), 0)
         
         
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
-        return self._map(self.allgatherv(self.base.getSaturation()), 0)
+        return self._map(self._flat0(self.gather(self.base.getSaturation())), 0)
         
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
-        theta= (self._map(self.allgatherv(self.base.getWaterContent()), 2))
+        theta= self._map(self._flat0(self.gather(self.base.getWaterContent())), 2)
         
         try:
             if len(theta) > 0:
@@ -501,12 +501,12 @@ class RichardsWrapper(SolverWrapper):
         f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])
         # get global index
         dofind = np.array(self.base.getDofIndices())
-        f2cidx_g = [] # give correct inner shape, needed by solverbase::allgatherv()
+        f2cidx_g = [] # give correct inner shape 
         if len(f2cidx) > 0:
             f2cidx_g = dofind[f2cidx] 
         # gather
-        f2cidx_gAll = comm.gather(f2cidx_g,root=0) # self.allgatherv(f2cidx_g)
-        ff10c_All = comm.gather(ff10c,root=0) # self.allgatherv(ff10c)
+        f2cidx_gAll = self.gather(f2cidx_g) # 
+        ff10c_All = self.gather(ff10c) #  
         if rank == 0:
             # get arrays 
             ff10c_All = np.vstack([i for i in ff10c_All if len(i) >0]) # 'if len(i) >0' in case some threads have no cells
@@ -517,7 +517,7 @@ class RichardsWrapper(SolverWrapper):
               max(np.where(
                 np.array(f2cidx_gAll, dtype=int) == idx_)[0])
                 ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
-
+            
             flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
             assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
             
@@ -531,7 +531,7 @@ class RichardsWrapper(SolverWrapper):
         else:
             flux10cCell = None
         
-        flux10cCell = comm.bcast(flux10cCell,root=0)
+        #flux10cCell = comm.bcast(flux10cCell)
         
         
         return flux10cCell
@@ -563,7 +563,8 @@ class RichardsWrapper(SolverWrapper):
         
         # sum to get the total flow per element during the whole solve() simulation
         inFluxes_tot = inFluxes_tot.sum(axis = 0) # cm3 or mol, [cell][comp]
-        return inFluxes_tot
+        # important => need minus sign
+        return - inFluxes_tot
         
         
     def getSource_10c(self):
@@ -572,19 +573,19 @@ class RichardsWrapper(SolverWrapper):
             for one thread 
         """
         # get total source and cell volumes for each thread
-        src10c =  comm.bcast(self._map(self.allgatherv(self.getSource_10c_()), 0), root = 0) # [ mol / m^3] 
-        vols = comm.bcast(self.getCellVolumes(), root = 0)/1e6 # [ m^3] 
-        
-        # from mol/m^3 to mol
-        src10c = np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)])
-        src10c = np.transpose(src10c) # [comp][cell]
-        
-        molarMassWat = 18. # [g/mol]
-        densityWat = 1. #[g/cm3]
-        # [mol/cm3] = [g/cm3] /  [g/mol] 
-        molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
-        src10c[0] /=  molarDensityWat # mol to cm3 for water 
+        src10c =  self._map(self._flat0(self.gather(self.getSource_10c_())), 0) * 1e6 # [ mol / cm^3]   
+        vols = self.getCellVolumes() # [ cm^3]   
         if rank == 0:
+            # from mol/m^3 to mol
+            src10c = np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)])
+            src10c = np.transpose(src10c) # [comp][cell]
+
+            molarMassWat = 18. # [g/mol]
+            densityWat = 1. #[g/cm3]
+            # [mol/cm3] = [g/cm3] /  [g/mol] 
+            molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+            src10c[0] /=  molarDensityWat # mol to cm3 for water 
+        
             assert src10c.shape == (self.numComp ,self.numberOfCellsTot)#numComp + water 
         return src10c
     
@@ -642,13 +643,13 @@ class RichardsWrapper(SolverWrapper):
         if not isDissolved:
             if self.useMoles:
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
-            return self._map(self.allgatherv(np.multiply(vols , C_  ) ),0)
+            return self._map(self._flat0(self.gather(np.multiply(vols , C_  ))),0)
         
         watCont = self.getWaterContent_()#.flatten() # m3 wat/m3 scv
         if self.useMoles:
             C_ *= self.molarDensityWat_m3 # mol/m3 wat
             
-        return self._map(self.allgatherv(np.multiply(np.multiply(vols , watCont) , C_ )),0)
+        return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_ ))),0)
           
 
     def setSolution_(self, sol, eqIdx = 1):

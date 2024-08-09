@@ -25,7 +25,7 @@ from functional.xylem_flux import sinusoidal2
 from weatherFunctions import weather, weatherChange
 
 
-def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt):
+def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s):
 
     results_dir = perirhizalModel.results_dir
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -70,7 +70,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt):
             
             if ((fpit_Helper.n_iter3 > 0)|(fpit_Helper.n_iter2 > 0)|(
                     fpit_Helper.n_iter > 0)):
-                print("\t\tdoreset")
+                if rank == 0:
+                    print("\t\tdoreset")
                 perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
                     
             fpit_Helper.storeOldMassData1d()
@@ -120,12 +121,15 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt):
             # 2.5 error rates
             ##
             fpit_Helper.massBalanceError1d(dt)
+            fpit_Helper.computeConvergence2()
 
 
+            # print extra data for troubleshooting
+            # TODO: finish adapting the name of the objects to print
+            printData.printFPitDataInnerLoop(perirhizalModel, plantModel, fpit_Helper, rs_age_i_dt)
             ###########
             #       leave??
             ##########
-            fpit_Helper.computeConvergence2()
             keepGoing, gaveUp = helpfull.continueLoop(perirhizalModel, n_iter=
                                 fpit_Helper.n_iter3,
                                                  dt_inner= dt,
@@ -133,7 +137,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt):
                                                       name='inner_loopdata',
                          isInner=True,
                          plant=plantModel, FPIT_id = 3)
-
+            if not perirhizalModel.doNestedFixedPointIter:
+                keepGoing, gaveUp = False, False
             fpit_Helper.n_iter3 += 1
 
         n_iter_inner_max = max(n_iter_inner_max,fpit_Helper.n_iter3)
@@ -278,16 +283,18 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             fpit_Helper.n_iter2 = 0
                 # nested inner loop
             while keepGoingInner :
+                assert perirhizalModel.dt_inner2 <= dt
 
-                print("enter inner loop")
+                if rank == 0:
+                    print("enter inner loop")
                 failedInnerLoop, real_dt, n_iter_inner_max2= innerLoop(
                     plantModel = plantModel, rs_age = rs_age_i_dt,
                     fpit_Helper  =fpit_Helper,perirhizalModel = perirhizalModel ,
-                    sim_time = dt, dt = perirhizalModel.dt_inner2)
-                print("leave inner loop")
+                    sim_time = dt, dt = perirhizalModel.dt_inner2, s=s)
+                if rank == 0:
+                    print("leave inner loop")
                 keepGoingInner = (failedInnerLoop & (
                             fpit_Helper.n_iter2 < perirhizalModel.k_iter))
-                fpit_Helper.n_iter2 += 1
             
                 # we leave the loop either because dumux threw an error or because
                 # we reached dt_inner
@@ -303,9 +310,11 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                      directory_ =results_dir, fileType = '.csv') 
                     raise Exception
                     
-                    
-                perirhizalModel.dt_inner2 = helpfull.suggestNumStepsChange(
-                    perirhizalModel.dt_inner2 ,
+                if perirhizalModel.doNestedFixedPointIter: 
+                    fpit_Helper.n_iter2 += 1
+                        
+                    perirhizalModel.dt_inner2 = helpfull.suggestNumStepsChange(dt,
+                                                                perirhizalModel.dt_inner2 ,
                                                                   failedInnerLoop, perirhizalModel,
                                                                   n_iter_inner_max2)
                 
@@ -387,16 +396,17 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
+            outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source
             bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
             
-            fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
-            fpit_Helper.sources_wat_from3d =  bulkSoil_sources[0]# cm3
-            
-            fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
-            fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
-            
-            assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)
+            if rank == 0:
+                fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
+                fpit_Helper.sources_wat_from3d =  bulkSoil_sources[0]# cm3
+
+                fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
+                fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
+
+                assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)
             ##
             # 3.6 mass or content balance error 3d 
             ##
@@ -413,7 +423,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # print extra data for troubleshooting
             # TODO: finish adapting the name of the objects to print
-            printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)
+            #printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)
             
             
             ##

@@ -287,6 +287,11 @@ def noTranspiration(perirhizalModel, rs_age_i_dt, dt):
         # TODO: check. depends how transpiration is computed for root systems
         return (sinusoidal2(rs_age_i_dt, dt) == 0)
     
+def computeAnalysticalRSI(perirhizalModel):
+    
+    raise Exception
+    
+    
 def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
     """
         
@@ -306,24 +311,23 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ) or (fpit_Helper.n_iter > perirhizalModel.k_iter_2initVal) :
         fpit_Helper.rsx_input = fpit_Helper.rsx_init
         
-    elif perirhizalModel.rsiCompMethod <= 1:
-        fpit_Helper.rsx_input = fpit_Helper.rsx_old * ( perirhizalModel.rsiCompMethod) + fpit_Helper.rsx_init * (1. - perirhizalModel.rsiCompMethod)
+        
+    if perirhizalModel.doNestedFixedPointIter:
+        n_iter_ = fpit_Helper.n_iter3 
     else:
-        if fpit_Helper.n_iter < 4:
+        n_iter_ = fpit_Helper.n_iter
+    if  perirhizalModel.rsiCompMethod == 0:
+        if n_iter_ < 4:
             fpit_Helper.rsx_input = fpit_Helper.rsx_old
-            
-        elif  perirhizalModel.rsiCompMethod == 2: # mean of the last 2 values
-            fpit_Helper.rsx_input = (fpit_Helper.rsx_olds[-1] + fpit_Helper.rsx_olds[-2])/2
-            
-        elif  perirhizalModel.rsiCompMethod == 3: # mean(mean(oldvals[:-1]), oldvals[-1])            
-            fpit_Helper.rsx_input = (np.array(fpit_Helper.rsx_olds[:-1]).mean(0)+ fpit_Helper.rsx_olds[-1])/2
-            
-        elif  perirhizalModel.rsiCompMethod == 4:# mean(oldvals)            
-            fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
-            
         else:
-            raise Exception
-                           
+            fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
+    elif  perirhizalModel.rsiCompMethod == 1:        
+        if n_iter_ < 20:
+            fpit_Helper.rsx_input = computeAnalysticalRSI()
+        else:
+            fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
+    else:
+        raise Exception
         
     if rank == 0:
         

@@ -45,9 +45,9 @@ def getBiochemParam(s,paramIdx):
         
     """
     # file containing the TraiRhizo parameter sets
-    paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
-    
-    s.mg_per_molC = 12000
+    paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()    
+    s.molarMassC = 12.011
+    s.mg_per_molC = s.molarMassC * 1000.
     s.betaC = paramSet['beta_C'] # -
     s.betaO = paramSet['beta_O'] # -
 
@@ -97,7 +97,7 @@ def getBiochemParam(s,paramIdx):
     else:
         s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
-        CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/12.011)
+        CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
 
@@ -232,8 +232,8 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
+    s.setParameter("Problem.dobioChemicalReaction",str(s.doBioChemicalReaction))
     
-    s.setParameter("Problem.dobioChemicalReaction",False)
     s.setParameter("Problem.verbose", "0")
     
     s.setParameter("Newton.Verbosity", "0") 
@@ -316,6 +316,7 @@ def create_soil_model3D( usemoles, results_dir ,
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True,
+                       doBioChemicalReaction=False,
                      MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
@@ -333,7 +334,7 @@ def create_soil_model( usemoles, results_dir ,
     # low MaxRelativeShift == higher precision in dumux
     s.MaxRelativeShift = MaxRelativeShift
     s.MaxRelativeShift_1DS = 1e-12
-    
+    s.doBioChemicalReaction = doBioChemicalReaction
     soilTextureAndShape = getSoilTextureAndShape() 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
@@ -423,9 +424,8 @@ def setupOther(s, p_mean_):
     s.ddt = 1.e-5  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
     s.bulkMassErrorWater_relLim = 0.
-    pressureinit = s.getSolutionHead()
-    
-    thetainit = s.getWaterContent_()
+    #pressureinit = s.getSolutionHead()
+    #thetainit = s.getWaterContent_()
     s.totC3dInit = sum(s.getTotCContent()) # mol
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3

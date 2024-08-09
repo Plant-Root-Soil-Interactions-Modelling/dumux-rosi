@@ -679,11 +679,11 @@ class fixedPointIterationHelper():
             @see  massBalanceError3d
         """
         s = self.s
-        water_content = comm.bcast( np.array(s.getWaterContent()),root= 0)  # theta per cell [1]
+        water_content = np.array(s.getWaterContent())  # theta per cell [1]
         self.soil_water3dAfter = np.multiply(water_content, self.cell_volumes)  # water per cell [cm3]
         
         # 3d soil solute content per solute type and voxel
-        self.totC3dAfter_eachVoxeleachComp = comm.bcast(s.getTotCContent_each(), root = 0) 
+        self.totC3dAfter_eachVoxeleachComp = s.getTotCContent_each()
         self.totC3dAfter = np.sum(self.totC3dAfter_eachVoxeleachComp)
         #assert isinstance(self.totC3dAfter ,float) # just test once: we did the complete sum?
         

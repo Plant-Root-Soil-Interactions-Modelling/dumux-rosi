@@ -22,12 +22,7 @@ import scenario_setup
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 
-doNestedFixedPointIter = False
-if doNestedFixedPointIter:
-    import cyl3plant as fixedPointIter
-else:
-    import nestedFixedPointIter as fixedPointIter
-    
+import nestedFixedPointIter as fixedPointIter    
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
 from helpfull import continueLoop
@@ -39,6 +34,7 @@ import printData
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
+    doNestedFixedPointIter = False
     xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
     # file
     dx = 0.2 # todo implement
@@ -47,7 +43,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init = 1/60/24 # dt
-    dt_inner2_init =  dt
+    dt_inner2_init = dt_inner_init
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
@@ -55,8 +51,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = False # only water (False) or with solutes (True)
-    doBiochemicalReaction = False
-    doSoluteUptake = True # active uptake?
+    doBioChemicalReaction = False
+    doSoluteUptake = False # active uptake?
     noAds = True # stop adsorption?
     doPhloemFlow = False
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
@@ -72,24 +68,18 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  False
+    doMinimumPrint =  True
+    debugMode = False
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
-    rsiCompMethod =4# 0.5 = mixed, 0 = init, 1 = end, -1: use mean of the last 2 iterations
-    # 2 : last two mean method
-    # 3 : mean(oldmean, lastval)
-    # 4 : mean(allvals)
-    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). f
-    # for eahc seg, not just the whole set
-    # 6: keep min obtained ksoil
-    # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
-    # or run plant model
-    # 8 call cpb 
+    rsiCompMethod = 0
+    # 0 : mean(allvals) after 4 iteration
+    # 1: use steady rate
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
-    maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
+    maxTranspiration = 12 # 6. # cm3/day, used if not doPhotosynthesis 
     maxTranspirationAge = 8. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
@@ -97,7 +87,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/ylim/"+str(rsiCompMethod*10)+str(spellData['scenario'])
+    results_dir=("./results/tillage/speedUp/"+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
@@ -118,7 +108,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
-                                         doBiochemicalReaction = doBiochemicalReaction,
+                                         doBioChemicalReaction = doBioChemicalReaction,
                                         MaxRelativeShift = MaxRelativeShift)
 
     
@@ -135,8 +125,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
-    
-    perirhizalModel.doBiochemicalReaction = doBiochemicalReaction  
+    perirhizalModel.debugMode = debugMode
+    perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
+    perirhizalModel.doBioChemicalReaction = doBioChemicalReaction  
     perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
@@ -260,7 +251,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 raise Exception
                 
                 
-            perirhizalModel.dt_inner = suggestNumStepsChange(dt,  failedLoop, perirhizalModel, n_iter_inner_max)
+            perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, failedLoop, perirhizalModel, n_iter_inner_max)
             
             if keepGoing:
                 

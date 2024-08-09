@@ -453,10 +453,8 @@ class RhizoMappedSegments(pb.MappedPlant):
         """ 
             creates new 1d models or update the sape of existing 1d models
         """
-        self.printData('updateBefore')
-
-
         if self.debugMode:
+            self.printData('updateBefore')
             for cyl in self.cyls:                  
                 gId = cyl.gId
                 if self.changedLen(cyl):     
@@ -772,8 +770,8 @@ class RhizoMappedSegments(pb.MappedPlant):
                     return data2share
             else:
                 return data2share
-        else:# faster than allgather
-            return comm.allreduce( sum(data2share), op=MPI.SUM)#self.allgatherv(sum(data2share))#= sum(data2share)
+        else:# faster than gather
+            return comm.allreduce( sum(data2share), op=MPI.SUM)
         return -1
         
     def getLocalIdCyls(self,idCyls=None):# idCyls needs to be sorted
@@ -1286,6 +1284,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
             cyl.pindx = self.soilModel.pindx
             cyl.results_dir = self.soilModel.results_dir
+            cyl.setParameter("Newton.Verbosity", "0") 
             cyl.initialize(verbose = False)
             cyl.setVGParameters([self.soil])
             lb = self.logbase
@@ -1403,7 +1402,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             # Maximum uptake rate (kg m–2 s–1)	3.844e-10	(Teo et al. (1992a)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
             # Michaelis constant (kg m–3)	1.054e-4	(Teo et al. (1992b)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
             
-            cyl.doBiochemicalReaction = self.doBiochemicalReaction
+            cyl.doBioChemicalReaction = self.doBioChemicalReaction
             cyl.molarMassC = self.soilModel.molarMassC
             cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift_1DS
             cyl.EnableResidualCriterion = self.soilModel.EnableResidualCriterion
@@ -1490,7 +1489,7 @@ class RhizoMappedSegments(pb.MappedPlant):
                     raise Exception
             else:
                 rsx[i] = cyl.getInnerHead()  # [cm] (in richards.py, then richards_cyl.hh)
-        inner_heads= self._map(self.allgatherv( rsx)) # gathers and maps correctly
+        inner_heads= self._map(self._flat0(comm.gather( rsx, root=0))) # gathers and maps correctly
         return inner_heads
 
     def get_inner_solutes(self, compId = 1):
@@ -1498,7 +1497,7 @@ class RhizoMappedSegments(pb.MappedPlant):
         rsx = np.full(len(self.cyls),0.)
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             rsx[i] = cyl.getInnerSolutes( compId=compId)  # [cm]
-        inner_solutes= self._map(self.allgatherv(rsx)).flatten()  # gathers and maps correctly
+        inner_solutes= self._map(self._flat0(comm.gather( rsx, root=0)))   # gathers and maps correctly
         return inner_solutes
     
     
@@ -1512,13 +1511,13 @@ class RhizoMappedSegments(pb.MappedPlant):
             #pass  # currently zero flux !!!!!!
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        inner_concentrations = self._map(self.allgatherv(rsx))  # gathers and maps correctly
+        inner_concentrations = self._map(self._flat0(comm.gather( rsx, root=0)))  # gathers and maps correctly
         return inner_concentrations
 
 
     def get_dx2(self):
         """ TODO doc me AND only for mode="dumux" yet (set in initialize)"""
-        dx2 = self._map(self.allgatherv(self.dx2))
+        dx2 = self._map(self._flat0(comm.gather( self.dx2, root=0))) 
         return dx2
 
     def get_inner_fluxes(self): # todo
@@ -1552,7 +1551,7 @@ class RhizoMappedSegments(pb.MappedPlant):
             return concentration # mol/cm3
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        concentration = self._map(self.allgatherv(rsx))  
+        concentration = self._map(self._flat0(self.gather(rsx,root=0))  )
         return concentration
 
 
@@ -2309,7 +2308,7 @@ class RhizoMappedSegments(pb.MappedPlant):
     def _map(self, x):
         """Converts @param x to a numpy array and maps it to the right indices                 """
         
-        indices = self.allgatherv(self.eidx, data2share_type_default = np.int64)  # gather segment indices from all threads
+        indices = self.eidx_all # gather segment indices from all threads
 
         
         if rank == 0:  # only for rank 0 it is not empty

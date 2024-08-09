@@ -228,6 +228,7 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
+    s.setParameter("Problem.dobioChemicalReaction",str(s.dobioChemicalReaction))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.Verbosity", "0") 
     
@@ -339,8 +340,9 @@ def create_soil_model( usemoles, results_dir ,
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
     s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
-    s.setParameter("Problem.dobioChemicalReaction",str(doBiochemicalReaction))
+    s.dobioChemicalReaction = doBiochemicalReaction
     
+    s.setParameter("Newton.Verbosity", "0") 
     s.initialize() 
     setDefault(s)
     
@@ -398,7 +400,7 @@ def setupOther(s, p_mean_):
         else:
             print(type(p_mean_))
             raise Exception
-    s.maxDt =  250/(3600*24)
+    s.maxDt =  250./(3600.*24.)
     s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
     
