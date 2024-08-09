@@ -47,3 +47,8 @@ src/CMakeFiles/
 src/Makefile
 src/cmake_install.cmake
 test/__pycache__/
+
+
+# bash
+*.out
+*.err
