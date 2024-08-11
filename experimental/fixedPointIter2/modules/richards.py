@@ -530,9 +530,7 @@ class RichardsWrapper(SolverWrapper):
         
         else:
             flux10cCell = None
-        
-        #flux10cCell = comm.bcast(flux10cCell)
-        
+                
         
         return flux10cCell
         

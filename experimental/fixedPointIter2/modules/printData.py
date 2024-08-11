@@ -233,19 +233,20 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
         define and save other error rates
     """
     results_dir = perirhizalModel.results_dir
-    write_file_array("endFpitLoop_error", perirhizalModel.errs, 
-                     directory_ =results_dir, fileType = '.csv') 
-    write_file_array("endFpitLoop_data", 
-                     np.array([perirhizalModel.n_iter, perirhizalModel.err, 
-                               perirhizalModel.rhizoMassWError_abs,
-                               perirhizalModel.dt_inner]), 
-                     directory_ =results_dir, fileType = '.csv')
-
-    totC3dAfter = sum(s.getTotCContent())  
-
-    soil_water3dAfter = sum(np.multiply(np.array(s.getWaterContent()), s.getCellVolumes()))    
+    totC3dAfter_ = s.getTotCContent()
+    WaterContent = s.getWaterContent()
+    CellVolumes = s.getCellVolumes()  
 
     if rank == 0:
+        totC3dAfter = sum(totC3dAfter_) 
+        soil_water3dAfter = sum(np.multiply(WaterContent, CellVolumes))
+        write_file_array("endFpitLoop_error", perirhizalModel.errs, 
+                         directory_ =results_dir, fileType = '.csv') 
+        write_file_array("endFpitLoop_data", 
+                         np.array([perirhizalModel.n_iter, perirhizalModel.err, 
+                                   perirhizalModel.rhizoMassWError_abs,
+                                   perirhizalModel.dt_inner]), 
+                         directory_ =results_dir, fileType = '.csv')
         if perirhizalModel.doSoluteFlow:
             s.bulkMassErrorCumul_abs = abs((totC3dAfter - ( s.totC3dInit + 
                                         sum(phloemData.Q_Exud) + 

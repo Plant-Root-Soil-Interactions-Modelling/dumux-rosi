@@ -148,7 +148,7 @@ class SolverWrapper():
         self.base.setVerbose(verbose)
 
     def gather(self, data2gather):
-        return comm.gather(data2gather, root=0)
+        return comm.gather(data2gather, root=0) 
     
     def allgatherv(self,data2share, keepShape = False, data2share_type_default = float): 
         """ own allgather() function for vectors
@@ -305,9 +305,9 @@ class SolverWrapper():
         self.pointIndices_ = self.base.getPointIndices()
         self.cellIndices_  = self.base.getCellIndices()
         # all indices
-        self.dofIndices   = self._flat0(self.gather(self.dofIndices_)) 
-        self.pointIndices = self._flat0(self.gather(self.pointIndices_)) 
-        self.cellIndices  = self._flat0(self.gather(self.cellIndices_)) 
+        self.dofIndices   = np.asarray(self._flat0(self.gather(self.dofIndices_)), np.int64)
+        self.pointIndices = np.asarray(self._flat0(self.gather(self.pointIndices_)), np.int64) 
+        self.cellIndices  = np.asarray(self._flat0(self.gather(self.cellIndices_)), np.int64) 
         self.cellsVertex = self._map(self._flat0(self.gather(self.base.getCells())), 2, np.int64)
         if rank == 0:
             print('len(self.dofIndices),len(self.pointIndices),len(self.cellIndices)',
@@ -669,7 +669,7 @@ class SolverWrapper():
         if rank == 0:
             return np.array([item for sublist in xx for item in sublist])
         else:
-            return []
+            return np.array([])
 
     @staticmethod
     def _vtkPoints(p):

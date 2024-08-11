@@ -5,6 +5,6 @@ sys.path.append('')
 import mainTillage
 
 spellData = {'scenario': 'none', 'spellStart': 92, 'spellEnd': 93,'condition': 'wet'}
-results_dir = mainTillage.XcGrowth(25.5, 30.,0,spellData )
+results_dir = mainTillage.XcGrowth(9.5, 30.,0,spellData )
 
 

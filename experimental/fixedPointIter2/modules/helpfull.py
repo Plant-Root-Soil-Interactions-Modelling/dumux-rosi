@@ -234,79 +234,84 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
                  name="continueLoop", isInner = False,doPrint =
                  True,
                          fileType = '.csv' , plant = None, FPIT_id = 2):
-    results_dir = perirhizalModel.results_dir
-    plant.time_rhizo_cumul += plant.time_rhizo_i
-    plant.time_3ds_cumul += plant.time_3ds_i
-    plant.time_rhizo_i = 0
-    plant.time_3ds_i = 0
-    plant.time_plant_cumul = plant.time_plant_cumulW + plant.time_plant_cumulS 
-
-    write_file_array("totalComputetime",
-                     np.array([timeit.default_timer() - plant.time_start_global,
-                    plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
-                     directory_ = results_dir)
-
-    # stop if converged or gave up
-    if FPIT_id ==2:
-        cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or
-               perirhizalModel.solve_gave_up or failedLoop
-                or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
-                or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
-                or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)
-                or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
-    else:
-        cL = ((np.floor(perirhizalModel.err2) > perirhizalModel.max_err) or
-               perirhizalModel.solve_gave_up or failedLoop
-                or ((n_iter < perirhizalModel.minIter)
-                    and (isInner)))  and (n_iter < perirhizalModel.k_iter)
-
+                         
     gaveUp = (n_iter >= perirhizalModel.k_iter)
+    cL = None
+    if rank ==0:
+        results_dir = perirhizalModel.results_dir
+        plant.time_rhizo_cumul += plant.time_rhizo_i
+        plant.time_3ds_cumul += plant.time_3ds_i
+        plant.time_rhizo_i = 0
+        plant.time_3ds_i = 0
+        plant.time_plant_cumul = plant.time_plant_cumulW + plant.time_plant_cumulS 
 
-    if (rank == 0) and isInner:
-        if FPIT_id == 2:
-            print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
-        if FPIT_id == 3:
-            print(f'\t\t\t\tcontinue INNER loop? {bool(cL)}\n\t\t\t\tn_iter: {n_iter}, '
-                  f'non-convergence and error metrics: {perirhizalModel.err2:.2e}, '
-                  f'solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}')
-            print('\t\t\t\tD(psi_rsi)',f'{perirhizalModel.errWrsi:.2e},',
-                  "psi_{rsi,in} vs psi_{rsi,out}:",f'{perirhizalModel.errWrsiRealInput:.2e}')
+        write_file_array("totalComputetime",
+                         np.array([timeit.default_timer() - plant.time_start_global,
+                        plant.time_plant_cumul,plant.time_rhizo_cumul ,plant.time_3ds_cumul]) , 
+                         directory_ = results_dir)
+
+        # stop if converged or gave up
+        if FPIT_id ==2:
+            cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or
+                   perirhizalModel.solve_gave_up or failedLoop
+                    or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
+                    or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
+                    or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)
+                    or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
+        else:
+            cL = ((np.floor(perirhizalModel.err2) > perirhizalModel.max_err) or
+                   perirhizalModel.solve_gave_up or failedLoop
+                    or ((n_iter < perirhizalModel.minIter)
+                        and (isInner)))  and (n_iter < perirhizalModel.k_iter)
+
+
+        if (rank == 0) and isInner:
+            if FPIT_id == 2:
+                print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+            if FPIT_id == 3:
+                print(f'\t\t\t\tcontinue INNER loop? {bool(cL)}\n\t\t\t\tn_iter: {n_iter}, '
+                      f'non-convergence and error metrics: {perirhizalModel.err2:.2e}, '
+                      f'solver gave up for 1ds: {bool(perirhizalModel.solve_gave_up)}')
+                print('\t\t\t\tD(psi_rsi)',f'{perirhizalModel.errWrsi:.2e},',
+                      "psi_{rsi,in} vs psi_{rsi,out}:",f'{perirhizalModel.errWrsiRealInput:.2e}')
+
+        if doPrint:
+            if not os.path.isfile(results_dir+name+fileType):
+                write_file_array(name, np.array(['n_iter', 'err', 
+                                                 'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                                 'solve_gave_up', 'min__soil_solute',
+                                                         'dt_inner','real_dt ',
+                                                 'failedLoop','cL']), directory_ =results_dir, fileType = fileType)
+                if not perirhizalModel.doMinimumPrint:
+                    write_file_array(name+"Bool", np.array(['n_iter',  'err', 
+
+                                                            'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
+                                                 'solve_gave_up',  'min__soil_solute',
+                                                             'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
+
+            write_file_array(name, np.array([n_iter, perirhizalModel.err, 
+                                             perirhizalModel.diff1d3dCurrant_rel,perirhizalModel.maxdiff1d3dCurrant_rel,
+                                             perirhizalModel.solve_gave_up, min(perirhizalModel.new_soil_solute.reshape(-1)),
+                                                         dt_inner, real_dt ,failedLoop,
+                                             cL]), directory_ =results_dir, fileType = fileType)
+            if not perirhizalModel.doMinimumPrint:
+                write_file_array(name+"2", 
+                                 np.concatenate((perirhizalModel.sumDiff1d3dCW_rel,perirhizalModel.maxDiff1d3dCW_rel)),  
+                                 directory_ =results_dir, fileType = fileType)
+                write_file_array(name+"Bool", np.array([n_iter, (np.floor(perirhizalModel.err) > perirhizalModel.max_err), 
+                                                        (np.floor(perirhizalModel.diff1d3dCurrant_rel*10.)/10. > 0.1),
+                                                        (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel) >1),
+                                                        #(abs(perirhizalModel.rhizoMassWError_abs) > 1e-13), (abs(perirhizalModel.rhizoMassCError_abs) > 1e-9), 
+                                                        #(max(abs(perirhizalModel.errDiffBCs*0)) > 1e-5), 
+                                                        perirhizalModel.solve_gave_up, min(perirhizalModel.new_soil_solute.reshape(-1)) < 0.,
+                                                             dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
 
     cL = comm.bcast(cL,root = 0)
-    failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
-    assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
-
-    if doPrint:
-        if not os.path.isfile(results_dir+name+fileType):
-            write_file_array(name, np.array(['n_iter', 'err', 
-                                             'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
-                                             'solve_gave_up', 'min__soil_solute',
-                                                     'dt_inner','real_dt ',
-                                             'failedLoop','cL']), directory_ =results_dir, fileType = fileType)
-            if not perirhizalModel.doMinimumPrint:
-                write_file_array(name+"Bool", np.array(['n_iter',  'err', 
-
-                                                        'diff1d3dCurrant_rel','maxdiff1d3dCurrant_rel',
-                                             'solve_gave_up',  'min__soil_solute',
-                                                         'dt_inner','failedLoop','cL']), directory_ =results_dir, fileType = fileType)
-
-        write_file_array(name, np.array([n_iter, perirhizalModel.err, 
-                                         perirhizalModel.diff1d3dCurrant_rel,perirhizalModel.maxdiff1d3dCurrant_rel,
-                                         perirhizalModel.solve_gave_up, min(perirhizalModel.new_soil_solute.reshape(-1)),
-                                                     dt_inner, real_dt ,failedLoop,
-                                         cL]), directory_ =results_dir, fileType = fileType)
-        if not perirhizalModel.doMinimumPrint:
-            write_file_array(name+"2", 
-                             np.concatenate((perirhizalModel.sumDiff1d3dCW_rel,perirhizalModel.maxDiff1d3dCW_rel)),  
-                             directory_ =results_dir, fileType = fileType)
-            write_file_array(name+"Bool", np.array([n_iter, (np.floor(perirhizalModel.err) > perirhizalModel.max_err), 
-                                                    (np.floor(perirhizalModel.diff1d3dCurrant_rel*10.)/10. > 0.1),
-                                                    (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel) >1),
-                                                    #(abs(perirhizalModel.rhizoMassWError_abs) > 1e-13), (abs(perirhizalModel.rhizoMassCError_abs) > 1e-9), 
-                                                    #(max(abs(perirhizalModel.errDiffBCs*0)) > 1e-5), 
-                                                    perirhizalModel.solve_gave_up, min(perirhizalModel.new_soil_solute.reshape(-1)) < 0.,
-                                                         dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
-
+        
+    if perirhizalModel.debugMode:
+        failedLoop_ = np.array( comm.bcast(comm.gather(failedLoop,root = 0),root = 0))
+        assert (failedLoop_ ==failedLoop_[0]).all() # all true or all false
+    
     return cL, gaveUp
 
 def checkseg2cellMapping(seg2cell_old, plantModel):
@@ -383,15 +388,15 @@ def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
         plantModel.seg_fluxes0 = plantModel.seg_fluxes0Cumul_inner/dt
         plantModel.seg_fluxes1 = plantModel.seg_fluxes1Cumul_inner/dt
         plantModel.seg_fluxes2 = plantModel.seg_fluxes2Cumul_inner/dt
-    
-    plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
-    if perirhizalModel.doPhotosynthesis:
-        if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
-            plantModel.TranspirationCumul_eval += plantModel.TranspirationCumul_inner
-        elif perirhizalModel.leftSpell:
-            plantModel.TranspirationCumul_eval = 0.
         
-        plantModel.An =comm.bcast( plantModel.AnCumul_inner/(dt*24*3600) , root=0)
+        plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
+        if perirhizalModel.doPhotosynthesis:
+            if perirhizalModel.enteredSpell and (not perirhizalModel.leftSpell):
+                plantModel.TranspirationCumul_eval += plantModel.TranspirationCumul_inner
+            elif perirhizalModel.leftSpell:
+                plantModel.TranspirationCumul_eval = 0.
+            
+            plantModel.An = plantModel.AnCumul_inner/(dt*24*3600)
         
         
 

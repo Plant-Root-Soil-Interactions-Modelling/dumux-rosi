@@ -228,7 +228,7 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    s.setParameter("Problem.dobioChemicalReaction",str(s.dobioChemicalReaction))
+    s.setParameter("Problem.dobioChemicalReaction",str(s.doBioChemicalReaction))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.Verbosity", "0") 
     
@@ -312,7 +312,8 @@ def create_soil_model3D( usemoles, results_dir ,
 def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True,
-                       doBiochemicalReaction=True,
+                       
+                       doBioChemicalReaction=True,
                      MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
@@ -340,7 +341,7 @@ def create_soil_model( usemoles, results_dir ,
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
     s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
-    s.dobioChemicalReaction = doBiochemicalReaction
+    s.doBioChemicalReaction = doBioChemicalReaction
     
     s.setParameter("Newton.Verbosity", "0") 
     s.initialize() 

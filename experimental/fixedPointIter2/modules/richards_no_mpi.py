@@ -21,6 +21,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         self.vg_soil = np.nan #t ostore  theta_S
 
     def gather(self, data2gather):
+        """ dummy function """
         return data2gather
 
     def allgatherv(self,X_rhizo, keepShape = False, X_rhizo_type_default = float): 

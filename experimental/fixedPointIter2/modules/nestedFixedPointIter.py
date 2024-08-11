@@ -70,8 +70,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             
             if ((fpit_Helper.n_iter3 > 0)|(fpit_Helper.n_iter2 > 0)|(
                     fpit_Helper.n_iter > 0)):
-                if rank == 0:
-                    print("\t\tdoreset")
+                #if rank == 0:
+                #    print("\t\tdoreset")
                 perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
                     
             fpit_Helper.storeOldMassData1d()
@@ -197,7 +197,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     ###              store data which are constant during iteration loop
     ######
     results_dir = s.results_dir
-    cell_volumes = comm.bcast(s.getCellVolumes() , root = 0) #cm3    
+    cell_volumes = s.getCellVolumes() #cm3    
     N = int(np.ceil(sim_time / dt))  # number of iterations
     # max num of iteration needed for the fixed-point iteration loop. used by @see helpfull::suggestNumStepsChange
     n_iter_inner_max = 0  
@@ -285,14 +285,14 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             while keepGoingInner :
                 assert perirhizalModel.dt_inner2 <= dt
 
-                if rank == 0:
-                    print("enter inner loop")
+                #if rank == 0:
+                #    print("enter inner loop")
                 failedInnerLoop, real_dt, n_iter_inner_max2= innerLoop(
                     plantModel = plantModel, rs_age = rs_age_i_dt,
                     fpit_Helper  =fpit_Helper,perirhizalModel = perirhizalModel ,
                     sim_time = dt, dt = perirhizalModel.dt_inner2, s=s)
-                if rank == 0:
-                    print("leave inner loop")
+                #if rank == 0:
+                #    print("leave inner loop")
                 keepGoingInner = (failedInnerLoop & (
                             fpit_Helper.n_iter2 < perirhizalModel.k_iter))
             
