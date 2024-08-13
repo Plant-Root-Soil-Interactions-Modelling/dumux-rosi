@@ -125,6 +125,12 @@ def suggestNumStepsChange(dt, dt_inner, failedLoop, perirhizalModel, n_iter_inne
     #dt_inner = perirhizalModel.dt_inner # time step of inner loop
     results_dir = perirhizalModel.results_dir
     nOld = int(dt/dt_inner) # old number of step for inner loop
+    
+    
+    ## adapt inner loop time step:
+    if perirhizalModel.doNestedFixedPointIter:
+        NinnerOld = int(np.ceil(dt_inner/perirhizalModel.dt_inner2 ))  
+    
     if failedLoop:# if the inner computation failed, we also need to decrease the timestep
         numIter_ = perirhizalModel.k_iter # k_iter == max accepted number of iteration for innerl loop
     else:
@@ -156,6 +162,13 @@ def suggestNumStepsChange(dt, dt_inner, failedLoop, perirhizalModel, n_iter_inne
                                                     nNew ,  nOld,
                                                  dt, dt_inner , failedLoop]), 
                          directory_ =results_dir, fileType = '.csv') 
+    
+    ## adapt inner loop time step:
+    if perirhizalModel.doNestedFixedPointIter:  
+        perirhizalModel.dt_inner2 = dt_inner/NinnerOld
+    else:
+        perirhizalModel.dt_inner2 = dt_inner
+        
     
     return dt_inner
 
@@ -339,6 +352,7 @@ def resetAndSaveData(perirhizalModel):
 
     n_iter = 0 # number of iteration in the loop
     keepGoing = True # stay in the fixed point iteration
+    
     
     return n_iter, keepGoing
 

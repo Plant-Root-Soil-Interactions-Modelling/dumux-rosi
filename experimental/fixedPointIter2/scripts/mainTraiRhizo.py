@@ -68,6 +68,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
     doMinimumPrint =  True
+    debugMode = False
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
@@ -125,6 +126,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
+    perirhizalModel.debugMode = debugMode
     
     perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
     perirhizalModel.doBioChemicalReaction = doBioChemicalReaction
@@ -198,9 +200,11 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             printData.printPlantShape(perirhizalModel,plantModel)
             
 
-        perirhizalModel.update() # update shape data in the rhizosphere model
+        perirhizalModel.update(fpit_Helper) # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
+            fpit_Helper.storeNewMassData1d()
+            fpit_Helper.storeNewMassData3d()
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False

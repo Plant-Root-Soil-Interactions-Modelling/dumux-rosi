@@ -29,10 +29,10 @@ from helpfull import continueLoop
 import weatherFunctions 
 from PhloemPhotosynthesis import *
 import printData
-
+import FPItHelper
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData):
+def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
 
     doNestedFixedPointIter = False
     xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
@@ -85,9 +85,12 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
-       
+    doProfileSTR = ""
+    if doProfile:
+        doProfileSTR = "doProfile"
+    
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/speedUp/"+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
+    results_dir=("./results/tillage/speedUp2/bis"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
@@ -199,12 +202,15 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
         perirhizalModel.update() # update shape data in the rhizosphere model
         
-        if start: # for first loop, do extra printing to have initial error
+        if start :#and perirhizalModel.debugMode :
+            FPItHelper.storeNewMassData1d(perirhizalModel)
+            FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
-            start = False
+        start = False
         # print differences between 1d and 3d soil models
         # and content in 1d and 3d
+        
         printData.printDiff1d3d(perirhizalModel, s)             
 
         if perirhizalModel.doPhloemFlow:
@@ -324,7 +330,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     """ wrap up """
     
     
-    perirhizalModel.check1d3dDiff()
+    #perirhizalModel.check1d3dDiff()
     
     
     
@@ -354,7 +360,7 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
         paramIndx_base = int(sys.argv[3])
         
     
-    doProfile = False
+    doProfile = True
     
     scenario = "none"
     if len(sys.argv)>4:
@@ -396,10 +402,12 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
         import pstats, io
         pr = cProfile.Profile()
         pr.enable()
-    results_dir = XcGrowth(initsim, simMax,paramIndx_base,spellData )
+        
+    results_dir = XcGrowth(initsim, simMax,paramIndx_base,spellData,doProfile = doProfile )
     if doProfile:
         pr.disable()
         filename = results_dir+'profile'+str(rank)+'.prof' 
+        print(filename)
         s = io.StringIO()
         ps = pstats.Stats(pr, stream=s).sort_stats('tottime')
         ps.dump_stats(filename)

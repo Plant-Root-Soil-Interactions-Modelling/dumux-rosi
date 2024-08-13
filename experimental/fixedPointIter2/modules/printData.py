@@ -25,8 +25,10 @@ def initialPrint(plant):
                 "SinkLim1DS","OutLim1DS",
                 "OutBCsol_diff","OutBCmucil_diff","InBCsol_diff","InBC_mucildiff",
                 # 1d-3d differences/errors
-                "sumDiff1d3dCW_abs","sumDiff1d3dCW_rel","diff1d3dCurrant","diff1d3dCurrant_rel",
-                "maxDiff1d3dCW_abs","maxDiff1d3dCW_rel","maxdiff1d3dCurrant","maxdiff1d3dCurrant_rel",
+                "sumDiff1d3dCW_abs","sumDiff1d3dCW_rel","diff1d3dCurrant",
+        "diff1d3dCurrant_rel",
+        "maxDiff1d3dCW_abs","maxDiff1d3dCW_rel","maxdiff1d3dCurrant",
+        "maxdiff1d3dCurrant_rel",
                 # mass balance error 3d model
                 "bulkMassErrorWater_abs","bulkMassErrorWater_rel",
                 "bulkMassErrorWater_absLim","bulkMassErrorWater_relLim",
@@ -36,7 +38,8 @@ def initialPrint(plant):
                 "rhizoMassWError_relLim","rhizoMassCError_relLim",
                 "rhizoMassWError_rel","rhizoMassCError_rel",
                 # summary metric
-                "err"])
+                "err", "time","n_iter","n_iter2", "n_iter3", "solveGaveUp"])
+    
     write_file_array("inner_error", columnNames, directory_ =plant.results_dir, fileType = '.csv')
     
         
@@ -473,16 +476,24 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
     """
     results_dir = perirhizalModel.results_dir
     
-    write_file_array("inner_error", perirhizalModel.errs, directory_ =results_dir, fileType = '.csv') 
-        
-    results_dir = results_dir+'fpit/'
-                    
 
-            
-    if not perirhizalModel.doMinimumPrint:
-        if rank == 0.:
+    if rank == 0.:
+        errs_ = np.concatenate((perirhizalModel.errs.copy(),
+                               np.array([rs_age_i_dt,fpit_Helper.n_iter,
+                                                     fpit_Helper.n_iter2,
+                                         fpit_Helper.n_iter3, 
+                                                 perirhizalModel.solve_gave_up])))
         
-            write_file_array("fpit_n_iter",np.array([fpit_Helper.n_iter, fpit_Helper.n_iter2,fpit_Helper.n_iter3, 
+        write_file_array("inner_error", errs_, 
+                         directory_ =results_dir, fileType = '.csv') 
+        
+
+        results_dir = results_dir+'fpit/'
+
+        if not perirhizalModel.doMinimumPrint:
+        
+            write_file_array("fpit_n_iter",np.array([fpit_Helper.n_iter,
+                                                     fpit_Helper.n_iter2,fpit_Helper.n_iter3, 
                                                  perirhizalModel.solve_gave_up ]), 
                          directory_ =results_dir, fileType = '.csv') 
             write_file_array("fpit_seg_fluxes_limited_Out",perirhizalModel.seg_fluxes_limited_Out,
@@ -547,9 +558,9 @@ def printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt):
                                      directory_ =results_dir, fileType = '.csv')
                     write_file_array("fpit_sol_content_diff1d3drel"+str(nc+1), perirhizalModel.allDiff1d3dCW_rel[nc+1], 
                                      directory_ =results_dir, fileType = '.csv')
-                    write_file_array("fpit_sol_content_3dabs"+str(nc+1), perirhizalModel.contentIn3d[nc+1],
+                    write_file_array("fpit_sol_content_3dabs"+str(nc+1), fpit_Helper.totC3dAfter_eachVoxeleachComp[nc+1],
                                      directory_ =results_dir, fileType = '.csv')
-                    write_file_array("fpit_sol_content_1dabs"+str(nc+1), perirhizalModel.contentIn1d[nc+1],
+                    write_file_array("fpit_sol_content_1dabs"+str(nc+1), fpit_Helper.totC3dAfter_eachVoxeleachComp[nc+1],
                                      directory_ =results_dir, fileType = '.csv')
 
                     write_file_array("fpit_sol_content3d"+str(nc+1), 

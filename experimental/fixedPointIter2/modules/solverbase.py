@@ -313,7 +313,7 @@ class SolverWrapper():
             print('len(self.dofIndices),len(self.pointIndices),len(self.cellIndices)',
                   len(self.dofIndices),len(self.pointIndices),len(self.cellIndices))
         # volumes, surface
-        self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m2 -> cm2
+        self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
         self.CellVolumes = self._map(self._flat0(self.gather(self.CellVolumes_)), 2)   # m2 -> cm2
         # coordinates
         self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm

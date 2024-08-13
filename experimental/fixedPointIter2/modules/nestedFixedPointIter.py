@@ -18,6 +18,7 @@ from functional.xylem_flux import sinusoidal2, sinusoidal
 import helpfull
 from helpfull import write_file_array, write_file_float
 from FPItHelper import fixedPointIterationHelper
+import FPItHelper
 import PhloemPhotosynthesis
 import printData
 from functional.xylem_flux import sinusoidal2
@@ -73,8 +74,9 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                 #if rank == 0:
                 #    print("\t\tdoreset")
                 perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
+            else:
+                FPItHelper.storeOldMassData1d(perirhizalModel)
                     
-            fpit_Helper.storeOldMassData1d()
                 
             
 
@@ -110,10 +112,9 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             
             ##
             # 2.4 data after, for post processing
-            # maybe move this part to within the solve function to go less often through the list of 1DS
             ##
             
-            fpit_Helper.storeNewMassData1d()
+            FPItHelper.storeNewMassData1d(perirhizalModel)
              
             
             
@@ -133,7 +134,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             keepGoing, gaveUp = helpfull.continueLoop(perirhizalModel, n_iter=
                                 fpit_Helper.n_iter3,
                                                  dt_inner= dt,
-                         failedLoop = False, real_dt =float(Ni) * dt,
+                         failedLoop = False, real_dt =float(Ni) * dt,doPrint = False,
                                                       name='inner_loopdata',
                          isInner=True,
                          plant=plantModel, FPIT_id = 3)
@@ -199,6 +200,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     results_dir = s.results_dir
     cell_volumes = s.getCellVolumes() #cm3    
     N = int(np.ceil(sim_time / dt))  # number of iterations
+     
     # max num of iteration needed for the fixed-point iteration loop. used by @see helpfull::suggestNumStepsChange
     n_iter_inner_max = 0  
 
@@ -340,7 +342,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             if (fpit_Helper.n_iter > 0) :
                 s.reset() #reset at the last moment: over functions use the solution/content at the end of the time step
             
-            fpit_Helper.storeOldMassData3d()
+            FPItHelper.storeOldMassData3d(s,perirhizalModel)
             
             
             
@@ -382,10 +384,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # 3.4 data after, for post proccessing 
             ##
             
+            
+            FPItHelper.storeNewMassData3d(s,perirhizalModel)
+            
             perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
-            
-            
-            fpit_Helper.storeNewMassData3d()
             
             
             
@@ -417,13 +419,13 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             """ 4. prints and evaluation of the iteration """
             
-            perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
+            #perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
             
             fpit_Helper.computeConvergence() # evaluate convergence and get other error metrics
             
             # print extra data for troubleshooting
             # TODO: finish adapting the name of the objects to print
-            #printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)
+            printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)
             
             
             ##
@@ -480,8 +482,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         #   error rates    
         ####
     
+        # => NO need to recompute it here I think
         # error 3DS-1DS
-        perirhizalModel.check1d3dDiff()
+        # perirhizalModel.check1d3dDiff()
         
         
         

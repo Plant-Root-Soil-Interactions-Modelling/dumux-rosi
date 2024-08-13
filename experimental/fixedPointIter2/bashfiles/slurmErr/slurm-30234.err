@@ -790,3 +790,12 @@ Traceback (most recent call last):
   File "/mnt/beegfs-ssd/home/m.giraud/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts/../modules/nestedFixedPointIter.py", line 399, in simulate_const
     outer_R_bc = -s.getFlux_10c() # < 0 means net sink, > 0 means net source
 TypeError: bad operand type for unary -: 'NoneType'
+mpirun: Forwarding signal 18 to job
+slurmstepd: error: *** JOB 30234 ON node15 CANCELLED AT 2024-08-09T11:47:16 ***
+--------------------------------------------------------------------------
+Primary job  terminated normally, but 1 process returned
+a non-zero exit code. Per user-direction, the job has been aborted.
+--------------------------------------------------------------------------
+--------------------------------------------------------------------------
+mpirun noticed that process rank 3 with PID 2534302 on node node15 exited on signal 15 (Terminated).
+--------------------------------------------------------------------------

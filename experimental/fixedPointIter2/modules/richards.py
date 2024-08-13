@@ -457,7 +457,7 @@ class RichardsWrapper(SolverWrapper):
             
     def getTotCContent_each(self):
         """ copmute the total content per solute class in each cell of the domain """
-        vols = self.getCellVolumes()#.flatten() #cm3 scv   
+        #vols = self.getCellVolumes()#.flatten() #cm3 scv   
         totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
             
         
@@ -488,6 +488,7 @@ class RichardsWrapper(SolverWrapper):
     def getFace2CellIds_(self):
         return np.array(self.base.face2CellIds).max(axis = 0)
          
+    # move that to c++
     def getFlux_10c(self): 
         """ returns the total inter-cell flux of water [cm3] per cell
             and solutes [mol] during the last @see solve() call
@@ -571,7 +572,7 @@ class RichardsWrapper(SolverWrapper):
             for one thread 
         """
         # get total source and cell volumes for each thread
-        src10c =  self._map(self._flat0(self.gather(self.getSource_10c_())), 0) * 1e6 # [ mol / cm^3]   
+        src10c =  self._map(self._flat0(self.gather(self.getSource_10c_())), 0) * 1e-6 # [ mol / m^3]   => [ mol / cm^3]   
         vols = self.getCellVolumes() # [ cm^3]   
         if rank == 0:
             # from mol/m^3 to mol

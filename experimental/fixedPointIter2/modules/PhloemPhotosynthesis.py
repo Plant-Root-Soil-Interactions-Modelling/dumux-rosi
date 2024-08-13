@@ -308,28 +308,29 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     
     # when there is no transpiration (night time), we use the plant wat. pot.
     # at the beginning of the time step (rsx_init). Otherwise does not converge
-    if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ) or (fpit_Helper.n_iter > perirhizalModel.k_iter_2initVal) :
-        fpit_Helper.rsx_input = fpit_Helper.rsx_init
-        
-        
-    if perirhizalModel.doNestedFixedPointIter:
-        n_iter_ = fpit_Helper.n_iter3 
-    else:
-        n_iter_ = fpit_Helper.n_iter
-    if  perirhizalModel.rsiCompMethod == 0:
-        if n_iter_ < 4:
-            fpit_Helper.rsx_input = fpit_Helper.rsx_old
-        else:
-            fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
-    elif  perirhizalModel.rsiCompMethod == 1:        
-        if n_iter_ < 20:
-            fpit_Helper.rsx_input = computeAnalysticalRSI()
-        else:
-            fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
-    else:
-        raise Exception
-        
+    
     if rank == 0:
+        if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ) or (fpit_Helper.n_iter > perirhizalModel.k_iter_2initVal) :
+            fpit_Helper.rsx_input = fpit_Helper.rsx_init
+
+
+        if perirhizalModel.doNestedFixedPointIter:
+            n_iter_ = fpit_Helper.n_iter3 
+        else:
+            n_iter_ = fpit_Helper.n_iter
+        if  perirhizalModel.rsiCompMethod == 0:
+            if n_iter_ < 4:
+                fpit_Helper.rsx_input = fpit_Helper.rsx_old
+            else:
+                fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
+        elif  perirhizalModel.rsiCompMethod == 1:        
+            if n_iter_ < 20:
+                fpit_Helper.rsx_input = computeAnalysticalRSI()
+            else:
+                fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
+        else:
+            raise Exception
+        
         
         soilKIn =np.divide(vg.hydraulic_conductivity(fpit_Helper.rsx_input, 
                                                      perirhizalModel.vg_soil),
