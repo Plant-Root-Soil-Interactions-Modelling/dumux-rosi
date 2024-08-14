@@ -202,8 +202,6 @@ public:
         materialLaw_.at(i) = PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)); // update material Law
     }
 
-private:
-
     //! returns the index of the soil layer
     size_t index_(const Element& element) const {
         if (homogeneous_) {
@@ -225,6 +223,9 @@ private:
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         } // add 3D things
     }
+	
+private:
+
 
     std::vector<Scalar> phi_; // porosity
     std::vector<std::vector<double>> boxes;
