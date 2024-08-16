@@ -29,7 +29,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
     skip = 10  # for output and results, skip iteration
     max_iter = 10  # maximum for fix point iteration
 
-    peri = PerirhizalPython(r.rs)
+    peri = PerirhizalPython(r.ms)
     peri.open_lookup(lookuptable_name)
 
     start_time = timeit.default_timer()
@@ -48,9 +48,9 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
     mapping = rs.getSegmentMapper()  # because seg2cell is a dict
 
     sx = s.getSolutionHead_()  # richards.py
-    hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
-    rsx = hsb.copy()  # initial values for fix point iteration
-    rx = r.solve(rs_age, trans_f(0, dt), 0., rsx, False, wilting_point, soil_k = [])
+    hsb_ = np.array(rs.getHs(sx))  # matric potential per segment
+    rsx = hsb_.copy()  # initial values for fix point iteration
+    rx = r.solve(rs_age, trans_f(0, dt), rsx, cells = False)
     rx_old = rx.copy()
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
@@ -68,10 +68,11 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
         cell2seg = rs.cell2seg  # for debugging
         mapping = rs.getSegmentMapper()
         sx = s.getSolutionHead_()  # richards.py
-        hsb_ = rs.getHs(sx)
+        hsb_ = np.array(rs.getHs(sx))
         hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
         hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  ############################################ (too keep within table)
-        rsx = hsb_.copy()  # initial values for fix point iteration
+
+        rsx = np.hstack((rsx, hsb_[rsx.shape[0]:]))  # initial values for fix point iteration
 
         outer_r = peri.get_outer_radii("length")
         inner_r = rs.radii
@@ -79,7 +80,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
         rho_ = np.divide(outer_r, np.array(inner_r))
         rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
-        kr_ = r.getKr(rs_age + t)
+        kr_ = r.params.getKr(rs_age + t)
         inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
         inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
         inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
@@ -98,12 +99,19 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
-            rsx = peri.soil_root_interface_potentials(rx[1:], hsb, inner_kr_, rho_, None)
+            # print("rx", len(rx[1:]))
+            # print("hsb_", len(hsb_))
+            # print("inner_kr", len(inner_kr_))
+            # print("rho", len(rho_))
+
+            rx = np.maximum(rx, np.ones(rx.shape) * -15000.)
+            rx = np.minimum(rx, np.zeros(rx.shape))
+            rsx = peri.soil_root_interface_potentials(rx[1:], hsb_, inner_kr_, rho_, None)
             wall_interpolation = timeit.default_timer() - wall_interpolation
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
-            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), rsx, cells = False)
+            rx = r.solve_again(rs_age + t, trans_f(rs_age + t, dt), rsx, cells = False)
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
 
@@ -122,8 +130,8 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
         #     s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
 
         wall_soil = timeit.default_timer()
-        fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
-        collar_flux = r.collar_flux(rs_age + t, rx.copy(), rsx.copy(), k_soil = [], cells = False)  # validity checks
+        fluxes = r.radial_fluxes(rs_age + t, rx, rsx)
+        collar_flux = r.get_transpiration(rs_age + t, rx.copy(), rsx.copy())  # validity checks
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
         if err > 1.e-6:
             print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(fluxes))
@@ -197,13 +205,13 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
             if type_ == 2:
                 soil_c_.append(cc)  # [kg/m3]
 
-            ana = pb.SegmentAnalyser(r.rs.mappedSegments())  # VOLUME and SURFACE
+            ana = pb.SegmentAnalyser(r.ms.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
                 anac = pb.SegmentAnalyser(ana)
                 anac.filter("subType", j)
                 vol_[j].append(anac.getSummed("volume"))
                 surf_[j].append(anac.getSummed("surface"))
-            krs, _ = r.get_krs(rs_age + t, [collar_ind])
+            krs, _ = r.get_krs(rs_age + t)
             krs_.append(krs)  # KRS
             depth_.append(ana.getMinBounds().z)
 

@@ -16,7 +16,9 @@ from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
-from functional.xylem_flux import *
+from functional.PlantHydraulicParameters import PlantHydraulicParameters
+from functional.PlantHydraulicModel import HydraulicModel_Doussan
+from functional.PlantHydraulicModel import HydraulicModel_Meunier
 import evapotranspiration as evap
 from datetime import *
 
@@ -177,11 +179,11 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
 
     kr01 = np.minimum(skr * kr0[:, 1], 1.)
     kr11 = np.minimum(skr * kr1[:, 1], 1.)
-    r.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
+    r.params.setKrTables([kr00[:, 1], kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
-    r.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
+    r.params.setKxTables([kx00[:, 1], kx01, kx11, kx11, kx01, kx01],
                   [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
@@ -311,7 +313,7 @@ def create_singleroot(ns = 100, l = 50 , a = 0.05):
 
 def set_all_sd(rs, s):
     """ # sets all standard deviation to a percantage, i.e. value*s """
-    for p in rs.getRootRandomParameter():
+    for p in rs.getOrganRandomParameter(pb.OrganTypes.root):
         p.a_s = p.a * s
         p.lbs = p.lb * s
         p.las = p.la * s
@@ -321,7 +323,7 @@ def set_all_sd(rs, s):
         p.thetas = p.theta * s
         p.rlts = p.rlt * s  # no used
         p.ldelays = p.ldelay * s
-    seed = rs.getRootSystemParameter()  # SeedRandomParameter
+    seed = rs.getOrganRandomParameter(pb.OrganTypes.seed)[0]  # SeedRandomParameter
     seed.firstBs = seed.firstB * s
     seed.delayBs = seed.delayB * s
     seed.maxBs = seed.maxB * s
@@ -339,8 +341,10 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
     global picker  # make sure it is not garbage collected away...
 
+    params = PlantHydraulicParameters()
+
     if fname.endswith(".rsml"):
-        r = XylemFluxPython(fname)
+        r = HydraulicModel_Doussan(fname, params)
     elif fname.endswith(".xml"):
         # if rank == 0:
         #     if stochastic:
@@ -348,13 +352,14 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         #     else:
         #         seed = 1  # always the same random seed
         # else:
-        #     seed = None
+        #     seed = Noneinit_conductivities_const
         # seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
         seed = 1
 
-        rs = pb.MappedRootSystem()
+        rs = pb.MappedPlant()
         rs.setSeed(seed)
         rs.readParameters(fname)
+
         if not stochastic:
             set_all_sd(rs, 0.)
 
@@ -427,7 +432,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
         rs.simulate(1., True)
-        r = XylemFluxPython(rs)
+        r = HydraulicModel_Doussan(rs, params)
 
         # print("HERE***********************************")
         # print([s.x for s in r.rs.segments])
@@ -435,7 +440,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         # # for i in range(0, len(r.rs.segments)): # ????????
         # #     print(r.rs.seg2cell[i])
 
-    r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+    r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 
     # print("HERE***********************************")
@@ -446,12 +451,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     # print("survived setRectangularGrid", rank)
 
     picker = lambda x, y, z: soil_model.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-    r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+    r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     # comm.barrier()
     # print("survived setSoilGrid", rank)
-
-    # if rank == 0:
-    init_conductivities_const(r)
 
     return r
 

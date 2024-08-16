@@ -13,7 +13,7 @@ import sra_new
 """ parameters   """
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 
-sim_time = 87.5  # 87.5  # 44  # 87.5  # [day]
+sim_time = 10  # 87.5  # 87.5  # 44  # 87.5  # [day]
 dt = 360 / (24 * 3600)  # time step [day]
 
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -42,7 +42,9 @@ r.test()  # sanity checks
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
-psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+# psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
+#     s, r, "data/" + table_name, sim_time, dt, trans_soybean, rs_age = 1., type_ = 1)
+psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
     s, r, "data/" + table_name, sim_time, dt, trans_soybean, rs_age = 1., type_ = 1)
 # psi_x_, psi_s_, sink_, x_, y_, psi_s2_ = sra.simulate_const(s, r, sra_table_lookup, sim_time, dt)
 
