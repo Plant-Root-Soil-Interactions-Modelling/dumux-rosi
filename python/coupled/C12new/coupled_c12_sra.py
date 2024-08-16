@@ -1,5 +1,9 @@
 """ 
-Benchmark M1.2 static root system in soil, root hydrualics with Meunier with rhizosphere (using steady rate approach)
+Benchmark M1.2 static root system in soil, root hydrualics with Meunier or Doussan (L74) with nonlinear rhizosphere resistance 
+(using steady rate approach of Schröder et al. 2008)
+
+Meunier         113s        uptake 6.179905380249504
+Doussan         85s         uptake 6.177594938264565 cm3
 """
 
 import sys; sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");

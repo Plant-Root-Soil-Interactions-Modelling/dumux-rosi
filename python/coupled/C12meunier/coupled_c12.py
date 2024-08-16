@@ -63,7 +63,7 @@ wilting_point = -15000  # cm
 
 sim_time = 7.1  # [day] for task b
 age_dependent = False  # conductivities
-dt = 360. / (24 * 3600)  # [days] Time step must be very small
+dt = 36. / (24 * 3600)  # [days] Time step must be very small
 skip = 1
 
 """ Initialize macroscopic soil model """
