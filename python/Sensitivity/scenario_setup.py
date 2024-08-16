@@ -336,6 +336,7 @@ def set_all_sd(rs, s):
 def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False, mods = None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
+
     global picker  # make sure it is not garbage collected away...
 
     if fname.endswith(".rsml"):
@@ -455,7 +456,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r
 
 
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):
+def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):  ###### TODO change to savez #######
     """  saves numpy arrays ass npy files """
 
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]

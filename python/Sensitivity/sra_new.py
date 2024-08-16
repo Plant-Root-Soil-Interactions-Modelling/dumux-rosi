@@ -1,9 +1,7 @@
 """
-functions for the steady rate approach
+    Water uptake simulation taking nonlinear rhizosphere resistance into account
 """
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
-from scipy.optimize import fsolve
 import timeit
 
 import plantbox as pb
@@ -16,12 +14,10 @@ import evapotranspiration as evap
 def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1., type_ = 1):
     """     
     simulates the coupled scenario       
-        root architecture is not gowing  
-        conductivities are not changing over time
         
     s                            soil model (RichardsWrapper(RichardsSP()))
-    r                            xylem flux model (XylemFluxPython wrapping MappedSegments mapped to soil @param s)
-    lookuptable_name             potentials a root soil interface    
+    r                            PlantHydraulicModel 
+    lookuptable_name             matric potentials at the root soil interface (precomputed in a 4D table)    
     sim_time                     simulation time
     dt                           time step
     trans_f                      potential transpiration function 
@@ -45,7 +41,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
     krs_ = []
     depth_ = []
 
-    rs = r.rs
+    rs = r.ms
     nodes = rs.nodes
     segs = rs.segments
     ns = len(segs)
@@ -72,16 +68,14 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
         cell2seg = rs.cell2seg  # for debugging
         mapping = rs.getSegmentMapper()
         sx = s.getSolutionHead_()  # richards.py
-        hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
-        rsx = hsb.copy()  # initial values for fix point iteration
-
-        cell_centers = s.getCellCenters_()
-        cell_centers_z = np.array([cell_centers[j][2] for j in mapping])
-        seg_centers_z = rs.getSegmentZ()
+        hsb_ = rs.getHs(sx)
+        hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
+        hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  ############################################ (too keep within table)
+        rsx = hsb_.copy()  # initial values for fix point iteration
 
         outer_r = peri.get_outer_radii("length")
-        inner_r = r.rs.radii
-        types = r.rs.subTypes
+        inner_r = rs.radii
+        types = rs.subTypes
         rho_ = np.divide(outer_r, np.array(inner_r))
         rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
@@ -91,36 +85,25 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
         inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
 
         wall_iteration = timeit.default_timer()
+
         wall_fixpoint = timeit.default_timer()
 
         err = 1.e6  # cm
         c = 0
 
-        # r.init_solve_static(rs_age + t, rsx, False, wilting_point, soil_k = [])  # LU factorisation for speed up
-        rx = r.solve(rs_age + t, trans_f(t, dt), 0., rsx, False, wilting_point, soil_k = [])
+        rx = r.solve(rs_age + t, trans_f(t, dt), rsx, cells = False)
         rx_old = rx.copy()
-
-        hsb_ = hsb - cell_centers_z  # from total matric potential to matric potential
-        hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
-        hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  ############################################ (too keep within table)
 
         while err > 1 and c < max_iter:
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
-            rx_ = rx[1:] - seg_centers_z  # from total matric potential to matric potential
-            rx_ = np.maximum(rx_, np.ones(rx_.shape) * -15000.)  ############################################ (too keep within table)
-
-            # rsx = root_interface(rx_ , hsb_, inner_kr_, rho_, sra_table_lookup)
-            rsx = peri.soil_root_interface_potentials(rx_ , hsb_, inner_kr_, rho_, None)
-
-            rsx = rsx + seg_centers_z  # from matric potential to total matric potential
+            rsx = peri.soil_root_interface_potentials(rx[1:], hsb, inner_kr_, rho_, None)
             wall_interpolation = timeit.default_timer() - wall_interpolation
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
-            # print("Segment size from Python ", len(r.rs.segments), ns)
-            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), 0., rsx, False, wilting_point, soil_k = [])  # xylem_flux.py, cells = False
+            rx = r.solve(rs_age + t, trans_f(rs_age + t, dt), rsx, cells = False)
             err = np.linalg.norm(rx - rx_old)
             wall_xylem = timeit.default_timer() - wall_xylem
 
@@ -129,14 +112,14 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, rs_age = 1.,
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
 
-        if type_ == 2:
-            cc = s.getSolution_(1)  # kg/m3
-            rsc = np.array([cc[i] for i in mapping])  # kg/m3
-            seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
-            soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
-            # evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day
-            evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day 1.e-7 * (75 * 16 * 1)
-            s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
+        # if type_ == 2:
+        #     cc = s.getSolution_(1)  # kg/m3
+        #     rsc = np.array([cc[i] for i in mapping])  # kg/m3
+        #     seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
+        #     soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
+        #     # evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day
+        #     evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day 1.e-7 * (75 * 16 * 1)
+        #     s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
 
         wall_soil = timeit.default_timer()
         fluxes = r.segFluxes(rs_age + t, rx, rsx, approx = False, cells = False)
