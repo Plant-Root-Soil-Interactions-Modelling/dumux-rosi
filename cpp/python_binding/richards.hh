@@ -263,6 +263,24 @@ public:
     }
 
     /**
+     * Get indexes of cells in a specific soil layer (== vanGenucht parameter set)
+     * defined from @see addVanGenuchtenDomain
+     * For a single process. Gathering is done in python
+     * layerIndex: index of the soil layer we wan the cell indexes of 
+     **/
+    virtual std::vector<int> getLayerCellIndx(int layerIndex)  {
+        this->checkGridInitialized();		
+        std::vector<int> indices;
+        for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
+			if(this->problem->spatialParams().index_(e) == layerIndex)
+			{
+				indices.push_back(this->cellIdx->index(e));
+			}
+        }
+        return indices;
+    }
+	
+    /**
      * forward to problem
      */
     void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks) {
@@ -366,6 +384,7 @@ void init_richards(py::module &m, std::string name) {
    .def("setRegularisation",&Richards_::setRegularisation)
    .def("addVanGenuchtenDomain",&Richards_::addVanGenuchtenDomain)
    .def("changeVanGenuchtenSet",&Richards_::changeVanGenuchtenSet)
+   .def("getLayerCellIndx",&Richards_::getLayerCellIndx)
    .def("setTopBC",&Richards_::setTopBC)
    .def("setBotBC",&Richards_::setBotBC)
    .def("setSTopBC",&Richards_::setSTopBC)

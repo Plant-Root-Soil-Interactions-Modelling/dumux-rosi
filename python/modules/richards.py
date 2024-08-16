@@ -413,6 +413,13 @@ class RichardsWrapper(SolverWrapper):
         """ add Van Genuchten domain """
         self.checkGridInitialized()
         self.base.changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks)
+        
+    def getLayerCellIndx(self, layerIndex):
+        """ get indexes of cells in a specific soil layer (Nc, 1) 
+            defined via @see addVanGenuchtenDomain
+        """
+        self.checkGridInitialized()
+        return np.unique(self._flat0(comm.gather(self.base.getLayerCellIndx(layerIndex), root = 0)))
 
     def writeDumuxVTK(self, file_name):
         """Uses the Dumux VTK writer to write the current model output"""
