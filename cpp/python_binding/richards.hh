@@ -263,8 +263,11 @@ public:
     }
 
     /**
-     * get indexes of cells in a specific soil layer
-     */
+     * Get indexes of cells in a specific soil layer (== vanGenucht parameter set)
+     * defined from @see addVanGenuchtenDomain
+     * For a single process. Gathering is done in python
+     * layerIndex: index of the soil layer we wan the cell indexes of 
+     **/
     virtual std::vector<int> getLayerCellIndx(int layerIndex)  {
         this->checkGridInitialized();		
         std::vector<int> indices;
