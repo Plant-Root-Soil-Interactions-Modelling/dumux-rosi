@@ -100,10 +100,11 @@ peri.open_lookup("../table_loam")
 start_time = timeit.default_timer()
 x_, y_, z_ = [], [], []
 
-mapping = r.ms.getSegmentMapper()
 sx = s.getSolutionHead_()  # richards.py
-hsb = np.array([sx[j] for j in mapping])
+hsb = r.ms.getHs(sx)  #
+
 rsx = hsb.copy()  # initial values for fix point iteration
+
 rho_ = np.divide(outer_r, np.array(inner_r))
 
 N = round(sim_time / dt)
@@ -148,7 +149,7 @@ for i in range(0, N):
     soil_water = (s.getWaterVolume() - water) / dt
 
     sx = s.getSolutionHead_()  # richards.py
-    hsb = np.array([sx[j] for j in mapping])  # soil bulk matric potential per segment
+    hsb = r.ms.getHs(sx)
 
     if i % skip == 0:
 

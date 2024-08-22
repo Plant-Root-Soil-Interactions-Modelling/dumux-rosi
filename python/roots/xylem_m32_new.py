@@ -30,7 +30,7 @@ param = PlantHydraulicParameters()
 param.setKr([kr])
 param.setKx([kz])
 
-r = HydraulicModel_Doussan("../../grids/RootSystem.rsml", param, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
+r = HydraulicModel_Meunier("../../grids/RootSystem.rsml", param, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 r.test()
 
 nodes = r.get_nodes()
