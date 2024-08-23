@@ -16,13 +16,13 @@ import numpy as np
 """ 
 Benchmark M3.2 Root system: SUF and Krs
 """
+min_b = [-4., -4., -15.]
+max_b = [4., 4., 0.]
+cell_number = [1, 1, 30]
 
 
 def suf_krs(r, param):
 
-    min_b = [-4., -4., -15.]
-    max_b = [4., 4., 0.]
-    cell_number = [1, 1, 15]
     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]),
         pb.Vector3d(max_b[0], max_b[1], max_b[2]),
         pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)
@@ -70,16 +70,28 @@ print("Krs", krs_am)
 print("Sum of SUF", np.sum(suf_bm), "from", np.min(suf_bm), "to", np.max(suf_bm), "summed positive", np.sum(suf_bm[suf_bm >= 0]))
 print("Krs", krs_bm)
 
-z_ = np.linspace(0, -15, 15)
+print("cell -0.5 cm", r.ms.soil_index(0., 0., -0.5))  # first cell is at position 14
+print("cell -14.5 cm", r.ms.soil_index(0, 0, -14.5))
+
+fig, (ax1, ax2) = plt.subplots(1, 2)
+
+z_ = np.linspace(-15, 0, cell_number[2])
+z_seg = r.ms.getSegmentZ()
+
 peri = Perirhizal(r.ms)
 suf_ad_layers = np.array(peri.aggregate(suf_ad))
 suf_am_layers = np.array(peri.aggregate(suf_am))
 suf_bd_layers = np.array(peri.aggregate(suf_bd))
 suf_bm_layers = np.array(peri.aggregate(suf_bm))
 
-print(suf_ad_layers.shape)
-# plt.plot(suf_ad_layers, z_, "*")
-# plt.plot(suf_am_layers, z_, "*")
-plt.plot(suf_bd_layers, z_, "*")
-plt.plot(suf_bm_layers, z_, "*")
+ax1.plot(suf_ad_layers, z_, "*", label = "(a) doussan")
+ax1.plot(suf_am_layers, z_, "*", label = "(a) meunier")
+ax2.plot(suf_bd_layers, z_, "*", label = "(b) doussan")
+ax2.plot(suf_bm_layers, z_, "*", label = "(b) meunier")
+# ax1.plot(suf_ad, z_seg, "*")
+# ax1.plot(suf_am, z_seg, "*")
+# ax2.plot(suf_bd, z_seg, "*")
+# ax2.plot(suf_bm, z_seg, "*")
+ax1.legend()
+ax2.legend()
 plt.show()
