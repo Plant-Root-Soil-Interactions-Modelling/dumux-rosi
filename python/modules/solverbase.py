@@ -19,10 +19,9 @@ class SolverWrapper():
         """ @param base is the C++ base class that is wrapped. """
         self.base = base
 
-
-    def initialize(self, args_ = [""], verbose = False,doMPI_=True):
+    def initialize(self, args_ = [""], verbose = False, doMPI_ = True):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
-        self.base.initialize(args_, verbose,doMPI=doMPI_)
+        self.base.initialize(args_, verbose, doMPI = doMPI_)
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
@@ -85,11 +84,11 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, doMPIsolve_=True, saveInnerFluxes_ = True):
+    def solve(self, dt:float, doMPIsolve_ = True, saveInnerFluxes_ = True):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         """
-        self.base.solve(dt * 24.*3600.,doMPIsolve=doMPIsolve_, saveInnerDumuxValues = saveInnerFluxes_)  # days -> s
+        self.base.solve(dt * 24.*3600., doMPIsolve = doMPIsolve_, saveInnerDumuxValues = saveInnerFluxes_)  # days -> s
 
     def solveSteadyState(self):
         """ Finds the steady state of the problem """
@@ -170,8 +169,8 @@ class SolverWrapper():
     def getSolution_(self, eqIdx = 0):
         """nompi version of  """
         self.checkGridInitialized()
-        return np.array(self.base.getSolution(eqIdx))    
-        
+        return np.array(self.base.getSolution(eqIdx))
+
     def setSolution(self, x, eqIdx = 0):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
@@ -184,7 +183,7 @@ class SolverWrapper():
 
     def getNeumann(self, gIdx, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
-        print("gIdx, eqIdx",gIdx, eqIdx)
+        # print("gIdx, eqIdx",gIdx, eqIdx)
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx = 0):

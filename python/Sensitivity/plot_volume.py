@@ -1,5 +1,5 @@
 """
-volume, surface, depth plot 
+Plots volume, surface, depth plot 
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -14,7 +14,7 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 name = "soybean"
-str_ = ["_sra0"]
+str_ = ["_sra0d"]
 
 fnames_t = np.array(["transpiration_" + name + s for s in str_ ])
 fnames = np.array(["vol_" + name + s for s in str_ ])
@@ -68,12 +68,12 @@ ax[1].legend()
 
 d_ = data4[0]
 krs_ = data3[0]
-ax[2].plot(t, d_)
+ax[2].plot(t, d_, "g", label = "depth")
 ax[2].set_ylabel("Depth [cm]")
 twin_axes = ax[2].twinx()
-twin_axes.plot(t, krs_, "r")
+twin_axes.plot(t, krs_, "r", label = "Krs")
 twin_axes.set_ylabel("krs [cm2/day]")
-print("max depth", np.max(y), "cm")
+print("max depth", np.min(y), "cm")
 print("final Krs", np.max(krs_), "cm2/day")
 
 ax[2].set_xlabel("Time [d]")

@@ -1,6 +1,6 @@
 
 """ 
-Analyse and create the root system we want to analyse 
+Analyse and create the root system we want to analyse [from CPlantBox database] 
 
 which root system do we pick? and whats the RLD, RSD in our simulation domain 
 """

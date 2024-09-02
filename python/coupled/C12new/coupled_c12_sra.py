@@ -15,10 +15,9 @@ from functional.PlantHydraulicParameters import PlantHydraulicParameters
 from functional.PlantHydraulicModel import HydraulicModel_Doussan
 from functional.PlantHydraulicModel import HydraulicModel_Meunier
 from functional.Perirhizal import PerirhizalPython  # Steady rate helper
-
 import functional.van_genuchten as vg
 from functional.root_conductivities import *
-import rsml.rsml_reader as rsml
+
 import visualisation.vtk_plot as vp
 
 from rosi_richards import RichardsSP  # C++ part (Dumux binding)
@@ -26,7 +25,6 @@ from richards import RichardsWrapper  # Python part
 from rhizo_models import plot_transpiration
 
 import numpy as np
-from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import timeit
 
@@ -47,13 +45,11 @@ initial = -659.8 + 7.5  # -659.8
 trans = 6.4  # cm3 /day (sinusoidal)
 wilting_point = -15000  # cm
 
-sim_time = 7.1  # [day] for task b
+sim_time = 7.1  # 7.1  # [day] for task b
 dt = 360. / (24 * 3600)  # [days] Time step must be very small
 skip = 1  # output
 
 """ Initialize macroscopic soil model """
-sp = vg.Parameters(soil)
-# vg.create_mfp_lookup(sp, -1.e5, 1000)
 s = RichardsWrapper(RichardsSP())
 s.initialize()
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
@@ -68,18 +64,19 @@ s.initializeProblem()
 s.setCriticalPressure(wilting_point)
 
 """ Initialize root hydraulic model (a) or (b)"""
-sinusoidal = HydraulicModel_Doussan.sinusoidal  # rename
+sinusoidal = lambda t: HydraulicModel_Doussan.sinusoidal2(t, dt)  # rename , or HydraulicModel_Doussan.sinusoidal2(t,dt)
 params = PlantHydraulicParameters()
 init_conductivities(params, age_dependent)
 
-r = HydraulicModel_Meunier(fname, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
-
+r = HydraulicModel_Doussan(fname, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), True)  # cutting
-
-""" Coupling (map indices) """
+                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), False)  # cutting
 picker = lambda x, y, z: s.pick([x, y, z])
 r.ms.setSoilGrid(picker)  # maps segment
+
+peri = PerirhizalPython()
+peri.open_lookup("../table_loam")
+
 outer_r = r.ms.segOuterRadii()
 inner_r = r.ms.radii
 
@@ -92,9 +89,6 @@ seg_length = r.ms.segLength()
 print("outer radii", np.min(outer_r) , np.max(outer_r))
 print("inner radii", np.min(inner_r) , np.max(inner_r))
 print()
-
-peri = PerirhizalPython()
-peri.open_lookup("../table_loam")
 
 """ Numerical solution (a) """
 start_time = timeit.default_timer()
@@ -123,12 +117,12 @@ for i in range(0, N):
     while err > 1. and c < 100:
 
         """ interpolation """
-        rsx = peri.soil_root_interface_potentials(rx[1:], hsb, inner_kr_, rho_, None)
+        rsx = peri.soil_root_interface_potentials(rx[1:], hsb, inner_kr_, rho_)
 
         """ xylem matric potential """
         rx = r.solve_again(rs_age + t, -trans * sinusoidal(t), rsx, cells = False)
-        err = np.linalg.norm(rx - rx_old)
 
+        err = np.linalg.norm(rx - rx_old)
         rx_old = rx.copy()
         c += 1
 
@@ -138,9 +132,14 @@ for i in range(0, N):
     if err > 1.e-6:
         print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(fluxes))
     err2 = np.linalg.norm(-trans * sinusoidal(t) - collar_flux)
-    if r.last == "neumann":
+    if rx[0] > -14999:
+        err2 = np.linalg.norm(-trans * sinusoidal(t) - collar_flux)
+        print(err2)
         if err2 > 1.e-6:
             print("error: potential transpiration differs root collar flux in Neumann case" , err2)
+            print(-trans * sinusoidal(t))
+            print(collar_flux)
+            # raise
 
     water = s.getWaterVolume()
     soil_fluxes = r.sumSegFluxes(fluxes)
@@ -157,8 +156,6 @@ for i in range(0, N):
         sum_flux = 0.
         for f in soil_fluxes.values():
             sum_flux += f
-        cf_ = r.get_transpiration(rs_age + t, rx, rsx)
-        print("Summed fluxes ", sum_flux, "= collar flux", cf_, "= prescribed", -trans * sinusoidal(t))
         y_.append(sum_flux)  # cm4/day
         z_.append(soil_water)  # cm3
         n = round(float(i) / float(N) * 100.)
@@ -177,6 +174,6 @@ print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s"
 # ana.addData("pressure", rx)
 # vp.plot_roots(ana, "pressure")
 
-plot_transpiration(x_, y_, z_, lambda t: trans * HydraulicModel_Doussan.sinusoidal(t))
+plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal(t))
 np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
 

@@ -35,8 +35,7 @@ r.test()
 
 nodes = r.get_nodes()
 soil_index = lambda x, y, z: 0
-r.ms.setSoilGrid(soil_index)ll -0.5 cm 14
-cell -14.5 cm 0
+r.ms.setSoilGrid(soil_index)
 
 """ Numerical solution (a) """
 rx_a = r.solve_dirichlet(0., p0, [p_s], cells = True)

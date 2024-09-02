@@ -2,14 +2,17 @@
 """ 
 Analyse and choose (modify) soybean system parameters 
 """
-import sys; sys.path.append("../../../CPlantBox/");  sys.path.append("../../../CPlantBox/src/python_modules")
+import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+
+import plantbox as pb
+
+import visualisation.vtk_plot as vp
+
+import scenario_setup as scenario
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-import plantbox as pb
-import vtk_plot as vp
-import scenario_setup as scenario
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
@@ -30,7 +33,7 @@ simtime = 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
 rs = pb.RootSystem()
-path = "../../../CPlantBox/modelparameter/rootsystem/"
+path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
 name = "Glycine_max_Moraes2020_opt2"
 rs.readParameters(path + name + ".xml")
 
@@ -63,9 +66,9 @@ r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, st
 
 kr = 1.e-4
 kx = 1.e-3
-scenario.init_conductivities_const(r, kr, kx)
+scenario.init_conductivities_const(r.params, kr, kx)
 
-rs = r.rs
+rs = r.ms
 
 # Initialize
 print()
@@ -80,7 +83,7 @@ ana = pb.SegmentAnalyser(rs)
 ana.addAge(simtime)
 
 orders = np.array(rs.getParameter("age"))
-print("\nnumber of roots", len(rs.getRoots()))
+print("\nnumber of roots", len(rs.getOrgans()))
 print("types", np.sum(orders == 1), np.sum(orders == 2), np.sum(orders == 3), np.sum(orders == 4), np.sum(orders == 5))
 print("number of nodes", len(ana.nodes))
 print("number of segments", len(ana.segments))

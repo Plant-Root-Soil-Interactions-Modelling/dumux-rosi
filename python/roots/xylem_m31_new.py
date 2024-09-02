@@ -59,7 +59,7 @@ params = PlantHydraulicParameters(rs)
 params.setKr([kr0])
 params.setKx([kz0])
 
-r = HydraulicModel_Doussan(rs, params, cached = True)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
+r = HydraulicModel_Doussan(rs, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
 
 kx = params.getKx(0.)
 print(kx)

@@ -37,7 +37,7 @@ class RichardsWrapper(SolverWrapper):
         """
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setVGParameters before calling initialize()')
-            
+
         qr, qs, alpha, n, ks = [], [], [], [], []
 
         for soil in soils:
@@ -64,7 +64,7 @@ class RichardsWrapper(SolverWrapper):
         """
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setLayersZ before calling initialize()')
-            
+
         self.setParameter(self.param_group + "Layer.Number", self.dumux_str(number))
         if z:
             assert len(number) == len(z), "setLayersZ: sample point values and z coordinates have unequal length"
@@ -89,7 +89,7 @@ class RichardsWrapper(SolverWrapper):
         """
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setICZ_solute before calling initialize()')
-            
+
         self.setParameter(self.param_group + "IC.C", self.dumux_str(c))
         if z:
             assert(len(c) == len(z))  # sample points
@@ -149,10 +149,10 @@ class RichardsWrapper(SolverWrapper):
             else:
                 raise Exception('richards.setTopBC(): Top type should be "constantPressure", "constantFlux", constantCyl", "noFlux", or "atmospheric" unknown top type {}'.format(type_top))
             type_top = t
-            
+
         if self.checkProblemInitialized(throwError = False):
-            self.base.setTopBC(type_top, value_top) 
-        else:  
+            self.base.setTopBC(type_top, value_top)
+        else:
             self.setParameter(self.param_group + "BC.Top.Type", str(type_top))
             self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
 
@@ -165,7 +165,7 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setTopBC(): Atmospheric boundary conditions where set, but no climatic data were given')
 
-    def setTopBC_solute(self, type_top:list, value_top:list = [], managed:list = []):   
+    def setTopBC_solute(self, type_top:list, value_top:list = [], managed:list = []):
         assert isinstance(type_top[0], (str, int))
         for id_tt, tt in enumerate(type_top):
             if isinstance(tt, str):
@@ -189,8 +189,8 @@ class RichardsWrapper(SolverWrapper):
         if len(value_top) == 0:
             value_top = [0. for i in type_top]
         if self.checkProblemInitialized(throwError = False):
-            self.base.setSTopBC(type_top, value_top) 
-        else:    
+            self.base.setSTopBC(type_top, value_top)
+        else:
             self.setParameter(self.param_group + "BC.Top.SType", self.dumux_str(type_top))
             self.setParameter(self.param_group + "BC.Top.CValue", self.dumux_str(value_top))
 
@@ -211,10 +211,10 @@ class RichardsWrapper(SolverWrapper):
         type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
         type_bot ==  "constantFluxCyl", value_bot is the constant flux [cm/day] for cylindrical coordinates        
         type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
-        """   
+        """
         assert isinstance(type_bot, (str, int))
         if isinstance(type_bot, str):
-            if type_bot == "constantPressure" or type_bot == "pressure":
+            if type_bot == "constantPressure" or type_bot == "pressure" or "matricPotential" or "potential":
                 b = 1
             elif type_bot == "constantFlux" or type_bot == "flux":
                 b = 2
@@ -232,13 +232,13 @@ class RichardsWrapper(SolverWrapper):
             type_bot = b
         if self.checkProblemInitialized(throwError = False):
             self.base.setBotBC(type_bot, value_bot)
-        else:    
+        else:
             self.setParameter(self.param_group + "BC.Bot.Type", str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
 
     def setBotBC_solute(self, type_bot:list, value_bot:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
-        """      
+        """
         assert isinstance(type_bot[0], (str, int))
         for id_tb, tb in enumerate(type_bot):
             if isinstance(tb, str):
@@ -259,13 +259,12 @@ class RichardsWrapper(SolverWrapper):
                 type_bot[id_tb] = b
         if len(value_bot) == 0:
             value_bot = [0. for i in type_bot]
-            
+
         if self.checkProblemInitialized(throwError = False):
-            self.base.setSBotBC(type_bot, value_bot) 
-        else:      
+            self.base.setSBotBC(type_bot, value_bot)
+        else:
             self.setParameter(self.param_group + "BC.Bot.SType", self.dumux_str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.CValue", self.dumux_str(value_bot))
-        
 
     def setInnerFluxCyl(self, flux):
         """ 
@@ -333,11 +332,11 @@ class RichardsWrapper(SolverWrapper):
     def setSoluteTopBC(self, type_top, value_top):
         """  sets the flux directly in the problem """
         self.setTopBC_solute(type_bot, value_bot)
-        
+
     def setSoluteBotBC(self, type_bot, value_bot):
         """  sets the flux directly in the problem """
         self.setBotBC_solute(type_bot, value_bot)
-        
+
     def getInnerHead(self, shift = 0):
         """Gets the pressure head at the inner boundary [cm] """
         return self.base.getInnerHead(shift)  # -> richards_cyl.hh
@@ -413,7 +412,7 @@ class RichardsWrapper(SolverWrapper):
         """ add Van Genuchten domain """
         self.checkGridInitialized()
         self.base.changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks)
-        
+
     def getLayerCellIndx(self, layerIndex):
         """ get indexes of cells in a specific soil layer (Nc, 1) 
             defined via @see addVanGenuchtenDomain
