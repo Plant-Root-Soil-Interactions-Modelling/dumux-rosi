@@ -131,5 +131,5 @@ if __name__ == '__main__':
     np.savez("data/soil_only{:g}".format(envirotype_number), h = h, times = times, net_inf = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
     print("Change in water balance", water - water0, "cm3")
 
-    plot_soil(sim_time, times, net_inf, h, soil_times, top)
+    plot_soil(sim_time, times, net_inf, h, soil_times, top_)
 
