@@ -277,9 +277,10 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
-    # IC
-    h = np.load("data/initial_potential.npy")
-    s.setInitialConditionHead(h)  # cm
+    # # IC
+    # h = np.load("data/initial_potential.npy")
+    # s.setInitialConditionHead(h)  # cm
+    s.setHomogeneousIC(-1000)
 
     if type == 2:
         c = np.load("data/initial_concentration.npy")  # kg/m3
@@ -432,6 +433,13 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 for i in range(0, len(rrp)):
                     rrp[i].r *= mods["r"]
                 mods.pop("r")
+            if "ln" in mods:  # all types
+                for i in range(0, len(rrp)):
+                    rrp[i].ln *= mods["ln"]
+                mods.pop("ln")
+            if "ln1" in mods:
+                rrp[1].ln *= mods["ln1"]
+                mods.pop("ln1")
             if "a" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].a *= mods["a"]
@@ -447,6 +455,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 for k, v in mods.items():
                     print("key:", k)
                 print()
+                raise
 
         # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
         # for p in rrp:

@@ -214,7 +214,7 @@ class RichardsWrapper(SolverWrapper):
         """
         assert isinstance(type_bot, (str, int))
         if isinstance(type_bot, str):
-            if type_bot == "constantPressure" or type_bot == "pressure" or "matricPotential" or "potential":
+            if type_bot == "constantPressure" or type_bot == "pressure" or type_bot == "matricPotential" or type_bot == "potential":
                 b = 1
             elif type_bot == "constantFlux" or type_bot == "flux":
                 b = 2
@@ -226,7 +226,10 @@ class RichardsWrapper(SolverWrapper):
                 b = 6
             elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
                 b = 2
-                assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
+                if not value_bot == 0:
+                    print("RichardsWrapper.setBotBC() warning: value_bot must be zero in case of no flux")
+                value_bot = 0.
+                # assert value_bot == 0., "setBotBC: value_bot must be zero in case of no flux"
             else:
                 raise Exception('richards.setBotBC(): Bottom type should be "constantPressure", "constantFlux", "constantFluxCyl", "noFlux", or "freeDrainage", unknown bottom type {}'.format(type_bot))
             type_bot = b
