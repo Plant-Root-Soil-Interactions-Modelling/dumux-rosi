@@ -232,7 +232,7 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
         print("choose type, 1 = Richards, 2 = RichardsNCSP")
 
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, periodic = False)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
+    s.createGrid(min_b, max_b, cell_number, periodic = True)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
 
     # Initial conditions for fertilization
     if type == 2:  # solute IC
@@ -278,9 +278,9 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # # IC
-    # h = np.load("data/initial_potential.npy")
+    h = np.load("data/initial_potential.npy")
     # s.setInitialConditionHead(h)  # cm
-    s.setHomogeneousIC(-1000)
+    # s.setHomogeneousIC(-1000)
 
     if type == 2:
         c = np.load("data/initial_concentration.npy")  # kg/m3
