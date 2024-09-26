@@ -4,18 +4,17 @@ Single root scenario: Soil depletion due to sinusoidal transpiration
 coupled to cylindrical rhizosphere models using 1d axi-symetric richards equation (DUMUX solver)
 """
 
-import sys; sys.path.append("../../../modules/"); sys.path.append("../../../../../CPlantBox/");  sys.path.append("../../../../../CPlantBox/src/python_modules")
-sys.path.append("../../../../build-cmake/cpp/python_binding/"); sys.path.append("../../../modules/fv/");
-sys.path.append("../"); sys.path.append("../scenarios/");
+import sys; sys.path.append("../../../../CPlantBox");  sys.path.append("../../../../CPlantBox/src")
+sys.path.append("../../modules"); sys.path.append("../../../build-cmake/cpp/python_binding/");
 
 import plantbox as pb  # CPlantBox
 from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
-from xylem_flux import *  # root system Python hybrid solver
+from functional.xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *  # Helper class for cylindrical rhizosphere models
 
-import vtk_plot as vp
-import van_genuchten as vg
+import visualisation.vtk_plot as vp
+import functional.van_genuchten as vg
 import aggregated_rs as agg
 
 import matplotlib.pyplot as plt

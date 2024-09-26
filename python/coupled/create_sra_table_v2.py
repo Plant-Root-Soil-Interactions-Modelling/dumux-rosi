@@ -40,7 +40,8 @@ hydrus_clay = [0.068, 0.38, 0.008, 1.09, 4.8]
 hydrus_sand = [0.045, 0.43, 0.145, 2.68, 712.8]
 hydrus_sandyloam = [0.065, 0.41, 0.075, 1.89, 106.1]
 
-filename = "table_loam" 
+soil = hydrus_sandyloam 
+filename = "table_hydrus_sandyloam" 
 
 # # for single root comparison
 # alpha = 0.0383  # (cm-1) soil
@@ -50,7 +51,7 @@ filename = "table_loam"
 
 # soil = [0.08, 0.43, 0.018, 1.8, 28.46]  # standard loam
 # soil = [0.08, 0.43, 0.04, 1.6, 50]  # c12 loam
-soil = loam 
+
 
 sp = vg.Parameters(soil)
 vg.create_mfp_lookup(sp, -1.e5, 1000)  # creates the matrix flux potential look up table

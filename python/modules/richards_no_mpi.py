@@ -75,11 +75,17 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         dics = self.base.getAllNeumann(eqIdx)
-        flat_dic = {}
-        for d in dics:
-            flat_dic.update(d)
-        for key, value in flat_dic:
-            flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        # for 1D
+        for key, value in dics.items():
+            dics[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
+        return dics
+    
+            
+        # flat_dic = {}
+        # for d in dics:
+        #     flat_dic.update(d)
+        # for key, value in flat_dic:
+        #     flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         return flat_dic
 
     def getNetFlux(self, eqIdx=0):
