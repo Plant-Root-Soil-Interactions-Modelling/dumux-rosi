@@ -142,6 +142,8 @@ def make_list():
 
 if __name__ == "__main__":
 
+    # good luck
+
     sim_time = 14.5  # days
 
     if rank == 0:
