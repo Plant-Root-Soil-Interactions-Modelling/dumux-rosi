@@ -248,7 +248,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('plant', type = str, help = 'soybean or maize or springbarley')
-    parser.add_argument('dim', type = str, help = '1D or 3D')
+    parser.add_argument('dim', type = str, help = '1D, 2D or 3D')
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
@@ -258,13 +258,9 @@ if __name__ == "__main__":
     name = "par_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
     print()
     print(name, "\n")
-    sys.stdout.flush()
 
-    initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
+    initial = -200  # cm
     sim_time = 14.5
-
-    print("setting scenario")
-    sys.stdout.flush()
 
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
@@ -274,6 +270,7 @@ if __name__ == "__main__":
         min_b, max_b, cell_number = springbarley_(args.dim)
     elif args.plant == "soybean":
         min_b, max_b, cell_number = soybean_(args.dim)
+    
     r_par, _ = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, args.outer_method)
     if args.dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
@@ -281,14 +278,9 @@ if __name__ == "__main__":
         picker = lambda x, y, z: s.pick([x, y, z])
     r_par.rs.setSoilGrid(picker)
 
-    print("set_scenario done.")
-    sys.stdout.flush()
-
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par_(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, args.outer_method)
 
     # """ write """
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
-
-    sys.stdout.flush()
 #

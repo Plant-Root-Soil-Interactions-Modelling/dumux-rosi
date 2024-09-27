@@ -201,11 +201,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('plant', type = str, help = 'soybean or maize or springbarley')
-    parser.add_argument('dim', type = str, help = '1D or 3D')
+    parser.add_argument('dim', type = str, help = '1D, 2D or 3D')
     parser.add_argument('soil', type = str, help = 'soil type (hydrus_loam, hydrus_clay, hydrus_sand or hydrus_sandyloam)')
     parser.add_argument('outer_method', type = str, help = 'how to determine outer radius (voronoi, length, surface, volume)')
 
-    # args = parser.parse_args(['springbarley', "1D", "hydrus_sandyloam", "voronoi"])
+    # args = parser.parse_args(['springbarley', "1D", "hydrus_loam", "length"])
     args = parser.parse_args()
 
     name = "sra_" + args.plant + "_" + args.dim + "_" + args.soil + "_" + args.outer_method
@@ -222,33 +222,3 @@ if __name__ == "__main__":
     """ write """
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
-
-    # """ plot results """
-    # plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt), name)
-    #
-    # hx = hx_[-1]
-    # sx = hs_[-1]
-    # ana = pb.SegmentAnalyser(r.rs.mappedSegments())
-    # ana.addData("pressure head", hx)
-    # # vp.plot_roots(ana, "hx")
-    #
-    # ns = len(r.rs.segments)
-    # hs = np.transpose(np.array([[sx[mapping[j]] for j in range(0, ns)]]))
-    # # print("hx", hx.shape)
-    # # print("sx", sx.shape)
-    # # print("hs", hs.shape)
-    # # print(len(r.rs.subTypes))
-    # # print(len(r.rs.organTypes))
-    # # print(len(r.rs.nodeCTs))
-    #
-    # ana.addConductivities(r, rs_age)
-    # ana.addFluxes(r, hx, hs, rs_age)  # adds "axial_flux", "radial_flux"
-    # if args.plant == "maize":
-    #     min_b, max_b, cell_number = maize_(args.dim)
-    # elif args.plant == "soybean":
-    #     min_b, max_b, cell_number = soybean_(args.dim)
-    #
-    # # print(hx.shape)
-    # vp.plot_roots_and_soil(ana, "radial_flux", None, s, True, min_b, max_b, cell_number)
-    # # vp.plot_roots_and_soil(ana, "axial_flux", None, s, True, min_b, max_b, cell_number)  # NOT WORKING .... (?)
-    # vp.plot_roots_and_soil(ana, "pressure head", None, s, True, min_b, max_b, cell_number)
