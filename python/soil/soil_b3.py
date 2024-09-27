@@ -21,13 +21,14 @@ also works parallel with mpiexec
 def solve(soil, simtimes):
     s = RichardsWrapper(RichardsSP())
     s.initialize()
-    s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [100., 100.]])  #  [cm/day] atmospheric is with surface run-off
+    s.setTopBC("atmospheric", 0.5, [[-1., 1.e10], [100., 100.]])  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")
     N = 199
     s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, N])  # [cm] N
     s.setHomogeneousIC(-400.)  # cm pressure head
     s.setVGParameters([soil])
     s.initializeProblem()
+    s.setCriticalPressure(-15000)
 
     dt_ = np.diff(simtimes)
     s.ddt = 1.e-5  # initial dumux time step [days]

@@ -280,7 +280,7 @@ public:
 					if (prec < 0.) { // precipitation
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
-						std::cout << "in: " << prec << ", " << imax << "\n" << std::flush;
+						// std::cout << "in: " << prec << ", " << imax << "\n" << std::flush;
 					} else { // evaporation
 						// std::cout << "out" << ", at " << h << " cm \n";
 					    Scalar p2 = toPa_(-10000);
