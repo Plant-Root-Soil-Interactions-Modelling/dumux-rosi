@@ -134,8 +134,8 @@ PYBIND11_MODULE(rosi_richards, m) {
 	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPSSORCGIstlLinearSolver>(m, "BaseRichardsSPSSORC");
     init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPSSORCGIstlLinearSolver>(m, "RichardsSPSSORC");
 	
-	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "BaseRichardsSPILURes");
-    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "RichardsSPILURes");
+//	init_solverbase<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "BaseRichardsSPILURes");
+//    init_richards<RichardsSPProblem, RichardsSPAssembler, RichardsSPILURestartedGMResIstlLinearSolver>(m, "RichardsSPILURes");
     
 //    init_solverbase<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "BaseRichardsUG");
 //    init_richards<RichardsUGProblem, RichardsUGAssembler, RichardsUGLinearSolver>(m, "RichardsUG");

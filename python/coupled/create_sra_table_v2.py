@@ -83,4 +83,4 @@ for i, rx in enumerate(rx_):
                 interface[i, j, k, l] = soil_root_interface(rx, sx, akr, rho, sp)
 
 np.save(filename, interface)  # data
-np.save(filename + "_", [rx_, sx_, akrn_, rho_, soil])  # meta data
+#np.save(filename + "_", [rx_, sx_, akrn_, rho_, soil])  # meta data

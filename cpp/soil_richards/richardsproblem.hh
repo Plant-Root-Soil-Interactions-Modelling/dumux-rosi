@@ -278,9 +278,9 @@ public:
 				case atmospheric: { // atmospheric boundary condition (with surface run-off)
 					Scalar prec = -precipitation_.f(time_);
 					if (prec < 0.) { // precipitation
-						// std::cout << "in" << "\n";
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
+						std::cout << "in: " << prec << ", " << imax << "\n" << std::flush;
 					} else { // evaporation
 						// std::cout << "out" << ", at " << h << " cm \n";
 					    Scalar p2 = toPa_(-10000);

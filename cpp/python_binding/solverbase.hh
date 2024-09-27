@@ -855,7 +855,6 @@ public:
     virtual int pickCell(VectorType pos) {//TODO: do a nonMPI version?
         checkGridInitialized();
         if (periodic) {
-            std::cout << " periodic " << pos << " ->";
             auto b = getGridBounds();
             for (int i = 0; i < 2; i++) { // for x and y, not z
                 double minx = b[i];
@@ -870,7 +869,6 @@ public:
                     pos[i] += minx;
                 }
             }
-            std::cout << pos << "\n";
         }
         auto& bBoxTree = gridGeometry->boundingBoxTree();
         Dune::FieldVector<double, dim> p;
