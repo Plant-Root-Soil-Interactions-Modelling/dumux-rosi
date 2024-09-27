@@ -238,7 +238,7 @@ def run_par(sim_time, method, plant, dim, soil, outer_method):
         picker = lambda x, y, z: s.pick([x, y, z])
     r_par.rs.setSoilGrid(picker)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par_(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)

@@ -22,7 +22,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 
-def get_aggregated_params(r, rs_age, outer_method):
+def get_aggregated_params(r, rs_age):
     """ returns krs, and per layer: suf_, kr_surf_, surf_, l_, a_    
         krs [cm2/day]         root system conductivity 
         suf_ [1]              standard uptake fraction
@@ -60,11 +60,7 @@ def get_aggregated_params(r, rs_age, outer_method):
     surf_ = per.aggregate(surf)
     l_ = per.aggregate(lengths)
     a_ = np.divide(surf_, 2 * np.pi * l_)
-    if outer_method == "voronoi":
-        outer_r = per.get_outer_radii_bounded_voronoi()
-    else:
-        outer_r = per.get_outer_radii(outer_method)
-    outer_r_ = per.average(outer_r)
+
     # print("krs")
     # print(krs)
     # print("\nSUF", suf_.shape)
@@ -81,21 +77,20 @@ def get_aggregated_params(r, rs_age, outer_method):
     # print("\n\n")
     # dd
 
-    return krs, suf_, kr_surf_, surf_, l_, a_, outer_r_
+    return krs, suf_, kr_surf_, surf_, l_, a_
 
 
-def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer_method):
+def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number):
     """  one segment per layer connected by artificial segments"""
 
     r.update(rs_age)  # prepare hydraulic model
 
-    krs, suf_, kr_surf_, surf_, l_, a_, outer_r_ = get_aggregated_params(r, rs_age, outer_method)
+    krs, suf_, kr_surf_, surf_, l_, a_ = get_aggregated_params(r, rs_age)
 
     n = cell_centers.shape[0]
     nodes = [pb.Vector3d(0, 0, 0), pb.Vector3d(0, 0, -0.1), pb.Vector3d(0, 0, -0.2)]  # maximal ns+1 nodes
     segs = []  # maximal ns segments
     radii = [0.1, 0.1]
-    outer_r = [1. , 1.]
     segs.append(pb.Vector2i(0, 1))
     segs.append(pb.Vector2i(1, 2))
 
@@ -107,10 +102,8 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
             nodes.append(pb.Vector3d(x + l_[i], y, z))  # node 2*i+4
             segs.append(pb.Vector2i(2, 2 * c + 3))  # artificial shoot segment
             radii.append(0.)
-            outer_r.append(1.)
             segs.append(pb.Vector2i(2 * c + 3, 2 * c + 4))  # normal segment
             radii.append(a_[i])
-            outer_r.append(outer_r_[i])
             c += 1
 
     rs = pb.MappedSegments(nodes, segs, radii)
@@ -168,7 +161,7 @@ def create_parallel_rs(r, rs_age, cell_centers, min_b, max_b, cell_number, outer
     print("kx_up")
     # vp.plot_roots(pb.SegmentAnalyser(r2.rs), "radius")
 
-    return r2, outer_r
+    return r2
 
 
 if __name__ == "__main__":
