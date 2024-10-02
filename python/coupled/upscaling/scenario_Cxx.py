@@ -231,14 +231,14 @@ def run_par(sim_time, method, plant, dim, soil, outer_method):
         min_b, max_b, cell_number = springbarley_(dim)
     elif plant == "soybean":
         min_b, max_b, cell_number = soybean_(dim)
-    r_par = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number)
+    r_par,_ = par.create_parallel_rs(r, rs_age, s.getCellCenters(), min_b, max_b, cell_number, outer_method)
     if dim == "1D":
         picker = lambda x, y, z: s.pick([0., 0., z])
     else:
         picker = lambda x, y, z: s.pick([x, y, z])
     r_par.rs.setSoilGrid(picker)
 
-    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method)
+    hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par_(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, outer_method)
 
     s.writeDumuxVTK("results/" + name)  # final soil VTU
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
