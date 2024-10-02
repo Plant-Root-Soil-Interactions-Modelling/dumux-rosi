@@ -1,3 +1,0 @@
-results as numpy arrays
-
-
