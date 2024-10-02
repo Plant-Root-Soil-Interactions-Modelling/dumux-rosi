@@ -15,10 +15,11 @@ import matplotlib.pyplot as plt
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)  # 0 = envirotype
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 simtime = 25.5  # between 75-100 days
+print(min_b)
 # cell_number = [76, 4, 200]
 # cell_number = [38, 2, 100]
-# cell_number = [19, 1, 50]
-cell_number = [1, 1, 1]
+cell_number = [1, 1, 200]
+# cell_number = [1, 1, 1]
 
 # soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(0)  # 0 = envirotype
 # xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
@@ -53,8 +54,8 @@ for j in range(0, sn):
 celldata = grid.GetCellData()
 celldata.AddArray(cell_sd)
 
-# outer_radii = peri.get_outer_radii_bounded_voronoi()
-outer_radii = peri.get_outer_radii("length")
+outer_radii = peri.get_outer_radii_bounded_voronoi()
+# outer_radii = peri.get_outer_radii("length")
 
 print("outer_radii", np.min(outer_radii), np.max(outer_radii), "median", np.median(outer_radii), "mean", np.mean(outer_radii), np.std(outer_radii))
 

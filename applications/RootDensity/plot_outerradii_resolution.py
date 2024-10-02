@@ -27,46 +27,19 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 
-def get_outer_radii(rootsystem, type_str, cell_number):
+def get_outer_radii(rootsystem, type_str, dim):
 
-    """ setup """
-    if rootsystem == "soybean":
-        soil_, table_name, min_b, max_b, _, area, Kc = scenario.soybean(0)  # 0 = envirotype
-        xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-        simtime = 42  # 87.5
-    elif rootsystem == "maize":
-        soil_, table_name, min_b, max_b, _, area, Kc = scenario.maize(0)  # 0 = envirotype
-        xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-        simtime = 56  # 95
-    elif rootsystem == "springbarley":
-        soil_, table_name, min_b, max_b, _, area, Kc = scenario.springbarley(0)  # 0 = envirotype
-        xml_name = "data/spring_barley_CF12.xml"  # root growth model parameter file
-        simtime = 49  # 95
-    else:
-        print("get_outer_radii() unknown rootsystem name", rootsystem)
-        raise
+    r, outer_radii, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = scenario.set_scenario(rootsystem, dim, -200, "hydrus_loam", type_str)
 
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)
-    r_ = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
-
-    """ simulation and post processing """
-    r = r_.rs
-    r.initialize(False)
-    r.simulate(simtime, False)
-    peri = PerirhizalPython(r)
-    if type_str == "voronoi":
-        outer_radii = peri.get_outer_radii_bounded_voronoi()
-    else:
-        outer_radii = peri.get_outer_radii(type_str)
-
+    r = r.rs
     seg2cell = np.array(r.getSegmentMapper())  # r.seg2cell as list
 
     ana = pb.SegmentAnalyser(r.mappedSegments())
     ana.addData("outer_r", outer_radii)
     ana.addData("length", ana.getParameter("length"))
     # organic_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -organic]), pb.Vector3d([1e6, 1e6, max_b[2]]))
-    topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, max_b[2]]))
-    subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, min_b[2]]), pb.Vector3d([1e6, 1e6, -topsoil]))
+    topsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -topsoil]), pb.Vector3d([1e6, 1e6, 0.]))
+    subsoil_layer = pb.SDF_Cuboid(pb.Vector3d([-1e6, -1e6, -150.]), pb.Vector3d([1e6, 1e6, -topsoil]))
     # ana0 = pb.SegmentAnalyser(ana)
     # ana0.crop(organic_layer)
     # ana0.pack()
@@ -88,103 +61,94 @@ def get_outer_radii(rootsystem, type_str, cell_number):
     return outer1, outer2, seg2cell, length1, length2
 
 
+fig, axes = plt.subplots(2, 3, figsize = (18, 12))
+
+type_str = "length"
 topsoil = 30  # 10 * 2.54
 subsoil = 150  # 30 * 2.54
 
+""" sring barley """
+plant = "springbarley"
 titles = []
-titles.append("3D - (1cm)$^3$")
-titles.append("3D - (2cm)$^3$")
-titles.append("3D - (4cm)$^3$")
-titles.append("1D - Layer thickness 1 cm ")
-titles.append("1D - Layer thickness 2 cm")
-titles.append("1D - Layer thickness 4 cm")
-
-""" maize """
-cell_numbers = []
-cell_numbers.append([76, 16, 150])
-cell_numbers.append([38, 8, 75])
-cell_numbers.append([19, 4, 38])
-cell_numbers.append([1, 1, 150])
-cell_numbers.append([1, 1, 75])
-cell_numbers.append([1, 1, 38])
-
-for split_type in ["surface"]:  # ["length", "surface", "volume"]:
-    fig, axes = plt.subplots(3, 2, figsize = (20, 18))
-    stats = [["min", "max", "median", "mean", "std"]]
-    for i, cell_number in enumerate(cell_numbers):
-        outer1, outer2, seg2cell, length1, length2 = get_outer_radii("maize", split_type, cell_number)
-
-        # print("outer_r.shape", outer_r.shape)
-        # print("seg2cell.shape", seg2cell.shape)
-        # print("cell_ids", np.min(seg2cell), np.max(seg2cell))
-        # layer0 = outer_r[seg2cell == 140]
-        # print("layer0", len(layer0))
-        # print(layer0)
-
-        outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
-        outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
-        ax = axes[i % 3, i // 3]
-        # ax.hist(outer_r, bins = 40, rwidth = 0.9)
-        ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
-        # ax.set_xlim(0, 4)
-        ax.set_ylim(0, 2500)
-        ax.set_title(titles[i])
-        stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
-                      np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
-
-        if i < 3:
-            ax.set_ylabel("Root length [cm] ")
-        if i == 2 or i == 5:
-            ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
-
-    print(stats[0])
-    for i, cell_number in enumerate(cell_numbers):
-        print("Summary", cell_number, ":")
-        print(stats[i + 1])
-
-    plt.tight_layout()
-    plt.savefig('res_maize_' + split_type + '.png')
-    plt.show()
-
-# """ spring barley """
+titles.append("Spring barley 3D grid [1 cm]$^3$")
+titles.append("Spring barley 1D grid [1 cm]$^1$")
 cell_numbers = []
 cell_numbers.append([13, 3, 150])
-cell_numbers.append([7, 2, 75])
-cell_numbers.append([3, 1, 38])
 cell_numbers.append([1, 1, 150])
-cell_numbers.append([1, 1, 75])
-cell_numbers.append([1, 1, 38])
+dim_ = ["3D", "1D"]
 
-for split_type in ["surface"]:  # ["length", "surface", "volume"]:
-    fig, axes = plt.subplots(3, 2, figsize = (20, 18))
-    stats = [["min", "max", "median", "mean", "std"]]
-    for i, cell_number in enumerate(cell_numbers):
-        outer1, outer2, seg2cell, length1, length2 = get_outer_radii("springbarley", split_type, cell_number)
-        # outer_r = np.minimum(outer_r, 2)
-        outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
-        outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
-        ax = axes[i % 3, i // 3]
-        # ax.hist(outer_r, bins = 40, rwidth = 0.9)
-        # ax.hist([outer1, outer2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
-        ax.hist([outer1, outer2], weights = [length1, length2], bins = 40, rwidth = 0.9, label = ["topsoil", "subsoil"], stacked = True)
-        # ax.set_xlim(0, 2)
-        ax.set_ylim(0, 170)
-        ax.set_title(titles[i])
-        stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
-                      np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+stats = []
+for i, dim in enumerate(dim_):
 
-        if i < 3:
-            ax.set_ylabel("Root length [cm] ")
-        if i == 2 or i == 5:
-            ax.set_xlabel("Perirhizal outer radius [cm], 40 bins")
+    outer1, outer2, seg2cell, length1, length2 = get_outer_radii(plant, type_str, dim)
+    stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
+                  np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+    outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+    outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
 
-    print(stats[0])
-    for i, cell_number in enumerate(cell_numbers):
-        print("Summary", cell_number, ":")
-        print(stats[i + 1])
+    if i == 0:
+        ax = axes[0, 0]
+    else:
+        ax = axes[0, 2]
+    # ax.hist(outer_r, bins = 40, rwidth = 0.9)
+    ax.hist([outer1, outer2], weights = [length1, length2], bins = 20, rwidth = 0.9, label = ["Top soil", "Sub soil"], stacked = True)
+    ax.set_ylim(0, 440)
+    ax.set_xlim(0., 2.)
+    ax.set_title(titles[i])
 
-    plt.tight_layout()
-    plt.savefig('res_springbarley_' + split_type + '.png')
-    plt.show()
+    if i == 0:
+        ax.set_ylabel("Root length [cm] ")
+
+stats = np.array(stats)
+for i, cell_number in enumerate(cell_numbers):
+    print("\nSummary Spring Barley (min, max, median, mean, std):", cell_number)
+    print("top soil", stats[i,:5])
+    print("sub soil", stats[i, 5:])
+
+axes[0, 1].axis('off')
+ax.legend()
+
+""" maize """
+plant = "maize"
+titles = []
+titles.append("Maize 3D grid [1 cm]$^3$")
+titles.append("Maize 2D grid [1 cm]$^2$")
+titles.append("Maize 1D grid [1 cm]$^1$")
+cell_numbers = []
+cell_numbers.append([76, 16, 150])
+cell_numbers.append([76, 1, 150])
+cell_numbers.append([1, 1, 150])
+dim_ = ["3D", "2D", "1D"]
+
+stats = []
+for i, dim in enumerate(dim_):
+
+    outer1, outer2, seg2cell, length1, length2 = get_outer_radii(plant, type_str, dim)
+    stats.append([np.min(outer1), np.max(outer1), np.median(outer1), np.mean(outer1), np.std(outer1),
+                  np.min(outer2), np.max(outer2), np.median(outer2), np.mean(outer2), np.std(outer2)])
+    outer1, length1 = PerirhizalPython.to_range_(None, outer1, length1, 0., 2.)
+    outer2, length2 = PerirhizalPython.to_range_(None, outer2, length2, 0., 2.)
+
+    ax = axes[1, i]
+    # ax.hist(outer_r, bins = 40, rwidth = 0.9)
+    ax.hist([outer1, outer2], weights = [length1, length2], bins = 20, rwidth = 0.9, label = ["Top soil", "Sub soil"], stacked = True)
+    ax.set_ylim(0, 6250)
+    # ax.set_xlim(0, 4)
+
+    ax.set_title(titles[i])
+
+    if i == 0:
+        ax.set_ylabel("Root length [cm] ")
+    ax.set_xlabel("Perirhizal outer radius [cm], 20 bins")
+
+stats = np.array(stats)
+for i, cell_number in enumerate(cell_numbers):
+    print("\nSummary Maize (min, max, median, mean, std):", cell_number)
+    print("top soil", stats[i,:5])
+    print("sub soil", stats[i, 5:])
+
+plt.tight_layout()
+plt.savefig('outer_radii_grids_' + type_str + '.png')
+plt.show()
 
 print("fin")
