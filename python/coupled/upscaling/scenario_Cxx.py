@@ -263,9 +263,6 @@ if __name__ == "__main__":
     initial = -200  # cm     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal2(t, dt))
     sim_time = 14.5
 
-    print("setting scenario")
-    sys.stdout.flush()
-
     r, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping = set_scenario(args.plant, args.dim, initial, args.soil, args.outer_method)
 
     if args.plant == "maize":
@@ -281,14 +278,10 @@ if __name__ == "__main__":
         picker = lambda x, y, z: s.pick([x, y, z])
     r_par.rs.setSoilGrid(picker)
 
-    print("set_scenario done.")
-    sys.stdout.flush()
-
     hx_, hsr_, sink_, x_, y_, z_, hs_, dt, wall_time = simulate_par_(sim_time, r_par, rho_, rs_age, trans, wilting_point, soil, s, sra_table_lookup, mapping, args.outer_method)
 
     # """ write """
     s.writeDumuxVTK("results/" + name)
     write_files(name, hx_, hsr_, sink_, x_, y_, z_, hs_, wall_time)
 
-    sys.stdout.flush()
 #
