@@ -15,7 +15,6 @@ import numpy as np
 import os
 
 import scenario_Axx as sra
-import scenario_sra_old as sra_old
 import scenario_Bxx as agg
 import scenario_Cxx as par
 
@@ -31,8 +30,6 @@ def start_jobs(jobs):
 
         if method == "sra":
             py_name = "scenario_Axx.py"
-        elif method == "sraOld":
-            py_name = "scenario_sra_old.py"
         elif method == "agg":
             py_name = "scenario_Bxx.py"
         elif method == "par":
@@ -88,8 +85,6 @@ def run_jobs(jobs, sim_time):
 
         if method == "sra":
             sra.run_sra(sim_time, *jobs[i])
-        elif method == "sraOld":
-            sra_old.run_sraOld(sim_time, *jobs[i])
         elif method == "agg":
             agg.run_agg(sim_time, *jobs[i])
         elif method == "par":
@@ -108,7 +103,7 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ["par"]  # 'sra', sraOld, agg, par
+    method = ["sra"]  # 'sra', agg, par
     plant = ['springbarley']  # 'springbarley', 'soybean', 'maize'
     dim = ["1D"]  # "1D", "2D"
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
