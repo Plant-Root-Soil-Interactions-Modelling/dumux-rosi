@@ -137,6 +137,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    run_jobs(jobs, sim_time)
+    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    # run_jobs(jobs, sim_time)
 
