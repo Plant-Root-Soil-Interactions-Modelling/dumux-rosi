@@ -4,9 +4,9 @@ Sink plot (noon and midnight), of a 1d soil
 import matplotlib.pyplot as plt
 import numpy as np
 
-SMALL_SIZE = 16
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 16
+SMALL_SIZE = 16 + 4
+MEDIUM_SIZE = 16 + 4
+BIGGER_SIZE = 16 + 4
 plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
 plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
@@ -18,12 +18,13 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times = [0., 2., 4., 6, 13], ls = [ "-", ":", "-.", "-", ":", "-."]):
 
+    soil_names = { "hydrus_loam":"Loam", "hydrus_clay":"Clay", "hydrus_sandyloam": "Sandy loam"}
     dim = ["1D"] * 3  # DO NOT CHANGE TO 3D, use script plot_sink3d
 
     # check with scenario_setup
     l = 150  # cm soil depth
     dx = 1  # cm resolution
-    ylim = 120
+    ylim = 110
     days = 14.5
 
     fnames = []
@@ -50,10 +51,10 @@ def plot_sink1d(ax, method, plant, soil, outer_method, label_ = "3D", plot_times
     data = [np.load(n_ + ".npy")  for n_ in fnames]
 
     """ sink plot """
-    ax[0].set_title(soil[0])
-    ax[0].set_ylabel("depth [cm]")
-    ax[0].set_xlabel("sink term at noon [1/day]")
-    ax[1].set_xlabel("sink term at night [1/day]")
+    ax[0].set_title(soil_names[soil[0]])
+    ax[0].set_ylabel("Depth [cm]")
+    ax[0].set_xlabel("Sink term at noon [1/day]")
+    ax[1].set_xlabel("Sink term at night [1/day]")
     ax[0].plot([0, 0], [-l, 0.], "k:")
     ax[1].plot([0, 0], [-l, 0.], "k:")
 
@@ -127,7 +128,7 @@ if __name__ == "__main__":
 
     """ maize """
     fig, ax = plt.subplots(2, 1, figsize = (10, 18))
-    method = ["sra"] * 3
+    method = ["sra"] * 3  # Axx
     plant = ["maize"] * 3
     soil = ["hydrus_sandyloam"] * 3
     outer_method = ["voronoi", "length", "surface"]  # , "voronoi"]

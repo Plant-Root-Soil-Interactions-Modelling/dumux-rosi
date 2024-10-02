@@ -100,44 +100,44 @@ if __name__ == "__main__":
     # Maize
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    method = ["sra"] * 3
+    method = ["sra"] * 3  # Axx
     plant = ["maize"] * 3
     dim = ["3D"] * 3
     soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
     outer_method = ["voronoi"] * 3
     plot_potential(ax, method, plant, dim, soil, outer_method)
-    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(3D ref)")
-    dim = ["2D"] * 3
-    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(2D ref)")
+    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAA)")
     dim = ["1D"] * 3
-    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(1D ref)")
+    cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(AAB 1D)")
+    dim = ["2D"] * 3
+    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(AAB 2D)")
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
-    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D",
-          100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
-    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D",
-          100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 2D")
+    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
+    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D")
+    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 1D")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D\n")
     plt.savefig('transpiration_AAx_maize.png')
 
-    # # Springbarley
-    # fig, ax = plt.subplots(3, 1, figsize = (12, 14))
-    # ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
-    # method = ["sra"] * 3
-    # plant = ["springbarley"] * 3
-    # dim = ["3D"] * 3
-    # soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
-    # outer_method = ["voronoi"] * 3
-    # plot_potential(ax, method, plant, dim, soil, outer_method)
-    # cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(3D ref)")
+    # Springbarley
+    fig, ax = plt.subplots(3, 1, figsize = (12, 14))
+    ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
+    method = ["sra"] * 3  # Axx
+    plant = ["springbarley"] * 3
+    dim = ["3D"] * 3
+    soil = ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]
+    outer_method = ["voronoi"] * 3
+    plot_potential(ax, method, plant, dim, soil, outer_method)
+    cup_ref, cupW_ref = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "", "(AAA)")
     # dim = ["2D"] * 3
     # cup_, cupW_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(2D ref)")
-    # dim = ["1D"] * 3
-    # cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(1D ref)")
-    # print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
-    # print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D",
-    #       100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
-    # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D",
-    #       100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 2D")
-    # plt.savefig('transpiration_AAx_springbarley.png')
+    dim = ["1D"] * 3
+    cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, "--", "(AAB 1D)")
+    print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
+    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
+    # print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D")
+    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 1D")
+    # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D")
+    plt.savefig('transpiration_AAx_springbarley.png')
 
     plt.tight_layout()
     plt.show()

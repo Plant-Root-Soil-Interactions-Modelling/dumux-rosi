@@ -67,7 +67,7 @@ def maize_(dim:str):
     if dim == "1D":
         cell_number = np.array([1, 1, 150])
     elif dim == "2D":
-        cell_number = np.array([38, 1, 150])
+        cell_number = np.array([76, 1, 150])
     else:
         cell_number = np.array([76, 16, 150])
     return min_b, max_b, cell_number
@@ -267,13 +267,10 @@ def soil_root_interface_table(rx, sx, inner_kr_, rho_, f):
 def open_sra_lookup(filename):
     """ opens the look from a file """
     sra_table = np.load(filename + ".npy")
-    # x = np.load(filename + "_.npy", allow_pickle = True)
-    # kx_ = x[0]
-    # sx_ = x[1]
-    # inner_ = x[2]
-    # outer_ = x[3]
-    # return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)  # default is 'linear' (method = 'nearest')
+    print(filename)
     
+    # x = np.load(filename + "_.npy", allow_pickle = True)
+ 
     rxn = 150
     rx_ = -np.logspace(np.log10(1.), np.log10(16000), rxn)
     rx_ = rx_ + np.ones((rxn,))
@@ -288,10 +285,13 @@ def open_sra_lookup(filename):
     akrn_ = np.logspace(np.log10(1.e-7), np.log10(1.e-4), akrn)
     
     rhon = 30
-    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)
-
-    return RegularGridInterpolator((rx_, sx_, akrn_, rho_), sra_table)  # default is 'linear' (method = 'nearest')
+    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)   
     
+    kx_ = rx_
+    sx_ = sx_
+    inner_ = akrn_
+    outer_ = rho_
+    return RegularGridInterpolator((kx_, sx_, inner_, outer_), sra_table)  # default is 'linear' (method = 'nearest')
 
 
 def write_files(file_name, hx, hsr, sink, times, trans, trans2, hs, wall_time = 0.):
