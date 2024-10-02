@@ -1,7 +1,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSPnum  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 from analytic_b3 import *  # plots the analytical solutions to ax1, ax2, ax3
 
@@ -19,7 +19,7 @@ also works parallel with mpiexec
 
 
 def solve(soil, simtimes):
-    s = RichardsWrapper(RichardsSP())
+    s = RichardsWrapper(RichardsSPnum())
     s.initialize()
     s.setTopBC("atmospheric", 0.5, [[-1., 1.e10], [100., 100.]])  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")
