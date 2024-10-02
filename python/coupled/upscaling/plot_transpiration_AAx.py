@@ -1,4 +1,6 @@
 """
+    Figure 10a, Figure 10b
+
     transpiration plot (one column, number of rows as number of filenames)
     
     modify __main__ to select simualtion result    

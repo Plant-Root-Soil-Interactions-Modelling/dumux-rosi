@@ -105,7 +105,7 @@ def make_list():
     # all springbarley
     method = ["sra"]  # 'sra', agg, par
     plant = ['springbarley']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D"]  # "1D", "2D"
+    dim = ["1D", "2D", "3D"]  # 
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
     outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
