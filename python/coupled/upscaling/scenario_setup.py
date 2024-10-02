@@ -10,7 +10,7 @@ from functional.Perirhizal import PerirhizalPython
 from functional.PlantHydraulicParameters import PlantHydraulicParameters  # Doussan solver
 from functional.PlantHydraulicModel import PlantHydraulicModel  # Doussan solver
 
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
+from rosi_richards import RichardsSPnum  # C++ part (Dumux binding)
 from richards import RichardsWrapper  # Python part
 
 from conductivities import *
@@ -128,7 +128,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
     sra_table_lookup = open_sra_lookup("../" + table_name)
-    s = RichardsWrapper(RichardsSP())
+    s = RichardsWrapper(RichardsSPnum())
     s.initialize()
     if dim == "1D":
         s.createGrid(min_b, max_b, cell_number, periodic = False)

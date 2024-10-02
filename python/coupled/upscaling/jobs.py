@@ -103,10 +103,10 @@ def make_list():
     jobs = []
 
     # all springbarley
-    method = ["agg"]  # 'sra', agg, par
+    method = ["sra"]  # 'sra', agg, par
     plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
-    dim = ["1D", "2D", "3D"]  # 
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
+    dim = ["3D"]  # 
+    soil = ['hydrus_clay']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
     outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
     # method = ['agg']  # 'sra', sraOld, agg
@@ -137,6 +137,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 

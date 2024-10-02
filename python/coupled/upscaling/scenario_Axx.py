@@ -102,8 +102,8 @@ def simulate_sra(sim_time, r, rho_, rs_age, trans, wilting_point, soil, s, sra_t
                 rx[j, 0] -= nodes[j + 1][2]
 
             rx = np.maximum(rx, np.ones(rx.shape) * (-15999))
-            # rx = np.minimum(rx, np.ones(rho_.shape) * 0.)
-            # hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
+            rx = np.minimum(rx, np.ones(rho_.shape) * 0.)
+            hs = np.maximum(hs, np.ones(hs.shape) * (-15999))
 
             rsx = soil_root_interface_table(rx, hs, inner_kr_, rho_, sra_table_lookup)
             for j in range(0, ns):  # from matric to total
