@@ -32,8 +32,7 @@ def sinusoidal2(t, dt):
 
 def soil_vg_(name:str):
     """ 
-    Van Genuchten parameter for soil from Hydrus1D, 
-    called by maize() and soybean() 
+    Van Genuchten parameter for soil from Hydrus1D
     
     4D look up tables are created with thes script create_sra_table_v2
     """
@@ -70,17 +69,6 @@ def maize_(dim:str):
         cell_number = np.array([76, 1, 150])
     else:
         cell_number = np.array([76, 16, 150])
-    return min_b, max_b, cell_number
-
-
-def soybean_(dim:str):
-    """ parameters for soybean simulation """
-    min_b = np.array([-38, -1.5, -150.])
-    max_b = np.array([38, 1.5, 0.])
-    if dim == "1D":
-        cell_number = np.array([1, 1, 150])
-    else:
-        cell_number = np.array([76, 3, 150])
     return min_b, max_b, cell_number
 
 
@@ -164,16 +152,15 @@ def set_scenario(plant, dim, initial, soil, outer_method):
             p.a = 2. * p.a  # at least ..... TODO parameterisation
 
     if plant == "springbarley":
-        print("springbarley")
         params = rs.getRootRandomParameter()
         params[2].lmax *= 2
         params[1].theta = 1.31  # why is the tap root not always 0?
 
-    #  = rs.getRootSystemParameter()
-    # seed_param.seedPos = pb.Vector3d(0., 0., -3.)  #################################################################################
+    seed_param = rs.getRootSystemParameter()
+    seed_param.seedPos = pb.Vector3d(0., 0., -3.)
 
-    # seed = rs.getRootSystemParameter()  # SeedRandomParameter
-    # seed.firstSB = 1.e6  #################################################################################
+    seed = rs.getRootSystemParameter()  # SeedRandomParameter
+    seed.firstSB = 1.e6
 
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
     # rs.initializeDB(4, 5)
@@ -192,9 +179,6 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     if plant == "maize":
         # const_conductivities(r)
         maize_conductivities(params, 1., 1.)
-    elif plant == "soybean":
-        # const_conductivities(r)
-        lupine_conductivities(params, 1., 1.)
     elif plant == "springbarley":
         # const_conductivities(r)
         springbarley_conductivities(params)
@@ -268,25 +252,25 @@ def open_sra_lookup(filename):
     """ opens the look from a file """
     sra_table = np.load(filename + ".npy")
     print(filename)
-    
+
     # x = np.load(filename + "_.npy", allow_pickle = True)
- 
+
     rxn = 150
     rx_ = -np.logspace(np.log10(1.), np.log10(16000), rxn)
     rx_ = rx_ + np.ones((rxn,))
     rx_ = rx_[::-1]
-    
+
     sxn = 150
     sx_ = -np.logspace(np.log10(1.), np.log10(16000), sxn)
     sx_ = sx_ + np.ones((sxn,))
     sx_ = sx_[::-1]
-    
+
     akrn = 100
     akrn_ = np.logspace(np.log10(1.e-7), np.log10(1.e-4), akrn)
-    
+
     rhon = 30
-    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)   
-    
+    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)
+
     kx_ = rx_
     sx_ = sx_
     inner_ = akrn_
