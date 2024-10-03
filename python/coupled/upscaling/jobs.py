@@ -104,16 +104,16 @@ def make_list():
 
     # all springbarley
     method = ["sra"]  # 'sra', agg, par
-    plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
+    plant = ['maize']  # 'springbarley', 'soybean', 'maize'
     dim = ["3D"]  # 
     soil = ['hydrus_clay']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
     outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
-    # method = ['agg']  # 'sra', sraOld, agg
+    # method = ['par']  # 'sra', agg, par
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
-    # dim = ["1D", "3D"]  # 1D, 3D
-    # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # , 'hydrus_clay'
-    # outer_radius = ['surface']
+    # dim = ["1D"]  # 1D, 2D, 3D
+    # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  
+    # outer_radius = ['length', 'surface', 'volume', 'voronoi']
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
     print()
@@ -137,6 +137,6 @@ if __name__ == "__main__":
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 
