@@ -1,4 +1,6 @@
-""" figures for the icons (2D)"""
+""" 
+    Figure 1 - subplots for mid column
+"""
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
 sys.path.append("../../../CPlantBox"); sys.path.append("../../../CPlantBox/src")
 
