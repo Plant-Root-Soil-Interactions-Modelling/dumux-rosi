@@ -127,7 +127,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     """ initialize macroscopic soil model """
     soil = vg.Parameters(soil_)
     vg.create_mfp_lookup(soil, -1.e5, 1000)
-    sra_table_lookup = open_sra_lookup("../../python/coupled/" + table_name)
+    sra_table_lookup = None  # open_sra_lookup("../../python/coupled/" + table_name)
     s = RichardsWrapper(RichardsSP())
     s.initialize()
     if dim == "1D":
@@ -271,18 +271,18 @@ def open_sra_lookup(filename):
     rx_ = -np.logspace(np.log10(1.), np.log10(16000), rxn)
     rx_ = rx_ + np.ones((rxn,))
     rx_ = rx_[::-1]
-    
+
     sxn = 150
     sx_ = -np.logspace(np.log10(1.), np.log10(16000), sxn)
     sx_ = sx_ + np.ones((sxn,))
     sx_ = sx_[::-1]
-    
+
     akrn = 100
     akrn_ = np.logspace(np.log10(1.e-7), np.log10(1.e-4), akrn)
-    
+
     rhon = 30
-    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)   
-    
+    rho_ = np.logspace(np.log10(1.), np.log10(200.), rhon)
+
     kx_ = rx_
     sx_ = sx_
     inner_ = akrn_

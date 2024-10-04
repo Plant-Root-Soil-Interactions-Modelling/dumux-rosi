@@ -102,12 +102,17 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
-    # all springbarley
-    method = ["sra", "agg", "par"]  # 'sra', agg, par
-    plant = ['maize', 'springbarley']  # , 'soybean', 'maize'
-    dim = ["1D"]  #
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
-    outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
+    # method = ["sra", "agg", "par"]  # 'sra', agg, par
+    # plant = ['maize', 'springbarley']  # , 'soybean', 'maize'
+    # dim = ["1D"]  #
+    # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
+    # outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
+
+    method = ["sra"]
+    plant = ['maize', 'springbarley']
+    dim = ["3D"]
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    outer_radius = ['voronoi']
 
     # method = ['par']  # 'sra', agg, par
     # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'

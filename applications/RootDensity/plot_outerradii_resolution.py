@@ -1,4 +1,7 @@
 """ 
+    Figure 7            L69: type_str = "voronoi" (takes a long time)
+    Figure 8            L69: type_str = "length" 
+
     plots histograms of the outer radius of the perirhizal zone for various discretisations
 """
 import sys; sys.path.append("../../build-cmake/cpp/python_binding/"); sys.path.append("../../python/modules/");
