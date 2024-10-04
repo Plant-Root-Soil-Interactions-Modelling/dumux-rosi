@@ -102,29 +102,33 @@ def run_jobs(jobs, sim_time):
 def make_list():
     jobs = []
 
+    # # all 1D options
     # method = ["sra", "agg", "par"]  # 'sra', agg, par
     # plant = ['maize', 'springbarley']  # , 'soybean', 'maize'
     # dim = ["1D"]  #
     # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
     # outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
-    method = ["sra"]
-    plant = ['maize', 'springbarley']
-    dim = ["3D"]
-    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    outer_radius = ['voronoi']
-
-    # method = ['par']  # 'sra', agg, par
-    # plant = ['maize', 'springbarley']  # 'springbarley', 'soybean', 'maize'
-    # dim = ["1D"]  # 1D, 2D, 3D
-    # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    # outer_radius = ['length', 'surface', 'volume', 'voronoi']
-
+    # # all 2D options
     # method = ["agg", "par"]
     # plant = ['maize']  # 'springbarley', 'soybean', 'maize'
     # dim = ["2D"]
     # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
     # outer_radius = ['length', 'surface', 'volume', 'voronoi']
+
+    # # most important 3D
+    # method = ["sra"]
+    # plant = ['maize', 'springbarley']
+    # dim = ["3D"]
+    # soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    # outer_radius = ['voronoi']
+
+    # # AAB
+    method = ["sra"]
+    plant = ['maize', 'springbarley']
+    dim = ["1D"]
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']  # 'hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam'
+    outer_radius = [ 'length', 'surface', 'volume', 'voronoi']  # 'length', 'surface', 'volume', 'voronoi'
 
     print("Creating", len(method) * len(plant) * len(dim) * len(soil) * len(outer_radius), "simulations")
     print()

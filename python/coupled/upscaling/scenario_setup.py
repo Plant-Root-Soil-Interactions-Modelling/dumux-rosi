@@ -160,8 +160,8 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     # seed_param.seedPos = pb.Vector3d(0., 0., -3.)
 
     rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-    rs.initializeDB(4, 5)
-    # rs.initialize()
+    # rs.initializeDB(4, 5)
+    rs.initialize()
     print("simulating root system")
     sys.stdout.flush()
     rs.simulate(rs_age, True)
