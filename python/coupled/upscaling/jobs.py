@@ -142,16 +142,36 @@ def make_list():
     return jobs
 
 
+def make_hess_jobs():
+    """ simulations for the figures """
+    jobs = []
+    plant = ['maize', 'springbarley']
+    soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    # AAA for both plants, all soils
+    for p in plant:
+        for s in soil:
+            jobs.append(["sra", p, "3D", s, 'voronoi'])
+    # AAB for both plants (1D), all soils
+    for p in plant:
+        for s in soil:
+            jobs.append(["sra", p, "1D", s, 'voronoi'])
+    # AAB for maize (2D), all soils
+    for s in soil:
+        jobs.append(["sra", "maize", "1D", s, 'voronoi'])
+
+    return jobs
+
+
 if __name__ == "__main__":
 
     sim_time = 14.5  # days
 
     if rank == 0:
-        jobs = make_list()
+        jobs = make_hess_jobs()
     else:
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
-    # run_jobs(jobs, sim_time)
+    # start_jobs(jobs)  # sim_time is hardcoded in the __main__ parts
+    run_jobs(jobs, sim_time)
 
