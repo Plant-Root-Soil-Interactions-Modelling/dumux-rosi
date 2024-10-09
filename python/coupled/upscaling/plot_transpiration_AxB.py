@@ -78,7 +78,8 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
         ax[i].set_title(soil_[i])
         # ax[i].set_title(titles[i])
         ax[i].set_ylabel("[cm$^3$ day$^{-1}$]")
-        ax[i].legend(loc = 'upper left')
+        if i == 0:
+            ax[i].legend(loc = 'upper left')
         dt = np.diff(t)
         so = np.array(y)
         cup = np.cumsum(np.multiply(so[:-1], dt))
@@ -90,7 +91,8 @@ def plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ls,
             ls_ = 'c' + ls
         ax2[i].plot(t[1:], cup, ls_, label = "cumulative " + label)  # cumulative transpiration (neumann)
         ax2[i].set_ylabel("cumulative [cm$^3$]")
-        ax2[i].legend(loc = 'lower right')
+        if i == 0:
+            ax2[i].legend(loc = 'lower right')
         print(i, "cumulative uptake " + label, cup[-1], "cm3")
         cup_.append(cup[-1])
         cup2_.append(cup[cup.shape[0] // 2])

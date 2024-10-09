@@ -140,7 +140,7 @@ if __name__ == "__main__":
         plot_sink1d(ax, method, plant, soil, outer_method, ["AAB"], [0, 2, 6, 13], ls = ["-."])
         ax[0].set_xlim([0., 0.1])
         ax[1].set_xlim([-0.012, 0.0075])
-        ax[1].set_xticks([-0.012, -0.0075, 0., 0.0075])
+        ax[1].set_xticks([-0.012, -0.008, -0.004, 0., 0.003, 0.007])
         plt.tight_layout()
         plt.savefig('sink_AAx_springbarley_' + s[7:] + '.png')
     for s in ["hydrus_loam", "hydrus_clay", "hydrus_sandyloam"]:  # Figure 12

@@ -149,7 +149,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     if plant == "maize":
         params = rs.getRootRandomParameter()
         for p in params:
-            p.a = 2. * p.a  # at least ..... TODO parameterisation
+            p.a = 2. * p.a
 
     if plant == "springbarley":
         params = rs.getRootRandomParameter()
@@ -215,7 +215,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
 
     print("done")
     sys.stdout.flush()
-
+ # at least ..... TODO parameterisation
     inner_ = rs.radii
     rho = np.divide(outer_, np.array(inner_))
     rho = np.expand_dims(rho, axis = 1)
