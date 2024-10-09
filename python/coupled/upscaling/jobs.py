@@ -147,6 +147,8 @@ def make_hess_jobs():
     jobs = []
     plant = ['maize', 'springbarley']
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
+    method = ["length", "surface", "volume"]
+
     # # AAA for both plants, all soils
     # for p in plant:
     #     for s in soil:
@@ -157,23 +159,43 @@ def make_hess_jobs():
     #        for m in ["length", "surface", "volume"]:
     #             jobs.append(["sra", p, "3D", s, m])
 
-    # AAB for both plants (1D), all soils
-    for p in plant:
-        for s in soil:
-            jobs.append(["sra", p, "1D", s, 'voronoi'])
-    # AAB for maize (2D), all soils
-    for s in soil:
-        jobs.append(["sra", "maize", "2D", s, 'voronoi'])
+    # # AAB for both plants (1D), all soils
+    # for p in plant:
+    #     for s in soil:
+    #         jobs.append(["sra", p, "1D", s, 'voronoi'])
+    # # AAB for maize (2D), all soils
+    # for s in soil:
+    #     jobs.append(["sra", "maize", "2D", s, 'voronoi'])
+    #
+    # # ABB for both plants, all soils
+    # for p in plant:
+    #     for s in soil:
+    #        for m in method:
+    #             jobs.append(["sra", p, "1D", s, m])
+    # # ABB for maize (2D), all soils
+    # for s in soil:
+    #    for m in method:
+    #         jobs.append(["sra", "maize", "2D", s, m])
 
-    # ABB for both plants, all soils
+    # BBB for both plants, all soils
     for p in plant:
         for s in soil:
-           for m in ["length", "surface", "volume"]:
-                jobs.append(["sra", p, "1D", s, m])
-    # ABB for maize (2D), all soils
+           for m in method:
+                jobs.append(["agg", p, "1D", s, m])
+    # BBB for maize (2D), all soils
     for s in soil:
-       for m in ["length", "surface", "volume"]:
-            jobs.append(["sra", "maize", "2D", s, m])
+       for m in method:
+            jobs.append(["agg", "maize", "2D", s, m])
+
+    # CBB for both plants, all soils
+    for p in plant:
+        for s in soil:
+           for m in method:
+                jobs.append(["par", p, "1D", s, m])
+    # CBB for maize (2D), all soils
+    for s in soil:
+       for m in method:
+            jobs.append(["par", "maize", "2D", s, m])
 
     return jobs
 
