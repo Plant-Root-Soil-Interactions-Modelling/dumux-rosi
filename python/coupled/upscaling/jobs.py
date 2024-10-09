@@ -147,17 +147,33 @@ def make_hess_jobs():
     jobs = []
     plant = ['maize', 'springbarley']
     soil = ['hydrus_loam', 'hydrus_clay', 'hydrus_sandyloam']
-    # AAA for both plants, all soils
-    for p in plant:
-        for s in soil:
-            jobs.append(["sra", p, "3D", s, 'voronoi'])
+    # # AAA for both plants, all soils
+    # for p in plant:
+    #     for s in soil:
+    #         jobs.append(["sra", p, "3D", s, 'voronoi'])
+    # ABA for both plants, all soils
+    # for p in plant:
+    #     for s in soil:
+    #        for m in ["length", "surface", "volume"]:
+    #             jobs.append(["sra", p, "3D", s, m])
+
     # AAB for both plants (1D), all soils
     for p in plant:
         for s in soil:
             jobs.append(["sra", p, "1D", s, 'voronoi'])
     # AAB for maize (2D), all soils
     for s in soil:
-        jobs.append(["sra", "maize", "1D", s, 'voronoi'])
+        jobs.append(["sra", "maize", "2D", s, 'voronoi'])
+
+    # ABB for both plants, all soils
+    for p in plant:
+        for s in soil:
+           for m in ["length", "surface", "volume"]:
+                jobs.append(["sra", p, "1D", s, m])
+    # ABB for maize (2D), all soils
+    for s in soil:
+       for m in ["length", "surface", "volume"]:
+            jobs.append(["sra", "maize", "2D", s, m])
 
     return jobs
 

@@ -116,10 +116,10 @@ if __name__ == "__main__":
     dim = ["2D"] * 3
     cup2_, cup2W_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(AAB 2D)")
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
-    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 1D")
-    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 2D")
-    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 1D")
-    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D\n")
+    print("1 week ", 100.*(np.ones(np.shape(cup2W_)) - np.divide(cup2W_, cupW_ref)), "% for 2D")
+    print("1 week ", 100.*(np.ones(np.shape(cupW_)) - np.divide(cupW_, cupW_ref)), "% for 1D")
+    print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 2D")
+    print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 1D\n")
     plt.savefig('transpiration_AAx_maize.png')
 
     # Springbarley
