@@ -17,33 +17,33 @@ if __name__ == "__main__":
     soil[5] = [ 0.0451, 0.3721, 0.0325, 1.4393, 34.03]
     soil[59] = [0.0534, 0.3744, 0.0171, 1.4138, 13.09]
 
-    filename = "envirotype0"
+    filename = "data/envirotype0"
     sp = vg.Parameters(soil[0])
     vg.create_mfp_lookup(sp)
     peri = PerirhizalPython()
     peri.create_lookup_mpi(filename, sp)  # takes some hours
 
-    # filename = "envirotype1"
-    # sp = vg.Parameters(soil[1])
-    # vg.create_mfp_lookup(sp)
-    # peri = PerirhizalPython()
-    # peri.create_lookup_mpi(filename, sp)  # takes some hours
-    #
-    # filename = "envirotype36"
-    # sp = vg.Parameters(soil[36])
-    # vg.create_mfp_lookup(sp)
-    # peri = PerirhizalPython()
-    # peri.create_lookup_mpi(filename, sp)  # takes some hours
-    #
-    # filename = "envirotype5"
-    # sp = vg.Parameters(soil[5])
-    # vg.create_mfp_lookup(sp)
-    # peri = PerirhizalPython()
-    # peri.create_lookup_mpi(filename, sp)  # takes some hours
-    #
-    # filename = "envirotype59"
-    # sp = vg.Parameters(soil[59])
-    # vg.create_mfp_lookup(sp)
-    # peri = PerirhizalPython()
-    # peri.create_lookup_mpi(filename, sp)  # takes some hours
+    filename = "data/envirotype1"
+    sp = vg.Parameters(soil[1])
+    vg.create_mfp_lookup(sp)
+    peri = PerirhizalPython()
+    peri.create_lookup_mpi(filename, sp)  # takes some hours
+    
+    filename = "data/envirotype36"
+    sp = vg.Parameters(soil[36])
+    vg.create_mfp_lookup(sp)
+    peri = PerirhizalPython()
+    peri.create_lookup_mpi(filename, sp)  # takes some hours
+    
+    filename = "data/envirotype5"
+    sp = vg.Parameters(soil[5])
+    vg.create_mfp_lookup(sp)
+    peri = PerirhizalPython()
+    peri.create_lookup_mpi(filename, sp)  # takes some hours
+    
+    filename = "data/envirotype59"
+    sp = vg.Parameters(soil[59])
+    vg.create_mfp_lookup(sp)
+    peri = PerirhizalPython()
+    peri.create_lookup_mpi(filename, sp)  # takes some hours
 

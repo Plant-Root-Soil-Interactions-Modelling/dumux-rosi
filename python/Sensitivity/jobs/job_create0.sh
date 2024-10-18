@@ -12,4 +12,4 @@
  
 cd ..
 module load openmpi/4.1.4
-mpirun -n 128 python3 create_envirotypes_tables.py
+mpirun -n 256 python3 create_envirotypes_tables.py
