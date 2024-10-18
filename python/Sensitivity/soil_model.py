@@ -24,7 +24,7 @@ import functional.van_genuchten as vg
 # import evapotranspiration as evap
 
 
-def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = None, bot_bc = "noFlux"):
+def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = None, bot_bc = "noFlux", bot_value = 0.):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         
@@ -49,10 +49,11 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
     else:
         s.setTopBC("noFlux")
     # s.setBotBC("freeDrainage")
-    s.setBotBC("noFlux")
+    # s.setBotBC("noFlux")
     # s.setBotBC("potential", 80)
+    s.setBotBC(bot_bc, bot_value)
 
-    # Paramters
+    # Parameters
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on

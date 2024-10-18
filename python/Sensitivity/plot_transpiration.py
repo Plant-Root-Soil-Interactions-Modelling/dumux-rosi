@@ -14,17 +14,16 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-# name = "soybean"
-# str_ = ["_sra0d"]
-# area = 76 * 3
-# # start_date = '1995-03-15 00:00:00'
-# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
-# start_date = '2021-05-10 00:00:00'  # INARI csv data
-# potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean2, Kc_soybean)  # 87.5
-# evap.net_infiltration_table_beers_csv(start_date, 87.5, evap.lai_soybean2, Kc_soybean)
-#
-# trans = 1
-#
+name = "soybean"
+str_ = [""]  # _sra0d
+area = 76 * 3
+# start_date = '1995-03-15 00:00:00'
+# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
+start_date = '2021-05-10 00:00:00'  # INARI csv data
+potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean2, Kc_soybean)  # 87.5
+evap.net_infiltration_table_beers_csv(start_date, 87.5, evap.lai_soybean2, Kc_soybean)
+trans = 1
+
 # name = "local_soybean"
 # str_ = ["1"]
 # area = 76 * 3
@@ -47,15 +46,15 @@ Kc_soybean = 1.15
 # potential_trans = evap.get_transpiration_beers('data/95.pkl', start_date, 95, area, evap.lai_maize2, Kc_maize)
 # trans = 1
 #
-name = "maize"
-str_ = ["_sra0d"]
-area = 76 * 16  # cm2
-# start_date = '1995-03-15 00:00:00'
-# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize2,2 Kc_maize)
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize2, Kc_maize)
-# evap.net_infiltration_table_beers_csv(start_date, 95, evap.lai_maize2, Kc_maize)
-trans = 1
+# name = "maize"
+# str_ = ["_sra0d"]
+# area = 76 * 16  # cm2
+# # start_date = '1995-03-15 00:00:00'
+# # potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 95, area, evap.lai_maize2,2 Kc_maize)
+# start_date = '2021-05-10 00:00:00'  # INARI csv data
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize2, Kc_maize)
+# # evap.net_infiltration_table_beers_csv(start_date, 95, evap.lai_maize2, Kc_maize)
+# trans = 1
 
 rs_age = 1
 
