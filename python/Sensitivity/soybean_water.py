@@ -29,6 +29,10 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 """ initialize """
 # s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80)
+print(s.is_periodic())
+print(s.pick([-2.28259006, -1.60862546, -5.89100094]))
+print(s.pick([0, 0., -5.89100094]))
+dd
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
@@ -41,6 +45,9 @@ scenario.init_lupine_conductivities(r)
 
 """ sanity checks """
 r.test()  # sanity checks
+print(s.pick([-2.28259006, -1.60862546, -5.89100094]))
+print(r.ms.soil_index(-2.28259006, -1.60862546, -5.89100094))
+ddd
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain

@@ -38,7 +38,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
 
     s = RichardsWrapper(RichardsSP())  # water only
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, periodic = False)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
+    s.createGrid(min_b, max_b, cell_number, periodic = True)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
 
     # BC
     if times is not None:
