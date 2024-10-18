@@ -8,6 +8,7 @@ import functional.van_genuchten as vg
 
 import scenario_setup as scenario
 import evapotranspiration as evap
+import sra
 import sra_new
 
 """ parameters   """
@@ -25,7 +26,7 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
 """ initialize """
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_, wet = False)  # , times = x_, net_inf = y_
+s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
@@ -43,7 +44,7 @@ r.test()  # sanity checks
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
-    s, r, "data/" + table_name, sim_time, dt, trans_soybean, initial_age = 1., type_ = 1)
+    s, r, "data/" + table_name, sim_time, dt, trans_soybean, 1., type_ = 1)
 
 water = s.getWaterVolume()
 

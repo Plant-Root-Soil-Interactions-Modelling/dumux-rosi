@@ -12,7 +12,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
-from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards import RichardsSP
+# from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 import plantbox as pb  # CPlantBox
@@ -251,9 +252,9 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     else:
         s.setTopBC("noFlux")
     # s.setBotBC("freeDrainage")
-    # s.setBotBC("noFlux")
-    # s.setBotBC("potential", 0)
-    s.setBotBC(bot_bc, 80)
+    s.setBotBC("noFlux")
+    # s.setBotBC("potential", 80)
+    # s.setBotBC(bot_bc, 80)
 
     if type == 2:  # solute BC
         #  90 lb/ha = 40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
@@ -272,20 +273,23 @@ def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, ne
     if type == 2:
         s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
+
+    s.setHomogeneousIC(-100)
+
     s.initializeProblem()
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1.e-5  # [day] initial Dumux time step
 
     # # IC
-    h = np.load("data/initial_potential.npy")
+    # h = np.load("data/initial_potential.npy")
     # s.setInitialConditionHead(h)  # cm
-    # s.setHomogeneousIC(-1000)
 
     if type == 2:
         c = np.load("data/initial_concentration.npy")  # kg/m3
         s.setInitialCondition(c, 1)  # kg/m3
 
+    # h = s.getSolutionHead()
     # plt.plot(h, np.linspace(-200., 0., h.shape[0]))
     # plt.xlabel("soil matric potential [cm]")
     # plt.ylabel("depth (cm)")
@@ -475,7 +479,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 
-    picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+    picker = lambda x, y, z: soil_model.pick([0, 0, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     # comm.barrier()
     # print("survived setSoilGrid", rank)

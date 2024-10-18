@@ -10,6 +10,7 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import numpy as np
 
 import scenario_setup as scenario
+import soil_model
 import evapotranspiration as evap
 import sra_new
 
@@ -86,10 +87,10 @@ if __name__ == '__main__':
     sim_time = 87.5  # [day]
     dt = 360 / (24 * 3600)  # time step [day]
 
-    file = np.load("data/soil_only{:g}.npz".format(envirotype_number))
-    plot_soil(sim_time, file["times"], file["net_inf"], file["h"], file["soil_times"], file["top"])
-    # plot_soil_1d(sim_time, file["h"])
-    dd
+    # file = np.load("data/soil_only{:g}.npz".format(envirotype_number))
+    # plot_soil(sim_time, file["times"], file["net_inf"], file["h"], file["soil_times"], file["top"])
+    # # plot_soil_1d(sim_time, file["h"])
+    # dd
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(envirotype_number)
 
@@ -102,7 +103,10 @@ if __name__ == '__main__':
     # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
 
     """ initialize """
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = times, net_inf = net_inf, bot_bc = "potential")
+
+    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = times, net_inf = net_inf)  # , bot_bc = "potential"
+    #
+    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = times, net_inf = net_inf)
 
     """ numerical solution """
     top_ind = s.pick([0., 0., -0.5])
@@ -116,12 +120,14 @@ if __name__ == '__main__':
     N = int(np.ceil(sim_time / dt))
 
     for i in range(0, N):
+
         t = i * dt  # current simulation time
         print(t, "days")
 
         water_ = s.getWaterVolume()
         s.solve(dt)
         net_change.append(s.getWaterVolume() - water_)
+
         h.append(s.getSolutionHead_())
         top_.append(s.getNeumann(top_ind))
         soil_times.append(t)
@@ -131,5 +137,5 @@ if __name__ == '__main__':
     np.savez("data/soil_only{:g}".format(envirotype_number), h = h, times = times, net_inf = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
     print("Change in water balance", water - water0, "cm3")
 
-    plot_soil(sim_time, times, net_inf, h, soil_times, top_)
+    plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_))
 
