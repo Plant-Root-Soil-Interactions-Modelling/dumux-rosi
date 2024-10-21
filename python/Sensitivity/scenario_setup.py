@@ -485,24 +485,27 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r
 
 
+def write_results(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_):
+    np.savez("data/" + filename, psi_x = psi_x, psi_rs = psi_i, sink = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
+    pass
+
+
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):  ###### TODO change to savez #######
     """  saves numpy arrays as npy files """
 
-    np.savez("data/" + filename, psi_x = psi_x, psi_rs = psi_i, sink = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
-    sss  # TODO
-    # np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
-    # np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
-    # np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
-    # np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
-    # np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
-    # np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
-    # np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
-    # np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
-    # np.save('results/depth_' + file_name, np.array(depth_))  # root system depth [cm]
-    # if conc is not None:
-    #     np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
-    # if c_ is not None:
-    #     np.save('results/nitrate_' + file_name, np.array(c_))  # soil potential per cell [cm]
+    np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
+    np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
+    np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
+    np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
+    np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
+    np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
+    np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
+    np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
+    np.save('results/depth_' + file_name, np.array(depth_))  # root system depth [cm]
+    if conc is not None:
+        np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
+    if c_ is not None:
+        np.save('results/nitrate_' + file_name, np.array(c_))  # soil potential per cell [cm]
 
 
 if __name__ == '__main__':

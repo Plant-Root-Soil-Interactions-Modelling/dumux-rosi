@@ -35,6 +35,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     start_time = timeit.default_timer()
 
     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
+    net_change = []
     soil_c_, c_ = [], []
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
@@ -145,7 +146,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py
+
+        water_ = s.getWaterVolume()
         s.solve(dt)
+        net_change.append(s.getWaterVolume() - water_)
 
         # for key, value in cell2seg.items():  # check cell2seg
         #     if key < 0:
