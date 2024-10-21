@@ -38,7 +38,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
 
     s = RichardsWrapper(RichardsSP())  # water only
     s.initialize()
-    s.createGrid(min_b, max_b, cell_number, periodic = True)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
+    s.createGrid(min_b, max_b, cell_number, periodic = False)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
 
     # BC
     if times is not None:
@@ -61,7 +61,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
         s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
 
-    s.setHomogeneousIC(-100)
+    s.setHomogeneousIC(-1000)
 
     s.initializeProblem()
     wilting_point = -15000
@@ -82,7 +82,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
     # plt.xlabel("nitrate concentration [g/cm3]")
     # plt.ylabel("depth (cm)")
     # plt.tight_layout()
-    plt.show()
+    # plt.show()
 
     return s
 

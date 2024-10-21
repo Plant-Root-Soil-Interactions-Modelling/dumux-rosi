@@ -381,7 +381,6 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
 
         seed = 1
-
         rs = pb.MappedPlant()
         rs.setSeed(seed)
         rs.readParameters(fname)

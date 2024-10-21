@@ -22,7 +22,7 @@ def solve(soils):
 
     s = RichardsWrapper(RichardsSP())
     s.initialize()
-    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199])  # [cm]
+    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199], True)  # [cm]
     s.setHomogeneousIC(-50.)  # cm pressure head
     s.setTopBC("constantFlux", 0.5)  #  [cm/day]
     s.setBotBC("freeDrainage")

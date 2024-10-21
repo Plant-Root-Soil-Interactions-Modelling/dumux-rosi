@@ -18,7 +18,7 @@ s = RichardsWrapper(RichardsSP())
 s.initialize()
 
 N = 53  # resolution
-s.createGrid([-5., -5., -53.], [5., 5., 0.], [1, 1, N])  # [cm]
+s.createGrid([-5., -5., -53.], [5., 5., 0.], [1, 1, N], True)  # [cm]
 
 s.setHomogeneousIC(-53, True)  # initial guess in hydraulic equilibrium
 s.setTopBC("constantFlux", -0.5)  #  [cm/day]

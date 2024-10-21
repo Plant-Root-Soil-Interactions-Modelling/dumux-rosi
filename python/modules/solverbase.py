@@ -27,6 +27,10 @@ class SolverWrapper():
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
 
+    def is_periodic(self):
+        """ returns if periodic in X and Y direction """
+        return self.base.periodic
+
     def createGrid(self, boundsMin, boundsMax, numberOfCells, periodic = False):
         """ Creates a rectangular grid with a given resolution             
             @param boundsMin        domain corner [cm]
@@ -34,6 +38,7 @@ class SolverWrapper():
             @param numberOfCells    resoultion [1]
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
+        print("createGrid", periodic) # OK
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
 
     def createGrid1d(self, points):

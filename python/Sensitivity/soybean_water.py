@@ -28,14 +28,14 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 
 """ initialize """
 # s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
-s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80)
-print(s.is_periodic())
-print(s.pick([-2.28259006, -1.60862546, -5.89100094]))
-print(s.pick([0, 0., -5.89100094]))
-dd
+s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0)
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+
+picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
+r.ms.setSoilGrid(picker)
+
 # scenario.init_conductivities_const_growth(r)
 scenario.init_lupine_conductivities(r)
 # scenario.init_dynamic_simple_growth(r, 1.e-3, 4.e-3, 5.e-2, 2.e-3)
@@ -45,9 +45,6 @@ scenario.init_lupine_conductivities(r)
 
 """ sanity checks """
 r.test()  # sanity checks
-print(s.pick([-2.28259006, -1.60862546, -5.89100094]))
-print(r.ms.soil_index(-2.28259006, -1.60862546, -5.89100094))
-ddd
 
 """ numerical solution """
 water0 = s.getWaterVolume()  # total initial water volume in domain
@@ -58,6 +55,6 @@ psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ =
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("soybean_80", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+scenario.write_files("soybean_notperiodic", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")
