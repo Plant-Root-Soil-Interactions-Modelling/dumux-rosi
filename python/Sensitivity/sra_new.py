@@ -26,7 +26,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     """
 
     wilting_point = -15000  # cm
-    skip = 10  # for output and results, skip iteration
+    skip = 100  # for output and results, skip iteration (TODO)
     max_iter = 10  # maximum for fix point iteration
 
     peri = PerirhizalPython(r.ms)

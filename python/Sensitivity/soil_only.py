@@ -18,9 +18,12 @@ import sra_new
 def plot_soil(sim_time, times, net_inf, h, soil_times, top):
     """ creates figures presenting the results of the macroscopic water movement 
     
-        sim_tim        [day] final simulation time
-        times          [day] 
-        net_inf        [cm/day]        
+        sim_time       final simulation time [day]
+        times          sampling times for net infiltration [day] 
+        net_inf        potential net infiltration [cm/day]   
+        h              soil matric potential [cm]
+        soil_times     sampling times for actual net infiltration [day]
+        top            actual net infiltration [cm/day]
     """
     h = np.transpose(h)
     h = h[::-1,:]
@@ -43,7 +46,7 @@ def plot_soil(sim_time, times, net_inf, h, soil_times, top):
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
     extent = [0 , sim_time, -200., 0.]
-    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -500, extent = extent)  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1000, extent = extent)  #  interpolation = 'bicubic', interpolation = 'nearest',
 
     x = np.linspace(0, sim_time, h.shape[1])
     y = np.linspace(0, -200, h.shape[0])
