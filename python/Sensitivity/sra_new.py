@@ -23,14 +23,26 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     trans_f                      potential transpiration function 
     initial_age                       initial root system age  
     type_                        1 = water only, 2 = water and nitrate
+    
+    return: 
+    psi_x_                       root xylem potential (per node) 
+    psi_s_                       soil matric potential (per cell)
+    sink_                        -  
+    x_                           times
+    y_                           actual transpiration (?)
+    psi_s2_                      sds 
+    vol_                         root system volume 
+    surf_                        root system surface [cm2]
+    krs_                         root system hydraulic conductivity [cm2/day]
+    depth_                       root system depth [cm]
     """
 
     wilting_point = -15000  # cm
-    skip = 100  # for output and results, skip iteration (TODO)
+    skip = 10  # for output and results, skip iteration (TODO)
     max_iter = 10  # maximum for fix point iteration
 
     peri = PerirhizalPython(r.ms)
-    peri.open_lookup(lookuptable_name)
+    peri.open_lookup("data/"+lookuptable_name)
 
     start_time = timeit.default_timer()
 
@@ -45,8 +57,6 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     rs = r.ms
     nodes = rs.nodes
     segs = rs.segments
-    ns = len(segs)
-    mapping = rs.getSegmentMapper()  # because seg2cell is a dict
 
     sx = s.getSolutionHead_()  # richards.py
     hsb_ = np.array(rs.getHs(sx))  # matric potential per segment
@@ -67,7 +77,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         rs.simulate(dt, False)
 
         cell2seg = rs.cell2seg  # for debugging
-        mapping = rs.getSegmentMapper()
+        mapping = rs.getSegmentMapper() # because seg2cell is a dict
         sx = s.getSolutionHead_()  # richards.py
         hsb_ = np.array(rs.getHs(sx))
         hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
@@ -201,7 +211,6 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
         if i % skip == 0:
 
-            # if i % (24 * skip) == 0:
             print("time", initial_age + t, "{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
                   wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
                   "number of segments", rs.getNumberOfSegments(), "root collar", rx[0])

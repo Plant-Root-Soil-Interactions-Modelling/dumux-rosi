@@ -6,10 +6,11 @@ import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cp
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import plantbox as pb
-
 import visualisation.vtk_plot as vp
 
 import scenario_setup as scenario
+import soil_model
+import hydraulic_model
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -27,6 +28,8 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
+
+""" 1. Modify parameter xml file  ******************************************************** """
 # typical domain for soybean
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 simtime = 87.5  # between 75-100 days
@@ -51,32 +54,27 @@ for p in rrp:
     print("lmax", p.lmax, "cm")
     print("changed to 0.5 cm to be faster...")
     p.dx = 0.5  # probably enough
-
 # # print(rrp[0])
 # rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 # # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
 rs.writeParameters("data/" + name + "_modified" + ".xml")  # remember the modifications
 
+""" 2. Analyse ******************************************************** """
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 
-s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)  # , times = x_, net_inf = y_
+s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_, net_inf = y_
+
 xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
 mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
-r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+rs = r.ms
 
 kr = 1.e-4
 kx = 1.e-3
 scenario.init_conductivities_const(r.params, kr, kx)
 
-rs = r.ms
-
-# Initialize
-print()
-rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, 200.))
-rs.initialize()
-
 # Simulate
-rs.simulate(simtime, True)
+rs.simulate(0.1, True)
 
 # Analyse
 ana = pb.SegmentAnalyser(rs)
@@ -118,18 +116,4 @@ print(ana.getMinBounds(), "-", ana.getMaxBounds())
 # plt.tight_layout()
 # plt.show()
 
-# Export final results
-ana.write("results/soybean.vtp")  # rs.write writes polylines, ana.write writes segments
-rs.write("results/soybean.rsml")
 
-w = np.array(max_b) - np.array(min_b)
-print(w)
-rs.setGeometry(pb.SDF_PlantBox(w[0], w[1], w[2]))
-rs.write("results/soybean_box.py")
-
-# Plot, using vtk
-vp.plot_roots(ana, "age")
-# vp.plot_roots(ana, "creationTime")
-
-ana.mapPeriodic(w[0], w[1])
-ana.write("results/soybean_periodic.vtp")

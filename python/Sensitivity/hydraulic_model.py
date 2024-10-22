@@ -154,7 +154,8 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
-        rs.simulate(10., True)
+        # rs.initializeLB(4, 5)
+        rs.simulate(1., True)
 
         if model == "Meunier":
             r = HydraulicModel_Meunier(rs, params)
@@ -163,13 +164,20 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         else:
             raise "create_mapped_rootsystem(): unknown model"
 
+    r.test()
+    
     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+
+    print("******************************************************")
+    r.test()
 
     picker = lambda x, y, z: soil_model.pick([x, y, z])
     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
     # comm.barrier()
     # print("survived setSoilGrid", rank)
+    print("******************************************************")
+    r.test()
 
     return r
 

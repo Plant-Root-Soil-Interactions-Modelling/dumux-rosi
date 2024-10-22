@@ -14,7 +14,7 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean_notperiodic"
+name = "soybean_80"
 str_ = [""]  # _sra0d
 area = 76 * 3
 # start_date = '1995-03-15 00:00:00'

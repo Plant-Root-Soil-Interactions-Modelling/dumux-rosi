@@ -31,7 +31,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     # initialize root system
     xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
     mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":lmax1, "r2":lmax2, "r3":lmax3, "a":a, "src":src}
-    r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Doussan")  # pass parameter file for dynamic growth
+    r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
 
     scenario.init_lupine_conductivities(r, kr, kx)
 

@@ -31,7 +31,7 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 
 """ initialize """
 # s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = x_, net_inf = y_)  # , times = x_, net_inf = y_
-s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0)
+s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80.)
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
@@ -53,11 +53,11 @@ r.test()  # sanity checks
 water0 = s.getWaterVolume()  # total initial water volume in domain
 
 psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
-    s, r, table_name, sim_time, dt, trans_soybean, 1., type_ = 1)  # , model = "Doussan"
+    s, r, "data/"+table_name, sim_time, dt, trans_soybean, 1., type_ = 1)  # , model = "Doussan"
 
 water = s.getWaterVolume()
 
 """ output """
-scenario.write_files("soybean_noFlux", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+scenario.write_files("soybean_potential_100_", psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
 print("\nnet water change in soil", water0 - water, "cm3")
 print("fin")

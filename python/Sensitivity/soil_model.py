@@ -48,7 +48,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
         s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
 
-    s.setHomogeneousIC(-1000)
+    s.setHomogeneousIC(-100)
 
     s.initializeProblem()
 
