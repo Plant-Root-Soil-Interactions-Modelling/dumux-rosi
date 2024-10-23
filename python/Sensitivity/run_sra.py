@@ -12,13 +12,14 @@ import evapotranspiration as evap
 import soil_model
 import hydraulic_model
 
-import sra
+# import sra
 import sra_new
 
 
 def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src):
 
-    print("run_soybean")
+    print("run_soybean", file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src)
+    return 
     
     # parameters
     dt = 360 / (24 * 3600)  # time step [day]
