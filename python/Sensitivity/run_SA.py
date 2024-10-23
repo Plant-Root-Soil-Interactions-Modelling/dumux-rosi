@@ -210,6 +210,7 @@ def read_ranges(file_name):
     names = []
     ranges = []
     if rank == 0:
+
         with open(file_name + "_range", 'r') as file:
            for line in file:
                 entries = line.rstrip().split(", ")
@@ -236,6 +237,7 @@ def local_soybean():
         theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
         jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])
 

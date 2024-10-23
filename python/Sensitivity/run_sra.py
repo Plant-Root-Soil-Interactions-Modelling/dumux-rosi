@@ -2,7 +2,9 @@
     starts a single sra simulation of soybean or maize freezing fixed parameters, 
     and passing parameters for steady state analysis
 """
+
 import numpy as np
+import sys
 
 import scenario_setup as scenario
 
