@@ -19,8 +19,8 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-# file_name = "local_soybean"
-file_name = "local_maize"
+file_name = "local_soybean"
+# file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
 not_xlog = [5]
