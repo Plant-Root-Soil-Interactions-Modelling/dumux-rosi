@@ -41,10 +41,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     skip = 10  # for output and results, skip iteration (TODO)
     max_iter = 10  # maximum for fix point iteration
 
-    print("starting")
+    print("simulate_dynamic starting" , flush = True )
     peri = PerirhizalPython(r.ms)
     peri.open_lookup("data/"+lookuptable_name)
-    print("opening look up table:", "data/"+lookuptable_name)
+    print("opening look up table:", "data/"+lookuptable_name,flush = True )
 
     start_time = timeit.default_timer()
 
@@ -68,7 +68,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
-    print("Starting simulation loop")
+    print("Starting simulation loop", flush = True)
 
     """ simulation loop """
     for i in range(0, N):
@@ -215,7 +215,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
             print("time", initial_age + t, "{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
                   wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
-                  "number of segments", rs.getNumberOfSegments(), "root collar", rx[0])
+                  "number of segments", rs.getNumberOfSegments(), "root collar", rx[0], flush = True)
 
             sink_.append(sink)  # cm3/day (per soil cell)
 
