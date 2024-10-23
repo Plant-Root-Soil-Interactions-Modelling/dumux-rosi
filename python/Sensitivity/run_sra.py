@@ -18,6 +18,8 @@ import sra_new
 
 def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src):
 
+    print("run_soybean")
+    
     # parameters
     dt = 360 / (24 * 3600)  # time step [day]
 
@@ -30,7 +32,9 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     # initialize soil
     # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80.)
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
+    print("soil model set")
 
+    print("starting hydraulic model")
     # initialize root system
     xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
     mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":lmax1, "r2":lmax2, "r3":lmax3, "a":a, "src":src}
