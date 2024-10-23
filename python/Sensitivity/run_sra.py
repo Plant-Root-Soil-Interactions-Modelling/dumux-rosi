@@ -86,34 +86,33 @@ if __name__ == "__main__":
     # print(len(sys.argv[1:]))
     # file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src
 
-    # file_name = sys.argv[1]
-    # enviro_type = int(float(sys.argv[2]))
-    # sim_time = float(sys.argv[3])
-    # kr = float(sys.argv[4])
-    # kx = float(sys.argv[5])
-    # lmax1 = float(sys.argv[6])
-    # lmax2 = float(sys.argv[7])
-    # lmax3 = float(sys.argv[8])
-    # theta1 = float(sys.argv[9])
-    # r1 = float(sys.argv[10])
-    # r2 = float(sys.argv[11])
-    # a = float(sys.argv[12])
-    # src = int(float(sys.argv[13]))
-    # # bla
+    file_name = sys.argv[1]
+    enviro_type = int(float(sys.argv[2]))
+    sim_time = float(sys.argv[3])
+    kr = float(sys.argv[4])
+    kx = float(sys.argv[5])
+    lmax1 = float(sys.argv[6])
+    lmax2 = float(sys.argv[7])
+    lmax3 = float(sys.argv[8])
+    theta1 = float(sys.argv[9])
+    r1 = float(sys.argv[10])
+    r2 = float(sys.argv[11])
+    a = float(sys.argv[12])
+    src = int(float(sys.argv[13]))
 
-    file_name = "test_"
-    enviro_type = 0
-    sim_time = 1
-    kr = 1.
-    kx = 1.
-    lmax1 = 1.
-    lmax2 = 1.
-    lmax3 = 1.
-    theta1 = 0.
-    r1 = 1.
-    r2 = 1.
-    a = 1.
-    src = 2
+    # file_name = "test_"
+    # enviro_type = 0
+    # sim_time = 1
+    # kr = 1.
+    # kx = 1.
+    # lmax1 = 1.
+    # lmax2 = 1.
+    # lmax3 = 1.
+    # theta1 = 0.
+    # r1 = 1.
+    # r2 = 1.
+    # a = 1.
+    # src = 2
 
     run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src)
 

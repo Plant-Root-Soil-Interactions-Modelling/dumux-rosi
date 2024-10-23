@@ -228,7 +228,7 @@ def local_soybean():
     root_type = "soybean"
     file_name = "local_soybean_noFlux"  ############################################################################
     enviro_type = 0
-    sim_time = 87.5
+    sim_time = 1  # 87.5
 
     if rank == 0:
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
@@ -243,7 +243,8 @@ def local_soybean():
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    # run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 
 def local_maize():
