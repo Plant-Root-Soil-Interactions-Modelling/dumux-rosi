@@ -246,28 +246,27 @@ def local_soybean():
     start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
     # run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
-
-def local_maize():
-    root_type = "maize"
-    file_name = "local_maize"
-    enviro_type = 0
-    sim_time = 95
-
-    if rank == 0:
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        # p3 = np.array([1.* 2 ** x for x in np.linspace(-3., 3., 19)])
-        theta_ = np.linspace(0, np.pi / 2, 9)
-        write_ranges("results/" + file_name,
-                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "delaySB"],
-                     [p2, p2, p1, p1, p1, theta_, p1, p1])
-        jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, p1)
-
-    else:
-        jobs = None
-
-    jobs = comm.bcast(jobs, root = 0)
-    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+# def local_maize():
+#     root_type = "maize"
+#     file_name = "local_maize"
+#     enviro_type = 0
+#     sim_time = 95
+#
+#     if rank == 0:
+#         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+#         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+#         # p3 = np.array([1.* 2 ** x for x in np.linspace(-3., 3., 19)])
+#         theta_ = np.linspace(0, np.pi / 2, 9)
+#         write_ranges("results/" + file_name,
+#                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "delaySB"],
+#                      [p2, p2, p1, p1, p1, theta_, p1, p1])
+#         jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, p1)
+#
+#     else:
+#         jobs = None
+#
+#     jobs = comm.bcast(jobs, root = 0)
+#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 # def local1_maize():
 #     root_type = "maize"
