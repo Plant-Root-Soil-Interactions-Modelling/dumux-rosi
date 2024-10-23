@@ -239,7 +239,7 @@ def local_soybean():
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
 
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
-        jobs = make_local(1.,1. , 1., 1., 1., 1., 1., 1., p1, [2., 3, 4, 5]) # p2 , p2, p1, p1,p1,theta_
+        jobs = make_local( p2 , p2, p1, p1,p1,theta_, 1., 1., p1, [2., 3, 4, 5]) #
 
     else:
         jobs = None
