@@ -229,7 +229,7 @@ def local_soybean():
     root_type = "soybean"
     file_name = "local_soybean_noFlux"  ############################################################################
     enviro_type = 0
-    sim_time = 1  # 87.5
+    sim_time = 87.5  # days
 
     if rank == 0:
         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
