@@ -35,11 +35,17 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
     xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
     mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":lmax1, "r2":lmax2, "r3":lmax3, "a":a, "src":src}
     r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
-
+    print("hydraulic model set")
+    
     scenario.init_lupine_conductivities(r, kr, kx)
+    print("conductivities set")
+
+    """ sanity checks """
+    r.test()  # sanity checks
+    print("sanity test done")
 
     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
-    s, r, table_name, sim_time, dt, trans_soybean, initial_age = 1., type_ = 1)
+        s, r, table_name, sim_time, dt, trans_soybean, initial_age = 1., type_ = 1)
 
     # print("volume")
     # print(np.sum(vol_, axis = 0))

@@ -41,8 +41,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     skip = 10  # for output and results, skip iteration (TODO)
     max_iter = 10  # maximum for fix point iteration
 
+    print("starting")
     peri = PerirhizalPython(r.ms)
     peri.open_lookup("data/"+lookuptable_name)
+    print("opening look up table:", "data/"+lookuptable_name)
 
     start_time = timeit.default_timer()
 
