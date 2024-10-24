@@ -34,7 +34,7 @@ trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, ev
 s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
 
 xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
-r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name)  # pass parameter file for dynamic growth
+r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = None, model = "Doussan")  # pass parameter file for dynamic growth
 
 # picker = lambda x, y, z: s.pick([0., 0., z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
 # r.ms.setSoilGrid(picker)

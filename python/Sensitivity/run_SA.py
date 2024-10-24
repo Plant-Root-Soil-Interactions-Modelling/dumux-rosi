@@ -106,7 +106,7 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
             fh.writelines("#SBATCH --ntasks=1\n")
             fh.writelines("#SBATCH --nodes=1\n")
-            fh.writelines("#SBATCH --time=5:00:00\n")
+            fh.writelines("#SBATCH --time=24:00:00\n")
             fh.writelines("#SBATCH --mem=16G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
             # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
