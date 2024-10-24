@@ -60,15 +60,18 @@ params.setKr([kr0])
 params.setKx([kz0])
 
 r = HydraulicModel_Doussan(rs, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
-
+# r = HydraulicModel_Meunier(rs, params, cached = False)
 kx = params.getKx(0.)
-print(kx)
+# print(kx)
 rx = r.solve_dirichlet(0., p0, [p_s], cells = True)
+print("rx[0]", rx[0], "rx[1]", rx[1])
 print("rx", rx.shape)
 
 trans = r.get_transpiration(0., rx, [p_s], cells = True)
 print("Transpiration", trans, "cm3/day")
 plt.plot(rx, z_, "r*")
+
+# get_collar_potential(t_act, rsx)
 
 # #
 # # check net fluxes
@@ -88,11 +91,16 @@ plt.plot(rx, z_, "r*")
 
 rx = r.solve_neumann(0., -2., [p_s], cells = True)  # or solve ...
 
+rx = r.solve_dirichlet(0., -869.6363009384586, [p_s], cells = True)  # or solve .
+
 trans = r.get_transpiration(0., rx, [p_s], cells = True)
-print("Transpiration", trans, "cm3/day")
+trans2 = r.axial_fluxes(0., rx, [p_s], cells = True)
+
+print("Transpiration", trans, trans2[0], trans - trans2[0], "cm3/day")
 plt.plot(rx, z_, "g*")
 
-plt.xlabel("Xylem pressure (cm)")
-plt.ylabel("Depth (m)")
-plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm$^3$ day$^{-1}$"])
-plt.show()
+# plt.xlabel("Xylem pressure (cm)")
+# plt.ylabel("Depth (m)")
+# plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm$^3$ day$^{-1}$"])
+# plt.show()
+
