@@ -148,13 +148,13 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         err = np.linalg.norm(np.sum(fluxes) - collar_flux)
         if err > 1.e-6:
             print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(fluxes))
-        # if rx[0] > -14999:
-        #     err2 = np.linalg.norm(trans_f(initial_age + t, dt) - collar_flux)
-        #     if err2 > 1.e-6:
-        #         print("")
-        #         print("simulate_dynamic() potential transpiration differs from root collar flux in Neumann case" , err2, rx[0])
-        #         print("fluxes: ", trans_f(initial_age + t, dt), collar_flux)
-        #         print("")
+        if rx[0] > -14999:
+            err2 = np.linalg.norm(trans_f(initial_age + t, dt) - collar_flux)
+            if err2 > 1.e-6:
+                print("")
+                print("simulate_dynamic() potential transpiration differs from root collar flux in Neumann case" , err2, rx[0])
+                print("fluxes: ", trans_f(initial_age + t, dt), collar_flux)
+                print("")
 
         soil_fluxes = r.sumSegFluxes(fluxes)
         s.setSource(soil_fluxes.copy())  # richards.py

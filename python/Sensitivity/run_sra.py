@@ -35,7 +35,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, t
 
     # initialize soil
     # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80.)
-    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 80.)
     print("soil model set\n", flush=True)
 
     print("starting hydraulic model", flush=True)

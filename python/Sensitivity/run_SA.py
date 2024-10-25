@@ -227,7 +227,7 @@ def read_ranges(file_name):
 def local_soybean():
     print("local_soybean")
     root_type = "soybean"
-    file_name = "local_soybean_noFlux"  ############################################################################
+    file_name = "local_soybean_potential80a"  ############################################################################
     enviro_type = 0
     sim_time = 87.5  # days
 

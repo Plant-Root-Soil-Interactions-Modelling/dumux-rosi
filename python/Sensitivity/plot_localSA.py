@@ -30,21 +30,21 @@ analysis_time = 100  # days
 names, ranges = sa.read_ranges(path + file_name)
 
 print(names)
-# # SOYBEAN
-# names[2] = "lmax, primaries"  # seminal and tap
-# names[3] = "lmax, first order"
-# names[4] = "lmax, second order"
-# names[5] = "insertion angle, seminal roots"
-# names[6] = "root radii scale"
-# names[7] = "seminal root count"
-
-# MAIZE
-names[2] = "lmax, primaries"  # brace, seminal and tap
+# SOYBEAN
+names[2] = "lmax, primaries"  # seminal and tap
 names[3] = "lmax, first order"
 names[4] = "lmax, second order"
-names[5] = "insertion angle, brace and seminals"
+names[5] = "insertion angle, seminal roots"
 names[6] = "root radii scale"
-names[7] = "brace root delay"
+names[7] = "seminal root count"
+
+# MAIZE
+# names[2] = "lmax, primaries"  # brace, seminal and tap
+# names[3] = "lmax, first order"
+# names[4] = "lmax, second order"
+# names[5] = "insertion angle, brace and seminals"
+# names[6] = "root radii scale"
+# names[7] = "brace root delay"
 
 trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
 times = trans_[0,:]
@@ -124,7 +124,7 @@ for lind in range(0, len(names)):
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
         ax.flat[ac].plot(ranges[lind], trans, '*-', label = "water")
-        ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
+        # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 
