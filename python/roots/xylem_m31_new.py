@@ -51,6 +51,8 @@ for s in range(0, N - 1):
     segs.append(pb.Vector2i(s, s + 1))
     radii.append(a)
 
+# print("dx", np.diff(z_))
+
 rs = pb.MappedSegments(nodes, segs, radii)
 soil_index = lambda x, y, z: 0
 rs.setSoilGrid(soil_index)
@@ -90,8 +92,7 @@ plt.plot(rx, z_, "r*")
 # vp.plot_roots(pd, "radial")  # axial, radial, rx
 
 rx = r.solve_neumann(0., -2., [p_s], cells = True)  # or solve ...
-
-rx = r.solve_dirichlet(0., -869.6363009384586, [p_s], cells = True)  # or solve .
+# rx = r.solve_dirichlet(0., -869.6363009384586, [p_s], cells = True)  # or solve .
 
 trans = r.get_transpiration(0., rx, [p_s], cells = True)
 trans2 = r.axial_fluxes(0., rx, [p_s], cells = True)
@@ -99,8 +100,8 @@ trans2 = r.axial_fluxes(0., rx, [p_s], cells = True)
 print("Transpiration", trans, trans2[0], trans - trans2[0], "cm3/day")
 plt.plot(rx, z_, "g*")
 
-# plt.xlabel("Xylem pressure (cm)")
-# plt.ylabel("Depth (m)")
-# plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm$^3$ day$^{-1}$"])
-# plt.show()
+plt.xlabel("Xylem pressure (cm)")
+plt.ylabel("Depth (m)")
+plt.legend(["analytic solution", "numeric solution", "predescribed flux -2 cm$^3$ day$^{-1}$"])
+plt.show()
 
