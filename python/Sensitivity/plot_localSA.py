@@ -19,7 +19,7 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_noFlux"
+file_name = "local_soybean_potential80a"
 # file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"

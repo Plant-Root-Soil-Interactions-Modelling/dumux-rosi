@@ -28,7 +28,6 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
-
 """ 1. Modify parameter xml file  ******************************************************** """
 # typical domain for soybean
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
@@ -40,10 +39,11 @@ path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
 name = "Glycine_max_Moraes2020_opt2"
 rs.readParameters(path + name + ".xml")
 
-srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)  # print(srp[0])
-# srp[0].firstB = 1.e9  # 3
-# srp[0].delayB = 3
-src = srp[0].maxB
+srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
+src = srp[0].maxB  # 14
+print("maxB", srp[0].maxB)
+print("firstB", srp[0].firstB)
+print("delayB", srp[0].delayB)
 
 rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
 for p in rrp:
@@ -54,10 +54,10 @@ for p in rrp:
     print("lmax", p.lmax, "cm")
     print("changed to 0.5 cm to be faster...")
     p.dx = 0.5  # probably enough
-# # print(rrp[0])
-# rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
-# # rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-rs.writeParameters("data/" + name + "_modified" + ".xml")  # remember the modifications
+
+rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
+rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
+rs.writeParameters("data/" + name + "_modified2" + ".xml")  # remember the modifications ################################### not touching the original
 
 """ 2. Analyse ******************************************************** """
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
@@ -74,9 +74,10 @@ kx = 1.e-3
 scenario.init_conductivities_const(r.params, kr, kx)
 
 # Simulate
-rs.simulate(0.1, True)
+rs.simulate(87, True)
 
 # Analyse
+vp.plot_roots(rs, "age")
 ana = pb.SegmentAnalyser(rs)
 ana.addAge(simtime)
 
@@ -92,28 +93,27 @@ print("Krs", r.get_krs(simtime)[0], "cm2/day")
 print("\nunconfined")
 print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
-# w = np.array(max_b) - np.array(min_b)
-# ana.mapPeriodic(w[0], w[1])
-# print("periodic")
-# print(ana.getMinBounds(), "-", ana.getMaxBounds())
+w = np.array(max_b) - np.array(min_b)
+ana.mapPeriodic(w[0], w[1])
+print("periodic")
+print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
-# dz = 0.5
-# exact = False
-# domain_size = np.array(max_b) - np.array(min_b)
-# slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
-# z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
-# rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
-# rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
-#
-# fig, ax = plt.subplots(1, 1, figsize = (10, 10))
-# ax = [ax]
-# ax[0].plot(rld, z_)
-# ax[0].set_xlabel("root length density [cm / cm3]")
-# ax[0].set_ylabel("depth [cm]")
-# # ax[1].plot(rsd, z_)
-# # ax[1].set_xlabel("root surface density [cm2 / cm3]")
-# # ax[1].set_ylabel("depth [cm]")
-# plt.tight_layout()
-# plt.show()
+dz = 0.5
+exact = False
+domain_size = np.array(max_b) - np.array(min_b)
+slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
+z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
+rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
+rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
 
+fig, ax = plt.subplots(1, 1, figsize = (10, 10))
+ax = [ax]
+ax[0].plot(rld, z_)
+ax[0].set_xlabel("root length density [cm / cm3]")
+ax[0].set_ylabel("depth [cm]")
+# ax[1].plot(rsd, z_)
+# ax[1].set_xlabel("root surface density [cm2 / cm3]")
+# ax[1].set_ylabel("depth [cm]")
+plt.tight_layout()
+plt.show()
 

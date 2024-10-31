@@ -490,8 +490,8 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
 
 
 def write_results(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_):
-    np.savez("data/" + filename, psi_x = psi_x, psi_rs = psi_i, sink = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
-    pass
+    np.savez("results/" + file_name, psi_x = psi_x, psi_rs = psi_i, sink = sink, times = times,
+             trans = trans, psi_s = psi_s, vol = vol_, surf = surf_, krs = krs_, depth = depth_)
 
 
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):  ###### TODO change to savez #######

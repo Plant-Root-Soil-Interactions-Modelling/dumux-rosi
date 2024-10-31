@@ -22,7 +22,7 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # lai = evap.lai_maize2
 # ylim_ = None  # -10
 
-name = "soybean_80"# "soybean_noFlux_100"
+name = "soybean_water0"
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
@@ -83,14 +83,14 @@ y_ = np.array(y_)
 t_ = t_[::2]
 y_ = y_[::2]
 
-fnames_depth = np.array(["depth_" + name + str_ ])
-depths = [np.load(path + n_ + ".npy")  for n_ in fnames_depth]
-depths = depths[0]
+fname_ = name + str_
+alldata = np.load(path + fname_ + ".npz")
+depths = alldata["depth"]
 
-data = np.load(path + fname + ".npy")
+data = alldata["psi_s"]  # np.load(path + fname + ".npy")
 data = np.transpose(data)
 data = data[::-1,:]
-yy = abs(int(depths[-1] - 10)) # depth index for visualization
+yy = abs(int(depths[-1] - 10))  # depth index for visualization
 data = data[:yy,:]
 
 """ sink plot """
@@ -146,7 +146,7 @@ else:
     x = np.linspace(0, times[-1], data.shape[1])
     y = np.linspace(0, -yy, data.shape[0])
     X, Y = np.meshgrid(x, y)
-    contours = ax[1].contour(X, Y, data, [0.], colors = 'black')    
+    contours = ax[1].contour(X, Y, data, [0.], colors = 'black')
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
     cb.set_label('soil matric potential [cm]', rotation = 270)

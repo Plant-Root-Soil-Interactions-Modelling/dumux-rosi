@@ -79,6 +79,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         rs.setSeed(seed)
         rs.readParameters(fname)
 
+        srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
+        src = srp[0].maxB  # 14
+
         if not stochastic:
             set_all_sd(rs, 0.)
 
@@ -141,6 +144,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 mods.pop("a")
             if "src" in mods:
                 srp[0].maxB = mods["src"]
+                print("maxB changed to", mods["src"])
+                print(srp[0].firstB)
+                print(srp[0].delayB)
                 mods.pop("src")
             if "delaySB" in mods:
                 srp[0].delaySB = mods["delaySB"]
@@ -151,10 +157,11 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                     print("key:", k)
                 print()
                 raise
+            # print("theta45", rrp[1].theta, rrp[4].theta)  # 1.5707999
+            # print("src", srp[0].maxB)  # 14
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeDB(4, 5)
-        # rs.initializeLB(4, 5)
         rs.simulate(1., True)
 
         if model == "Meunier":
@@ -164,46 +171,10 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         else:
             raise "create_mapped_rootsystem(): unknown model"
 
-    # r.test()
-
     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 
-    # print("******************************************************")
-    # r.test()
-
     picker = lambda x, y, z: soil_model.pick([x, y, z])
     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-    # comm.barrier()
-    # print("survived setSoilGrid", rank)
-    print("\n******************************************************")
-    r.test()
-    print("******************************************************\n")
 
     return r
-
-# def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):
-#     """ creates a single root mapped to a soil with @param ns segments, length l, and radius a """
-#     global picker  # make sure it is not garbage collected away...
-#     r = create_singleroot(ns, l, a)
-#     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-#                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-#     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-#     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-#     init_conductivities_const(r)
-#     return r
-#
-#
-# def create_singleroot(ns = 100, l = 50 , a = 0.05):
-#     """ creates a single root with @param ns segments, length l, and radius a """
-#     radii = np.array([a] * ns)
-#     nodes = [pb.Vector3d(0, 0, 0)]
-#     segs = []
-#     dx = l / ns
-#     z_ = np.linspace(-dx, -l , ns)
-#     for i in range(0, ns):
-#         nodes.append(pb.Vector3d(0, 0, z_[i]))
-#         segs.append(pb.Vector2i(i, i + 1))
-#     rs = pb.MappedSegments(nodes, segs, radii)
-#     return XylemFluxPython(rs)
-

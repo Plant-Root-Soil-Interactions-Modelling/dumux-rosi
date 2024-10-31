@@ -41,10 +41,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     skip = 10  # for output and results, skip iteration (TODO)
     max_iter = 10  # maximum for fix point iteration
 
-    print("simulate_dynamic starting" , flush = True )
+    print("simulate_dynamic starting" , flush = True)
     peri = PerirhizalPython(r.ms)
-    peri.open_lookup("data/"+lookuptable_name)
-    print("opening look up table:", "data/"+lookuptable_name,flush = True )
+    peri.open_lookup("data/" + lookuptable_name)
+    print("opening look up table:", "data/" + lookuptable_name, flush = True)
 
     start_time = timeit.default_timer()
 
@@ -79,7 +79,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         rs.simulate(dt, False)
 
         cell2seg = rs.cell2seg  # for debugging
-        mapping = rs.getSegmentMapper() # because seg2cell is a dict
+        mapping = rs.getSegmentMapper()  # because seg2cell is a dict
         sx = s.getSolutionHead_()  # richards.py
         hsb_ = np.array(rs.getHs(sx))
         hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
@@ -102,13 +102,13 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
         wall_fixpoint = timeit.default_timer()
 
-        err = 1.e6  # cm
+        err_ = 1.e6  # cm
         c = 0
 
         rx = r.solve(initial_age + t, trans_f(t, dt), rsx, cells = False)
         rx_old = rx.copy()
 
-        while err > 1 and c < max_iter:
+        while err_ > 1 and c < max_iter:
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
@@ -125,7 +125,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
             rx = r.solve_again(initial_age + t, trans_f(initial_age + t, dt), rsx, cells = False)
-            err = np.linalg.norm(rx - rx_old)
+            err_ = np.linalg.norm(rx - rx_old) / np.sqrt(rx.shape[0])  # rmse
             wall_xylem = timeit.default_timer() - wall_xylem
 
             rx_old = rx.copy()
@@ -213,9 +213,9 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
         if i % skip == 0:
 
-            print("time", initial_age + t, "{:g}/{:g} {:g} iterations".format(i, N, c), "wall times",
-                  wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem),
-                  "number of segments", rs.getNumberOfSegments(), "root collar", rx[0], flush = True)
+            print("age {:g}".format(initial_age + t), "{:g}/{:g} {:g} iterations, rmse {:g}".format(i, N, c, err_), "; wall times {:g} {:g}".format(
+                wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem)),
+                  "number of segments", rs.getNumberOfSegments(), "collar potential {:g}".format(rx[0]), flush = True)
 
             sink_.append(sink)  # cm3/day (per soil cell)
 

@@ -24,17 +24,12 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
         
         returns soil_model (RichardsWrapper(RichardsSP()))
     """
-    wet = False  # wet scenario
-
     s = RichardsWrapper(RichardsSP())  # water only
     s.initialize()
     s.createGrid(min_b, max_b, cell_number, periodic = True)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
 
     # BC
     if times is not None:
-        if wet:  # wet scenario increases precipitation and decreases evaporation
-            net_inf[net_inf > 0] = net_inf[net_inf > 0] * 1.2  # increase precipitation for 20%
-            net_inf[net_inf < 0] = net_inf[net_inf < 0] * 0.8  # decrease evaporation for 20%
         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     else:
         s.setTopBC("noFlux")
@@ -48,7 +43,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
         s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
 
-    s.setHomogeneousIC(-100)
+    s.setHomogeneousIC(-100, equilibrium = True)  # cm
 
     s.initializeProblem()
 

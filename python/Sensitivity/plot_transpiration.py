@@ -17,8 +17,6 @@ Kc_soybean = 1.15
 name = "soybean_80"
 str_ = [""]  # _sra0d
 area = 76 * 3
-# start_date = '1995-03-15 00:00:00'
-# potential_trans = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, 87.5, area, evap.lai_soybean, Kc_soybean)
 start_date = '2021-05-10 00:00:00'  # INARI csv data
 potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean2, Kc_soybean)  # 87.5
 evap.net_infiltration_table_beers_csv(start_date, 87.5, evap.lai_soybean2, Kc_soybean)

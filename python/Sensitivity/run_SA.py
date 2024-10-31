@@ -239,14 +239,37 @@ def local_soybean():
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
 
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
-        jobs = make_local( p2 , p2, p1, p1,p1,theta_, 1., 1., p1, [2., 3, 4, 5]) #
+        jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
     else:
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
     start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-    # run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+
+
+def local_soybean_conductivities():
+    print("local_soybean_conductivities")
+    root_type = "soybean"
+    file_name = "local_soybean_conductivities"
+    enviro_type = 0
+    sim_time = 87.5  # days
+
+    if rank == 0:
+        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        theta_ = np.linspace(0, np.pi / 2, 9)
+        write_ranges("results/" + file_name,
+                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+
+                     [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
+        jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+
+    else:
+        jobs = None
+
+    jobs = comm.bcast(jobs, root = 0)
+    start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 # def local_maize():
 #     root_type = "maize"
