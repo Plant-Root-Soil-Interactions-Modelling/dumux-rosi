@@ -75,7 +75,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process; TODO check test for that ...
         # print("create_mapped_rootsystem(): Seed rank {:g}:".format(rank), seed)
 
-        rs = pb.MappedPlant()
+        rs = pb.MappedRootSystem()  ####################################################################################
         rs.setSeed(seed)
         rs.readParameters(fname)
 
@@ -177,4 +177,4 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     picker = lambda x, y, z: soil_model.pick([x, y, z])
     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 
-    return r
+    return r, params

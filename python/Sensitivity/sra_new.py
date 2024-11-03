@@ -55,6 +55,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     surf_ = [[], [], [], [], [], []]
     krs_ = []
     depth_ = []
+    pot_trans = []
 
     rs = r.ms
     nodes = rs.nodes
@@ -207,7 +208,11 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         for k, v in soil_fluxes.items():
             sink[k] += v
         x_.append(initial_age + t)  # day
-        y_.append(np.sum(sink))  # cm3/day
+        # y_.append(np.sum(sink))  # cm3/day
+        y_.append(np.sum(fluxes))  # cm3/day
+
+        pot_trans.append(trans_f(initial_age + t, dt))  # cm3/day
+
         if type_ == 2:
             c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
 
@@ -246,5 +251,17 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    return psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
-
+    return pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
+    """ 
+    pot_trans                    potential transpiration
+    psi_x_                       root xylem potential (per node) 
+    psi_s_                       soil matric potential (per cell)
+    sink_                        -  
+    x_                           times
+    y_                           actual transpiration
+    psi_s2_                      - 
+    vol_                         root system volume 
+    surf_                        root system surface [cm2]
+    krs_                         root system hydraulic conductivity [cm2/day]
+    depth_                       root system depth [cm]
+    """

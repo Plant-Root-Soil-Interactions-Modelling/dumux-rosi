@@ -227,7 +227,7 @@ def read_ranges(file_name):
 def local_soybean():
     print("local_soybean")
     root_type = "soybean"
-    file_name = "local_soybean_potential80a"  ############################################################################
+    file_name = "local_soybean"
     enviro_type = 0
     sim_time = 87.5  # days
 
@@ -248,7 +248,7 @@ def local_soybean():
     start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 
-def local_soybean_conductivities():
+def local_soybean_conductivities():  #######################################################################################
     print("local_soybean_conductivities")
     root_type = "soybean"
     file_name = "local_soybean_conductivities"

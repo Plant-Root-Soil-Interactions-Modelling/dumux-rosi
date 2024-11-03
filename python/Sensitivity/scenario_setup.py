@@ -201,6 +201,27 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
     #               [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
+def init_lupine_conductivities_sa(r, ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_):
+    """ 10 variable set up for sensitivity analysis"""
+    kr00 = np.array([[0., 0.]])  # artificial shoot
+    kx00 = np.array([[0., 1.e3]])  # artificial shoot
+
+    kx1 = np.array([[0., ykx1], [14., ykx1], [28., okx1], [28., okx1]])  # increasing with age
+    kx2 = np.array([[0., ykx2], [7., ykx2], [14., okx2], [14., okx2]])  # increasing with age
+
+    kr1 = np.array([[0., ykr1], [7., ykr1], [28., okr1], [28., okr1]])  # decreasing with age
+    kr2 = np.array([[0., ykr2], [7., ykr2], [14., okr2], [14., okr2]])  # decreasing with age
+
+    kr3 = np.array([[0., kr3_], [100., kr3_]])  # constant
+    kx3 = np.array([[0., kx3_], [100., kx3_]])  # constant
+
+    r.params.setKrTables([kr00[:, 1], kr1[:, 1], kr2[:, 1], kr3[:, 1], kr1[:, 1], kr1[:, 1]],
+                         [kr00[:, 0], kr1[:, 0], kr2[:, 0], kr3[:, 0], kr1[:, 0], kr1[:, 0]])
+
+    r.params.setKxTables([kx00[:, 1], kx1[:, 1], kx2[:, 1], kx3[:, 1], kx1[:, 1], kx1[:, 1]],
+                         [kx00[:, 0], kx1[:, 0], kx2[:, 0], kx3[:, 0], kx1[:, 0], kx1[:, 0]])
+
+
 def init_lupine_conductivities2(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for maize following Meunier et al. (2018) !altered for tap and seminal! """
 
@@ -215,287 +236,18 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
     r.setKxTables([kx00[:, 1], 20 * skx * kx[:, 1], skx * kx[:, 1], skx * kx[:, 1], 10 * skx * kx[:, 1], 10 * skx * kx[:, 1]],
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
-# def create_soil_model(soil_, min_b , max_b , cell_number, type, times = None, net_inf = None, bot_bc = "noFlux"):
-#     """
-#         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
-#         soil type is fixed and homogeneous
-#         domain is periodic (if 2d or 3d)
-#         initial potentials are linear from @param p_top to @param p_bot
-#
-#         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
-#     """
-#     wet = False
-#
-#     soil = vg.Parameters(soil_)
-#     # vg.create_mfp_lookup(soil, -1.e5, 1000)
-#
-#     if type == 1:
-#         s = RichardsWrapper(RichardsSP())  # water only
-#     elif type == 2:
-#         s = RichardsWrapper(RichardsNCSP())  # water and one solute
-#     else:
-#         print("choose type, 1 = Richards, 2 = RichardsNCSP")
-#
-#     s.initialize()
-#     s.createGrid(min_b, max_b, cell_number, periodic = True)  # [cm]  # periodicity is not needed, since coupling via s.pick(0., 0., z.)
-#
-#     # Initial conditions for fertilization
-#     if type == 2:  # solute IC
-#         z_ = [0., -30., -30., -200.]
-#         v_ = np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  # kg / m3 (~4.e-4)
-#         # [1.5 * 2.6e-4, 1.5 * 2.6e-4, 2.6e-4, 2.6e-4]  # kg/m3 [2.e-4, 2.e-4, 1.e-4, 1.e-4]  # TODO [0., 0., 0., 0.]  #
-#         # -> Fletcher et al. 2021 initial solution concentration = 0.43 mol/m3 (2.6e-4 = 0.43*62*1e-3) (nitrate 62 g/mol)
-#         s.setICZ_solute(v_[::-1], z_[::-1])  # ascending order...
-#
-#     # BC
-#     if times is not None:
-#         if wet:
-#             net_inf[net_inf > 0] = net_inf[net_inf > 0] * 1.2  # increase precipitation for 20%
-#             net_inf[net_inf < 0] = net_inf[net_inf < 0] * 0.8  # decrease evaporation for 20%
-#         s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
-#     else:
-#         s.setTopBC("noFlux")
-#     # s.setBotBC("freeDrainage")
-#     s.setBotBC("noFlux")
-#     # s.setBotBC("potential", 80)
-#     # s.setBotBC(bot_bc, 80)
-#
-#     if type == 2:  # solute BC
-#         #  90 lb/ha = 40.8 kg/ha -> 4.08 g /m2 *1.e-4 -> 4.08e-4 g/cm2
-#         f0 = 4.08e-4  # g/cm2 (90)
-#         f1 = 2.27e-5  # g/cm2 (5)
-#         f2 = 5.43e-4  # g/cm2 (120)
-#         sol_times = np.array([0., 1., 1., 50., 50., 51., 51., 1.e3])
-#         sol_influx = -np.array([f1, f1, 0., 0., f2, f2, 0., 0.])  # g/(cm2 day)
-#         # s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx]) ########################################
-#         # s.setBotBC_solute("outflow", 0.) ##################################
-#
-#     # Paramters
-#     s.setVGParameters([soil_])
-#     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
-#     s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
-#     if type == 2:
-#         s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
-#         s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
-#
-#     s.setHomogeneousIC(-100)
-#
-#     s.initializeProblem()
-#     wilting_point = -15000
-#     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
-#     s.ddt = 1.e-5  # [day] initial Dumux time step
-#
-#     # # IC
-#     # h = np.load("data/initial_potential.npy")
-#     # s.setInitialConditionHead(h)  # cm
-#
-#     if type == 2:
-#         c = np.load("data/initial_concentration.npy")  # kg/m3
-#         s.setInitialCondition(c, 1)  # kg/m3
-#
-#     # h = s.getSolutionHead()
-#     # plt.plot(h, np.linspace(-200., 0., h.shape[0]))
-#     # plt.xlabel("soil matric potential [cm]")
-#     # plt.ylabel("depth (cm)")
-#     # plt.tight_layout()
-#     # plt.show()
-#     # plt.plot(c, np.linspace(-200, 0., c.shape[0]))
-#     # plt.xlabel("nitrate concentration [g/cm3]")
-#     # plt.ylabel("depth (cm)")
-#     # plt.tight_layout()
-#     # plt.show()
-#
-#     return s, soil
-#
-#
-# def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, ns = 100, l = 50 , a = 0.05):
-#     """ creates a single root mapped to a soil with @param ns segments, length l, and radius a """
-#     global picker  # make sure it is not garbage collected away...
-#     r = create_singleroot(ns, l, a)
-#     r.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-#                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-#     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-#     r.rs.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-#     init_conductivities_const(r)
-#     return r
-#
-#
-# def create_singleroot(ns = 100, l = 50 , a = 0.05):
-#     """ creates a single root with @param ns segments, length l, and radius a """
-#     radii = np.array([a] * ns)
-#     nodes = [pb.Vector3d(0, 0, 0)]
-#     segs = []
-#     dx = l / ns
-#     z_ = np.linspace(-dx, -l , ns)
-#     for i in range(0, ns):
-#         nodes.append(pb.Vector3d(0, 0, z_[i]))
-#         segs.append(pb.Vector2i(i, i + 1))
-#     rs = pb.MappedSegments(nodes, segs, radii)
-#     return XylemFluxPython(rs)
-#
-#
-# def set_all_sd(rs, s):
-#     """ # sets all standard deviation to a percantage, i.e. value*s """
-#     for p in rs.getOrganRandomParameter(pb.OrganTypes.root):
-#         p.a_s = p.a * s
-#         p.lbs = p.lb * s
-#         p.las = p.la * s
-#         p.lns = p.ln * s
-#         p.lmaxs = p.lmax * s
-#         p.rs = p.r * s
-#         p.thetas = p.theta * s
-#         p.rlts = p.rlt * s  # no used
-#         p.ldelays = p.ldelay * s
-#     seed = rs.getOrganRandomParameter(pb.OrganTypes.seed)[0]  # SeedRandomParameter
-#     seed.firstBs = seed.firstB * s
-#     seed.delayBs = seed.delayB * s
-#     seed.maxBs = seed.maxB * s
-#     seed.firstSBs = seed.firstSB * s
-#     seed.delaySBs = seed.delaySB * s
-#     seed.delayRCs = seed.delayRC * s
-#     seed.nCs = seed.nCs * s
-#     seed.nzs = seed.nzs * s
-#     # todo seed position s
-#
-#
-# def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False, mods = None, model = "Meunier"):
-#     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,
-#         and maps it to the soil_model """
-#
-#     params = PlantHydraulicParameters()
-#
-#     if fname.endswith(".rsml"):  # opens root geometry from RSML file
-#
-#         if model == "Meunier":
-#             r = HydraulicModel_Meunier(fname, params)
-#         elif model == "Doussan":
-#             r = HydraulicModel_Doussan(fname, params)
-#         else:
-#             raise "create_mapped_rootsystem(): unknown model"
-#
-#     elif fname.endswith(".xml"):  # functional plant model with parameters given in xml file
-#
-#         if rank == 0:
-#             if stochastic:
-#                 seed = np.random.randint(0, 1e6)
-#             else:
-#                 seed = 1  # always the same random seed
-#         else:
-#             seed = None
-#         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process
-#
-#         seed = 1
-#         rs = pb.MappedPlant()
-#         rs.setSeed(seed)
-#         rs.readParameters(fname)
-#
-#         if not stochastic:
-#             set_all_sd(rs, 0.)
-#
-#         if mods is not None:  # apply modifications
-#             rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
-#             srp = rs.getOrganRandomParameter(pb.OrganTypes.seed)
-#             if "lmax" in mods:  # all types
-#                 for i in range(0, len(rrp)):
-#                     rrp[i].lmax *= mods["lmax"]
-#                 mods.pop("lmax")
-#             if "lmax145" in mods:
-#                 rrp[1].lmax *= mods["lmax145"]
-#                 rrp[4].lmax *= mods["lmax145"]
-#                 if len(rrp) > 5:
-#                     rrp[5].lmax *= mods["lmax145"]
-#                 mods.pop("lmax145")
-#             if "lmax2" in mods:
-#                 rrp[2].lmax *= mods["lmax2"]
-#                 mods.pop("lmax2")
-#             if "lmax3" in mods:
-#                 rrp[3].lmax *= mods["lmax3"]
-#                 mods.pop("lmax3")
-#             if "lmax4" in mods:
-#                 rrp[4].lmax *= mods["lmax4"]
-#                 mods.pop("lmax4")
-#             if "theta45" in mods:
-#                 if len(rrp) > 5:
-#                     print("shootbore (theta45)")
-#                     rrp[5].theta = mods["theta45"]
-#                 else:
-#                     print("seminal (theta45)")
-#                     rrp[4].theta = mods["theta45"]
-#                 mods.pop("theta45")
-#             if "r145" in mods:
-#                 rrp[1].r *= mods["r145"]
-#                 rrp[4].r *= mods["r145"]
-#                 if len(rrp) > 5:
-#                     rrp[5].r *= mods["r145"]
-#                 mods.pop("r145")
-#             if "r2" in mods:
-#                 rrp[2].r *= mods["r2"]
-#                 mods.pop("r2")
-#             if "r3" in mods:
-#                 rrp[3].r *= mods["r3"]
-#                 mods.pop("r3")
-#             if "r" in mods:  # all types
-#                 for i in range(0, len(rrp)):
-#                     rrp[i].r *= mods["r"]
-#                 mods.pop("r")
-#             if "ln" in mods:  # all types
-#                 for i in range(0, len(rrp)):
-#                     rrp[i].ln *= mods["ln"]
-#                 mods.pop("ln")
-#             if "ln1" in mods:
-#                 rrp[1].ln *= mods["ln1"]
-#                 mods.pop("ln1")
-#             if "a" in mods:  # all types
-#                 for i in range(0, len(rrp)):
-#                     rrp[i].a *= mods["a"]
-#                 mods.pop("a")
-#             if "src" in mods:
-#                 srp[0].maxB = mods["src"]
-#                 mods.pop("src")
-#             if "delaySB" in mods:
-#                 # srp[0].delay
-#                 # SB = mods["delayB"]  ################ TODO
-#                 mods.pop("delaySB")
-#             if mods:  # something unused in mods
-#                 print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
-#                 for k, v in mods.items():
-#                     print("key:", k)
-#                 print()
-#                 raise
-#
-#         # rrp = rs.getOrganRandomParameter(pb.OrganTypes.root)
-#         # for p in rrp:
-#         #     print(p.dx, p.dxMin)
-#
-#         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-#         rs.initializeDB(4, 5)
-#         rs.simulate(4., True)
-#
-#         if model == "Meunier":
-#             r = HydraulicModel_Meunier(rs, params)
-#         elif model == "Doussan":
-#             r = HydraulicModel_Doussan(rs, params)
-#         else:
-#             raise "create_mapped_rootsystem(): unknown model"
-#
-#     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-#                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
-#
-#     picker = lambda x, y, z: soil_model.pick([x, y, z])  #  function that return the index of a given position in the soil grid (should work for any grid - needs testing)
-#     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
-#     # comm.barrier()
-#     # print("survived setSoilGrid", rank)
-#
-#     return r
 
-
-def write_results(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_):
-    np.savez("results/" + file_name, psi_x = psi_x, psi_rs = psi_i, sink = sink, times = times,
-             trans = trans, psi_s = psi_s, vol = vol_, surf = surf_, krs = krs_, depth = depth_)
+def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_):
+    """  saves numpy arrays in a npz file """
+    np.savez("results/" + file_name, pot_trans = np.array(pot_trans_), psi_x = psi_x_, psi_rs = psi_i_, sink = sink_, times = times_,
+             act_trans = act_trans_, psi_s = psi_s_, vol = vol_, surf = surf_, krs = krs_, depth = depth_)
 
 
 def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):  ###### TODO change to savez #######
     """  saves numpy arrays as npy files """
+
+    print("depricated")
+    dd
 
     np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
     np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
@@ -510,97 +262,3 @@ def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_,
         np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
     if c_ is not None:
         np.save('results/nitrate_' + file_name, np.array(c_))  # soil potential per cell [cm]
-
-
-if __name__ == '__main__':
-
-    pass
-    # theta_r = 0.025
-    # theta_s = 0.403
-    # alpha = 0.0383  # (cm-1) soil
-    # n = 1.3774
-    # k_sat = 60.  # (cm d-1)
-    # soil_ = [theta_r, theta_s, alpha, n, k_sat]
-    # s, soil = create_soil_model(soil_, [-1, -1, -150.], [1, 1, 0.], [1, 1, 55], -310, -200, 1)
-    #
-    # print()
-    # print(s)
-    # print(soil)
-    #
-    # """ TODO: tests would be nice, or a minimal example setup ... """
-
-    #     """ a simplified parametrisation, based on init_dynamic_conductivities_growth """
-#     kr00 = np.array([[0., 0.]])  # artificial shoot
-#     kx00 = np.array([[0., 1.e3]])  # artificial shoot
-#
-#     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., kr0], [dt, kr0], [dt, 0.], [1.e3, 0.]])  # primals
-#     kx0 = np.array([[0., kx0], [1.e3, kx0]])  # primals
-#
-#     r.setKrTables([kr00[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1], kr0[:, 1]],
-#                   [kr00[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0], kr0[:, 0]])
-#     r.setKxTables([kx00[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1], kx0[:, 1]],
-#                   [kx00[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0], kx0[:, 0]])
-
-# def simulate_const(s, r, trans, sim_time, dt):
-#     """
-#         classic model:
-#         potential at root soil interface equals mean matric potential of surrounding finite volume
-#     """
-#     wilting_point = -15000  # cm
-#     skip = 6  # for output and results, skip iteration
-#     rs_age = 0.  # day
-#
-#     start_time = timeit.default_timer()
-#     psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
-#     sx = s.getSolutionHead()  # inital condition, solverbase.py
-#     ns = len(r.rs.segments)
-#     if rank == 0:
-#         map_ = r.rs.seg2cell  # because seg2cell is a map
-#         mapping = np.array([map_[j] for j in range(0, ns)], dtype = np.int64)  # convert to a list
-#
-#     N = int(np.ceil(sim_time / dt))
-#
-#     """ simulation loop """
-#     for i in range(0, N):
-#
-#         t = i * dt  # current simulation time
-#
-#         """ 1. xylem model """
-#         if rank == 0:  # Root part is not parallel
-#             rx = r.solve(rs_age, -trans * sinusoidal2(t, dt), 0., sx, cells = True, wilting_point = wilting_point)  # xylem_flux.py
-#             fluxes = r.soilFluxes(rs_age, rx, sx, False)  # class XylemFlux is defined in MappedOrganism.h, approx = False
-#         else:
-#             fluxes = None
-#         fluxes = comm.bcast(fluxes, root = 0)  # Soil part runs parallel
-#
-#         """ 2. soil model """
-#         s.setSource(fluxes.copy())  # richards.py
-#         s.solve(dt)
-#         sx = s.getSolutionHead()  # richards.py
-#
-#         """ validity check """
-#
-#         """ remember results ... """
-#         if rank == 0 and i % skip == 0:
-#
-#             sx_ = sx[:, 0]
-#             psi_x_.append(rx.copy())  # cm (per root node)
-#             psi_s_.append(np.array([sx_[ci] for ci in mapping]))  # cm (per root segment)
-#             sink = np.zeros(sx_.shape)
-#             for k, v in fluxes.items():
-#                 sink[k] += v
-#             sink_.append(sink)  # cm3/day (per soil cell)
-#             x_.append(t)  # day
-#             y_.append(np.sum(sink))  # cm3/day
-#             psi_s2_.append(sx_)  # cm (per soil cell)
-#
-#             min_sx, min_rx, max_sx, max_rx = np.min(sx), np.min(rx), np.max(sx), np.max(rx)
-#             n = round(float(i) / float(N) * 100.)
-#             print("\n[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], [{:g}, {:g}] cm soil [{:g}, {:g}] cm root at {:g}, {:g}"
-#                     .format(min_sx, max_sx, min_rx, max_rx, np.sum(sink), -trans * sinusoidal2(t, dt)))
-#
-#     if rank == 0:
-#         print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-#
-#     return psi_x_, psi_s_, sink_, x_, y_, psi_s2_
-

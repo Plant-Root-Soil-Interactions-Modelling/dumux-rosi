@@ -34,7 +34,7 @@ soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
 simtime = 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
-rs = pb.RootSystem()
+rs = pb.Plant()
 path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
 name = "Glycine_max_Moraes2020_opt2"
 rs.readParameters(path + name + ".xml")

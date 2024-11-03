@@ -15,7 +15,7 @@ import hydraulic_model
 import sra_new
 
 
-def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, src, save_all = False):
+def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, src, kr_old = None, kx_old = None, save_all = False):
     """
         file_name                output file_name
         enviro_type              envirotype (number)
@@ -39,6 +39,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
 
     # initialize soil
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 200. - water_table)
+    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
     print("soil model set\n", flush = True)
 
     # initialize root system
@@ -51,23 +52,35 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     if src:
         mods["src"] = src
 
-    r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)
+    r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
     print("***********************", "hydraulic model set\n", flush = True)
 
-    scenario.init_lupine_conductivities(r, kr, kx)
+    if kr_old:
+        print("10 variable condcutivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
+        scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
+    else:
+        scenario.init_lupine_conductivities(r, kr, kx)
+    # params.plot_conductivities(False, lateral_ind = [2, 3])  #
+    # dd
+
     print("conductivities set\n", flush = True)
 
     """ sanity checks """
     r.test()  # sanity checks
     print("sanity test done\n", flush = True)
 
-    psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
+    pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
         s, r, table_name, sim_time, dt, trans_soybean, initial_age = 1., type_ = 1)
 
     if save_all:
-        scenario.write_results(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+        scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+    else:
+        scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
 
-    np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
+    print("writing parameters", file_name)
+    r.ms.writeParameters(file_name)  # corresponding xml parameter set
+
+    # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
 
 # def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
@@ -104,10 +117,6 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
 
 if __name__ == "__main__":
 
-    # print(sys.argv)
-    # print(len(sys.argv[1:]))
-    # file_name, enviro_type, sim_time, kr, kx, lmax0, lmax1, lmax2, theta0, r0, r1, a, src
-
     file_name = sys.argv[1]
     enviro_type = int(float(sys.argv[2]))
     sim_time = float(sys.argv[3])
@@ -122,19 +131,16 @@ if __name__ == "__main__":
     a = float(sys.argv[12])
     src = int(float(sys.argv[13]))
 
-    # file_name = "test_"
-    # enviro_type = 0
-    # sim_time = 1
-    # kr = 1.
-    # kx = 1.
-    # lmax1 = 1.
-    # lmax2 = 1.
-    # lmax3 = 1.
-    # theta1 = 0.
-    # r1 = 1.
-    # r2 = 1.
-    # a = 1.
-    # src = 2
-
     run_soybean(file_name, enviro_type, sim_time, kr, kx, [lmax1, lmax2, lmax3], theta1, [r1, r2], a, src, save_all = True)
+
+    theta1 = None
+    src = None
+
+    kx = [0.1, 1.e-3, 1.e-3]
+    kx_old = [0.35, 0.015]
+
+    kr = [1.e-3, 4.e-3, 4.e-3]
+    kr_old = [5e-4, 0.0015]
+
+    run_soybean(file_name, envirotype, sim_time, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 

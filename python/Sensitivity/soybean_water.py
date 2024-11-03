@@ -15,12 +15,20 @@ import hydraulic_model
 import sra_new
 import run_sra
 
-sim_time = 87.5  # 87.5  # [day]
+sim_time = 45  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
-src = None
+src = None  # if none leave unmodified
 
-run_sra.run_soybean("soybean_water{:g}".format(envirotype), envirotype, sim_time, 1., 1., [1., 1., 1.], theta1, [1., 1.], 1., src, True)
+run_sra.run_soybean("soybean_waterRS{:g}".format(envirotype), envirotype, sim_time, 1., 1., [1., 1., 1.], theta1, [1., 1.], 1., src, save_all = True)
+
+# kx = [0.1, 1.e-3, 1.e-3]
+# kx_old = [0.35, 0.015]
+#
+# kr = [1.e-3, 4.e-3, 4.e-3]
+# kr_old = [5e-4, 0.0015]
+#
+# run_sra.run_soybean("soybean_test{:g}".format(envirotype), envirotype, sim_time, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 
 # """ parameters   """
 #
