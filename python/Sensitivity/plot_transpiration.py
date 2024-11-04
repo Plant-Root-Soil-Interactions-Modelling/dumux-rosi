@@ -14,7 +14,7 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean_water0"
+name = "soybean_waterRS0"
 str_ = [""]
 area = 76 * 3
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -117,9 +117,10 @@ for i in range(0, n):
     ax[i].legend(loc = 'upper left')
     ax2 = ax[i].twinx()
     dt = np.diff(t)
-    cup = -10 * np.cumsum(np.multiply(np.array(act_trans[:-1]) / area, dt))
+    cup = -10 * np.cumsum(np.multiply(act_trans[:-1], dt)) / area
     cum_pot = -10 * np.cumsum(np.multiply(pot_trans[:-1], dt)) / area
-    ax2.plot(t[1:], 10 * cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
+    ax2.plot(t[1:], cup, 'c--', label = "cumulative transpiration")  # cumulative transpiration (neumann)
+    # ax2.plot(t[1:], cum_pot, 'c--', label = "cumulative potential")
     print("cumulative pot transp", cum_pot[-1])
     ax2.set_ylabel("cumulative [mm]")
     # if data2 is not None:
