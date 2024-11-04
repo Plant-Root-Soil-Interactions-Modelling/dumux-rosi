@@ -50,7 +50,7 @@ sim_time = 87.5
 # ylim_ = None  # -10
 # sim_time = 95
 
-fname = "soil_" + name + str_
+fname = name + str_
 
 # start_date = '1995-03-14 00:00:00'  # substract 1 day, since inital rs_age
 start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -71,9 +71,11 @@ prop_cycle = plt.rcParams['axes.prop_cycle']
 colors = prop_cycle.by_key()['color']
 
 """ load data """
-fnames_t = np.array(["transpiration_" + name + str_ ])  # data currently not stored for rhizosphere models
-times = [np.load(path + n_ + ".npy")  for n_ in fnames_t]
-times = times[0][0,:]
+alldata = np.load(path + name + ".npz")
+times = alldata["times"]
+pot_trans = alldata["pot_trans"]
+act_trans = alldata["act_trans"]
+sim_time = np.max(times)
 
 # t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
 t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc)
@@ -84,7 +86,7 @@ t_ = t_[::2]
 y_ = y_[::2]
 
 fname_ = name + str_
-alldata = np.load(path + fname_ + ".npz")
+
 depths = alldata["depth"]
 
 data = alldata["psi_s"]  # np.load(path + fname + ".npy")

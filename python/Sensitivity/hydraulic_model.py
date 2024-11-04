@@ -75,7 +75,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process; TODO check test for that ...
         # print("create_mapped_rootsystem(): Seed rank {:g}:".format(rank), seed)
 
-        rs = pb.MappedRootSystem()  ####################################################################################
+        rs = pb.MappedPlant()  ####################################################################################
         rs.setSeed(seed)
         rs.readParameters(fname)
 
@@ -161,7 +161,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             # print("src", srp[0].maxB)  # 14
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-        rs.initializeDB(4, 5)
+        rs.initializeLB(4, 5)
         rs.simulate(1., True)
 
         if model == "Meunier":
