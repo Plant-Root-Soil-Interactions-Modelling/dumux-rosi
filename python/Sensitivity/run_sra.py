@@ -133,14 +133,14 @@ if __name__ == "__main__":
 
     run_soybean(file_name, enviro_type, sim_time, kr, kx, [lmax1, lmax2, lmax3], theta1, [r1, r2], a, src, save_all = True)
 
-    theta1 = None
-    src = None
-
-    kx = [0.1, 1.e-3, 1.e-3]
-    kx_old = [0.35, 0.015]
-
-    kr = [1.e-3, 4.e-3, 4.e-3]
-    kr_old = [5e-4, 0.0015]
-
-    run_soybean(file_name, envirotype, sim_time, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
+    # theta1 = None
+    # src = None
+    #
+    # kx = [0.1, 1.e-3, 1.e-3]
+    # kx_old = [0.35, 0.015]
+    #
+    # kr = [1.e-3, 4.e-3, 4.e-3]
+    # kr_old = [5e-4, 0.0015]
+    #
+    # run_soybean(file_name, envirotype, sim_time, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 
