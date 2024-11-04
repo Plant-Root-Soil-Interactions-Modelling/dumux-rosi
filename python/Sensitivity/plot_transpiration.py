@@ -14,7 +14,7 @@ import evapotranspiration as evap
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
-name = "soybean_waterRS0"
+name = "soybean_water_0"
 str_ = [""]
 area = 76 * 3
 start_date = '2021-05-10 00:00:00'  # INARI csv data

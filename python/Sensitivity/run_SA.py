@@ -227,7 +227,7 @@ def read_ranges(file_name):
 def local_soybean():
     print("local_soybean")
     root_type = "soybean"
-    file_name = "local_soybean_"
+    file_name = "local_soybean_noFlux_"
     enviro_type = 0
     sim_time = 87.5  # days
 
@@ -240,6 +240,9 @@ def local_soybean():
 
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
         jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+
+        
+        # kr, kx, lmax, theta1, r, a, src,
 
     else:
         jobs = None

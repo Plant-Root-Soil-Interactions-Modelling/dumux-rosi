@@ -19,13 +19,13 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_potential80a"
+file_name = "local_soybean_"
 # file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
 not_xlog = [5]
 
-analysis_time = 100  # days
+analysis_time = 80# days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -46,22 +46,25 @@ names[7] = "seminal root count"
 # names[6] = "root radii scale"
 # names[7] = "brace root delay"
 
-trans_ = np.load(path + "transpiration_" + file_name + "2" + ".npy")
-times = trans_[0,:]
+alldata = np.load(path + file_name + "2" + ".npz")
+trans_ = alldata["act_trans"]
+times = alldata["times"]
 print("Simulation time from", min(times), "to ", max(times), "days")
 
 ind_ = np.argwhere(times > analysis_time)
 if len(ind_) > 0:
     ind = ind_[0][0]
-    print("plots for day", times[ind])
     ind += 1
     ind10 = ind // 10  # TODO check
-    print(ind)
 else:
     ind = -1
     ind10 = -1
 
+
+print("ind", ind)
+print("plots for day", times[ind])
 dt_ = np.diff(times[:ind])
+
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -94,20 +97,26 @@ for lind in range(0, len(names)):
         nitrate = np.zeros((sa_len,))
         for k in range(0, sa_len):
             try:
-                trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                trans[k] = np.sum(np.multiply(trans_[1,:ind - 1], dt_))
-                print(trans[k])
+                # trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
+                alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
+                trans_ = alldata["act_trans"]
+                print("trans_", trans_.shape)
+                trans[k] = np.sum(np.multiply(trans_[:ind - 1], dt_))
+                print("trans[k]", trans[k])
             except:
                 trans[k] = np.nan
                 print("skipping file", file_name + str(file_start_ind + k))
             try:
-                vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
+                # alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
+                vol_ = alldata["vol"]                
+                # vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
                 vol_ = vol_[:, ind10]
                 vol[k] = np.sum(vol_)  # sum over sub-types
             except:
                 vol[k] = np.nan
             try:
-                krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
+                # krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
+                krs_ = alldata["krs"]
                 krs[k] = krs_[ind10]
             except:
                 krs[k] = np.nan
