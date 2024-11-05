@@ -19,13 +19,13 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_"
+file_name = "local_soybean_noFlux_"
 # file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
 not_xlog = [5]
 
-analysis_time = 80# days
+analysis_time = 80  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -60,11 +60,9 @@ else:
     ind = -1
     ind10 = -1
 
-
 print("ind", ind)
 print("plots for day", times[ind])
 dt_ = np.diff(times[:ind])
-
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -108,7 +106,7 @@ for lind in range(0, len(names)):
                 print("skipping file", file_name + str(file_start_ind + k))
             try:
                 # alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
-                vol_ = alldata["vol"]                
+                vol_ = alldata["vol"]
                 # vol_ = np.load(path + "vol_" + file_name + str(file_start_ind + k) + ".npy")
                 vol_ = vol_[:, ind10]
                 vol[k] = np.sum(vol_)  # sum over sub-types

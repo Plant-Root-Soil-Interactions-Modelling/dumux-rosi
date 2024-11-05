@@ -114,8 +114,11 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
+            # print("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+            #   format(job_name, enviro_type, sim_time, *job[1:]))
 
         os.system("sbatch {:s}".format(job_file))
+
         # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
         #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
@@ -241,7 +244,9 @@ def local_soybean():
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
         jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
-        
+        # for j in jobs:
+        #     print(j)
+        # dd
         # kr, kx, lmax, theta1, r, a, src,
 
     else:

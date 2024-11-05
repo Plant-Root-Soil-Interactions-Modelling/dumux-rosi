@@ -15,12 +15,13 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 name = "soybean_water_0"
+name = "local_soybean_noFlux_1"
 str_ = [""]
 area = 76 * 3
-start_date = '2021-05-10 00:00:00'  # INARI csv data
-potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean2, Kc_soybean)  # 87.5
-evap.net_infiltration_table_beers_csv(start_date, 87.5, evap.lai_soybean2, Kc_soybean)
-trans = 1
+# start_date = '2021-05-10 00:00:00'  # INARI csv data
+# potential_trans = evap.get_transpiration_beers_csvS(start_date, 87.5, area, evap.lai_soybean2, Kc_soybean)  # 87.5
+# evap.net_infiltration_table_beers_csv(start_date, 87.5, evap.lai_soybean2, Kc_soybean)
+# trans = 1
 
 # name = "local_soybean"
 # str_ = ["1"]
@@ -101,8 +102,7 @@ if n == 1:
 
 for i in range(0, n):
     t = times
-    if trans > 0:
-        ax[i].plot(t, -10 * pot_trans / area, 'k', label = "potential transpiration")  # potential transpiration
+    ax[i].plot(t, -10 * pot_trans / area, 'k', label = "potential transpiration")  # potential transpiration
     # y = np.maximum(y, 0)
     ax[i].plot(t, -10 * act_trans / area, 'g', label = "actual transpiration")  # actual transpiration  according to soil model
     # if data2 is not None:

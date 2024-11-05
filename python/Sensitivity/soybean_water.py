@@ -18,9 +18,9 @@ import run_sra
 sim_time = 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
-src = None  # if none leave unmodified
+src = 4.  # if none leave unmodified
 
-run_sra.run_soybean("soybean_water_{:g}".format(envirotype), envirotype, sim_time, 1., 1., [1., 1., 1.], theta1, [1., 1.], 1., src, save_all = True)
+run_sra.run_soybean("soybean_test_noFlux_{:g}".format(envirotype), envirotype, sim_time, 1., 1., [1., 1., 1.], theta1, [1., 1.], 1., src, save_all = True)
 
 # kx = [0.1, 1.e-3, 1.e-3]
 # kx_old = [0.35, 0.015]

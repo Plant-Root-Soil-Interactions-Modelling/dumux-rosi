@@ -38,8 +38,8 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc)
 
     # initialize soil
-    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 200. - water_table)
-    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 200. - water_table)
+    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
     print("soil model set\n", flush = True)
 
     # initialize root system
@@ -56,7 +56,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     print("***********************", "hydraulic model set\n", flush = True)
 
     if kr_old:
-        print("10 variable condcutivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
+        print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
         scenario.init_lupine_conductivities(r, kr, kx)
@@ -116,6 +116,8 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
 
 
 if __name__ == "__main__":
+
+    # python3 run_sra.py local_soybean_noFlux_1 0 87.5 1 1 1 1 1 0.785398 1 1 1 4
 
     file_name = sys.argv[1]
     enviro_type = int(float(sys.argv[2]))
