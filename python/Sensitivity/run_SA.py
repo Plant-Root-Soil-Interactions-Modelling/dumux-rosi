@@ -222,8 +222,8 @@ def read_ranges(file_name):
                 ranges.append([])
                 for i in range(0, n):
                     ranges[-1].append(float(entries[2 + i]))
-    print(ranges)
-    print(names)
+    # print(ranges)
+    # print(names)
     return names, ranges
 
 

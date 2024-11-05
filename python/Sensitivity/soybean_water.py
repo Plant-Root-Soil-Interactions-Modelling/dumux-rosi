@@ -18,7 +18,7 @@ import run_sra
 sim_time = 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
-src = 4.  # if none leave unmodified
+src = None  # if none leave unmodified
 
 run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, 1., 1., [1., 1., 1.], theta1, [1., 1.], 1., src, save_all = True)
 

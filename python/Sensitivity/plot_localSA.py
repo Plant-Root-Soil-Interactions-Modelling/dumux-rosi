@@ -29,14 +29,17 @@ analysis_time = 80  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
-print(names)
+# for i, _ in enumerate(names):
+#     print(names[i])
+#     print(ranges[i])
+
 # SOYBEAN
-names[2] = "lmax, primaries"  # seminal and tap
-names[3] = "lmax, first order"
-names[4] = "lmax, second order"
-names[5] = "insertion angle, seminal roots"
-names[6] = "root radii scale"
-names[7] = "seminal root count"
+# names[2] = "lmax, primaries"  # seminal and tap
+# names[3] = "lmax, first order"
+# names[4] = "lmax, second order"
+# names[5] = "insertion angle, seminal roots"
+# names[6] = "root radii scale"
+# names[7] = "seminal root count"
 
 # MAIZE
 # names[2] = "lmax, primaries"  # brace, seminal and tap
@@ -99,7 +102,7 @@ for lind in range(0, len(names)):
                 alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
                 trans_ = alldata["act_trans"]
                 print("trans_", trans_.shape)
-                trans[k] = np.sum(np.multiply(trans_[:ind - 1], dt_))
+                trans[k] = -np.sum(np.multiply(trans_[:ind - 1], dt_))
                 print("trans[k]", trans[k])
             except:
                 trans[k] = np.nan

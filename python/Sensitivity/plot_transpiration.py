@@ -16,6 +16,7 @@ Kc_soybean = 1.15
 
 name = "soybean_water_0"
 name = "local_soybean_noFlux_1"
+name = "soybean_test_noFlux_0"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -127,7 +128,7 @@ for i in range(0, n):
     #     ax2.plot(t[1:], 10 * cuc, 'r--', label = "cumulative nitrate uptake 1.e-2*[g]")  # cumulative transpiration (neumann)
 
     ax2.legend(loc = 'center right')
-    print(str_[i], "cumulative water uptake", cup[-1], "cm")
+    print("cumulative water uptake", cup[-1], "cm", -10 * np.sum(np.multiply(act_trans[:-1], dt)) / area)
 
 ax[i].set_xlabel("time [day]")
 

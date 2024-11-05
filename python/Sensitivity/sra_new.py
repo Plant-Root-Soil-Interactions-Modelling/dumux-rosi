@@ -157,7 +157,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
                 print("fluxes: ", trans_f(initial_age + t, dt), collar_flux)
                 print("")
 
-        soil_fluxes = r.sumSegFluxes(fluxes)
+        soil_fluxes = r.sumSegFluxes(fluxes.copy())
         s.setSource(soil_fluxes.copy())  # richards.py
 
         water_ = s.getWaterVolume()
