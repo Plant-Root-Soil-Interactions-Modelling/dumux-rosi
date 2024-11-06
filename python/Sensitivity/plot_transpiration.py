@@ -16,7 +16,7 @@ Kc_soybean = 1.15
 
 name = "soybean_water_0"
 name = "local_soybean_noFlux_1"
-name = "soybean_test_noFlux_0"
+name = "local_soybean_6"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
