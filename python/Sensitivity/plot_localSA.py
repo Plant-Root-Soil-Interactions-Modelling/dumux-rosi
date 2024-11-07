@@ -25,7 +25,7 @@ file_name = "local_soybean_"
 path = "results/"
 not_xlog = [5]
 
-analysis_time = 80  # days
+analysis_time = 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
 
