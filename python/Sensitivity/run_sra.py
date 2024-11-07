@@ -55,7 +55,7 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
     print("***********************", "hydraulic model set\n", flush = True)
 
-    if kr_old:
+    if kr_old is not None:
         print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
@@ -117,32 +117,63 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
 
 if __name__ == "__main__":
 
-    # python3 run_sra.py local_soybean_noFlux_1 0 87.5 1 1 1 1 1 0.785398 1 1 1 4
+    if len(sys.argv) == 14:
 
-    file_name = sys.argv[1]
-    enviro_type = int(float(sys.argv[2]))
-    sim_time = float(sys.argv[3])
-    kr = float(sys.argv[4])
-    kx = float(sys.argv[5])
-    lmax1 = float(sys.argv[6])
-    lmax2 = float(sys.argv[7])
-    lmax3 = float(sys.argv[8])
-    theta1 = float(sys.argv[9])
-    r1 = float(sys.argv[10])
-    r2 = float(sys.argv[11])
-    a = float(sys.argv[12])
-    src = int(float(sys.argv[13]))
+        print("running original sa")
+        file_name = sys.argv[1]
+        enviro_type = int(float(sys.argv[2]))
+        sim_time = float(sys.argv[3])
 
-    run_soybean(file_name, enviro_type, sim_time, kr, kx, [lmax1, lmax2, lmax3], theta1, [r1, r2], a, src, save_all = True)
+        kr = float(sys.argv[4])
+        kx = float(sys.argv[5])
+        lmax1 = float(sys.argv[6])
+        lmax2 = float(sys.argv[7])
+        lmax3 = float(sys.argv[8])
+        theta1 = float(sys.argv[9])
+        r1 = float(sys.argv[10])
+        r2 = float(sys.argv[11])
+        a = float(sys.argv[12])
+        src = int(float(sys.argv[13]))
+
+        run_soybean(file_name, enviro_type, sim_time, kr, kx, [lmax1, lmax2, lmax3], theta1, [r1, r2], a, src, save_all = True)  # pass only mods, kr, and kx, TODO
+
+    elif len(sys.argv) == 15:
+
+        # print("running 10 variable conductivity set up")
+        # for arg_ in sys.argv:
+        #     print(arg_)
+        # dd
+
+        file_name = sys.argv[1]
+        enviro_type = int(float(sys.argv[2]))
+        sim_time = float(sys.argv[3])
+
+        kr = np.zeros((3,))
+        kr_old = np.zeros((2,))
+        kx = np.zeros((3,))
+        kx_old = np.zeros((2,))
+
+        kr[0] = sys.argv[4]
+        kr_old[0] = sys.argv[5]
+        kr[1] = sys.argv[6]
+        kr_old[1] = sys.argv[7]
+        kr[2] = sys.argv[8]
+
+        kx[0] = sys.argv[9]
+        kx_old[0] = sys.argv[10]
+        kx[1] = sys.argv[11]
+        kx_old[1] = sys.argv[12]
+        kx[2] = sys.argv[13]
+
+        run_soybean("", 0, 1, kr, kx, [1., 1., 1.], None, [1., 1.], 1., None, kr_old, kx_old, save_all = True)
 
     # theta1 = None
     # src = None
-    #
     # kx = [0.1, 1.e-3, 1.e-3]
     # kx_old = [0.35, 0.015]
     #
     # kr = [1.e-3, 4.e-3, 4.e-3]
     # kr_old = [5e-4, 0.0015]
     #
-    # run_soybean(file_name, envirotype, sim_time, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
+    # run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 

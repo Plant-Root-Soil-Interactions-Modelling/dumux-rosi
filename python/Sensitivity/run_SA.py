@@ -48,7 +48,6 @@ def run_jobs(file_name, root_type, enviro_type, sim_time, jobs):
     """ distribute jobs to MPI ranks """
 
     # random.shuffle(jobs)  # apply magic (otherwise hard or easy jobs might aggregate)
-
     jobs = np.array(jobs)
     b = jobs.shape[0]
     if rank == 0:
@@ -109,8 +108,6 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
             fh.writelines("#SBATCH --time=24:00:00\n")
             fh.writelines("#SBATCH --mem=16G\n")
             fh.writelines("#SBATCH --partition=cpu256\n")
-            # fh.writelines("#SBATCH --mail-type=BEGIN,TIME_LIMIT_50,END\n")
-            # fh.writelines("#SBATCH --mail-user=d.leitner@fz-juelich.de\n")
             fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))
@@ -121,6 +118,41 @@ def start_jobs(file_name, root_type, enviro_type, sim_time, jobs):
 
         # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
         #                   format(job_name, enviro_type, sim_time, *job[1:]))
+
+
+def start_jobs_conductivities(file_name, root_type, enviro_type, sim_time, jobs):
+    """ send as individual jobs """
+
+    job_directory = os.path.join(os.getcwd(), file_name)
+    mkdir_p(job_directory)
+    print(job_directory)
+    jobs = np.array(jobs)
+
+    for job in jobs:
+
+        job_name = file_name + str(int(job[0]))
+        print("Job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
+        job_file = os.path.join(job_directory, job_name + ".job")
+
+        with open(job_file, 'w') as fh:
+
+            fh.writelines("#!/bin/bash\n")
+            fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+            fh.writelines("#SBATCH --ntasks=1\n")
+            fh.writelines("#SBATCH --nodes=1\n")
+            fh.writelines("#SBATCH --time=24:00:00\n")
+            fh.writelines("#SBATCH --mem=16G\n")
+            fh.writelines("#SBATCH --partition=cpu256\n")
+            fh.writelines("module load openmpi/4.1.4\n")
+            fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
+                          format(job_name, enviro_type, sim_time, *job[1:]))  # conductivities as additional argument will make run_sra.py use conductivity SA
+
+        # os.system("sbatch {:s}".format(job_file))
+
+        os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
+                          format(job_name, enviro_type, sim_time, *job[1:]))
+
+     # run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 
 
 def make_local(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
@@ -173,6 +205,12 @@ def make_local(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
             i += 1
             jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), src])
 
+    return jobs
+
+
+def make_local_conductivities(ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_):
+    """ rename things """
+    jobs = make_local(ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_)
     return jobs
 
 
@@ -240,7 +278,6 @@ def local_soybean():
         theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-
                      [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
         jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
@@ -256,28 +293,33 @@ def local_soybean():
     start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
 
 
-def local_soybean_conductivities():  #######################################################################################
+def local_soybean_conductivities():  ####################################################################################### TODO
+
     print("local_soybean_conductivities")
     root_type = "soybean"
     file_name = "local_soybean_conductivities"
     enviro_type = 0
-    sim_time = 87.5  # days
+    sim_time = 1  # 87.5  # days
+
+    kx = [0.1, 1.e-3, 1.e-3]
+    kx_old = [0.35, 0.015]
+
+    kr = [1.e-3, 4.e-3, 4.e-3]
+    kr_old = [5e-4, 0.0015]
 
     if rank == 0:
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        theta_ = np.linspace(0, np.pi / 2, 9)
         write_ranges("results/" + file_name,
-                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-
-                     [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
-        jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+                     ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
+                     [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
+        jobs = make_local_conductivities(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])  #
 
     else:
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    start_jobs_conductivities(file_name, root_type, enviro_type, sim_time, jobs)
 
 # def local_maize():
 #     root_type = "maize"
@@ -371,14 +413,16 @@ if __name__ == "__main__":
     # local_maize()
 
     # i = int(sys.argv[1])
-    i = 1
+    i = 2
 
     if i == 1:
         local_soybean()
     if i == 2:
-        global1_soybean()
+        local_soybean_conductivities()
     if i == 3:
-        local_maize()
+        global1_soybean()
     if i == 4:
+        local_maize()
+    if i == 5:
         global1_maize()
 
