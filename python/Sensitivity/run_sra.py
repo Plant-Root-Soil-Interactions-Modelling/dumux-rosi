@@ -165,7 +165,7 @@ if __name__ == "__main__":
         kx_old[1] = sys.argv[12]
         kx[2] = sys.argv[13]
 
-        run_soybean("", 0, 1, kr, kx, [1., 1., 1.], None, [1., 1.], 1., None, kr_old, kx_old, save_all = True)
+        run_soybean(file_name, enviro_type, sim_time, kr, kx, [1., 1., 1.], None, [1., 1.], 1., None, kr_old, kx_old, save_all = True)
 
     # theta1 = None
     # src = None
