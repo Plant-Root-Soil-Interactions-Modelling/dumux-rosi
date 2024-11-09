@@ -24,7 +24,7 @@ file_name = "local_soybean_conductivities_"
 path = "results/"
 not_xlog = []
 
-analysis_time = 2  # days
+analysis_time = 80  # days
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -79,12 +79,12 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 3, figsize = (16, 16))
+fig, ax = plt.subplots(2, 5, figsize = (16, 16))
 final = []
 finaln = []
 
 ac = 0
-for lind in range(0, len(names) - 1):
+for lind in range(0, len(names)):
 
     file_start_ind = 2 + start_index(lind, ranges)  # 1 is initial simulation
     sa_len = len(ranges[lind])
