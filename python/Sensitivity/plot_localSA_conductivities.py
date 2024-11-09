@@ -24,13 +24,15 @@ file_name = "local_soybean_conductivities_"
 path = "results/"
 not_xlog = []
 
-analysis_time = 80  # days
+analysis_time = 87.5  # days
+
 
 names, ranges = sa.read_ranges(path + file_name)
 
-# for i, _ in enumerate(names):
-#     print(names[i])
-#     print(ranges[i])
+for i, _ in enumerate(names):
+    print(names[i])
+    print(ranges[i])
+    ranges[i] = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])  # np.linspace(0.25, 4., 9)  # modify ranges (i stored values)
 
 # SOYBEAN
 # names[2] = "lmax, primaries"  # seminal and tap
@@ -147,9 +149,11 @@ for lind in range(0, len(names)):
         ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
         # ax.flat[ac].set_ylim(0.5, 2)
+        # ax.flat[ac].set_xlim([0.25, 4])
         # ax.flat[ac].set_yscale('log', base = 2)
         if not lind in not_xlog:
             ax.flat[ac].set_xscale('log', base = 2)
+
         ac += 1
 
 plt.tight_layout(pad = 4.)

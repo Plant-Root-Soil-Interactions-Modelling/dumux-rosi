@@ -22,7 +22,7 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # lai = evap.lai_maize2
 # ylim_ = None  # -10
 
-name = "soybean_water0"
+name = "local_soybean_1"
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
