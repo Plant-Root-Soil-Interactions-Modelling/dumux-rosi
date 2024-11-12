@@ -143,7 +143,7 @@ def start_jobs_conductivities(file_name, root_type, enviro_type, sim_time, jobs)
             fh.writelines("#SBATCH --nodes=1\n")
             fh.writelines("#SBATCH --time=24:00:00\n")
             fh.writelines("#SBATCH --mem=8G\n")
-            fh.writelines("#SBATCH --partition=cpu256\n")
+            #fh.writelines("#SBATCH --partition=cpu256\n")
             fh.writelines("module load openmpi/4.1.4\n")
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))  # conductivities as additional argument will make run_sra.py use conductivity SA
