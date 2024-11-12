@@ -60,8 +60,8 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
         scenario.init_lupine_conductivities(r, kr, kx)
-    params.plot_conductivities(False, lateral_ind = [2, 3])  #
-    dd
+    # params.plot_conductivities(False, lateral_ind = [2, 3])  #
+    # dd
 
     print("conductivities set\n", flush = True)
 
@@ -167,13 +167,13 @@ if __name__ == "__main__":
 
         run_soybean(file_name, enviro_type, sim_time, kr, kx, [1., 1., 1.], None, [1., 1.], 1., None, kr_old, kx_old, save_all = True)
 
-    theta1 = None
-    src = None
-    kx = [0.1, 1.e-3, 1.e-3]
-    kx_old = [0.35, 0.015]
-
-    kr = [1.e-3, 4.e-3, 4.e-3]
-    kr_old = [5e-4, 0.0015]
-
-    run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
+    # theta1 = None
+    # src = None
+    # kx = [0.1, 1.e-3, 1.e-3]
+    # kx_old = [0.35, 0.015]
+    #
+    # kr = [1.e-3, 4.e-3, 4.e-3]
+    # kr_old = [5e-4, 0.0015]
+    #
+    # run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 

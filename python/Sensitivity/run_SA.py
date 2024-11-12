@@ -147,10 +147,10 @@ def start_jobs_conductivities(file_name, root_type, enviro_type, sim_time, jobs)
             fh.writelines("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
                           format(job_name, enviro_type, sim_time, *job[1:]))  # conductivities as additional argument will make run_sra.py use conductivity SA
 
-        # os.system("sbatch {:s}".format(job_file))
+        os.system("sbatch {:s}".format(job_file))
 
-        os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
-                          format(job_name, enviro_type, sim_time, *job[1:]))
+        # os.system("python3 run_sra.py {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} conductivities\n".
+        #                   format(job_name, enviro_type, sim_time, *job[1:]))
 
      # run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
 
@@ -299,7 +299,7 @@ def local_soybean_conductivities():  ###########################################
     root_type = "soybean"
     file_name = "local_soybean_conductivities_"
     enviro_type = 0
-    sim_time = 1  # 87.5  # days
+    sim_time = 87.5  # days
 
     kx = [0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
@@ -309,7 +309,7 @@ def local_soybean_conductivities():  ###########################################
 
     if rank == 0:
         # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
         write_ranges("results/" + file_name,
                      ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
                      [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
