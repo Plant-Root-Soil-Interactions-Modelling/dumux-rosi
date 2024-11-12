@@ -121,6 +121,7 @@ if __name__ == "__main__":
     print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 2D")
     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 1D\n")
     plt.savefig('transpiration_AAx_maize.png')
+    plt.savefig('fig10b.png')
 
     # Springbarley
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
@@ -142,6 +143,7 @@ if __name__ == "__main__":
     print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for 1D")
     # print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "% for 2D")
     plt.savefig('transpiration_AAx_springbarley.png')
+    plt.savefig('fig10a.png')
 
     plt.tight_layout()
     plt.show()

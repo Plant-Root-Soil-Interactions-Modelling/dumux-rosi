@@ -114,6 +114,7 @@ if __name__ == "__main__":
     method = ["agg"] * 3
     cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(BBB)")
     plt.savefig('transpiration_BBB_springbarley.png')
+    plt.savefig('fig16a.png')
     print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
@@ -131,6 +132,7 @@ if __name__ == "__main__":
     method = ["agg"] * 3
     cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(BBB)")
     plt.savefig('transpiration_BBB_maize.png')
+    plt.savefig('fig16b.png')
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
@@ -151,6 +153,7 @@ if __name__ == "__main__":
     method = ["par"] * 3
     cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(CBB)")
     plt.savefig('transpiration_CBB_springbarley.png')
+    plt.savefig('fig19a.png')
     print("\nSpringbarley: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")
@@ -168,6 +171,7 @@ if __name__ == "__main__":
     method = ["par"] * 3
     cup_, cup2_ = plot_transpiration_rows(ax, ax2, method, plant, dim, soil, outer_method, ":", "(CBB)")
     plt.savefig('transpiration_CBB_maize.png')
+    plt.savefig('fig19b.png')
     print("\nMaize: percental error in cumulative uptake comapared to reference solution")
     print("1 week ", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup2_ref)), "%")
     print("2 weeks", 100.*(np.ones(np.shape(cup_)) - np.divide(cup_, cup_ref)), "%")

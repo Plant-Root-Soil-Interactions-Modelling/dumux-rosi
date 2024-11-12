@@ -180,7 +180,8 @@ if __name__ == "__main__":
     print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
     print("2 weeks", 100.*(np.ones(np.shape(cup3_)) - np.divide(cup3_, cup_ref)), "% for volume\n")
     plt.savefig('transpiration_AxB_maize.png')
-
+    plt.savefig('fig13b.png')
+    
     # Springbarley
     fig, ax = plt.subplots(3, 1, figsize = (12, 14))
     ax2 = [ ax[i].twinx() for i in range(0, len(ax)) ]
@@ -205,6 +206,7 @@ if __name__ == "__main__":
     print("2 weeks", 100.*(np.ones(np.shape(cup2_)) - np.divide(cup2_, cup_ref)), "% for surface")
     print("2 weeks", 100.*(np.ones(np.shape(cup3_)) - np.divide(cup3_, cup_ref)), "% for volume\n")
     plt.savefig('transpiration_AxB_springbarley.png')
+    plt.savefig('fig13a.png')
 
     plt.tight_layout()
     plt.show()
