@@ -166,8 +166,7 @@ def read_ranges(file_name):
                 ranges.append([])
                 for i in range(0, n):
                     ranges[-1].append(float(entries[2 + i]))
-    # print(ranges)
-    # print(names)
+
     return names, ranges
 
 
@@ -203,10 +202,11 @@ def local_soybean():
 def local_soybean_conductivities():  ####################################################################################### TODO
 
     print("local_soybean_conductivities")
+    type_str = "local_soybean_conductivities10"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_conductivities_"
     enviro_type = 0
-    sim_time = 1  # 87.5  # days
+    sim_time = 87.5  # days
 
     kx = [0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
@@ -216,7 +216,7 @@ def local_soybean_conductivities():  ###########################################
 
     if rank == 0:
         # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+        p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
         write_ranges("results/" + file_name,
                      ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
                      [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
@@ -226,51 +226,7 @@ def local_soybean_conductivities():  ###########################################
         jobs = None
 
     jobs = comm.bcast(jobs, root = 0)
-    start_jobs_conductivities(file_name, root_type, enviro_type, sim_time, jobs)
-
-
-def global1_soybean():
-    root_type = "soybean"
-    file_name = "global_soybean"
-    enviro_type = 0
-    sim_time = 30
-
-    if rank == 0:
-        theta_ = theta = 85. / 180 * np.pi
-        kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
-        kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-        # kx = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
-        # kr = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
-        write_ranges("results/" + file_name,
-                     ["kr", "kx"],
-                     [ kr , kx ])
-        jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
-    else:
-        jobs = None
-    jobs = comm.bcast(jobs, root = 0)
-    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-
-
-def global1_maize():
-    root_type = "maize"
-    file_name = "global_maize_inc2"
-    enviro_type = 0
-    sim_time = 30
-
-    if rank == 0:
-        theta_ = theta = 85. / 180 * np.pi
-        # kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
-        # kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-        kr = np.array([10 ** x for x in np.linspace(0., 4., 50)])
-        kx = np.array([10 ** x for x in np.linspace(-1., 1., 10)])  # _inc
-        write_ranges("results/" + file_name,
-                     ["kr", "kx"],
-                     [ kr , kx ])
-        jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
-    else:
-        jobs = None
-    jobs = comm.bcast(jobs, root = 0)
-    run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs)
 
 
 if __name__ == "__main__":
@@ -349,5 +305,48 @@ if __name__ == "__main__":
 #     else:
 #         jobs = None
 #
+#     jobs = comm.bcast(jobs, root = 0)
+#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+#
+# def global1_soybean():
+#     root_type = "soybean"
+#     file_name = "global_soybean"
+#     enviro_type = 0
+#     sim_time = 30
+#
+#     if rank == 0:
+#         theta_ = theta = 85. / 180 * np.pi
+#         kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
+#         kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
+#         # kx = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
+#         # kr = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
+#         write_ranges("results/" + file_name,
+#                      ["kr", "kx"],
+#                      [ kr , kx ])
+#         jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
+#     else:
+#         jobs = None
+#     jobs = comm.bcast(jobs, root = 0)
+#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+#
+#
+# def global1_maize():
+#     root_type = "maize"
+#     file_name = "global_maize_inc2"
+#     enviro_type = 0
+#     sim_time = 30
+#
+#     if rank == 0:
+#         theta_ = theta = 85. / 180 * np.pi
+#         # kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
+#         # kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
+#         kr = np.array([10 ** x for x in np.linspace(0., 4., 50)])
+#         kx = np.array([10 ** x for x in np.linspace(-1., 1., 10)])  # _inc
+#         write_ranges("results/" + file_name,
+#                      ["kr", "kx"],
+#                      [ kr , kx ])
+#         jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
+#     else:
+#         jobs = None
 #     jobs = comm.bcast(jobs, root = 0)
 #     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
