@@ -87,7 +87,7 @@ if __name__ == '__main__':
 
     """ parameters   """
     envirotype_number = 0
-    sim_time = 87.5  # [day]
+    sim_time = 14  # 87.5  # [day]
     dt = 360 / (24 * 3600)  # time step [day]
 
     # file = np.load("data/soil_only{:g}.npz".format(envirotype_number))
@@ -101,15 +101,8 @@ if __name__ == '__main__':
     times, net_inf = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc)
     # trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc)
 
-    # start_date = '1995-03-15 00:00:00' # pickle data from germany
-    # times, net_inf = evap.net_infiltration_table_beers_pickle('data/95.pkl', start_date, sim_time, evap.lai_soybean, Kc)
-    # trans_soybean = evap.get_transpiration_beers_pickle('data/95.pkl', start_date, sim_time, area, evap.lai_soybean, Kc)
-
     """ initialize """
-
-    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = times, net_inf = net_inf)  # , bot_bc = "potential"
-    #
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1, times = times, net_inf = net_inf)
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = times, net_inf = net_inf, bot_bc = "potential", bot_value = 80.)  # , bot_bc = "potential"
 
     """ numerical solution """
     top_ind = s.pick([0., 0., -0.5])
@@ -120,20 +113,28 @@ if __name__ == '__main__':
     water0 = s.getWaterVolume()  # total initial water volume in domain
 
     soil_times, h, top_, net_change = [], [], [], []
+    top_new, bot_new = [], []
+
     N = int(np.ceil(sim_time / dt))
 
     for i in range(0, N):
 
         t = i * dt  # current simulation time
-        print(t, "days")
+        if i % 240 == 0:
+            print(t, "days")
 
         water_ = s.getWaterVolume()
         s.solve(dt)
         net_change.append(s.getWaterVolume() - water_)
 
         h.append(s.getSolutionHead_())
-        top_.append(s.getNeumann(top_ind))
         soil_times.append(t)
+
+        top_.append(s.getNeumann(top_ind))  # the neumann BC that is described
+
+        velocities = s.getVelocities()
+        top_new.append(velocities[top_ind])
+        bot_new.append(velocities[bot_ind])
 
     water = s.getWaterVolume()
 

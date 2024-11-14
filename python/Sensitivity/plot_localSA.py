@@ -20,14 +20,20 @@ def start_index(ind, ranges):
 
 """ def SA """
 file_name = "local_soybean_"
+file_name = "local_soybean_conductivities_"
 # file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
-not_xlog = [5]
+# not_xlog = []
 
 analysis_time = 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
+
+print(len(names), "variables:")
+print(names)
+print(len(ranges))
+print()
 
 # for i, _ in enumerate(names):
 #     print(names[i])
@@ -63,8 +69,8 @@ else:
     ind = -1
     ind10 = -1
 
-print("ind", ind)
-print("plots for day", times[ind])
+print("index", ind)
+print("Plotting for day", times[ind])
 dt_ = np.diff(times[:ind])
 
 """ font sizes """
@@ -80,7 +86,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 3, figsize = (16, 16))
+fig, ax = plt.subplots(2, 5, figsize = (16, 16))
 final = []
 finaln = []
 
@@ -101,9 +107,8 @@ for lind in range(0, len(names)):
                 # trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
                 alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
                 trans_ = alldata["act_trans"]
-                print("trans_", trans_.shape)
                 trans[k] = -np.sum(np.multiply(trans_[:ind - 1], dt_))
-                print("trans[k]", trans[k])
+                # print("trans[k]", trans[k])
             except:
                 trans[k] = np.nan
                 print("skipping file", file_name + str(file_start_ind + k))
@@ -134,6 +139,8 @@ for lind in range(0, len(names)):
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
         ax.flat[ac].plot(ranges[lind], trans, '*-', label = "water")
+        print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]))
+
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
         # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
@@ -147,10 +154,10 @@ for lind in range(0, len(names)):
 
         ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
-        # ax.flat[ac].set_ylim(0.5, 2)
+        ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
-        if not lind in not_xlog:
-            ax.flat[ac].set_xscale('log', base = 2)
+        # if not lind in not_xlog:
+        ax.flat[ac].set_xscale('log', base = 2)
         ac += 1
 
 plt.tight_layout(pad = 4.)

@@ -134,10 +134,18 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "ln" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].ln *= mods["ln"]
+            if "ln145" in mods:
+                rrp[1].ln *= mods["ln145"]
+                rrp[4].ln *= mods["ln145"]
+                if len(rrp) > 5:
+                    rrp[5].ln *= mods["ln145"]
                 mods.pop("ln")
             if "ln1" in mods:
                 rrp[1].ln *= mods["ln1"]
                 mods.pop("ln1")
+            if "ln2" in mods:
+                rrp[2].ln *= mods["ln2"]
+                mods.pop("ln2")
             if "a" in mods:  # all types
                 for i in range(0, len(rrp)):
                     rrp[i].a *= mods["a"]
