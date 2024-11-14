@@ -10,8 +10,8 @@ import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
-# from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
-from rosi_richards import RichardsSPnum as  RichardsSP
+from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+# from rosi_richards import RichardsSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
 import functional.van_genuchten as vg

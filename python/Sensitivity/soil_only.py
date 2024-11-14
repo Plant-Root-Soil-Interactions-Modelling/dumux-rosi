@@ -4,6 +4,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
+import timeit
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -116,6 +117,7 @@ if __name__ == '__main__':
     top_new, bot_new = [], []
 
     N = int(np.ceil(sim_time / dt))
+    start_time = timeit.default_timer()
 
     for i in range(0, N):
 
@@ -132,11 +134,13 @@ if __name__ == '__main__':
 
         top_.append(s.getNeumann(top_ind))  # the neumann BC that is described
 
-        velocities = s.getVelocities()
+        velocities = s.getVelocities_()
         top_new.append(velocities[top_ind])
         bot_new.append(velocities[bot_ind])
 
     water = s.getWaterVolume()
+
+    print("Computation time", timeit.default_timer() - start_time)
 
     np.savez("data/soil_only{:g}".format(envirotype_number), h = h, times = times, net_inf = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
     print("Change in water balance", water - water0, "cm3")
