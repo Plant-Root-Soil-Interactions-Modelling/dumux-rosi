@@ -105,7 +105,7 @@ def getBiochemParam(s,paramIdx):
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
 
         
-    s.css1Function = 10 # current adsorption function implemented.
+    s.css1Function = 9 # current adsorption function implemented.TODO update
     kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
     yr_per_d = 1/365 # [yr/d]
     m3_per_cm3 = 1e-6; # m3/cm3
@@ -238,7 +238,7 @@ def setDefault(s):
     molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
     s.molarDensityWat = molarDensityWat
 
-    s.setParameter("Problem.dobioChemicalReaction",str(int(s.doBiochemicalReaction)))
+    s.setParameter("Problem.dobioChemicalReaction",str(int(s.doBioChemicalReaction)))
     s.setParameter("Problem.verbose", "0")
     
     s.setParameter("Newton.Verbosity", "0") 
@@ -324,7 +324,7 @@ def create_soil_model( usemoles, results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True,
                      MaxRelativeShift = 1e-8,doSoluteUptake = True,
-                                    doBiochemicalReaction = False):
+                                    doBioChemicalReaction = False):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         homogeneous domain 
@@ -344,7 +344,7 @@ def create_soil_model( usemoles, results_dir ,
 
     s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
-    s.doBiochemicalReaction = doBiochemicalReaction
+    s.doBioChemicalReaction = doBioChemicalReaction
     s.doSoluteUptake = doSoluteUptake
 
     soilTextureAndShape = getSoilTextureAndShape() 
@@ -467,18 +467,18 @@ def create_mapped_plant(initSim, soil_model, fname, path,
         weatherInit = weatherFunctions.weather(initSim,0, spellData)
         perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
-                                 seedNum = seed, 
+                                              ms = pb.MappedPlant(),
                                  limErr1d3dAbs = limErr1d3d)
 
-        perirhizalModel.setSeed(seed)
-        perirhizalModel.readParameters(path + fname)
-        perirhizalModel.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        perirhizalModel.initialize(verbose = False)
-        perirhizalModel.simulate(initSim,verbose= False)
+        perirhizalModel.ms.setSeed(seed)
+        perirhizalModel.ms.readParameters(path + fname)
+        perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+        perirhizalModel.ms.initialize(verbose = False)
+        perirhizalModel.ms.simulate(initSim,verbose= False)
         if doPhloemFlow:
-            plantModel = PhloemFluxPython(perirhizalModel,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
+            plantModel = PhloemFluxPython(perirhizalModel.ms,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
-            plantModel = XylemFluxPython(perirhizalModel)
+            plantModel = XylemFluxPython(perirhizalModel.ms)
             
     
     plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 

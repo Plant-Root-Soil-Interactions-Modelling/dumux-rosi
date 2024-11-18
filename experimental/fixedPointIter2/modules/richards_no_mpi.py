@@ -278,7 +278,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
         
         
-    def distributeSources(self, dt,source,inner_fluxs, eqIdx):
+    def distributeSources(self, dt,source,inner_fluxs, eqIdx,plantM):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
@@ -290,10 +290,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         # iterate through each component
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
             splitVals.append(self.distributeSource(dt, src,inner_fluxs[i],
-                                    eqIdx[i]))
+                                    eqIdx[i], plantM=plantM))
         return np.array(splitVals, dtype = object)
             
-    def distributeSource(self,dt, source: float,inner_flux:float, eqIdx: int):
+    def distributeSource(self,dt, source: float,inner_flux:float, eqIdx: int,plantM):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
@@ -305,7 +305,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         assert eqIdx < self.numFluidComp
         
         # distribute the value between the cells
-        splitVals = self.distributeVals(dt, source, inner_flux, eqIdx)       
+        splitVals = self.distributeVals(dt, source, inner_flux, eqIdx,plantM)       
         # send the source data to dumux
         if source != 0.:# [cm3/day] or [mol/day]
             test_values = list(splitVals.copy())
@@ -326,7 +326,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     
 
     
-    def distributeVals(self, dt, source: float, inner_flux: float, eqIdx: int):
+    def distributeVals(self, dt, source: float, inner_flux: float, eqIdx: int,plantM):
         """ when we have a source in for a 1d model (exchange with bulk soil),
             divid the source between the cell of the 1d model according to the water
             or solute content
@@ -341,10 +341,10 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         if source != 0.:# [cm3/day] or [mol/day]
             
             if eqIdx == 0:# compute the amount of water potentially available in each cell
-                splitVals, source_ = self.distributeValWater(dt, source, inner_flux, verbose)
+                splitVals = self.distributeValWater(dt, source, inner_flux,plantM, verbose)
             else:
-                splitVals, source_ = self.distributeValSolute(eqIdx, dt, source, inner_flux, verbose)
-            
+                splitVals = self.distributeValSolute(eqIdx, dt, source, inner_flux, plantM, verbose)
+            source_ = sum(splitVals)
             try:
                 assert (((splitVals >= 0).all()) or ((splitVals <= 0).all()))
                 assert abs(sum(abs(splitVals)) - abs(source_)) < 1e-13
@@ -362,15 +362,15 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         return splitVals
     
     
-    def distributeValSolute(self,eqIdx, dt, source: float, inner_flux: float, verbose):
+    def distributeValSolute(self,eqIdx, dt, source: float, inner_flux: float, plantM, verbose):
         seg_values_content = np.maximum(self.getContent(eqIdx), 0.) # during the solve() loop, we might still get seg_values <0 
 
         seg_values_content[0] += inner_flux # add root solute release or uptake
         cylVol = self.getCellVolumes()
         
-        return helpfull.distributeValSolute_(seg_values_content.copy(),cylVol.copy(), source, dt, verbose )  # mol/day
+        return np.array(plantM.distributeValSolute_(seg_values_content.copy(),cylVol.copy(), source, dt ) ) # mol/day
         
-    def distributeValWater(self, dt, source: float, inner_flux: float, verbose):
+    def distributeValWater(self, dt, source: float, inner_flux: float,plantM, verbose):
         cylVol = self.getCellVolumes()
         seg_values_perVol_ =np.maximum( self.getWaterContent(), 0.)  # cm3/cm3
         if verbose:            
@@ -388,6 +388,6 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         seg_values_perVol_[0] += inner_flux/cylVol[0] # add root water release or uptake
         
         
-        return helpfull.distributeValWater_(seg_values_perVol_.copy(), cylVol.copy(), source, dt, 
-                                            self.vg_soil, self.theta_wilting_point,verbose)
+        return np.array( plantM.distributeValWater_(seg_values_perVol_.copy(), cylVol.copy(), source, dt, 
+                                            self.vg_soil.theta_S, self.theta_wilting_point))
         

@@ -56,7 +56,7 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = False # only water (False) or with solutes (True)
-    doBiochemicalReaction = False
+    doBioChemicalReaction = False
     doSoluteUptake = True # active uptake?
     noAds = True # stop adsorption?
     doPhloemFlow = False
@@ -112,7 +112,7 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
-                                         doBiochemicalReaction = doBiochemicalReaction,
+                                         doBioChemicalReaction = doBioChemicalReaction,
                                         MaxRelativeShift = MaxRelativeShift)
 
     
@@ -131,7 +131,7 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
     plantModel.maxTranspirationAge = maxTranspirationAge
     
     perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
-    perirhizalModel.doBiochemicalReaction = doBiochemicalReaction  
+    perirhizalModel.doBioChemicalReaction = doBioChemicalReaction  
     perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
@@ -191,14 +191,14 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
         
         if (rank == 0) and (not static_plant) :
             
-            seg2cell_old = perirhizalModel.seg2cell
-            perirhizalModel.simulate(dt, verbose = False)
-            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel)
+            seg2cell_old = perirhizalModel.ms.seg2cell
+            perirhizalModel.ms.simulate(dt, verbose = False)
+            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
             
                 
         if (rank == 0):
             # print plant shape data for post-processing
-            printData.printPlantShape(perirhizalModel,plantModel)
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             
 
         perirhizalModel.update() # update shape data in the rhizosphere model

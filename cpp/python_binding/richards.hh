@@ -317,14 +317,14 @@ public:
 	
 	
 	
-	
     double molarMassWat = 18.; // [g/mol]
     double densityWat_m3 = 1e6 ;//[g/m3]
     //[mol/m3] = [g/m3] /  [g/mol] 
     double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
 
 protected:
-
+    
+    
     std::vector<double> cellVolume;
 
     using SolutionVector = typename Problem::SolutionVector;

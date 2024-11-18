@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=38till
+#SBATCH --job-name=tilltest
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=50
 #SBATCH --nodes=1
@@ -21,8 +21,9 @@ cd $HOME/dumux38bis/dumux/dumux-rosi/experimental/fixedPointIter2/scripts
 
 #export NUMEXPR_MAX_THREADS=${SLURM_CPUS_PER_TASK}
 #export OMP_NUM_THREADS=${SLURM_CPUS_PER_TASK}
-mpirun -n 50 python3 launchTillage.py 
+mpirun -n 50 python3 launchTillageTest.py 
 
+#DUMUX_NUM_THREADS=4
 # $1 : start, $2: end, $3: param ind, $4 scenario, 
 # optional : $5: spellStart, $6: spellduration
 

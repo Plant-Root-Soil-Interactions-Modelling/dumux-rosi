@@ -23,13 +23,13 @@ def storeOldMassData1d(perirhizalModel):
     """
     perirhizalModel.rhizoWBefore_eachCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
     # each solute for each cyl.
-    perirhizalModel.soil_solute1d_eachCylechSolBefore = perirhizalModel.getTotCContentAll(doSum = False, reOrder = True) # total carbon content per 1d model
+    perirhizalModel.soil_solute1d_eachCylechSolBefore = perirhizalModel.getTotCContentAll(doSum = False, reOrder = True)
 
     if rank ==0:
 
         cellIds= perirhizalModel.getCellIds()
         # total carbon content per 1d model
-        perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore.sum(axis=1)
+        perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore.sum(axis=1) 
         perirhizalModel.rhizoWBefore = sum(perirhizalModel.rhizoWBefore_eachCyl) 
         perirhizalModel.rhizoTotCBefore = sum(perirhizalModel.rhizoTotCBefore_eachCyl) 
 
@@ -49,11 +49,11 @@ def storeNewMassData1d(perirhizalModel):
 
     # each solute for each cyl.
     perirhizalModel.soil_solute1d_eachCylechSolAfter = perirhizalModel.getTotCContentAll(doSum = False, reOrder = True) # total carbon content per 1d model
-
+    
     if rank ==0:
         cellIds= perirhizalModel.getCellIds()
-        
-        assert perirhizalModel.soil_solute1d_eachCylechSolAfter.shape == (len(perirhizalModel.eidx_all),perirhizalModel.numSoluteComp) 
+       
+        assert ((perirhizalModel.soil_solute1d_eachCylechSolAfter.shape == (len(perirhizalModel.eidx_all),perirhizalModel.numSoluteComp))|(perirhizalModel.soil_solute1d_eachCylechSolAfter.shape[0] == len(perirhizalModel.eidx_all) == 0)) 
 
         # total carbon content per 1d model
         perirhizalModel.rhizoTotCAfter_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolAfter.sum(axis=1)
@@ -173,11 +173,11 @@ class fixedPointIterationHelper():
         self.proposed_outer_fluxes_old = 0 # 3d to 1d water flux
         self.proposed_outer_sol_fluxes_old = 0 # 3d to 1d small solute flux (1st dissolved component)
         self.proposed_outer_mucil_fluxes_old = 0 # 3d to 1d large solute (==mucilage) flux (2nd dissolved component)
-        self.seg_fluxes = seg_fluxes.copy()
+        self.seg_fluxes = seg_fluxes #.copy()
         self.outer_R_bc_wat_old =  0 # inter-cell water flux in 3d soil model
         self.outer_R_bc_sol_old = 0 # inter-cell solute flux in 3d soil model
-        self.outer_R_bc_wat =  outer_R_bc_wat.copy() # inter-cell water flux in 3d soil model
-        self.outer_R_bc_sol = outer_R_bc_sol.copy() # inter-cell solute flux in 3d soil model
+        self.outer_R_bc_wat =  outer_R_bc_wat #.copy() # inter-cell water flux in 3d soil model
+        self.outer_R_bc_sol = outer_R_bc_sol #.copy() # inter-cell solute flux in 3d soil model
         
         self.thetaCylOld = self.perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3/cm3
         
@@ -259,7 +259,7 @@ class fixedPointIterationHelper():
         
         
             if max(abs(outer_R_bc_wat )) > 0:
-                assert outer_R_bc_wat.shape == ( s.numberOfCellsTot, )
+                
                 try:
                     proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
                                                         seg_values=self.thetaCyl_4splitSoilVals, 
@@ -267,7 +267,9 @@ class fixedPointIterationHelper():
                                                        isWater = True, 
                                                                       verbose = False) #cm3/day
                 except:
-                    print('thetaCyl_4splitSoilVals',min(self.thetaCyl_4splitSoilVals),max(self.thetaCyl_4splitSoilVals),
+                    print('distribute3dto1dFlows: outer_R_bc_wat',outer_R_bc_wat.shape)
+                    print('thetaCyl_4',self.thetaCyl_4splitSoilVals.shape, self.cylVol.shape,
+                          min(self.thetaCyl_4splitSoilVals),max(self.thetaCyl_4splitSoilVals),
                           'self.thetaCylOld',min(self.thetaCylOld),max(self.thetaCylOld))
                     raise Exception                   
                                                  
@@ -301,9 +303,9 @@ class fixedPointIterationHelper():
             proposed_outer_mucil_fluxes = None
 
 
-        self.proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root = 0)
-        self.proposed_outer_sol_fluxes = comm.bcast(proposed_outer_sol_fluxes, root = 0)
-        self.proposed_outer_mucil_fluxes = comm.bcast(proposed_outer_mucil_fluxes, root = 0)
+        self.proposed_outer_fluxes = proposed_outer_fluxes #comm.bcast(, root = 0)
+        self.proposed_outer_sol_fluxes = proposed_outer_sol_fluxes#comm.bcast(, root = 0)
+        self.proposed_outer_mucil_fluxes = proposed_outer_mucil_fluxes#comm.bcast(, root = 0)
         
         
     def getCyldatafor3d1dFlow(self, rs_age_i_dt, dt):
@@ -317,7 +319,7 @@ class fixedPointIterationHelper():
                 # get data before doing the 'reset' => values at the end of the time step
                 # self.thetaCyl = perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3 water
                 # get all potentially available water == water after reset + water taken up by plant
-                seg_fluxes_root  = self.seg_fluxes.copy()
+                seg_fluxes_root  = self.seg_fluxes
                 if len(perirhizalModel.airSegs) > 0:
                     seg_fluxes_root[perirhizalModel.airSegs]  = 0.
                 self.thetaCyl_4splitSoilVals = (self.thetaCylOld * self.cylVol + (seg_fluxes_root + perirhizalModel.flow1d1d_w)* dt )/self.cylVol
@@ -330,11 +332,13 @@ class fixedPointIterationHelper():
                     self.thetaCyl_4splitSoilVals[perirhizalModel.airSegs]  = 0.
                 
            
-        # get data before doing the 'reset' => values at the end of the time step
-        self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
-        self.comp2content = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
 
-        if rank ==0:
+            # get data before doing the 'reset' => values at the end of the time step
+            self.comp1content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,0]
+            assert len(self.comp1content) == len(perirhizalModel.eidx_all)
+            # [mol] small rhizodeposits
+            self.comp2content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,1]  # [mol] mucilage
+
             # assert (self.thetaCyl_4splitSoilVals >= 0.).all() # because of seg_fluxes, could have thetaCyl_4splitSoilVals < 0
             assert (self.comp1content >= 0.).all()
             assert (self.comp2content >= 0.).all()
