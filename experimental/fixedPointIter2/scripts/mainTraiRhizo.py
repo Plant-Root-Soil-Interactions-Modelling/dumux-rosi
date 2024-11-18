@@ -30,6 +30,7 @@ import weatherFunctions
 from PhloemPhotosynthesis import *
 import printData
 import scenario_setup
+import FPItHelper
 
     
 
@@ -190,21 +191,22 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         
         if (rank == 0) and (not static_plant) :
             
-            seg2cell_old = perirhizalModel.seg2cell
-            perirhizalModel.simulate(dt, verbose = False)
-            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel)
+            seg2cell_old = perirhizalModel.ms.seg2cell
+            perirhizalModel.ms.simulate(dt, verbose = False)
+            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
             
                 
         if (rank == 0):
             # print plant shape data for post-processing
-            printData.printPlantShape(perirhizalModel,plantModel)
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             
 
-        perirhizalModel.update(fpit_Helper) # update shape data in the rhizosphere model
+        perirhizalModel.update()#fpit_Helper) # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
-            fpit_Helper.storeNewMassData1d()
-            fpit_Helper.storeNewMassData3d()
+            #fpit_Helper
+            FPItHelper.storeNewMassData1d(perirhizalModel)
+            FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False

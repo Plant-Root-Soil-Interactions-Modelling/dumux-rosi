@@ -34,7 +34,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         used to avoid getting erros when iterating through the segments
         in the rhizo_modelsPlant class
     """
-    def __init__(self, a_in:float = 1., a_out:float = 1.1, length = 1.):
+    def __init__(self, a_in:float = 1., a_out:float = 1.1, length = 1.,numSoluteComp=1):
         
         self.a_in = a_in #cm
         
@@ -49,6 +49,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         self.sim_time = 0.
         self.bc = { }  # boundary conditions, map with key (cell_id, face_id) containing a list of values
         self.sources = np.zeros((self.n,))  # [cm3 / cm3]
+        self.numSoluteComp = numSoluteComp
         
     def solve(self, dt, maxDt = None):
         print("dummy solve function for airSegments. does nothing (for now?)")
@@ -112,6 +113,9 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
         pass
     def setInnerBC_solute(self,*arg):
         pass
+    
+    def getTotCContent_each(self):
+        return np.full((self.numSoluteComp,1),0.)
     
     #all
     #def solve(self,*arg):

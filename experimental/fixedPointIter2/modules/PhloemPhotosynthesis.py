@@ -17,8 +17,9 @@ class phloemDataStorage():
     def __init__(self, perirhizalModel, plantModel):
         self.plantModel = plantModel
         self.perirhizalModel = perirhizalModel
+        self.mappedSegment = perirhizalModel.ms
         self.plantModel = plantModel
-        self.Nt = len(perirhizalModel.nodes)
+        self.Nt = len(perirhizalModel.ms.nodes)
         self.Q_ST_init = np.array([])
         self.C_S_meso    = np.zeros(self.Nt)
         self.C_meso    = np.zeros(self.Nt)
@@ -65,7 +66,7 @@ class phloemDataStorage():
             self.plantModel.startPM(startphloem, endphloem, stepphloem, (  self.perirhizalModel.weatherX["TairC"]  +273.15) , verbose_phloem, filename)
             print("endtpm",rank)
 
-            self.Nt = len( self.perirhizalModel.nodes)
+            self.Nt = len( self.perirhizalModel.ms.nodes)
             Nt = self.Nt
             
             #  MMOL Suc (/cm3) => mol C (/cm3)
@@ -389,5 +390,4 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
             plantModel.psiXyl = None
             seg_fluxes = None
             
-    fpit_Helper.seg_fluxes = comm.bcast(seg_fluxes,root=0)  # plant-exterior water exchanges
-    plantModel.psiXyl = comm.bcast(plantModel.psiXyl, root = 0) # plant water potential
+    fpit_Helper.seg_fluxes = seg_fluxes#comm.bcast( ,root=0) # plant-exterior water exchanges

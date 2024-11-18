@@ -664,10 +664,10 @@ class SolverWrapper():
             #return array instead of float to be able to have same object type no matter what
             return np.array([])
 
-    def _flat0(self, xx):
+    def _flat0(self, xx, dtype_=None):
         """flattens the gathered list in rank 0, empty list for other ranks """
         if rank == 0:
-            return np.array([item for sublist in xx for item in sublist])
+            return np.array([item for sublist in xx for item in sublist],dtype = dtype_)
         else:
             return np.array([])
 

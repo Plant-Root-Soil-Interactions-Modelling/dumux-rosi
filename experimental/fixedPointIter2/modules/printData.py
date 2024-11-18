@@ -43,9 +43,8 @@ def initialPrint(plant):
     write_file_array("inner_error", columnNames, directory_ =plant.results_dir, fileType = '.csv')
     
         
-def printPlantShape(rs,r):
+def printPlantShape(rs,r, results_dir):
     """ store plant shape data after doing growth simulation"""
-    results_dir = rs.results_dir
     write_file_array('seg2cell_keys',rs.seg2cell,directory_ =results_dir, 
                              fileType = '.csv')
     write_file_array('seg2cell_vals',np.array(list(rs.seg2cell.values())),
@@ -305,7 +304,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
         rsi_Conce = perirhizalModel.get_concentrationOrContent(0, getConcentration)
         
         # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
-        vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
+        vp.plot_roots_and_soil(perirhizalModel.ms.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
                                soilTextureAndShape['min_b'],
                                soilTextureAndShape['max_b'],
                                soilTextureAndShape['cell_number'], 
@@ -327,7 +326,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                         extraArray_ /= cell_volumes #cm3
 
 
-                vp.plot_roots_and_soil(perirhizalModel.mappedSegments(),
+                vp.plot_roots_and_soil(perirhizalModel.ms.mappedSegments(),
                                        extraArrayName_ ,
                                        perirhizalModel.get_concentrationOrContent(i , getConcentration), s, 
                                        periodic,

@@ -42,15 +42,13 @@ decrease of the errors during the first 4 loops. Might need to adapt that for an
 
 # TODOs
 - merge exudation_analysis_plant3 with master
-- implement plant solute uptake (N or P)
 - finish adding unit information + funciton description
 - merge fpit_clean with master branch, and merge file in fixedPointIter/modules with the default ones of the master branch
 - create test units for setup
-- limit in dumux the sink/source term (like for the bcs)?
 - retry implementing the 1d1d flow
-- try using the kr and psoil at each inner-dumux time step.
 - implement analytic dumux solution for richardsnc problems
 - setup the other solvers for dumux10c
+- do MPI with shared memory? could make data exchange quicker
 - [.. to be completed by users..]
 
 # Other

@@ -105,7 +105,6 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
-
             fpit_Helper.storeLimitedFluxes() # store actual BC of 1d models (to compare with prescribed BC)
             
             
@@ -205,7 +204,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     n_iter_inner_max = 0  
 
     ### plant shape
-    organTypes = np.asarray(plantModel.rs.organTypes, int)
+    organTypes = np.asarray(perirhizalModel.organTypes, int)
     cylVol = perirhizalModel.getVolumesCyl(doSum = False, reOrder = True) # volume of perirhizal zones [cm3]
     airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
     rhizoSegsId = perirhizalModel.rhizoSegsId # id of plant segments WITH perirhizal zones   
@@ -241,7 +240,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     if(len(outer_R_bc_sol[0]) == 0):
         outer_R_bc_sol = np.full((perirhizalModel.numSoluteComp,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
-        outer_R_bc_wat = np.full(cell_volumes.shape, 0.)        
+        outer_R_bc_wat = np.full(cell_volumes.shape, 0.)     
+        
         
         
     """ simualtion loop """
@@ -276,8 +276,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         # looping 1
         keepGoing = True
         while keepGoing:
-
-
 
             # looping 2
             #dt_inner = min(fpit_Helper.dt_inner2, fpit_Helper.dt_inner)

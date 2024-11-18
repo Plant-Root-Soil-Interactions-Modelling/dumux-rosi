@@ -80,7 +80,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
     maxTranspiration = 12 # 6. # cm3/day, used if not doPhotosynthesis 
-    maxTranspirationAge = 8. # day, age at which trans = maxTRans
+    maxTranspirationAge = 25. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
@@ -90,7 +90,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
         doProfileSTR = "doProfile"
     
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/speedUp2/bis"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
+    results_dir=("./results/tillage/speedUp/bis"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
@@ -190,17 +190,15 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
         
         if (rank == 0) and (not static_plant) :
             
-            seg2cell_old = perirhizalModel.seg2cell
-            perirhizalModel.simulate(dt, verbose = False)
-            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel)
+            seg2cell_old = perirhizalModel.ms.seg2cell
+            perirhizalModel.ms.simulate(dt, verbose = False)
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
+            if perirhizalModel.debugMode:
+                helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
             
-                
-        if (rank == 0):
-            # print plant shape data for post-processing
-            printData.printPlantShape(perirhizalModel,plantModel)
-            
-
         perirhizalModel.update() # update shape data in the rhizosphere model
+                
+
         
         if start :#and perirhizalModel.debugMode :
             FPItHelper.storeNewMassData1d(perirhizalModel)
