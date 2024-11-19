@@ -22,13 +22,16 @@ def solve(soils):
 
     s = RichardsWrapper(RichardsSP())
     s.initialize()
-    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199], True)  # [cm]
+    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 199], periodic = False)  # [cm] perid
     s.setHomogeneousIC(-50.)  # cm pressure head
     s.setTopBC("constantFlux", 0.5)  #  [cm/day]
     s.setBotBC("freeDrainage")
     s.setLayersZ([2, 2, 1, 1], [-200., -50., -50., 0.])  # sample points ([1], [cm])
     s.setVGParameters(soils)
     s.initializeProblem()
+
+    idx = s.pick([0., 0., -0.01])
+    print("Top cell index is", idx)
 
     if rank == 0:
         print(s)

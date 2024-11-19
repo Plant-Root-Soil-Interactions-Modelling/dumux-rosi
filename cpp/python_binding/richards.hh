@@ -103,8 +103,8 @@ public:
      */
     virtual std::vector<double> getSolutionHead(int eqIdx = 0) {
         std::vector<double> sol = this->getSolution(eqIdx);
-        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::plus<double>(), -pRef_));
-        std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / rho_ / g_));
+        std::transform(sol.begin(), sol.end(), sol.begin(), [&](auto& value){ return value-pRef_; });
+        std::transform(sol.begin(), sol.end(), sol.begin(), [&](auto& value){ return value*100. / rho_ / g_; });
         return sol;
     }
 
@@ -112,7 +112,7 @@ public:
      * TODO setLayers(std::map<int, int> l)
      */
 
-	
+
     virtual std::vector<double> getAvgDensity() {
     	int n =  this->checkGridInitialized();
         std::vector<double> avgD;
@@ -124,19 +124,19 @@ public:
             auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
             elemVolVars.bindElement(element, fvGeometry, this->x);
             int c = 0;
-			
-			
+
+
             for (const auto& scv : scvs(fvGeometry)) {
                 c++;
 				double avgD_ = elemVolVars[scv].density();//absolute saturation
                 t += avgD_;
-				
+
             }
             avgD.push_back(t/c); // mean value
         }
         return avgD;
     }
-	
+
     /**
      * Returns the current solution for a single mpi process.
      * Gathering and mapping is done in Python
@@ -266,10 +266,10 @@ public:
      * Get indexes of cells in a specific soil layer (== vanGenucht parameter set)
      * defined from @see addVanGenuchtenDomain
      * For a single process. Gathering is done in python
-     * layerIndex: index of the soil layer we wan the cell indexes of 
+     * layerIndex: index of the soil layer we wan the cell indexes of
      **/
     virtual std::vector<int> getLayerCellIndx(int layerIndex)  {
-        this->checkGridInitialized();		
+        this->checkGridInitialized();
         std::vector<int> indices;
         for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
 			if(this->problem->spatialParams().index_(e) == layerIndex)
@@ -279,7 +279,7 @@ public:
         }
         return indices;
     }
-	
+
     /**
      * forward to problem
      */
@@ -331,11 +331,11 @@ public:
     	this->problem->bcSBotType_ = types;
     	this->problem->bcSBotValue_ = values;
     }
-	
-	
+
+
     double molarMassWat = 18.; // [g/mol]
     double densityWat_m3 = 1e6 ;//[g/m3]
-    //[mol/m3] = [g/m3] /  [g/mol] 
+    //[mol/m3] = [g/m3] /  [g/mol]
     double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
 
 protected:

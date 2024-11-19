@@ -61,7 +61,8 @@ public:
         std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");  // [1/cm]
         std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N"); // [1]
         kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity [cm/day]
-        std::transform(kc_.begin (), kc_.end (), kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from [cm/day] to [m/s]
+        std::transform(kc_.begin(), kc_.end(), kc_.begin(), [&](auto& value){ return value*1./100./24./3600.; });  // convert from [cm/day] to [m/s]
+
         homogeneous_ = qr.size()==1; // more than one set of VG parameters?
         three_ = false;
 
@@ -223,7 +224,7 @@ public:
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         } // add 3D things
     }
-	
+
 private:
 
 
