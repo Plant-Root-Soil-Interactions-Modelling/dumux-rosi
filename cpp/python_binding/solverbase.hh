@@ -811,7 +811,7 @@ public:
         return fluxes;
     }
 
-    /**
+        /**
      * For a single mpi process. Gathering is done in Python
      */
     virtual std::vector<std::array<double,3>> getVelocities(int eqIdx = 0) {
@@ -826,27 +826,25 @@ public:
         // std::cout << "c\n" << std::flush;
 
         auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+		auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
         //std::cout << "d\n" << std::flush;
 
         for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
-        // for (const auto& e : Dune::elements(gridGeometry->gridView())) { // all elements (loop simplified from vtkoutputmodule.hh)
 
-            fvGeometry.bindElement(e);
+            fvGeometry.bind(e);
             // std::cout << "e\n" << std::flush;
 
-            elemVolVars.bindElement(e, fvGeometry, x);
+            elemVolVars.bind(e, fvGeometry, x);
             // std::cout << "f\n" << std::flush;
 
-            auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
-            std::cout << "f" << std::flush;
 
             elemFluxVarsCache.bind(e, fvGeometry, elemVolVars); // check workspace
-            std::cout << "g" << std::flush;
+            //std::cout << "g" << std::flush;
 
             flowVelocities->calculateVelocity(velocity, e, fvGeometry, elemVolVars, elemFluxVarsCache, 0 ); // veloctiy.hh
-            std::cout << "h\n" << std::flush;
+            //std::cout << "h\n" << std::flush;
 
-//            // where dopes velocity go?
+//            // where does velocity go?
 //            int idx = cellIdx->index(e);
 //            fluxes[idx] = velocity;
 
