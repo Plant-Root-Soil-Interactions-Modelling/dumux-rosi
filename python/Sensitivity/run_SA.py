@@ -175,7 +175,7 @@ def local_soybean_tropisms():
     root_type = "soybean"
     file_name = "local_soybean_tropisms_"
     enviro_type = 0
-    sim_time = 1 #87.5  # days
+    sim_time = 87.5 #87.5  # days
 
     p = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 9)])
     write_ranges("results/" + file_name,
@@ -183,7 +183,7 @@ def local_soybean_tropisms():
                  [p, p, p, p, p, p])
     jobs = make_local(p, p, p, p, p, p, 0., 0., 0., 0.) # currently we always pass 10 valeus to run_sra  
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 if __name__ == "__main__":

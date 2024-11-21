@@ -76,7 +76,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
         scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
 
     print("writing parameters", file_name)
-    r.ms.writeParameters(file_name)  # corresponding xml parameter set
+    r.ms.writeParameters("results/"+ file_name+".xml")  # corresponding xml parameter set
 
     # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
