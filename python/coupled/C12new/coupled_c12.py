@@ -98,11 +98,12 @@ sx = s.getSolutionHead()  # inital condition, solverbase.py
 N = round(sim_time / dt)
 t = 0.
 
-rx = r.solve(rs_age, -trans * sinusoidal(t), sx, cells = True)
 
 for i in range(0, N):
 
     if rank == 0:  # Root part is not parallel
+        if i == 0: 
+            rx = r.solve(rs_age, -trans * sinusoidal(t), sx, cells = True)
         rx = r.solve_again(rs_age + t, -trans * sinusoidal(t), sx, cells = True)
         fluxes = r.soil_fluxes(rs_age + t, rx, sx)
 
@@ -115,8 +116,10 @@ for i in range(0, N):
 
     s.setSource(fluxes.copy())
     s.solve(dt)
-
-    old_sx = sx.copy()
+    
+    if rank == 0:
+        old_sx = sx.copy()
+        
     sx = s.getSolutionHead()
 
     soil_water = (s.getWaterVolume() - water) / dt  # since no-flux bc everywhere, change in water volume should equal transpirational flux
