@@ -259,7 +259,8 @@ public:
     }
 
     //    /**
-    //     * Creates a 1D grid with number of cells = [1,1,points.size()-1] where points are the cell centers for 3d/3d
+    //     * Creates a 1D grid with number of cells = [1,1,points.size()-1] where points are the cem
+    // 		* TODO needs testing
     //     */
     //    virtual void createGrid3d(const std::vector<VectorType>& points, const std::vector<VectorType>& p0) {
     //        assert(dim==3 && "SolverBase::createGrid3d: works only for dim==3");
@@ -597,12 +598,7 @@ public:
      */
     virtual std::vector<double> getCellVolumesCyl() {
 		DUNE_THROW(Dune::NotImplemented, "Do NOT use getCellVolumesCyl, use getCellSurfacesCyl instead and multiply by the length");
-
-		assert(false&&"Do NOT use getCellVolumesCyl, use getCellSurfacesCyl instead");//do I need to use dune-assert here?
         std::vector<double> vols;
-        for (const auto& e : elements(gridGeometry->gridView())) {
-            vols.push_back(e.geometry().volume()*2*e.geometry().center()[0]*3.1415);
-        }
         return vols;
     }
 
@@ -730,6 +726,7 @@ public:
      * for all mpi processes
      *
      * TODO currently works only for CCTpfa
+     * TODO replace min
      */
     double getSolutionAt(int gIdx, int eqIdx = 0) {
         if (isBox) {
@@ -749,6 +746,8 @@ public:
      * Returns the maximal flux (over the boundary scvfs) of an element, given by its global element index,
      * for all mpi processes
 	 * ATT: this only gives the flux AT THE END of the solve() function
+	 *
+	 * TODO revise
      */
     virtual double getNeumann(int gIdx, int eqIdx = 0) {
         double f = 0.;
@@ -778,6 +777,8 @@ public:
      * Return the neumann fluxes of the current solution for each boundary element (as mean over all scvfs, TODO why, net-flux would make more sense).
      *
      * For a single mpi process. Gathering is done in Python
+     *
+     * Todo revise
      */
     virtual std::map<int, double> getAllNeumann(int eqIdx = 0) {
         std::map<int, double> fluxes;
