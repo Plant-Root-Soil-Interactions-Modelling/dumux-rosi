@@ -131,8 +131,8 @@ for i in range(0, N):
             sum_flux += f
         act_trans = r.get_transpiration(rs_age + t, rx, old_sx, cells = True)
         print("Summed fluxes ", sum_flux, "= collar flux", act_trans, "= prescribed", -trans * sinusoidal(t))
-        y_.append(soil_water)  # cm3/day (soil uptake)
-        # z_.append(sum_flux)  # cm3/day (root system uptake)
+        # y_.append(soil_water)  # cm3/day (soil uptake)
+        y_.append(sum_flux)  # cm3/day (root system uptake)
         z_.append(act_trans)  # cm3/day
         n = round(float(i) / float(N) * 100.)
         print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], soil [{:g}, {:g}] cm, root [{:g}, {:g}] cm, {:g} days {:g}\n"
@@ -154,8 +154,12 @@ s.writeDumuxVTK(name)
 """ Plot """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-    vp.plot_roots_and_soil(r.ms, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    
+    # vp.plot_roots_and_soil(r.ms, "pressure head", rx, s, periodic, min_b, max_b, cell_number, name)  # VTK vizualisation
+    
     plot_transpiration(x_, y_, z_, lambda t: trans * sinusoidal(t))
+    # TODO getWaterVolume() does not work with MPI 
+    
     np.savetxt(name, np.vstack((x_, -np.array(y_))), delimiter = ';')
     # sink1d = np.array(sink1d)
     # np.save("sink1d", sink1d)
