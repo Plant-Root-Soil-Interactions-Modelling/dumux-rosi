@@ -6,7 +6,6 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
 import numpy as np
 import os
 import random
@@ -15,44 +14,56 @@ import run_sra
 
 
 def mid_(l):
-    """ mid element of the list (floor)"""
+    """ mid element of the list (ceiling)"""
     return l[len(l) // 2]
 
 
-def make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
-    """ turns single values into lists containing the value """
-    if isinstance(kr_, float):
-        kr_ = [kr_]
-    if isinstance(kx_, float):
-        kx_ = [kx_]
-    if isinstance(lmax1_, float):
-        lmax1_ = [lmax1_]
-    if isinstance(lmax2_, float):
-        lmax2_ = [lmax2_]
-    if isinstance(lmax3_, float):
-        lmax3_ = [lmax3_]
-    if isinstance(theta1_, float):
-        theta1_ = [theta1_]
-    if isinstance(r1_, float):
-        r1_ = [r1_]
-    if isinstance(r2_, float):
-        r2_ = [r2_]
-    if isinstance(a_, float):
-        a_ = [a_]
-    if isinstance(src_, float):
-        src_ = [src_]
-    return kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_
-
+def make_lists(*args):
+    """ turns single values into lists containing a single value """
+    l = list(args)
+    for i, v in enumerate(l): 
+        if isinstance(v, float):
+            l[i] = [v]
+    return (*l,) 
 
 def mkdir_p(dir):
     '''make a directory (dir) if it doesn't exist'''
     if not os.path.exists(dir):
         os.mkdir(dir)
 
+def make_local(*args):
+    """ creates the jobs for a local sensitivity analysis: 
+        
+        the input *args are lists representing value ranges, 
+        values are varied for each range, using the mid values for the other ranges,         
+    """
+    ranges = make_lists(*args) # puts floats into single valued lists
+    jobs = []
+    
+    c = 1 # job counter
+    mids = [mid_(r) for r in ranges]
+    jobs.append([c, *mids])
 
-def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs):
-    """ send as individual jobs """
+    for i, r in enumerate(ranges):
+        if len(r) > 1:
+            for v in r:
+                c += 1
+                mids_copy = mids.copy()
+                mids_copy[i] = v
+                jobs.append([c, *mids_copy])
+                
+    return jobs
 
+def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
+    """starts the jobs calling run_sra.py with the agruments 
+    type_str                 type of sensitivity analysis to let run_sra know how to interpet the data passed to it
+    file_name                name of the sensitivity analysis, simulation number is added
+    root_type                currently unused TODO to switch between soybean and maize
+    enviro_type              choose parametrisation  
+    sim_time                 simulation time
+    jobs                     parameters for each simulation run (see make_local)    
+    run_local                if True calls pyhton3, else for cluster calls sbatch
+    """
     job_directory = os.path.join(os.getcwd(), file_name)
     mkdir_p(job_directory)
     print(job_directory)
@@ -61,148 +72,81 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs):
     for job in jobs:
 
         job_name = file_name + str(int(job[0]))
-        print("Job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
-        job_file = os.path.join(job_directory, job_name + ".job")
-
-        with open(job_file, 'w') as fh:
-
-            fh.writelines("#!/bin/bash\n")
-            fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
-            fh.writelines("#SBATCH --ntasks=1\n")
-            fh.writelines("#SBATCH --cpus-per-task=1")
-            fh.writelines("#SBATCH --nodes=1\n")
-            fh.writelines("#SBATCH --time=24:00:00\n")
-            fh.writelines("#SBATCH --mem=8G\n")
-            fh.writelines("#SBATCH --partition=cpu256\n")
-            fh.writelines("module load openmpi/4.1.4\n")
-            fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-                          format(type_str, job_name, enviro_type, sim_time, *job[1:]))
-
-        os.system("sbatch {:s}".format(job_file))
-
-        # os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-        #                   format(type_str, job_name, enviro_type, sim_time, *job[1:]))
-
-
-def make_local(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
-    """ creates the jobs for a local sensitivity analysis  """
-
-    kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_ = make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_)
-
-    # create local sa jobs
-    jobs = []
-    i = 1
-    jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(kr_) > 1:
-        for kr in kr_:
-            i += 1
-            jobs.append([i, kr, mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(kx_) > 1:
-        for kx in kx_:
-            i += 1
-            jobs.append([i, mid_(kr_), kx, mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(lmax1_) > 1:
-        for lmax1 in lmax1_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), lmax1, mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(lmax2_) > 1:
-        for lmax2 in lmax2_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), lmax2, mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(lmax3_) > 1:
-        for lmax3 in lmax3_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), lmax3, mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(theta1_) > 1:
-        for theta1 in theta1_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), theta1, mid_(r1_), mid_(r2_), mid_(a_), mid_(src_)])
-    if len(r1_) > 1:
-        for r1 in r1_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), r1, mid_(r2_), mid_(a_), mid_(src_)])
-    if len(r2_) > 1:
-        for r2 in r2_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), r2, mid_(a_), mid_(src_)])
-    if len(a_) > 1:
-        for a in a_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), a, mid_(src_)])
-    if len(src_) > 1:
-        for src in src_:
-            i += 1
-            jobs.append([i, mid_(kr_), mid_(kx_), mid_(lmax1_), mid_(lmax2_), mid_(lmax3_), mid_(theta1_), mid_(r1_), mid_(r2_), mid_(a_), src])
-
-    return jobs
-
-
-def make_local_conductivities(ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_):
-    """ rename things """
-    jobs = make_local(ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_)
-    return jobs
-
+        print("starting job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
+        
+        if run_local:
+        
+            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+                              format(type_str, job_name, enviro_type, sim_time, *job[1:]))
+        else:
+            job_file = os.path.join(job_directory, job_name + ".job")
+            with open(job_file, 'w') as fh:
+        
+                fh.writelines("#!/bin/bash\n")
+                fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+                fh.writelines("#SBATCH --ntasks=1\n")
+                fh.writelines("#SBATCH --cpus-per-task=1")
+                fh.writelines("#SBATCH --nodes=1\n")
+                fh.writelines("#SBATCH --time=24:00:00\n")
+                fh.writelines("#SBATCH --mem=8G\n")
+                fh.writelines("#SBATCH --partition=cpu256\n")
+                fh.writelines("module load openmpi/4.1.4\n")
+                fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+                              format(type_str, job_name, enviro_type, sim_time, *job[1:]))
+        
+            os.system("sbatch {:s}".format(job_file))
 
 def write_ranges(file_name, names, ranges):
-    if rank == 0:
-        assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
-        with open(file_name + "_range", 'w') as file:
-            for i in range(0, len(ranges)):
-                l = [str(r) for r in ranges[i]]
-                range_ = ', '.join(l)
-                file.write(names[i] + ", " + str(len(ranges[i])) + ", " + range_ + "\n")
+    """ writes variable names and parameter ranges of the sensitivity analysis """
+    assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
+    with open(file_name + "_range", 'w') as file:
+        for i in range(0, len(ranges)):
+            l = [str(r) for r in ranges[i]]
+            range_ = ', '.join(l)
+            file.write(names[i] + ", " + str(len(ranges[i])) + ", " + range_ + "\n")
 
 
 def read_ranges(file_name):
-    names = []
-    ranges = []
-    if rank == 0:
-
-        with open(file_name + "_range", 'r') as file:
-           for line in file:
-                entries = line.rstrip().split(", ")
-                names.append(entries[0])
-                n = int(entries[1])
-                ranges.append([])
-                for i in range(0, n):
-                    ranges[-1].append(float(entries[2 + i]))
+    """ reads variable names and parameter ranges of the sensitivity analysis """    
+    names, ranges = [], []    
+    with open(file_name + "_range", 'r') as file:
+       for line in file:
+            entries = line.rstrip().split(", ")
+            names.append(entries[0])
+            n = int(entries[1])
+            ranges.append([])
+            for i in range(0, n):
+                ranges[-1].append(float(entries[2 + i]))
 
     return names, ranges
 
 
 def local_soybean():
+    """ constructs a local sensitivity analysis for values 
+        "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
+    """
     print("local_soybean")
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
-    file_name = "local_soybean_"
+    file_name = "test_" # local_soybean_
     enviro_type = 0
-    sim_time = 87.5  # days
+    sim_time = 1 #87.5  # days
 
-    if rank == 0:
-        p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-        theta_ = np.linspace(0, np.pi / 2, 9)
-        write_ranges("results/" + file_name,
-                     ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
-                     [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
-        jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+    p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+    p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+    theta_ = np.linspace(0, np.pi / 2, 9)
+    write_ranges("results/" + file_name,
+                 ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
+                 [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
+    jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
-        # for j in jobs:
-        #     print(j)
-        # dd
-        # kr, kx, lmax, theta1, r, a, src,
-
-    else:
-        jobs = None
-
-    jobs = comm.bcast(jobs, root = 0)
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
-def local_soybean_conductivities():  ####################################################################################### TODO
-
+def local_soybean_conductivities():  
+    
     print("local_soybean_conductivities")
-    type_str = "local_soybean_conductivities10"  # the 'original' sa analysis from the pre project
+    type_str = "local_soybean_conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
     file_name = "local_soybean_conductivities_"
     enviro_type = 0
@@ -214,35 +158,48 @@ def local_soybean_conductivities():  ###########################################
     kr = [1.e-3, 4.e-3, 4.e-3]
     kr_old = [5e-4, 0.0015]
 
-    if rank == 0:
-        # p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-        p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
-        write_ranges("results/" + file_name,
-                     ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
-                     [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
-        jobs = make_local_conductivities(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])  #
+    # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+    p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
+    write_ranges("results/" + file_name,
+                 ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
+                 [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
+    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])  
 
-    else:
-        jobs = None
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
-    jobs = comm.bcast(jobs, root = 0)
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs)
+
+def local_soybean_tropisms():  
+    
+    print("local_soybean_tropisms")
+    type_str = "tropisms"  
+    root_type = "soybean"
+    file_name = "local_soybean_tropisms_"
+    enviro_type = 0
+    sim_time = 1 #87.5  # days
+
+    p = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 9)])
+    write_ranges("results/" + file_name,
+                 ["n145", "n2", "n3", "sigma145", "sigma2", "sigma3"],
+                 [p, p, p, p, p, p])
+    jobs = make_local(p, p, p, p, p, p, 0., 0., 0., 0.) # currently we always pass 10 valeus to run_sra  
+
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
 if __name__ == "__main__":
 
-    i = 2
+    i = 3
 
     if i == 1:
         local_soybean()
     if i == 2:
         local_soybean_conductivities()
     if i == 3:
-        global1_soybean()
+        local_soybean_tropisms()
     if i == 4:
-        local_maize()
+        pass
     if i == 5:
-        global1_maize()
+        pass
 
 # def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 #     """ creates the jobs for a global sensitivity analysis  """

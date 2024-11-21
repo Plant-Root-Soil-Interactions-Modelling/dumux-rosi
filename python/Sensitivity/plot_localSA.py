@@ -20,7 +20,7 @@ def start_index(ind, ranges):
 
 """ def SA """
 file_name = "local_soybean_"
-file_name = "local_soybean_conductivities_"
+#file_name = "local_soybean_conductivities_"
 # file_name = "local_maize"
 # file_name = "local_timing"
 path = "results/"
@@ -86,7 +86,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(2, 5, figsize = (16, 16))
+fig, ax = plt.subplots(3, 3, figsize = (16, 16))
 final = []
 finaln = []
 
@@ -142,8 +142,8 @@ for lind in range(0, len(names)):
         print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]))
 
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
-        # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
-        # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
+        ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
+        ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 
         final.append(trans[-1] / vol[-1])
         finaln.append(nitrate[-1] / vol[-1])

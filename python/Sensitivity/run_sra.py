@@ -15,7 +15,7 @@ import hydraulic_model
 import sra_new
 
 
-def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, src, kr_old = None, kx_old = None, save_all = False):
+def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx_old = None, save_all = False):
     """
         file_name                output file_name
         enviro_type              envirotype (number)
@@ -24,7 +24,11 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     """
 
     print("***********************")
-    print("run_soybean", file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, src)
+    print("run_soybean", file_name, enviro_type, sim_time)
+    print(mods)
+    print(kr, kx)
+    if kr_old: 
+        print(kr_old, kx_old)
     print("***********************", flush = True)
 
     dt = 360 / (24 * 3600)  # time step [day]
@@ -45,12 +49,6 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
     print("starting hydraulic model", flush = True)
     xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 
-    mods = {"lmax145":lmax[0], "lmax2":lmax[1], "lmax3":lmax[2], "r145":r[0], "r2":r[1], "r3":r[1], "a":a}
-    if theta1:
-        mods["theta45"] = theta1
-    if src:
-        mods["src"] = src
-
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
     print("***********************", "hydraulic model set\n", flush = True)
 
@@ -59,8 +57,9 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
         scenario.init_lupine_conductivities(r, kr, kx)
-    params.plot_conductivities(False, lateral_ind = [2, 3])  #
-    dd
+    
+    # params.plot_conductivities(False, lateral_ind = [2, 3])  #
+    # dd
 
     print("conductivities set\n", flush = True)
 
@@ -85,13 +84,15 @@ def run_soybean(file_name, enviro_type, sim_time, kr, kx, lmax, theta1, r, a, sr
 
 if __name__ == "__main__":
 
-    theta1 = None
-    src = None
-    kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
-    kx_old = [0.35, 0.015]
-    kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
-    kr_old = [5e-4, 0.0015]
-    run_soybean("", 0, 1, kr, kx, [1., 1., 1.], theta1, [1., 1.], 1., src, kr_old, kx_old, save_all = True)
+    # enviro_type = 0
+    # sim_time = 1
+    # theta1 = None
+    # src = None
+    # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
+    # kx_old = [0.35, 0.015]
+    # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
+    # kr_old = [5e-4, 0.0015]
+    # run_soybean("test", enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
 
     type = sys.argv[1]
     file_name = sys.argv[2]
@@ -100,7 +101,8 @@ if __name__ == "__main__":
 
     if type == "original":
 
-        print("running original sa")
+        print("running original sa", flush = True)
+        
         kr = float(sys.argv[5])
         kx = float(sys.argv[6])
         lmax1 = float(sys.argv[7])
@@ -112,33 +114,55 @@ if __name__ == "__main__":
         a = float(sys.argv[13])
         src = int(float(sys.argv[14]))
 
-        run_soybean(file_name, enviro_type, sim_time, kr, kx, [lmax1, lmax2, lmax3], theta1, [r1, r2], a, src, save_all = True)  # pass only mods, kr, and kx, TODO
+        mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "r145":r1, "r2":r2, "r3":r2, "a":a}
+        mods["theta45"] = theta1
+        mods["src"] = src
 
+        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, save_all = True)  
+        
     elif type == "conductivities10":
 
-        print("running conductivities 10")
+        print("running conductivities 10", flush = True)
         kr = np.zeros((3,))
         kr_old = np.zeros((2,))
         kx = np.zeros((3,))
         kx_old = np.zeros((2,))
 
-        kr[0] = sys.argv[5]
-        kr_old[0] = sys.argv[6]
-        kr[1] = sys.argv[7]
-        kr_old[1] = sys.argv[8]
-        kr[2] = sys.argv[9]
+        kr[0] = float(sys.argv[5])
+        kr_old[0] = float(sys.argv[6])
+        kr[1] = float(sys.argv[7])
+        kr_old[1] = float(sys.argv[8])
+        kr[2] = float(sys.argv[9])
 
-        kx[0] = sys.argv[10]
-        kx_old[0] = sys.argv[11]
-        kx[1] = sys.argv[12]
-        kx_old[1] = sys.argv[13]
-        kx[2] = sys.argv[14]
+        kx[0] = float(sys.argv[10])
+        kx_old[0] = float(sys.argv[11])
+        kx[1] = float(sys.argv[12])
+        kx_old[1] = float(sys.argv[13])
+        kx[2] = float(sys.argv[14])
 
-        run_soybean(file_name, enviro_type, sim_time, kr, kx, [1., 1., 1.], None, [1., 1.], 1., None, kr_old, kx_old, save_all = True)
+        run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
+
+    elif type == "tropisms":
+                
+        print("running tropisms", flush = True)
+        
+        n145,n2,n3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
+        s145,s2,s3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
+        
+        mods = {"tropismN145":n145, "tropismN2":n2, "tropismN3":n3, 
+                "tropismS145":s145, "tropismS2":s2, "tropismS3":s3 }
+        
+        run_soybean(file_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
+    
+    elif type == "radii":
+        # TODO
+        pass
 
     else:
 
         print("Unknown run sa type")
+
+
 
 # def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
 #
