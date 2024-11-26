@@ -228,6 +228,11 @@ def local_soybean_conductivities():  ###########################################
     jobs = comm.bcast(jobs, root = 0)
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs)
 
+# def local_soybean_roothairs():
+#     p.hairsZone = 0.5
+#     p.hairsLength = 0.05
+#     p.hairsElongation = 0.5
+
 
 if __name__ == "__main__":
 

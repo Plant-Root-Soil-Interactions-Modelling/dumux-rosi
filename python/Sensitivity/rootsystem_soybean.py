@@ -53,20 +53,26 @@ for p in rrp:
     print("theta", p.theta, "cm")
     print("lmax", p.lmax, "cm")
     print("changed to 0.5 cm to be faster...")
-    p.dx = 0.5  # probably enough
+    p.dx = 0.1  # probably enough
+    print(p.hairsElongation)
+    print(p.hairsZone)
+    print(p.hairsLength)
+    p.hairsZone = 0.5
+    p.hairsLength = 0.05
+    p.hairsElongation = 0.5
 
 rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-rs.writeParameters("data/" + name + "_modified2" + ".xml")  # remember the modifications ################################### not touching the original
+rs.writeParameters("data/" + name + "_modified3" + ".xml")  # remember the modifications ################################### not touching the original
 
 """ 2. Analyse ******************************************************** """
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 
 s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_, net_inf = y_
 
-xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
+xml_name = "data/" + name + "_modified3" + ".xml"  # root growth model parameter file
 mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
-r = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
 rs = r.ms
 
 kr = 1.e-4
@@ -75,13 +81,14 @@ scenario.init_conductivities_const(r.params, kr, kx)
 
 # Simulate
 rs.simulate(87, True)
+rs.calcExchangeZoneCoefs()  ####################################################################################
 
 # Analyse
-vp.plot_roots(rs, "age")
+# vp.plot_roots(rs, "age")
 ana = pb.SegmentAnalyser(rs)
 ana.addAge(simtime)
 
-orders = np.array(rs.getParameter("age"))
+orders = np.array(rs.getParameter("radius"))
 print("\nnumber of roots", len(rs.getOrgans()))
 print("types", np.sum(orders == 1), np.sum(orders == 2), np.sum(orders == 3), np.sum(orders == 4), np.sum(orders == 5))
 print("number of nodes", len(ana.nodes))
@@ -97,6 +104,15 @@ w = np.array(max_b) - np.array(min_b)
 ana.mapPeriodic(w[0], w[1])
 print("periodic")
 print(ana.getMinBounds(), "-", ana.getMaxBounds())
+
+n = len(rs.radii)
+radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+print("radii max", np.max(radii))
+rs.radii = radii
+ana = pb.SegmentAnalyser(rs.mappedSegments())
+ana.addData("distanceTip", rs.distanceTip)
+
+vp.plot_roots(ana, "radius")
 
 dz = 0.5
 exact = False
