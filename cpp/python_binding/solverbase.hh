@@ -991,113 +991,113 @@ public:
 	std::vector<double> inFluxes_time;
     std::vector<double> inFluxes_ddt;
     
-    std::vector<std::vector<double>> getFlux_10c_() {
-        // Compute the total flux [mol] per face during the last solve() call
+    // std::vector<std::vector<double>> getFlux_10c_() {
+        // // Compute the total flux [mol] per face during the last solve() call
         
-        // Create a 2D vector to store the total flux for each cell and component
-        std::vector<std::vector<double>> totalFlux(inFluxes[0].size(), std::vector<double>(inFluxes[0][0].size(), 0.0));//[cellidx][eqIdx]
+        // // Create a 2D vector to store the total flux for each cell and component
+        // std::vector<std::vector<double>> totalFlux(inFluxes[0].size(), std::vector<double>(inFluxes[0][0].size(), 0.0));//[cellidx][eqIdx]
 
-        // Iterate over each sub-timestep
-        for (size_t i = 0; i < inFluxes.size(); ++i) {
-            // Iterate over each cell
-            for (size_t j = 0; j < inFluxes[i].size(); ++j) {
-                // Iterate over each component within the cell
-                for (size_t k = 0; k < inFluxes[i][j].size(); ++k) {
-                    // Calculate total flux per component for each cell
-                    // Return the negated total flux
-                    totalFlux[j][k] -= inFluxes[i][j][k] * inFluxes_ddt[i];
-                }
-            }
-        }
-        return totalFlux;
-    }
+        // // Iterate over each sub-timestep
+        // for (size_t i = 0; i < inFluxes.size(); ++i) {
+            // // Iterate over each cell
+            // for (size_t j = 0; j < inFluxes[i].size(); ++j) {
+                // // Iterate over each component within the cell
+                // for (size_t k = 0; k < inFluxes[i][j].size(); ++k) {
+                    // // Calculate total flux per component for each cell
+                    // // Return the negated total flux
+                    // totalFlux[j][k] -= inFluxes[i][j][k] * inFluxes_ddt[i];
+                // }
+            // }
+        // }
+        // return totalFlux;
+    // }
     
     
-    std::vector<std::vector<double>> getFlux_10c() {
-        assert(dimWorld == 3); // only works for 3d grids
+    // std::vector<std::vector<double>> getFlux_10c() {
+        // assert(dimWorld == 3); // only works for 3d grids
 
-        auto ff10c_ = getFlux_10c_();                  // Local thread flux for each cell
-        auto f2cidx_ = face2CellIds.at(0);             // Corresponding cell for each face
+        // auto ff10c_ = getFlux_10c_();                  // Local thread flux for each cell
+        // auto f2cidx_ = face2CellIds.at(0);             // Corresponding cell for each face
 
-        std::unordered_map<int, double> cellFluxMap;   // Map to store the sum of fluxes per cell
-        std::unordered_map<int, int> cellCountMap;     // Map to count the number of faces per cell
+        // std::unordered_map<int, double> cellFluxMap;   // Map to store the sum of fluxes per cell
+        // std::unordered_map<int, int> cellCountMap;     // Map to count the number of faces per cell
 
-        // Sum values per cell and count the faces
-        for (size_t i = 0; i < f2cidx_.size(); ++i) {
-            int cellId = f2cidx_[i];
-            cellFluxMap[cellId] += ff10c_[i];
-            cellCountMap[cellId]++;
-        }
+        // // Sum values per cell and count the faces
+        // for (size_t i = 0; i < f2cidx_.size(); ++i) {
+            // int cellId = f2cidx_[i];
+            // cellFluxMap[cellId] += ff10c_[i];
+            // cellCountMap[cellId]++;
+        // }
 
-        std::vector<double> ff10c;
-        std::vector<int> f2cidx;
+        // std::vector<double> ff10c;
+        // std::vector<int> f2cidx;
 
-        // Only keep cells where all 6 faces belong to this thread
-        for (const auto& [cellId, count] : cellCountMap) {
-            if (count == 6) {
-                ff10c.push_back(cellFluxMap[cellId]);
-                f2cidx.push_back(cellId);
-            }
-        }
+        // // Only keep cells where all 6 faces belong to this thread
+        // for (const auto& [cellId, count] : cellCountMap) {
+            // if (count == 6) {
+                // ff10c.push_back(cellFluxMap[cellId]);
+                // f2cidx.push_back(cellId);
+            // }
+        // }
 
-        // Get global indices
-        auto dofind = getDofIndics();
-        std::vector<int> f2cidx_g;
-        f2cidx_g.reserve(f2cidx.size());
-        int maxlid = -1;
-        for (int idx : f2cidx) {
-            f2cidx_g.push_back(dofind[idx]);
-            maxlid = maxlid < dofind[idx] ? dofind[idx]:maxlid;
-        }
+        // // Get global indices
+        // auto dofind = getDofIndics();
+        // std::vector<int> f2cidx_g;
+        // f2cidx_g.reserve(f2cidx.size());
+        // int maxlid = -1;
+        // for (int idx : f2cidx) {
+            // f2cidx_g.push_back(dofind[idx]);
+            // maxlid = maxlid < dofind[idx] ? dofind[idx]:maxlid;
+        // }
 
-        // Gather global indices and fluxes
-        std::vector<int> f2cidx_gAll;
-        f2cidx_gAll.reserve(maxgCid);
-        maxgCid = gridGeometry->gridView().comm().max(maxlid);
-        for (size_t gCid = 0; gCid < maxlid ; gCid ++) {
+        // // Gather global indices and fluxes
+        // std::vector<int> f2cidx_gAll;
+        // f2cidx_gAll.reserve(maxgCid);
+        // maxgCid = gridGeometry->gridView().comm().max(maxlid);
+        // for (size_t gCid = 0; gCid < maxlid ; gCid ++) {
         
-            if (localCellIdx.count(gIdx)>0) {
-                int eIdx = localCellIdx[gIdx];
-                y = x[eIdx][eqIdx];
-            }
+            // if (localCellIdx.count(gIdx)>0) {
+                // int eIdx = localCellIdx[gIdx];
+                // y = x[eIdx][eqIdx];
+            // }
             
-            f2cidx_gAll.at(gCid) = 
-        }
-        auto f2cidx_gAll = gather(f2cidx_g);
-        auto ff10c_All = gather(ff10c);
+            // f2cidx_gAll.at(gCid) = 
+        // }
+        // auto f2cidx_gAll = gather(f2cidx_g);
+        // auto ff10c_All = gather(ff10c);
         
 
-        std::vector<std::vector<double>> flux10cCell;
+        // std::vector<std::vector<double>> flux10cCell;
 
-        if (rank == 0) {
-            // Flatten arrays and remove duplicates
-            std::unordered_set<int> f2cidx_gAll_unique(f2cidx_gAll.begin(), f2cidx_gAll.end());
-            std::vector<double> ff10c_All_unique;
+        // if (rank == 0) {
+            // // Flatten arrays and remove duplicates
+            // std::unordered_set<int> f2cidx_gAll_unique(f2cidx_gAll.begin(), f2cidx_gAll.end());
+            // std::vector<double> ff10c_All_unique;
 
-            for (int idx_ : f2cidx_gAll_unique) {
-                auto it = std::find(f2cidx_gAll.begin(), f2cidx_gAll.end(), idx_);
-                if (it != f2cidx_gAll.end()) {
-                    size_t index = std::distance(f2cidx_gAll.begin(), it);
-                    ff10c_All_unique.push_back(ff10c_All[index]);
-                }
-            }
+            // for (int idx_ : f2cidx_gAll_unique) {
+                // auto it = std::find(f2cidx_gAll.begin(), f2cidx_gAll.end(), idx_);
+                // if (it != f2cidx_gAll.end()) {
+                    // size_t index = std::distance(f2cidx_gAll.begin(), it);
+                    // ff10c_All_unique.push_back(ff10c_All[index]);
+                // }
+            // }
 
-            // Transpose for [comp][cell]
-            flux10cCell = transpose(ff10c_All_unique, numComp, numberOfCellsTot);
+            // // Transpose for [comp][cell]
+            // flux10cCell = transpose(ff10c_All_unique, numComp, numberOfCellsTot);
 
-            //assert(flux10cCell.size() == static_cast<size_t>(numComp));
-            //assert(flux10cCell[0].size() == static_cast<size_t>(numberOfCellsTot));
+            // //assert(flux10cCell.size() == static_cast<size_t>(numComp));
+            // //assert(flux10cCell[0].size() == static_cast<size_t>(numberOfCellsTot));
 
-            // Convert water flux from mol to cm3
-            double molarDensityWat = densityWat / molarMassWat; // [mol/cm3]
-            for (double& flux : flux10cCell[0]) {
-                flux /= molarDensityWat;
-            }
-        }
+            // // Convert water flux from mol to cm3
+            // double molarDensityWat = densityWat / molarMassWat; // [mol/cm3]
+            // for (double& flux : flux10cCell[0]) {
+                // flux /= molarDensityWat;
+            // }
+        // }
 
-        return flux10cCell;
-    }
-	
+        // return flux10cCell;
+    // }
+    
 	// reset to value before the last call to solve()
     virtual void reset() {
         checkGridInitialized();
