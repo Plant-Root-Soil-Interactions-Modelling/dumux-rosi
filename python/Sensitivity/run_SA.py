@@ -210,18 +210,27 @@ def local_soybean_radii():
     enviro_type = 0
     sim_time = 87.5  # days
 
-    p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+    a145 = np.linspace(0., .5, 9)
+    a2 = np.linspace(0., .1, 9)
+    a3 = np.linspace(0., .1, 9)
+
+    hz = np.linspace(0., 4., 9)
+    hairsZone145, hairsZone2, hairsZone3 = hz, hz, hz
+
+    hl = np.linspace(0.01, 0.99, 9)
+    hairsLength145, hairsLength2, hairsLength3 = hl, hl, hl
+
     write_ranges("results/" + file_name,
-                 ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength"],
-                 [p, p, p, p, p, p, p, p, p, p, p, p])
-    jobs = make_local(p, p, p, p, p, p, p, p, p, 0.)  # currently we always pass 10 valeus to run_sra
+                 ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength3"],
+                 [a145, a2, a3, hz, hz, hz, hl, hl, hl])
+    jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0.)  # currently we always pass 10 valeus to run_sra
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 if __name__ == "__main__":
 
-    i = 3
+    i = 4
 
     if i == 1:
         local_soybean()

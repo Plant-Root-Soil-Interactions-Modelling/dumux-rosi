@@ -60,6 +60,7 @@ for p in rrp:
     p.hairsZone = 0.5
     p.hairsLength = 0.05
     p.hairsElongation = 0.5
+dd
 
 rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std

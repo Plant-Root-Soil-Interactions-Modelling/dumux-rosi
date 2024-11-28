@@ -161,6 +161,7 @@ if __name__ == "__main__":
         a145, a2, a3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
         hairsZone145, hairsZone2, hairsZone3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
         hairsLength145, hairsLength2, hairsLength3 = float(sys.argv[11]), float(sys.argv[12]), float(sys.argv[13])
+
         mods = {"a145":a145, "a":a2, "a3":a3,
                 "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
                 "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3 }
