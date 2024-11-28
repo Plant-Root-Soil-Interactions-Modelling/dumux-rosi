@@ -520,9 +520,12 @@ class SolverWrapper():
         """
         bounds = self.getGridBounds(); min_b = bounds[:3]; max_b = bounds[3:]
         cell_number_ = self.numberOfCells
+
+        # is in domain according to x,y,z?
         ratioDist = (coordCell - min_b)/(max_b - min_b)
         if ((ratioDist > 1.) |(ratioDist < 0.) ).any():#not in the domain
             return -1
+                    
         id_rows = ratioDist*cell_number_
         onCellOuterFace = np.where((id_rows == np.round(id_rows)) & (id_rows > 0) )[0]
         id_rows[onCellOuterFace] -= 1

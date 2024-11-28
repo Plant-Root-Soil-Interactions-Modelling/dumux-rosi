@@ -1865,7 +1865,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             assert max(phead)<= 0.
         except:
             print(rank, 'min(theta)< minVal or max(theta)>maxVal', 
-                  cyl.gId, theta,
+                  cyl.gId, 
                   'or phead > 0',phead)
             return  False
         return True
