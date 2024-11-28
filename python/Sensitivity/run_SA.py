@@ -122,7 +122,7 @@ def read_ranges(file_name):
 
 
 def local_soybean():
-    """ constructs a local sensitivity analysis for values 
+    """ constructs a local sensitivity analysis presented in the preproject for values 
         "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
     print("local_soybean")
@@ -144,7 +144,9 @@ def local_soybean():
 
 
 def local_soybean_conductivities():  
-    
+    """ constructs a local sensitivity analysis of hydraulic conductivities 
+       for young and old parts, dependent on root order (145, 2, 3)
+    """    
     print("local_soybean_conductivities")
     type_str = "local_soybean_conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
@@ -169,7 +171,10 @@ def local_soybean_conductivities():
 
 
 def local_soybean_tropisms():  
-    
+    """ constructs a local sensitivity analysis of the influence of tropisms
+       alters number of trials n and mean alteration sigma, dependent on root order (145, 2, 3)
+       TODO did not work, maybe starting point sigma was to low 
+    """    
     print("local_soybean_tropisms")
     type_str = "tropisms"  
     root_type = "soybean"
@@ -185,6 +190,28 @@ def local_soybean_tropisms():
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
+def local_soybean_radii():  
+    """ constructs a local sensitivity analysis of root radii and root hairs 
+       radii, dependent on root order (145, 2, 3)
+       root hair zone length, dependent on root order (145, 2, 3)
+       root hair length, dependent on root order (145, 2, 3)
+       root elongation zone is fixed to 0.5
+    """    
+    print("local_soybean_radii")
+    type_str = "radii"  
+    root_type = "soybean"
+    file_name = "local_soybean_tropisms_"
+    enviro_type = 0
+    sim_time = 87.5 #87.5  # days
+
+    p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
+    write_ranges("results/" + file_name,
+                 ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength"],
+                 [p, p, p, p, p, p, p, p, p, p, p, p])
+    jobs = make_local(p, p, p, p, p, p, 0., 0., 0., 0.) # currently we always pass 10 valeus to run_sra  
+
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+
 
 if __name__ == "__main__":
 
@@ -195,9 +222,9 @@ if __name__ == "__main__":
     if i == 2:
         local_soybean_conductivities()
     if i == 3:
-        local_soybean_tropisms()
+        local_soybean_tropisms() # did not work, try again with larger sigma? and insertion angles?
     if i == 4:
-        pass
+        local_soybean_radii()
     if i == 5:
         pass
 

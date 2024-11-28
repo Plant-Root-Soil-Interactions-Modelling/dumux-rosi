@@ -250,7 +250,50 @@ def apply_mods(mods, plant):
     if "tropismS3" in mods:  
         rrp[3].tropismS *= mods["tropismS3"]
         mods.pop("tropismS3")
-
+    if  "hairsZone" in mods:
+        for i in range(0, len(rrp)):
+            rrp[i].hairsZone = mods["hairsZone"]
+        mods.pop("hairsZone")
+    if "hairsZone145" in mods:  
+        rrp[1].tropismS *= mods["hairsZone145"]
+        rrp[4].tropismS *= mods["hairsZone145"]
+        if len(rrp) > 5:
+            rrp[5].tropismS*= mods["hairsZone145"]
+        mods.pop("hairsZone145")
+    if "hairsZone2" in mods:  
+        rrp[2].tropismS *= mods["hairsZone2"]
+        mods.pop("hairsZone2")
+    if "hairsZone3" in mods:  
+        rrp[3].tropismS *= mods["hairsZone3"]
+        mods.pop("hairsZone3")        
+    if "hairsLength" in mods:                            
+        for i in range(0, len(rrp)):
+            rrp[i].hairsZone = mods["hairsLength"]
+        mods.pop("hairsLength")
+    if "hairsLength145" in mods:  
+        rrp[1].tropismS *= mods["hairsLength145"]
+        rrp[4].tropismS *= mods["hairsLength145"]
+        if len(rrp) > 5:
+            rrp[5].tropismS*= mods["hairsLength145"]
+        mods.pop("hairsZone145")
+    if "hairsZone2" in mods:  
+        rrp[2].tropismS *= mods["hairsZone2"]
+        mods.pop("hairsZone2")
+    if "hairsZone3" in mods:  
+        rrp[3].tropismS *= mods["hairsZone3"]
+        mods.pop("hairsZone3")        
+    if "hairsLength" in mods:                            
+        for i in range(0, len(rrp)):
+            rrp[i].hairsZone = mods["hairsLength"]
+        mods.pop("hairsLength")        
+        
+        
+        
+    if "hairsElongation" in mods:    
+        for i in range(0, len(rrp)):
+            rrp[i].hairsZone = mods["hairsElongation"]
+        mods.pop("hairsElongation")        
+        
     if mods:  # something unused in mods
         print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
         for k, v in mods.items():
