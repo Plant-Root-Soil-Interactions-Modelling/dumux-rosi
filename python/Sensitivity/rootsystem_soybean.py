@@ -81,7 +81,7 @@ scenario.init_conductivities_const(r.params, kr, kx)
 
 # Simulate
 rs.simulate(87, True)
-rs.calcExchangeZoneCoefs()  ####################################################################################
+# rs.calcExchangeZoneCoefs()  ####################################################################################
 
 # Analyse
 # vp.plot_roots(rs, "age")

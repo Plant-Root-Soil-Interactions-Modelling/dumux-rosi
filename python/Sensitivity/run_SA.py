@@ -21,15 +21,17 @@ def mid_(l):
 def make_lists(*args):
     """ turns single values into lists containing a single value """
     l = list(args)
-    for i, v in enumerate(l): 
+    for i, v in enumerate(l):
         if isinstance(v, float):
             l[i] = [v]
-    return (*l,) 
+    return (*l,)
+
 
 def mkdir_p(dir):
     '''make a directory (dir) if it doesn't exist'''
     if not os.path.exists(dir):
         os.mkdir(dir)
+
 
 def make_local(*args):
     """ creates the jobs for a local sensitivity analysis: 
@@ -37,10 +39,10 @@ def make_local(*args):
         the input *args are lists representing value ranges, 
         values are varied for each range, using the mid values for the other ranges,         
     """
-    ranges = make_lists(*args) # puts floats into single valued lists
+    ranges = make_lists(*args)  # puts floats into single valued lists
     jobs = []
-    
-    c = 1 # job counter
+
+    c = 1  # job counter
     mids = [mid_(r) for r in ranges]
     jobs.append([c, *mids])
 
@@ -51,8 +53,9 @@ def make_local(*args):
                 mids_copy = mids.copy()
                 mids_copy[i] = v
                 jobs.append([c, *mids_copy])
-                
+
     return jobs
+
 
 def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
     """starts the jobs calling run_sra.py with the agruments 
@@ -73,15 +76,15 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
 
         job_name = file_name + str(int(job[0]))
         print("starting job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
-        
+
         if run_local:
-        
+
             os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(type_str, job_name, enviro_type, sim_time, *job[1:]))
         else:
             job_file = os.path.join(job_directory, job_name + ".job")
             with open(job_file, 'w') as fh:
-        
+
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
@@ -93,8 +96,9 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(type_str, job_name, enviro_type, sim_time, *job[1:]))
-        
+
             os.system("sbatch {:s}".format(job_file))
+
 
 def write_ranges(file_name, names, ranges):
     """ writes variable names and parameter ranges of the sensitivity analysis """
@@ -107,8 +111,8 @@ def write_ranges(file_name, names, ranges):
 
 
 def read_ranges(file_name):
-    """ reads variable names and parameter ranges of the sensitivity analysis """    
-    names, ranges = [], []    
+    """ reads variable names and parameter ranges of the sensitivity analysis """
+    names, ranges = [], []
     with open(file_name + "_range", 'r') as file:
        for line in file:
             entries = line.rstrip().split(", ")
@@ -128,9 +132,9 @@ def local_soybean():
     print("local_soybean")
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
-    file_name = "test_" # local_soybean_
+    file_name = "local_soybean_"
     enviro_type = 0
-    sim_time = 1 #87.5  # days
+    sim_time = 1  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
@@ -143,10 +147,10 @@ def local_soybean():
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
-def local_soybean_conductivities():  
+def local_soybean_conductivities():
     """ constructs a local sensitivity analysis of hydraulic conductivities 
        for young and old parts, dependent on root order (145, 2, 3)
-    """    
+    """
     print("local_soybean_conductivities")
     type_str = "local_soybean_conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
@@ -165,50 +169,52 @@ def local_soybean_conductivities():
     write_ranges("results/" + file_name,
                  ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
                  [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
-    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])  
+    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
-def local_soybean_tropisms():  
+def local_soybean_tropisms():
     """ constructs a local sensitivity analysis of the influence of tropisms
        alters number of trials n and mean alteration sigma, dependent on root order (145, 2, 3)
-       TODO did not work, maybe starting point sigma was to low 
-    """    
+    """
     print("local_soybean_tropisms")
-    type_str = "tropisms"  
+    type_str = "tropisms"
     root_type = "soybean"
     file_name = "local_soybean_tropisms_"
     enviro_type = 0
-    sim_time = 87.5 #87.5  # days
+    sim_time = 87.5  # 87.5  # days
 
-    p = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 9)])
+    sigma_ = np.linspace(0.1, 0.5, 5)
+    n_ = np.linspace(0., 5., 9)
+
     write_ranges("results/" + file_name,
                  ["n145", "n2", "n3", "sigma145", "sigma2", "sigma3"],
-                 [p, p, p, p, p, p])
-    jobs = make_local(p, p, p, p, p, p, 0., 0., 0., 0.) # currently we always pass 10 valeus to run_sra  
+                 [n_, n_, n_, sigma_, sigma_, sigma_])
 
+    jobs = make_local(n_, n_, n_, sigma_, sigma_, sigma_, 0., 0., 0., 0.)  # currently we always pass 10 valeus to run_sra
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
-def local_soybean_radii():  
+
+def local_soybean_radii():
     """ constructs a local sensitivity analysis of root radii and root hairs 
        radii, dependent on root order (145, 2, 3)
        root hair zone length, dependent on root order (145, 2, 3)
        root hair length, dependent on root order (145, 2, 3)
        root elongation zone is fixed to 0.5
-    """    
+    """
     print("local_soybean_radii")
-    type_str = "radii"  
+    type_str = "radii"
     root_type = "soybean"
-    file_name = "local_soybean_tropisms_"
+    file_name = "local_soybean_radii_"
     enviro_type = 0
-    sim_time = 87.5 #87.5  # days
+    sim_time = 87.5  # days
 
     p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     write_ranges("results/" + file_name,
                  ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength"],
                  [p, p, p, p, p, p, p, p, p, p, p, p])
-    jobs = make_local(p, p, p, p, p, p, 0., 0., 0., 0.) # currently we always pass 10 valeus to run_sra  
+    jobs = make_local(p, p, p, p, p, p, p, p, p, 0.)  # currently we always pass 10 valeus to run_sra
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
@@ -222,7 +228,7 @@ if __name__ == "__main__":
     if i == 2:
         local_soybean_conductivities()
     if i == 3:
-        local_soybean_tropisms() # did not work, try again with larger sigma? and insertion angles?
+        local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
     if i == 4:
         local_soybean_radii()
     if i == 5:

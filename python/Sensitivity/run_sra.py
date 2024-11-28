@@ -27,7 +27,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     print("run_soybean", file_name, enviro_type, sim_time)
     print(mods)
     print(kr, kx)
-    if kr_old: 
+    if kr_old:
         print(kr_old, kx_old)
     print("***********************", flush = True)
 
@@ -57,7 +57,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
         scenario.init_lupine_conductivities(r, kr, kx)
-    
+
     # params.plot_conductivities(False, lateral_ind = [2, 3])  #
     # dd
 
@@ -76,7 +76,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
         scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
 
     print("writing parameters", file_name)
-    r.ms.writeParameters("results/"+ file_name+".xml")  # corresponding xml parameter set
+    r.ms.writeParameters("results/" + file_name + ".xml")  # corresponding xml parameter set
 
     # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
@@ -102,7 +102,7 @@ if __name__ == "__main__":
     if type == "original":
 
         print("running original sa", flush = True)
-        
+
         kr = float(sys.argv[5])
         kx = float(sys.argv[6])
         lmax1 = float(sys.argv[7])
@@ -118,11 +118,11 @@ if __name__ == "__main__":
         mods["theta45"] = theta1
         mods["src"] = src
 
-        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, save_all = True)  
-        
+        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, save_all = True)
+
     elif type == "conductivities10":
 
-        print("running conductivities 10", flush = True)
+        print("running conductivities10", flush = True)
         kr = np.zeros((3,))
         kr_old = np.zeros((2,))
         kx = np.zeros((3,))
@@ -143,26 +143,33 @@ if __name__ == "__main__":
         run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
 
     elif type == "tropisms":
-                
+
         print("running tropisms", flush = True)
-        
-        n145,n2,n3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
-        s145,s2,s3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
-        
-        mods = {"tropismN145":n145, "tropismN2":n2, "tropismN3":n3, 
+
+        n145, n2, n3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
+        s145, s2, s3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
+
+        mods = {"tropismN145":n145, "tropismN2":n2, "tropismN3":n3,
                 "tropismS145":s145, "tropismS2":s2, "tropismS3":s3 }
-        
+
         run_soybean(file_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
-    
+
     elif type == "radii":
-        # TODO
-        pass
+
+        print("running radii", flush = True)
+
+        a145, a2, a3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
+        hairsZone145, hairsZone2, hairsZone3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
+        hairsLength145, hairsLength2, hairsLength3 = float(sys.argv[11]), float(sys.argv[12]), float(sys.argv[13])
+        mods = {"a145":a145, "a":a2, "a3":a3,
+                "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
+                "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3 }
+
+        run_soybean(file_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
 
     else:
 
         print("Unknown run sa type")
-
-
 
 # def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
 #

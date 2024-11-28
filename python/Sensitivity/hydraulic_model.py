@@ -53,6 +53,7 @@ def set_all_sd(rs, s):
     # print(seed.firstB)
     # print(seed.delayB)
 
+
 def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False, mods = None, model = "Meunier"):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
@@ -79,7 +80,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process; TODO check test for that ...
         # print("create_mapped_rootsystem(): Seed rank {:g}:".format(rank), seed)
 
-        rs = pb.MappedPlant()  
+        rs = pb.MappedPlant()
         rs.setSeed(seed)
         rs.readParameters(fname)
 
@@ -109,9 +110,6 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r, params
 
 
-
-
-
 def apply_mods(mods, plant):
     """
     applies changes to RootRandomParameters @param rrp and SeedRandomParameters @parm srp
@@ -120,13 +118,15 @@ def apply_mods(mods, plant):
     insertion angle from base root:  theta45, theta2, theta3                     angles in radians
     initial growth rate:             r, r145, r2, r3                             scaling
     interlateral spacing:            ln, ln145, ln2                              scaling
-    root radius                      a, a145, a2, a3                             scaling
+    root radius                      a, a145, a2, a3                             absolute
     seminal roots:                   src [number of], src_first, src_delay       scaling 
     tropism:                         tropismN, tropismN145, tropismN2, tropismN3 scaling 
-                                     tropismS, tropismS145, tropismS2, tropismS3 scaling  
+                                     tropismS, tropismS145, tropismS2, tropismS3 scaling 
+    root hairs:                      hairsZone, hairsLength, hairsElongation     absolute
     """
     rrp = plant.getOrganRandomParameter(pb.OrganTypes.root)
     srp = plant.getOrganRandomParameter(pb.OrganTypes.seed)
+
     if "lmax" in mods:
         for i in range(0, len(rrp)):
             rrp[i].lmax *= mods["lmax"]
@@ -146,6 +146,7 @@ def apply_mods(mods, plant):
     if "lmax4" in mods:
         rrp[4].lmax *= mods["lmax4"]
         mods.pop("lmax4")
+
     if "theta45" in mods:
         if len(rrp) > 5:
             print("shootbore (theta45)")
@@ -157,7 +158,8 @@ def apply_mods(mods, plant):
     if "theta2" in mods:
         rrp[2].theta = mods["theta2"]
     if "theta3" in mods:
-        rrp[3].theta = mods["theta2"]        
+        rrp[3].theta = mods["theta2"]
+
     if "r" in mods:  # all types
         for i in range(0, len(rrp)):
             rrp[i].r *= mods["r"]
@@ -174,6 +176,7 @@ def apply_mods(mods, plant):
     if "r3" in mods:
         rrp[3].r *= mods["r3"]
         mods.pop("r3")
+
     if "ln" in mods:  # all types
         for i in range(0, len(rrp)):
             rrp[i].ln *= mods["ln"]
@@ -189,23 +192,25 @@ def apply_mods(mods, plant):
     if "ln2" in mods:
         rrp[2].ln *= mods["ln2"]
         mods.pop("ln2")
+
     if "a" in mods:  # all types
         for i in range(0, len(rrp)):
-            rrp[i].a *= mods["a"]
+            rrp[i].a = mods["a"]
         mods.pop("a")
-    if "a145" in mods:  
-        rrp[1].a *= mods["a145"]
-        rrp[4].a *= mods["a145"]
+    if "a145" in mods:
+        rrp[1].a = mods["a145"]
+        rrp[4].a = mods["a145"]
         if len(rrp) > 5:
-            rrp[5].a*= mods["a145"]
+            rrp[5].a = mods["a145"]
         mods.pop("a145")
-    if "a2" in mods:  
-        rrp[2].a *= mods["a2"]
+    if "a2" in mods:
+        rrp[2].a = mods["a2"]
         mods.pop("a2")
-    if "a3" in mods:  
-        rrp[3].a *= mods["a3"]
+    if "a3" in mods:
+        rrp[3].a = mods["a3"]
         mods.pop("a3")
-    if "src" in mods: # seminal root count, called basal roots in cplantbox
+
+    if "src" in mods:  # seminal root count, called basal roots in cplantbox
         srp[0].maxB = mods["src"]
         mods.pop("src")
     if "src_first" in mods:
@@ -214,11 +219,12 @@ def apply_mods(mods, plant):
     if "src_delay" in mods:
         srp[0].delayB *= mods["src_delay"]
         mods.pop("src_delay")
+
     if "tropismN" in mods:  # all types
         for i in range(0, len(rrp)):
             rrp[i].tropismN *= mods["tropismN"]
         mods.pop("tropismN")
-    if "tropismN145" in mods:  
+    if "tropismN145" in mods:
         print(rrp[1].tropismN)
         print(type(rrp[1].tropismN))
         print(mods["tropismN145"])
@@ -226,81 +232,78 @@ def apply_mods(mods, plant):
         rrp[1].tropismN *= mods["tropismN145"]
         rrp[4].tropismN *= mods["tropismN145"]
         if len(rrp) > 5:
-            rrp[5].tropismN*= mods["tropismN145"]
+            rrp[5].tropismN *= mods["tropismN145"]
         mods.pop("tropismN145")
-    if "tropismN2" in mods:  
+    if "tropismN2" in mods:
         rrp[2].tropismN *= mods["tropismN2"]
         mods.pop("tropismN2")
-    if "tropismN3" in mods:  
+    if "tropismN3" in mods:
         rrp[3].tropismN *= mods["tropismN3"]
         mods.pop("tropismN3")
+
     if "tropismS" in mods:  # all types
         for i in range(0, len(rrp)):
             rrp[i].tropismS *= mods["tropismS"]
         mods.pop("tropismS")
-    if "tropismS145" in mods:  
+    if "tropismS145" in mods:
         rrp[1].tropismS *= mods["tropismS145"]
         rrp[4].tropismS *= mods["tropismS145"]
         if len(rrp) > 5:
-            rrp[5].tropismS*= mods["tropismS145"]
+            rrp[5].tropismS *= mods["tropismS145"]
         mods.pop("tropismS145")
-    if "tropismS2" in mods:  
+    if "tropismS2" in mods:
         rrp[2].tropismS *= mods["tropismS2"]
         mods.pop("tropismS2")
-    if "tropismS3" in mods:  
+    if "tropismS3" in mods:
         rrp[3].tropismS *= mods["tropismS3"]
         mods.pop("tropismS3")
+
     if  "hairsZone" in mods:
         for i in range(0, len(rrp)):
             rrp[i].hairsZone = mods["hairsZone"]
         mods.pop("hairsZone")
-    if "hairsZone145" in mods:  
-        rrp[1].tropismS *= mods["hairsZone145"]
-        rrp[4].tropismS *= mods["hairsZone145"]
+    if "hairsZone145" in mods:
+        rrp[1].hairsZone = mods["hairsZone145"]
+        rrp[4].hairsZone = mods["hairsZone145"]
         if len(rrp) > 5:
-            rrp[5].tropismS*= mods["hairsZone145"]
+            rrp[5].hairsZone = mods["hairsZone145"]
         mods.pop("hairsZone145")
-    if "hairsZone2" in mods:  
-        rrp[2].tropismS *= mods["hairsZone2"]
+    if "hairsZone2" in mods:
+        rrp[2].hairsZone = mods["hairsZone2"]
         mods.pop("hairsZone2")
-    if "hairsZone3" in mods:  
-        rrp[3].tropismS *= mods["hairsZone3"]
-        mods.pop("hairsZone3")        
-    if "hairsLength" in mods:                            
+    if "hairsZone3" in mods:
+        rrp[3].hairsZone = mods["hairsZone3"]
+        mods.pop("hairsZone3")
+
+    if "hairsLength" in mods:
         for i in range(0, len(rrp)):
-            rrp[i].hairsZone = mods["hairsLength"]
+            rrp[i].hairsLength = mods["hairsLength"]
         mods.pop("hairsLength")
-    if "hairsLength145" in mods:  
-        rrp[1].tropismS *= mods["hairsLength145"]
-        rrp[4].tropismS *= mods["hairsLength145"]
+    if "hairsLength145" in mods:
+        rrp[1].hairsLength = mods["hairsLength145"]
+        rrp[4].hairsLength = mods["hairsLength145"]
         if len(rrp) > 5:
-            rrp[5].tropismS*= mods["hairsLength145"]
-        mods.pop("hairsZone145")
-    if "hairsZone2" in mods:  
-        rrp[2].tropismS *= mods["hairsZone2"]
-        mods.pop("hairsZone2")
-    if "hairsZone3" in mods:  
-        rrp[3].tropismS *= mods["hairsZone3"]
-        mods.pop("hairsZone3")        
-    if "hairsLength" in mods:                            
+            rrp[5].hairsLength = mods["hairsLength145"]
+        mods.pop("hairsLength145")
+    if "hairsLength2" in mods:
+        rrp[2].hairsLength = mods["hairsLength2"]
+        mods.pop("hairsLength2")
+    if "hairsLength3" in mods:
+        rrp[3].hairsLength = mods["hairsLength3"]
+        mods.pop("hairsLength3")
+
+    if "hairsElongation" in mods:
         for i in range(0, len(rrp)):
-            rrp[i].hairsZone = mods["hairsLength"]
-        mods.pop("hairsLength")        
-        
-        
-        
-    if "hairsElongation" in mods:    
-        for i in range(0, len(rrp)):
-            rrp[i].hairsZone = mods["hairsElongation"]
-        mods.pop("hairsElongation")        
-        
+            rrp[i].hairsElongation = mods["hairsElongation"]
+        mods.pop("hairsElongation")
+
     if mods:  # something unused in mods
         print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
         for k, v in mods.items():
             print("key:", k)
         print()
         raise
+
     # print("theta45", rrp[1].theta, rrp[4].theta)  # 1.5707999
     # print("src", srp[0].maxB)  # 14
-
 
