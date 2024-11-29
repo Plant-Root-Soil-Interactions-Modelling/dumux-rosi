@@ -444,9 +444,6 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
-    if soil_model.isPeriodic:
-        min_b[0] = np.inf;min_b[1] = np.inf;
-        max_b[0] = np.inf;max_b[1] = np.inf;
     
     if fname.endswith(".rsml"):
         plantModel = XylemFluxPython(fname)

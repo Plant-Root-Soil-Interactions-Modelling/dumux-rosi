@@ -42,7 +42,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/24 # dt
+    dt_inner_init =  dt #1/60/24 #
     dt_inner2_init = dt_inner_init
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
@@ -90,7 +90,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
         doProfileSTR = "doProfile"
     
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/speedUp/bis"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
+    results_dir=("./results/tillage/"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
@@ -192,9 +192,13 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
             
             seg2cell_old = perirhizalModel.ms.seg2cell
             perirhizalModel.ms.simulate(dt, verbose = False)
-            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             if perirhizalModel.debugMode:
                 helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
+            
+            
+        if (rank == 0):
+            # print plant shape data for post-processing
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             
         perirhizalModel.update() # update shape data in the rhizosphere model
                 
@@ -205,7 +209,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
             FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
-        start = False
+            start = False
         # print differences between 1d and 3d soil models
         # and content in 1d and 3d
         
@@ -358,7 +362,7 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
         paramIndx_base = int(sys.argv[3])
         
     
-    doProfile = True
+    doProfile = False
     
     scenario = "none"
     if len(sys.argv)>4:

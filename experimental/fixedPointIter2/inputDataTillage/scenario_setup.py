@@ -464,7 +464,11 @@ def create_mapped_plant(initSim, soil_model, fname, path,
 
         perirhizalModel.ms.setSeed(seed)
         perirhizalModel.ms.readParameters(path + fname)
-        perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+        if soil_model.isPeriodic:
+            perirhizalModel.ms.setGeometry(pb.SDF_PlantBox(np.inf, np.inf, max_b[2]-min_b[2]))
+        else:
+            perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+        #perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
         perirhizalModel.ms.initialize(verbose = False)
         perirhizalModel.ms.simulate(initSim,verbose= False)
         if doPhloemFlow:
@@ -472,12 +476,12 @@ def create_mapped_plant(initSim, soil_model, fname, path,
         else:
             plantModel = XylemFluxPython(perirhizalModel.ms)
             
-    
-    plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
-                            pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
-                            cut = False, # do not cut plant segments according to the voxel size
-                            noChanges = True) # segments remain in the voxel they first appeared in
+    perirhizalModel.ms.constantLoc = True # segments remain in the voxel they first appeared in
+    # plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
+    #                        pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+    #                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
+    #                        cut = False, # do not cut plant segments according to the voxel size
+    #                        noChanges = True) # segments remain in the voxel they first appeared in
     
     #  function that return the index of a given position in the soil grid 
     picker = lambda x, y, z: soil_model.pick_([x,y, z])  

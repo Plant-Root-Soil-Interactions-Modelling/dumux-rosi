@@ -325,6 +325,8 @@ class fixedPointIterationHelper():
     def getCyldatafor3d1dFlow(self, rs_age_i_dt, dt):
         perirhizalModel = self.perirhizalModel
 
+        
+        # get data before doing the 'reset' => values at the end of the time step
         self.comp1content = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
         self.comp2content = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
     
@@ -350,41 +352,16 @@ class fixedPointIterationHelper():
                     self.thetaCyl_4splitSoilVals[perirhizalModel.airSegs]  = 0.
                     
 
-                #print('in getCyldatafor3d1dFlow',
-                #      'self.thetaCyl_4splitSoilVals',self.thetaCyl_4splitSoilVals.shape,
-                #      'max(perirhizalModel.airSegs)',
-                #     max(perirhizalModel.airSegs))
-                
-            #if self.n_iter == 0:
-            #    self.comp1content = perirhizalModel.soil_solute1d_eachCylechSolBefore[:,0]# [mol] small rhizodeposits
-            #    self.comp2content = perirhizalModel.soil_solute1d_eachCylechSolBefore[:,1]  # [mol] mucilage
-            #else:
-            #    self.comp1content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,0]# [mol] small rhizodeposits
-            #    self.comp2content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,1]  # [mol] mucilage
-
-            assert (self.comp1content[perirhizalModel.airSegs] == 0.).all() #no solutes in the space around the air segments
-            assert (self.comp2content[perirhizalModel.airSegs] == 0.).all() #no solutes in the space around the air segments
+            if (len(perirhizalModel.airSegs) > 0):
+                assert (self.comp1content[perirhizalModel.airSegs] == 0.).all() #no solutes in the space around the air segments
+                assert (self.comp2content[perirhizalModel.airSegs] == 0.).all() #no solutes in the space around the air segments
             assert len(self.comp1content) == len(perirhizalModel.eidx_all)    
-            #print('self.comp1content.shape',
-            #      self.comp1content.shape )
-            #print(self.comp2content.shape )
-            #print('self.comp1content',self.comp1content)
-            #print('self.comp2content',self.comp2content)
-            #print('in getCyldatafor3d1dFlow',
-            #     'self.numSegs',self.numSegs,'len(perirhizalModel.eidx_all)',len(perirhizalModel.eidx_all))
-            #print(self.comp1content.astype(np.float64).flatten().min())
-            #print(self.comp2content.astype(np.float64).flatten().min())
 
             # assert (self.thetaCyl_4splitSoilVals >= 0.).all() # because of seg_fluxes, could have thetaCyl_4splitSoilVals < 0
             assert (self.comp1content.astype(np.float64).flatten().min() >= 0.)
             assert ( self.comp2content.astype(np.float64).flatten().min()>= 0.)
 
-            # get data before doing the 'reset' => values at the end of the time step
             # self.comp1content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,0]
-            #print('before assert len(self.comp1content) == len(perirhizalModel.eidx_all)',
-            #      perirhizalModel.soil_solute1d_eachCylechSolAfter.shape,
-            #     self.comp1content.shape,len(self.comp1content),len(perirhizalModel.eidx_all))
-            # assert len(self.comp1content) == len(perirhizalModel.eidx_all)
             
             # [mol] small rhizodeposits
             # self.comp2content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,1]  # [mol] mucilage
