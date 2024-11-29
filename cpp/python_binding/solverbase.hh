@@ -19,7 +19,10 @@
 // simulate
 #include <dumux/common/timeloop.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
+// #include <dumux/porousmediumflow/richards/newtonsolver.hh>
 #include "../../dumux/porousmediumflow/richards/newtonsolver.hh"
+#include <dumux/porousmediumflow/velocity.hh>
+
 
 // getDofIndices, getPointIndices, getCellIndices
 #include <dune/grid/utility/globalindexset.hh>
@@ -68,6 +71,7 @@ public:
 
     using VectorType = std::array<double, dim>;
     using NumEqVector = typename Problem::NumEqVector;
+    using VelocityVector = std::vector<Dune::FieldVector<double, dim>>;
 
     int numComp(){return nEV.size();}
     NumEqVector nEV;
@@ -366,6 +370,7 @@ public:
 
         gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
         gridVariables->init(x); // initialize all variables , updates volume variables to the current solution, and updates the flux variable cache
+        flowVelocities = std::make_shared<PorousMediumFlowVelocity>(*gridVariables);
 
         simTime = 0; // reset
         ddt = -1;
@@ -470,6 +475,8 @@ public:
 			} else {
 				nonLinearSolverNoMPI->solve(x, *timeLoop); // solve the non-linear system with time step control
 			}
+
+			// auto dummy = this->getVelocities(); /////////////////////////////////
 
             xOld = x; // make the new solution the old solution
 
@@ -805,46 +812,52 @@ public:
         return fluxes;
     }
 
-    /**
-     * Returns the net flux [kg/s]. TODO crashes, no idea why
-     *
-     * partly from velocityoutput.hh
-     *
+        /**
      * For a single mpi process. Gathering is done in Python
      */
-    virtual std::vector<double> getNetFlux(int eqIdx = 0) {
+    virtual std::vector<std::array<double,3>> getVelocities(int eqIdx = 0) {
+
+        // std::cout << "a\n" << std::flush;
         int n = checkGridInitialized();
-        std::vector<double> fluxes;
-        fluxes.resize(n);
+        VelocityVector velocity = VelocityVector();
+        velocity.resize(n);
+        // std::cout << "b\n" << std::flush;
+
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+        // std::cout << "c\n" << std::flush;
 
         auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-        auto fvGeometry = Dumux::localView(*gridGeometry); // soil solution -> volume variable
-        auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
+		auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
+        //std::cout << "d\n" << std::flush;
 
-        // the upwind term to be used for the volume flux evaluation, currently not needed
-        // auto upwindTerm = [eqIdx](const auto& volVars) { return volVars.mobility(eqIdx); };
+        for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
 
-        for (const auto& e : Dune::elements(gridGeometry->gridView())) { // soil elements
+            fvGeometry.bind(e);
+            // std::cout << "e\n" << std::flush;
 
-            fvGeometry.bindElement(e);
-            elemVolVars.bindElement(e, fvGeometry, x);
+            elemVolVars.bind(e, fvGeometry, x);
+            // std::cout << "f\n" << std::flush;
 
-            double f = 0.;
-            for (const auto& scvf : scvfs(fvGeometry)) {
 
-                if (!scvf.boundary()) {
-                    // bind the element flux variables cache
-                    elemFluxVarsCache.bindElement(e, fvGeometry, elemVolVars);
-                    //                    FluxVariables fluxVars;
-                    //                    fluxVars.init(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
-                    //                    f += fluxVars.advectiveFlux(eqIdx, upwindTerm);
-                }
-                else { }
+            elemFluxVarsCache.bind(e, fvGeometry, elemVolVars); // check workspace
+            //std::cout << "g" << std::flush;
 
-            }
-            fluxes[cellIdx->index(e)] = f;
+            flowVelocities->calculateVelocity(velocity, e, fvGeometry, elemVolVars, elemFluxVarsCache, 0 ); // veloctiy.hh
+            //std::cout << "h\n" << std::flush;
+
+//            // where does velocity go?
+//            int idx = cellIdx->index(e);
+//            fluxes[idx] = velocity;
+
         }
-        return fluxes;
+
+        std::vector<std::array<double,3>> v;
+        for (auto v_ : velocity) {
+            std::array<double,3> a = {v_[0], v_[2], v_[2]};
+            v.push_back(a);
+        }
+
+        return v;
     }
 
     /**
@@ -991,6 +1004,7 @@ protected:
     using GridVariables = typename Problem::GridVariables;
     using FluxVariables = typename Problem::FluxVariables;
 	using ElementFluxVariablesCache = typename Problem::ElementFluxVariablesCache;
+	using PorousMediumFlowVelocity = Dumux::PorousMediumFlowVelocity<GridVariables, FluxVariables>;
 
     using GridData = Dumux::GridData<Grid>;
     using GridView = typename Grid::Traits::LeafGridView;
@@ -1000,6 +1014,7 @@ protected:
     std::shared_ptr<FVGridGeometry> gridGeometry;
     std::shared_ptr<Problem> problem;
     std::shared_ptr<GridVariables> gridVariables;
+    std::shared_ptr<PorousMediumFlowVelocity> flowVelocities;
 
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
@@ -1155,7 +1170,7 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("setSolution", &Solver::setSolution)
             .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
-            .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
+            .def("getVelocities", &Solver::getVelocities, py::arg("eqIdx") = 0)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
             // members

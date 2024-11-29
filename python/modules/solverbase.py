@@ -38,7 +38,7 @@ class SolverWrapper():
             @param numberOfCells    resoultion [1]
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
-        print("createGrid", periodic) # OK
+        print("createGrid", periodic)  # OK
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
 
     def createGrid1d(self, points):
@@ -211,15 +211,15 @@ class SolverWrapper():
             flat_dic[key] = value / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         return flat_dic
 
-    def getNetFlux(self, eqIdx = 0):
+    def getVelocities(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getNetFlux(eqIdx), root = 0)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return self._map(self._flat0(comm.gather(self.base.getVelocities(eqIdx), root = 0)), 0) * 100. *24 * 3600  # m/s -> cm/day
 
-    def getNetFlux_(self, eqIdx = 0):
+    def getVelocities_(self, eqIdx = 0):
         """nompi version of """
         self.checkGridInitialized()
-        return np.array(self.base.getNetFlux(eqIdx)) * 1000. *24 * 3600  # kg/s -> cm3/day
+        return np.array(self.base.getVelocities(eqIdx)) * 100. *24 * 3600  # cm/s -> cm/day
 
     def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
