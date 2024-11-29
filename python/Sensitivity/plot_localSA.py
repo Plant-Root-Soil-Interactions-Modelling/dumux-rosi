@@ -19,9 +19,10 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_"
+#file_name = "local_soybean_"
 #file_name = "local_soybean_conductivities_"
-# file_name = "local_maize"
+# file_name = "local_soybean_tropisms_"
+file_name = "local_soybean_radii_"
 # file_name = "local_timing"
 path = "results/"
 # not_xlog = []
@@ -142,8 +143,8 @@ for lind in range(0, len(names)):
         print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]))
 
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
-        ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
-        ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
+        # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
+        # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
 
         final.append(trans[-1] / vol[-1])
         finaln.append(nitrate[-1] / vol[-1])
@@ -154,10 +155,11 @@ for lind in range(0, len(names)):
 
         ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
-        ax.flat[ac].set_ylim(0.8, 1.2)
+        #ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
         # if not lind in not_xlog:
-        ax.flat[ac].set_xscale('log', base = 2)
+        
+        #ax.flat[ac].set_xscale('log', base = 2)
         ac += 1
 
 plt.tight_layout(pad = 4.)

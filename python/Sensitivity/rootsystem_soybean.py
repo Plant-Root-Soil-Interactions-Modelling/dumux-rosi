@@ -57,9 +57,9 @@ for p in rrp:
     print(p.hairsElongation)
     print(p.hairsZone)
     print(p.hairsLength)
-    p.hairsZone = 0.5
-    p.hairsLength = 0.05
-    p.hairsElongation = 0.5
+    p.hairsZone = 1.7
+    p.hairsLength = 0.1
+    p.hairsElongation = 0.3
 
 rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
@@ -70,8 +70,8 @@ p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
 
 s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_, net_inf = y_
 
-xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
-mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1., "src":src}
+xml_name = "data/" + name + "_modified3" + ".xml"  # root growth model parameter file
+mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "src":src}
 r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
 rs = r.ms
 
@@ -107,7 +107,7 @@ print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
 n = len(rs.radii)
 radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
-print("radii max", np.max(radii))
+print("radii max", n, np.max(radii))
 
 rs.radii = radii
 ana = pb.SegmentAnalyser(rs.mappedSegments())
