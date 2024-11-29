@@ -197,7 +197,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
     def getAirSegsId(self):
         """ get id of abovegronud root and shoot segments """
-        aboveGround = np.array([])
+        aboveGround = np.array([], dtype = int)
         if not (self.cell2seg.get(-1) is None):
             aboveGround = self.cell2seg.get(-1)                
         self.airSegs = np.array(list(set(np.concatenate((aboveGround,
@@ -734,7 +734,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         if cellId in self.IdCyllMPI.keys():
             idCylsAll, idCyls = self.IdCyllMPI[cellId]
         else:
-            idCylsAll, idCyls = np.array([]), np.array([])
+            idCylsAll, idCyls = np.array([],dtype = int), np.array([],dtype = int)
         if getidCylsAll:
             if doSum:
                 idCylsAll = len(idCylsAll)
@@ -2290,7 +2290,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 p = x
             return p
         else:
-            return np.array([])
+            return np.array([], dtype = dtype)
     
     def gather(self,x, dtype = np.float64, doMap = True):
         return self._map(self._flat0(comm.gather(x, root=0)),dtype, doMap)

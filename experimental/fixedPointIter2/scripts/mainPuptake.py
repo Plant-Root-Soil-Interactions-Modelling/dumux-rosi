@@ -23,11 +23,8 @@ import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
 
 
-doNestedFixedPointIter = True
-if doNestedFixedPointIter:
-    import nestedFixedPointIter as fixedPointIter
-else:
-    import cyl3plant as fixedPointIter
+doNestedFixedPointIter = False
+import nestedFixedPointIter as fixedPointIter
 
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
@@ -204,6 +201,9 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
         perirhizalModel.update() # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
+            #fpit_Helper
+            FPItHelper.storeNewMassData1d(perirhizalModel)
+            FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False

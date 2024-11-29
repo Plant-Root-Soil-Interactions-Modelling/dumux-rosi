@@ -92,7 +92,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/paperSc/NewSetup/"+str(rsiCompMethod)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/NewSetupBis/"+str(rsiCompMethod)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\

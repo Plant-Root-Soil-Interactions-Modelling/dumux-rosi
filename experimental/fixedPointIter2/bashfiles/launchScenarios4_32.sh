@@ -24,3 +24,4 @@ sbatch fpit2_32cpu128TraiRhizo.sh 10 25 61 lateDry --nodelist=node13
 # sbatch fpit128cpu128.sh 10 25 61 earlyDry
 
 # sbatch fpit4_64cpu128.sh 10 25 5 lateDry
+# sbatch launchTill_50cpu128.sh --nodelist=13
