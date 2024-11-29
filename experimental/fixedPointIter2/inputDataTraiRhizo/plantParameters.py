@@ -69,12 +69,15 @@ def phloemParam(r,weatherInit ):
     r.maxLoop = 10000
     r.minLoop=900
     
-    r.C_targ = r.CSTimin
-    r.C_targMesophyll = r.CSTimin
-    r.k_S_ST = 5/25 *2  
-    r.k_S_Mesophyll = 5/25*0   
+    #r.C_targ = r.CSTimin
+    #r.C_targMesophyll = r.CSTimin
+    #r.k_S_ST = 5/25 *2  
+    #r.k_S_Mesophyll = 5/25*0   
                  
-   
+    r.C_targ = r.initValST#0.4#r.CSTimin
+    r.C_targMesophyll = 0.06#r.CSTimin
+    r.k_S_ST = 5/25 *100#*2 #daudet2002
+    r.k_S_Mesophyll = 5/25*100 #daudet2002
 
 
     r.cs = weatherInit["cs"]

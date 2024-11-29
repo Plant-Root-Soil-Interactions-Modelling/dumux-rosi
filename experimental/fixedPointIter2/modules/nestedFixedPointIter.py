@@ -35,6 +35,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
         fpit_Helper.n_iter3 = 0
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         keepGoing = True
+        # FPItHelper.storeOldMassData1d(perirhizalModel)
+        # print("perirhizalModel.rhizoWBefore_eachCyl",perirhizalModel.rhizoWBefore_eachCyl)
         while keepGoing:
                                 
             

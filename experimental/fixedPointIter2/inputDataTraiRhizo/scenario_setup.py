@@ -265,7 +265,7 @@ def getSoilTextureAndShape():
     """
     min_b = np.array([-3./2, -12./2, -40.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 12./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array([3,3,3]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
+    cell_number = np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
     # #np.array([3,3,3])
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
@@ -314,7 +314,7 @@ def create_soil_model( usemoles, results_dir ,
                      noAds = False, ICcc = None, doSoluteFlow = True,
                        
                        doBioChemicalReaction=True,
-                     MaxRelativeShift = 1e-8):
+                     MaxRelativeShift = 1e-8, doOld = False):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
         homogeneous domain 
@@ -351,12 +351,14 @@ def create_soil_model( usemoles, results_dir ,
     getBiochemParam(s,paramIndx)
     setBiochemParam(s)
     setIC3D(s, paramIndx, ICcc)
-    s.isPeriodic = True
+    s.isPeriodic =True 
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
+    if doOld:
+        s.isPeriodic =True
     s = setupOther(s, p_mean_)
     
-    if rank == 0:
-        s.base.printParams()
+    #if rank == 0:
+    #    s.base.printParams()
     
     # just print once as will not change during simulation
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =s.results_dir) # cm3 
@@ -442,6 +444,9 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
+    if soil_model.isPeriodic:
+        min_b[0] = np.inf;min_b[1] = np.inf;
+        max_b[0] = np.inf;max_b[1] = np.inf;
     
     if fname.endswith(".rsml"):
         plantModel = XylemFluxPython(fname)
@@ -458,8 +463,10 @@ def create_mapped_plant(initSim, soil_model, fname, path,
 
         perirhizalModel.ms.setSeed(seed)
         perirhizalModel.ms.readParameters(path + fname)
-        
-        perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+        if soil_model.isPeriodic:
+            perirhizalModel.ms.setGeometry(pb.SDF_PlantBox(np.inf, np.inf, max_b[2]-min_b[2]))
+        else:
+            perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
         perirhizalModel.ms.initialize(verbose = False)
         perirhizalModel.ms.simulate(initSim,verbose= False)
         if doPhloemFlow:
@@ -467,12 +474,12 @@ def create_mapped_plant(initSim, soil_model, fname, path,
         else:
             plantModel = XylemFluxPython(perirhizalModel.ms)
             
-    
-    plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
-                            pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), 
-                            cut = False, # do not cut plant segments according to the voxel size
-                            noChanges = True) # segments remain in the voxel they first appeared in
+    perirhizalModel.ms.constantLoc = True
+    #plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
+    #                        pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+    #                        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), # not used
+    #                        cut = False, # do not cut plant segments according to the voxel size
+    #                        noChanges = True) # segments remain in the voxel they first appeared in
     
     #  function that return the index of a given position in the soil grid 
     picker = lambda x, y, z: soil_model.pick_([x,y, z])  

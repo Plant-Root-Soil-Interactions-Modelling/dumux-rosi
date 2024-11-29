@@ -129,6 +129,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
             
         
+        fpit_Helper.storeOldMassData1d(perirhizalModel) # for 1st time step
+        if rank ==0:
+            print(perirhizalModel.soil_solute1d_eachCylechSolBefore)
+        
         while  continueLoop(perirhizalModel,s,fpit_Helper.n_iter, dt,
                             False,real_dtinner=float(Ni) * dt,name='inner_loopdata', isInner = True, 
                             plant = plantModel):
@@ -168,7 +172,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             if (fpit_Helper.n_iter > 0) : 
                 perirhizalModel.reset() # go back to water and solute value at the BEGINING of the time step
                     
-            fpit_Helper.storeOldMassData1d()
+                fpit_Helper.storeOldMassData1d(perirhizalModel)
                 
             
 
@@ -207,7 +211,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # maybe move this part to within the solve function to go less often through the list of 1DS
             ##
             
-            fpit_Helper.storeNewMassData1d()
+            fpit_Helper.storeNewMassData1d(perirhizalModel)
              
             
             
@@ -228,7 +232,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             if (fpit_Helper.n_iter > 0) :
                 s.reset() #reset at the last moment: over functions use the solution/content at the end of the time step
             
-            fpit_Helper.storeOldMassData3d()
+            fpit_Helper.storeOldMassData3d(s, perirhizalModel)
             
             
             
@@ -273,7 +277,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
             
             
-            fpit_Helper.storeNewMassData3d()
+            fpit_Helper.storeNewMassData3d(s, perirhizalModel)
             
             
             

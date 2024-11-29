@@ -38,6 +38,7 @@ class SolverWrapper():
         self.molarDensityWat_cm3 =  self.molarDensityWat_m3 /1e6 # [mol wat/cm3 wat] 
         self.results_dir = "./results/"
         self.pindx = 0
+        self.periodic = False
         
 
     def initialize(self, args_ = [""], verbose = False,doMPI_=True):
@@ -230,7 +231,7 @@ class SolverWrapper():
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
         
-        
+        self.periodic = periodic
         try:
             with StdoutRedirector() as redirector:
                 self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., 
@@ -517,12 +518,30 @@ class SolverWrapper():
         
     def pick_(self,coordCell):
         """ non MPI version of pick, to use when the plant object is not computed on all threads
+            coordCell: cell coordinates in cm
         """
-        bounds = self.getGridBounds(); min_b = bounds[:3]; max_b = bounds[3:]
-        cell_number_ = self.numberOfCells
+        bounds = self.getGridBounds(); # cm
+        min_b = bounds[:3]; max_b = bounds[3:]
+        cell_number_ = np.array(self.numberOfCells)
+        
+        if (self.isPeriodic) :
+            for i in [0,1]: # for x and y, not z
+                minx = min_b[i];
+                xx = max_b[i]-minx; # unit of demain distance
+                if (not np.isinf(xx)) :# periodic in x
+                    coordCell[i] -= minx # start at 0 (relative coordinates)
+                    if (coordCell[i]>=0) :
+                        coordCell[i] = coordCell[i] - int(coordCell[i]/xx)*xx;
+                    else :
+                        coordCell[i] = coordCell[i] + int((xx-coordCell[i])/xx)*xx;
+                    
+                    coordCell[i] += minx# back to absolute coordinates             
+            
+        # is in domain according to x,y,z?
         ratioDist = (coordCell - min_b)/(max_b - min_b)
         if ((ratioDist > 1.) |(ratioDist < 0.) ).any():#not in the domain
             return -1
+                 
         id_rows = ratioDist*cell_number_
         onCellOuterFace = np.where((id_rows == np.round(id_rows)) & (id_rows > 0) )[0]
         id_rows[onCellOuterFace] -= 1

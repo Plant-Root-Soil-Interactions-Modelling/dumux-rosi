@@ -119,12 +119,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.limErr1d3dAbs = limErr1d3dAbs
         self.maxDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.maxDiff1d3dCW_relOld = np.full(self.numComp, 0.)
-        self.maxdiff1d3dCurrant_rel = np.Inf
-        self.maxdiff1d3dCurrant = np.Inf
+        self.maxdiff1d3dCurrant_rel = np.inf
+        self.maxdiff1d3dCurrant = np.inf
         self.sumDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.sumDiff1d3dCW_relOld = np.full(self.numComp, 0.)
         self.diff1d3dCurrant_rel = 0.
-        self.diff1d3dCurrant = np.Inf
+        self.diff1d3dCurrant = np.inf
         self.solve_gave_up = False
         self.errWrsi = 1000.
         self.errWrsiRealInput = 1000.
@@ -206,10 +206,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     
     def getNewCyldistribution(self):
         """ get new ids and shape of 1d models and define distribute between the threads """
-        
-        self.outer_radii = np.array(self.segOuterRadii(type = 0)) 
-        
-        
+        self.outer_radii = np.array(self.segOuterRadii(type = 0,vols = self.soilModel.CellVolumes )) 
+                
         self.getAirSegsId()
         if len (self.airSegs) > 0:
             self.outer_radii[self.airSegs ] = np.array(self.radii)[self.airSegs ]*1.1 #dummy outer radii                
@@ -280,9 +278,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     
                     
     def check1d3dDiff(self, 
-                        diff1d3dCW_abs_lim = np.Inf, # maximal axcepted absolute arror
+                        diff1d3dCW_abs_lim = np.inf, # maximal axcepted absolute arror
                               verbose_ = False,
-                              diff1d3dCW_rel_lim =np.full(10, np.Inf), # maximal accepted relative error
+                              diff1d3dCW_rel_lim =np.full(10, np.inf), # maximal accepted relative error
                               ):
         """ check difference between soil content according to 1d and 3d soil """
         
@@ -806,9 +804,18 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return outout.flatten()
         
         
-    def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = True):#mol
+    def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = True, verbose=False):#mol
         localIdCyls =   self.getLocalIdCyls(idCyls)      
-        mol_rhizo = np.array([sum(self.cyls[i].getContent( idComp)) for i in localIdCyls ]) #cm3
+        mol_rhizo = np.array([self.cyls[i].getContent( idComp).sum() for i in localIdCyls ]) #cm3
+        
+        try:
+            assert mol_rhizo.shape == (len(localIdCyls),)
+        except:
+            print(' mol_rhizo.shape , (len(localIdCyls),)',rank, mol_rhizo.shape , (len(localIdCyls),))
+            raise Exception
+        if verbose:
+            print(' mol_rhizo.shape , (len(localIdCyls),)',rank, mol_rhizo.shape , (len(localIdCyls),),
+                 'mol_rhizo',mol_rhizo)
         return self.getXcyl(data2share=mol_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
         
     def getTotCContentAll(self,idCyls=None, doSum = True, reOrder = True):#mol
@@ -829,7 +836,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
         localIdCyls =   self.getLocalIdCyls(idCyls)           
-        wat_rhizo = np.array([sum(self.cyls[i].getWaterVolumesCyl()) for i in localIdCyls ]) #cm3
+        wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
         if verbose and (len(wat_rhizo) > 0):
             print('getWaterVolumesCyl',wat_rhizo,idCyls)
         return self.getXcyl(data2share=wat_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
@@ -951,7 +958,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             maxVal = self.vg_soil.theta_S
             minVal = self.theta_wilting_point
         else:
-            maxVal = np.Inf
+            maxVal = np.inf
             minVal = 0.
         # check that the mean concentration respects the boundary 
         assert ( (minVal - totContent/sum(volumes)) < 1e-14) 
@@ -959,11 +966,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             
 
         # Verbose before changes
-        print_verbose('BEFORE possible changes. new content', val_new * volumes, 'totContent', totContent, 'sum new content', sum(val_new * volumes), 'sum(val_new * volumes) - totContent', sum(val_new * volumes) - totContent)
+        print_verbose('BEFORE possible changes.val_new',val_new, 'new content', val_new * volumes, 'totContent', totContent, 'sum new content', sum(val_new * volumes), 'sum(val_new * volumes) - totContent', sum(val_new * volumes) - totContent, 'maxVal',maxVal, 'minVal',minVal)
 
         # Adapt values if necessary
         try:
-            val_new = np.array(self.adapt_values(val_new_ = val_new, minVal_ = minVal, maxVal_=maxVal, volumes_=volumes, divideEqually_=True))
+            val_new = np.array(self.adapt_values(val_new_ = val_new, minVal_ = minVal, maxVal_=maxVal, volumes_=volumes, 
+                                                 divideEqually_=True, verbose_ = verbose))
         except:
             print("issue adapt_values val_new, minVal, maxVal, volumes",
                   val_new, minVal, maxVal, volumes)
@@ -1312,7 +1320,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                       self.organTypes[gId],
                     self.radii[gId], self.outer_radii[gId],self.seg_length[gId],
                     x[self.seg2cell[gId]],
-                      cc[self.seg2cell[gId]],self.seg2cell[gId] )
+                      cc[self.seg2cell[gId]] )
                 raise Exception
         else:
             # shoot or root aboveground
@@ -1531,7 +1539,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             return cyl
             
         else:
-            print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(i, a_in, a_out))
+            print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(gId, a_in, a_out))
+            raise Exception
             return []
 
 
@@ -1589,17 +1598,18 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 isDissolved = (compId <= self.numDissolvedSoluteComp)
                 if isDissolved: 
                     V_rhizo = self.getWaterVolumesCyl(doSum = False, reOrder = True) # cm3
-                    if len(isAirSegs)>1:
+                    if (len(isAirSegs)>1) and (rank==0):
                         V_rhizo[isAirSegs] = 1 # avoid RuntimeWarning: invalid value encountered in true_divide                    
                 else:
                     V_rhizo = self.getVolumesCyl(doSum = False, reOrder = True) #[cm3]                
                 contentRhizo = self.getContentCyl(idComp=compId, doSum = False, reOrder = True)# mol
-            if len(isAirSegs)>1:
+            if (len(isAirSegs)>1) and (rank==0):
                 assert (contentRhizo[isAirSegs] == 0.).all() #no solutes in the space around the air segments
+
             if not concentration:
                 return contentRhizo
             concentration = contentRhizo/V_rhizo
-            if len(isAirSegs)>1:
+            if (len(isAirSegs)>1) and (rank==0):
                 concentration[isAirSegs] = np.nan
             return concentration # mol/cm3
         else:
@@ -1865,7 +1875,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             assert max(phead)<= 0.
         except:
             print(rank, 'min(theta)< minVal or max(theta)>maxVal', 
-                  cyl.gId, theta,
+                  cyl.gId, 
                   'or phead > 0',phead)
             return  False
         return True
