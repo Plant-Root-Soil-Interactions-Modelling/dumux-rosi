@@ -35,10 +35,15 @@ import FPItHelper
     
 
 def XcGrowth(initsim, simMax,paramIndx_,spellData): 
-    
+    doOld = False
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
-    xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
+    
+    if doOld:
+        xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
+    else:
+        xml_name = "Triticum_aestivum_test_2021_new.xml"  # root growth model parameter fileroot growth model parameter file
+        
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
@@ -48,7 +53,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
     k_iter = 100 # max num of iteration for loops
-    targetIter= 90# target n_iter for adjusting time step of inner loop
+    targetIter= 40# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
@@ -87,7 +92,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/paperSc/"+str(rsiCompMethod)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/NewSetup/"+str(rsiCompMethod)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -111,7 +116,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
                                         
                                          doBioChemicalReaction = doBioChemicalReaction,
-                                        MaxRelativeShift = MaxRelativeShift)
+                                        MaxRelativeShift = MaxRelativeShift, doOld =doOld)
 
     
 
