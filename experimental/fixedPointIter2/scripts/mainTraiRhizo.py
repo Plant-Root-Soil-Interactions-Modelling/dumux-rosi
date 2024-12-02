@@ -40,9 +40,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     path = "../../../../CPlantBox/modelparameter/structural/plant/"
     
     if doOld:
-        xml_name = "Triticum_aestivum_test_2021.xml"  # root growth model parameter fileroot growth model parameter file
+        xml_name = "Triticum_aestivum_test_2021_old.xml"  # root growth model parameter fileroot growth model parameter file
     else:
-        xml_name = "Triticum_aestivum_test_2021_new.xml"  # root growth model parameter fileroot growth model parameter file
+        xml_name = "Triticum_aestivum_test_2021_1cm.xml"  # root growth model parameter fileroot growth model parameter file
         
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
@@ -73,8 +73,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  True
-    debugMode = False
+    doMinimumPrint =  False
+    debugMode = True
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
@@ -92,7 +92,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/paperSc/NewSetupBis/"+str(rsiCompMethod)+str(spellData['scenario'])\
+    results_dir="./results/TraiRhizo/paperSc/NewSetup/1cm"+str(rsiCompMethod)+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\

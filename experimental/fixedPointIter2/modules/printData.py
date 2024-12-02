@@ -159,6 +159,8 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
                          directory_ =results_dir)
         write_file_array("rhizoSegsId", np.array(perirhizalModel.rhizoSegsId), 
                          directory_ =results_dir)
+        write_file_array("volST", phloemDataStorage.volST, directory_ =results_dir)
+        write_file_array("volMeso", phloemDataStorage.volMeso, directory_ =results_dir)
         write_file_array("Q_ST", phloemDataStorage.Q_ST, directory_ =results_dir)#mmol
         write_file_array("C_ST", phloemDataStorage.C_ST, directory_ =results_dir)#mmol/cm3
         write_file_array("C_meso", phloemDataStorage.C_meso, directory_ =results_dir)

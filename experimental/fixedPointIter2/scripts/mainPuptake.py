@@ -88,7 +88,7 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/pdef/"+str(Plevel)+str(spellData['scenario'])
+    results_dir=("./results/pdef/debug"+str(Plevel)+str(spellData['scenario'])
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
