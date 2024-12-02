@@ -853,7 +853,7 @@ public:
 
         std::vector<std::array<double,3>> v;
         for (auto v_ : velocity) {
-            std::array<double,3> a = {v_[0], v_[2], v_[2]};
+            std::array<double,3> a = {v_[0], v_[1], v_[2]};
             v.push_back(a);
         }
 
