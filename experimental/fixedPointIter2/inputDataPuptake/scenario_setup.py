@@ -362,7 +362,7 @@ def create_soil_model( usemoles, results_dir ,
     getBiochemParam(s,paramIndx)
     setBiochemParam(s)
     setIC3D(s, paramIndx, ICcc)
-    s.isPeriodic = True
+    s.isPeriodic = False
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, p_mean_)
     

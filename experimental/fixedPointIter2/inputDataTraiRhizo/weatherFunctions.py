@@ -180,3 +180,4 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
             print('weather::weatherChange(): error after change',
                   perirhizalModel.sumDiff1d3dCW_rel, perirhizalModel.sumDiff1d3dCW_abs )
         assert (perirhizalModel.sumDiff1d3dCW_abs <= beforeChange_sumDiff1d3dCW_abs*10).all()
+        

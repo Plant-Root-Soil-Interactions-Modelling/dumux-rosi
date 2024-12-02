@@ -1,6 +1,6 @@
 #!/bin/bash
 #
-#SBATCH --job-name=newSetup
+#SBATCH --job-name=1cm
 #SBATCH --cpus-per-task=1
 #SBATCH --ntasks=32
 #SBATCH --nodes=1
