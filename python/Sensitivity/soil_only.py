@@ -16,7 +16,7 @@ import evapotranspiration as evap
 import sra_new
 
 
-def plot_soil(sim_time, times, net_inf, h, soil_times, top):
+def plot_soil(sim_time, times, net_inf, h, soil_times, top, top2):
     """ creates figures presenting the results of the macroscopic water movement 
     
         sim_time       final simulation time [day]
@@ -34,6 +34,7 @@ def plot_soil(sim_time, times, net_inf, h, soil_times, top):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1.5, 3]})
     bar = ax[0].bar(times[::2], np.array(net_inf[::2]) * 10, 100 * 0.8 / len(times[::2]))  # cm -> mm
     ax[0].plot(soil_times, -10.*top, "r:")
+    ax[0].plot(soil_times, -10.*top, "g:")
     ax[0].set_ylabel("net inf [mm/day]")
     ax[0].set_xlim(times[0], times[-1])
     divider = make_axes_locatable(ax[0])
@@ -137,13 +138,31 @@ if __name__ == '__main__':
         velocities = s.getVelocities_()
         top_new.append(velocities[top_ind])
         bot_new.append(velocities[bot_ind])
+        print(velocities[bot_ind])
 
     water = s.getWaterVolume()
+
+    top_new = np.array(top_new)
+    bot_new = np.array(bot_new)
 
     print("Computation time", timeit.default_timer() - start_time)
 
     np.savez("data/soil_only{:g}".format(envirotype_number), h = h, times = times, net_inf = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
-    print("Change in water balance", water - water0, "cm3")
 
-    plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_))
+    topflux_ = np.sum(top_) * dt
+    topflux = np.sum(top_new[:, 2] * dt)
+    botflux = np.sum(bot_new[:, 2] * dt)
+
+    print("Change in water balance", water - water0, "cm3")
+    print("top", topflux, topflux_, "cm")
+    print("bot", botflux, "cm")
+
+    plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), -top_new[:, 2])
+
+    print()
+
+    # plt.plot(soil_times, top_new[:, 2])
+    # plt.plot(soil_times, bot_new[:, 2])
+
+    plt.show()
 
