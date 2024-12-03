@@ -104,7 +104,7 @@ if __name__ == '__main__':
     # trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc)
 
     """ initialize """
-    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = times, net_inf = net_inf, bot_bc = "potential", bot_value = 80.)  # , bot_bc = "potential"
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = times, net_inf = net_inf, bot_bc = "potential", bot_value = 80)  # .
 
     """ numerical solution """
     top_ind = s.pick([0., 0., -0.5])
@@ -138,7 +138,6 @@ if __name__ == '__main__':
         velocities = s.getVelocities_()
         top_new.append(velocities[top_ind])
         bot_new.append(velocities[bot_ind])
-        print(velocities[bot_ind])
 
     water = s.getWaterVolume()
 
@@ -153,10 +152,15 @@ if __name__ == '__main__':
     topflux = np.sum(top_new[:, 2] * dt)
     botflux = np.sum(bot_new[:, 2] * dt)
 
+    print()
+    print("top", topflux, topflux_, "cm", "g/cm2", topflux*area, "cm3", "with area", area, "cm2")
+    print("bot", botflux, "cm", "g/cm2", botflux*area, "cm3", "with area", area, "cm2")
     print("Change in water balance", water - water0, "cm3")
-    print("top", topflux, topflux_, "cm")
-    print("bot", botflux, "cm")
-
+    print("top", topflux*area)
+    print("bot", botflux*area)
+    print("balances (should be 0)", (water - water0)- (botflux*area - topflux*area))
+    print()
+    
     plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), -top_new[:, 2])
 
     print()
