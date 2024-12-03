@@ -89,7 +89,7 @@ if __name__ == '__main__':
 
     """ parameters   """
     envirotype_number = 0
-    sim_time = 14  # 87.5  # [day]
+    sim_time = 21  # 87.5  # [day]
     dt = 360 / (24 * 3600)  # time step [day]
 
     # file = np.load("data/soil_only{:g}.npz".format(envirotype_number))
@@ -149,24 +149,24 @@ if __name__ == '__main__':
     np.savez("data/soil_only{:g}".format(envirotype_number), h = h, times = times, net_inf = net_inf, soil_times = soil_times, top = top_, net_change = net_change)
 
     topflux_ = np.sum(top_) * dt
-    topflux = np.sum(top_new[:, 2] * dt)
-    botflux = np.sum(bot_new[:, 2] * dt)
+    topflux = np.sum(top_new[:, 2] * dt)  # positive value means evaporation
+    botflux = np.sum(bot_new[:, 2] * dt)  # positive value means influx
 
     print()
-    print("top", topflux, topflux_, "cm", "g/cm2", topflux*area, "cm3", "with area", area, "cm2")
-    print("bot", botflux, "cm", "g/cm2", botflux*area, "cm3", "with area", area, "cm2")
+    print("top", topflux, topflux_, "cm", "g/cm2", topflux * area, "cm3", "with area", area, "cm2")
+    print("bot", botflux, "cm", "g/cm2", botflux * area, "cm3", "with area", area, "cm2")
     print("Change in water balance", water - water0, "cm3")
-    print("top", topflux*area)
-    print("bot", botflux*area)
-    print("balances (should be 0)", (water - water0)- (botflux*area - topflux*area))
+    print("top", topflux * area)
+    print("bot", botflux * area)
+    print("balances (should be 0)", (water - water0) + topflux * area - botflux * area, "cm3")
     print()
-    
+
     plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), -top_new[:, 2])
 
     print()
 
-    # plt.plot(soil_times, top_new[:, 2])
-    # plt.plot(soil_times, bot_new[:, 2])
+    plt.plot(soil_times, top_new[:, 2])
+    plt.plot(soil_times, bot_new[:, 2])
 
     plt.show()
 

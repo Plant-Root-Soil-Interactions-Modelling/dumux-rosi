@@ -81,6 +81,8 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
 
+    return s, r
+
 
 if __name__ == "__main__":
 

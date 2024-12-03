@@ -297,6 +297,11 @@ def apply_mods(mods, plant):
             rrp[i].hairsElongation = mods["hairsElongation"]
         mods.pop("hairsElongation")
 
+    if "dx" in mods:
+        for i in range(0, len(rrp)):
+            rrp[i].dx = mods["dx"]
+        mods.pop("dx")
+
     if mods:  # something unused in mods
         print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
         for k, v in mods.items():

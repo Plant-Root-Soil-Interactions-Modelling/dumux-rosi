@@ -246,8 +246,21 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
             # ana.addData("rsx", rsx)
             # ana.addAge(initial_age + t)  # "age"
             # ana.addConductivities(r, initial_age + t)  # "kr", "kx"
-            # ana.addFluxes(r, rx, rsx, initial_age + t)  # "axial_flux", "radial_flux"
             # ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
+
+    ana = pb.SegmentAnalyser(r.ms.mappedSegments())  # VOLUME and SURFACE
+    for j in range(0, 6):  # root types
+        anac = pb.SegmentAnalyser(ana)
+        anac.filter("subType", j)
+        vol_[j].append(anac.getSummed("volume"))
+        surf_[j].append(anac.getSummed("surface"))
+    krs, _ = r.get_krs(initial_age + t)
+    krs_.append(krs)  # KRS
+    depth_.append(ana.getMinBounds().z)
+
+    ana.addHydraulicConductivities(r.params, sim_time)
+    ana.addFluxes(r, rx, rsx, initial_age + t)  # "axial_flux", "radial_flux"
+    vtk.plot_roots(ana, "radial_flux")
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 

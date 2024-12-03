@@ -244,7 +244,7 @@ if __name__ == "__main__":
     if i == 3:
         local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
     if i == 4:
-        local_soybean_radii()
+        local_soybean_radii()  # did not work, check plausibility
     if i == 5:
         pass
 
