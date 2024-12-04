@@ -165,7 +165,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                 plantModel.TranspirationCumul_inner += sum(fpit_Helper.seg_fluxes[rootSegs]) * dt
                 
             write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
-
+        
         dt_inner = float(Ni + 1) * float(dt)
         return gaveUp, dt_inner, n_iter_inner_max
 
@@ -208,11 +208,16 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     ### plant shape
     organTypes = np.asarray(perirhizalModel.organTypes, int)
     cylVol = perirhizalModel.getVolumesCyl(doSum = False, reOrder = True) # volume of perirhizal zones [cm3]
+    if (rank == 0) and perirhizalModel.debugMode:
+        print("cylVol",cylVol)
+        print("perirhizalModel.rhizoVol",perirhizalModel.rhizoVol)
+        print("perirhizalModel.eidx_all_",perirhizalModel.eidx_all_)
+        
     airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
     rhizoSegsId = perirhizalModel.rhizoSegsId # id of plant segments WITH perirhizal zones   
     cellIds = perirhizalModel.cellWithRoots # only id of cells with roots
     emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
-    if not doMinimumPrint:
+    if (not doMinimumPrint) or perirhizalModel.debugMode:
         # for debugging
         write_file_array('emptyCells',emptyCells,directory_ =results_dir, fileType = '.csv')
         write_file_array('cellWithRoots',cellIds,directory_ =results_dir, fileType = '.csv')
@@ -273,7 +278,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         fpit_Helper = fixedPointIterationHelper(s, perirhizalModel, plantModel, 
                                                 seg_fluxes, outer_R_bc_wat, 
                                                 outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i,
-                                                dt,sim_time, emptyCells)
+                                                dt, # sub-time step
+                                                sim_time, # sim_time = N * dt
+                                                emptyCells)
 
         # looping 1
         keepGoing = True
@@ -341,8 +348,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             if (fpit_Helper.n_iter > 0) :
                 s.reset() #reset at the last moment: over functions use the solution/content at the end of the time step
-            
-            FPItHelper.storeOldMassData3d(s,perirhizalModel)
+            else:
+                FPItHelper.storeOldMassData3d(s,perirhizalModel)
             
             
             

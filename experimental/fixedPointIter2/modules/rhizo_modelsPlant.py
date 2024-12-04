@@ -61,7 +61,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.numDissolvedSoluteComp = soilModel.numDissolvedSoluteComp
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
-        self.debugMode = True
+        self.debugMode = False
         
         
         # constants
@@ -345,6 +345,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                       'self.maxDiff1d3dCW_rel',self.maxDiff1d3dCW_rel,
                       'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs)
                 raise Exception
+                
                 
     
     def broadcastPlantShape(self):
@@ -836,27 +837,34 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
         localIdCyls =   self.getLocalIdCyls(idCyls)           
-        wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
-        if verbose and (len(wat_rhizo) > 0):
-            print('getWaterVolumesCyl',wat_rhizo,idCyls)
+        wat_rhizo_ = np.array([self.cyls[i].getWaterVolumesCyl() for i in localIdCyls ],dtype=object) 
+        wat_rhizo = np.array([xxx.sum() for xxx in wat_rhizo_ ]) 
+        #wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
+        if verbose:
+            comm.barrier()
+            for i in localIdCyls:
+                print("getWaterVolumesCyl_",self.cyls[i].gId, self.cyls[i].getWaterVolumesCyl())
+            print('getWaterVolumesCyl',idCyls,wat_rhizo,wat_rhizo_)
+            comm.barrier()
         return self.getXcyl(data2share=wat_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
         
     def getVolumesCyl(self,idCyls=None,idCylsAll=None,  doSum = True, reOrder = True):#cm3
         if self.finishedUpdate:
-            if idCylsAll is None:
-                idCylsAll = self.eidx_all_
             if rank == 0:
-                V_rhizo = self.rhizoVol[idCylsAll]
+                if idCylsAll is None:
+                    # no need to use eidx_all_: rhizoVol is already in correct order
+                    idCylsAll = np.array([i for i in range(len(self.eidx_all_))])# self.eidx_all_
+                V_rhizo = self.rhizoVol[idCylsAll]         
+                if doSum and (not isinstance(V_rhizo, numbers.Number)):
+                    try:
+                        V_rhizo = sum(V_rhizo)
+                    except:
+                        print('getVolumesCyl V_rhizo',V_rhizo,idCylsAll,
+                              self.rhizoVol[idCylsAll],self.rhizoVol)
+                        raise Exception
+                return V_rhizo 
             else:
-                V_rhizo = np.array([])            
-            if doSum and (not isinstance(V_rhizo, numbers.Number)):
-                try:
-                    V_rhizo = sum(V_rhizo)
-                except:
-                    print('getVolumesCyl V_rhizo',V_rhizo,idCylsAll,
-                          self.rhizoVol[idCylsAll],self.rhizoVol)
-                    raise Exception
-            return V_rhizo 
+                return np.array([])   
         else:
             localIdCyls =   self.getLocalIdCyls(idCyls)                     
             V_rhizo = np.array([sum(self.cyls[i].getCellVolumes()) for i in localIdCyls ]) #cm3

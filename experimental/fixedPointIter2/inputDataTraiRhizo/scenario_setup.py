@@ -40,7 +40,7 @@ def getBiochemParam(s,paramIdx):
         
     """
     # file containing the TraiRhizo parameter sets
-    paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict()
+    paramSet = pd.read_csv('./output_random_rows.csv').iloc[paramIdx].to_dict() # select one specific parameter set from index
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.betaC = paramSet['beta_C'] # -
@@ -104,9 +104,9 @@ def getBiochemParam(s,paramIdx):
     cm3_per_m3 = 1e6; # cm3/m3
     
     # [kg/g] * [g/mol] = kg/mol
-    mol_per_kgC = (1/1000) * s.molarMassC
+    kgC_per_mol = (1/1000) * s.molarMassC
     # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
-    s.kads = kads * yr_per_d * cm3_per_m3 * mol_per_kgC
+    s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol
     
     kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
     s.kdes = kdes * yr_per_d
@@ -354,7 +354,7 @@ def create_soil_model( usemoles, results_dir ,
     s.isPeriodic =True 
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     if doOld:
-        s.isPeriodic =True
+        s.isPeriodic =False
     s = setupOther(s, p_mean_)
     
     #if rank == 0:

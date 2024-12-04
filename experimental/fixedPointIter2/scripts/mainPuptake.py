@@ -70,7 +70,7 @@ def XcGrowth(initsim, simMax,Plevel,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  False
+    doMinimumPrint =  True
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
