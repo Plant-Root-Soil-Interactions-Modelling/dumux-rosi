@@ -37,7 +37,7 @@ hairsElongation = 0.
 #         "hairsElongation": hairsElongation, "dx": 0.1 }
 
 mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-        "initial_age": 10,
+        "initial_age": 1.,
         "initial_totalpotential":-500}
 
 s, r = run_sra.run_soybean("soybean_testsingle_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)

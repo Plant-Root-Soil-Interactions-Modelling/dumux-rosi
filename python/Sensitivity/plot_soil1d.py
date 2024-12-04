@@ -23,6 +23,7 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 # ylim_ = None  # -10
 
 name = "local_soybean_1"
+name = "soybean_testsingle_0"
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
@@ -78,7 +79,7 @@ act_trans = alldata["act_trans"]
 sim_time = np.max(times)
 
 # t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
-t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc)
+t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc, initial_age = 0.)
 # t_, y_ = evap.net_infiltration_table_beers('data/95.pkl', start_date, times[-1], lai, Kc)
 t_ = np.array(t_)
 y_ = np.array(y_)
