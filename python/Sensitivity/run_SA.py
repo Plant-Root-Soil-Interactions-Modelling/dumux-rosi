@@ -152,11 +152,38 @@ def local_soybean_conductivities():
        for young and old parts, dependent on root order (145, 2, 3)
     """
     print("local_soybean_conductivities")
-    type_str = "local_soybean_conductivities10"  # varying age dependent conductiviies
+    type_str = "conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
     file_name = "local_soybean_conductivities_"
     enviro_type = 0
     sim_time = 87.5  # days
+
+    kx = [0.1, 1.e-3, 1.e-3]
+    kx_old = [0.35, 0.015]
+
+    kr = [1.e-3, 4.e-3, 4.e-3]
+    kr_old = [5e-4, 0.0015]
+
+    # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+    p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
+    write_ranges("results/" + file_name,
+                 ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
+                 [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
+    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
+
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+
+
+def local_singleroot_conductivities():
+    """ constructs a local sensitivity analysis of hydraulic conductivities 
+       for young and old parts, dependent on root order (145, 2, 3)
+    """
+    print("local_soybean_conductivities")
+    type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
+    root_type = "soybean"
+    file_name = "local_singleroot_conductivities_"
+    enviro_type = 0
+    sim_time = 28  # 87.5  # days
 
     kx = [0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
@@ -235,7 +262,7 @@ def local_soybean_radii():
 
 if __name__ == "__main__":
 
-    i = 4
+    i = 5
 
     if i == 1:
         local_soybean()
@@ -246,6 +273,8 @@ if __name__ == "__main__":
     if i == 4:
         local_soybean_radii()  # did not work, check plausibility
     if i == 5:
+        local_singleroot_conductivities()
+    if i == 6:
         pass
 
 # def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):

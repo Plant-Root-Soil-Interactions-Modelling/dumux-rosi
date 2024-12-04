@@ -154,12 +154,12 @@ def get_transpiration_beers_csv(start_date, sim_time, area, lai_f, Kc):
     return trans
 
 
-def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc):
+def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_age):
     """ calculates transpiration with Beer's law from start_date from a pickle file"""
 
-    sim_time += 1  # root system starts to grow one day earlier (+max dat)
+    sim_time += initial_age  # root system starts to grow one day earlier (+max dat)
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    end_date = start_date + timedelta(sim_time + 1, 0)
+    end_date = start_date + timedelta(sim_time + 1, 0)  # +1 just to be sure
     range_ = [str(start_date), str(end_date)]
 
     """ 1. load ET, ET0 -> ETc """
@@ -321,10 +321,21 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     return np.array(x_), np.array(y_)
 
 
-def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
-    """ calculates net infiltration with Beer's law from start_date from INARI csv file"""
+def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc , initial_age):
+    """ 
+    ! used by run_sra !
+    calculates net infiltration with Beer's law from start_date from INARI csv file 
+    
+    start_date              format '%Y-%m-%d %H:%M:%S'
+    sim_time                maximal simulation time (to calculate end date)
+    lai_f                   time dependent leaf area index (lai_soybean2)   
+    Kc                      crop coefficient  
+    initial_age             initial_age root system age (shifts start and end date)   
+    
+    TODO
+    """
 
-    sim_time += 1
+    sim_time += initial_age
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
     end_date = start_date + timedelta(sim_time, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
@@ -353,6 +364,12 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc):
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
+
+    # print()
+    # print("total precip", np.sum(precip) * 10, "mm")
+    # print("total evaporation", np.sum(evap) * 10, "mm")
+    # print("total net_inf", np.sum(net_inf) * 10, "mm")
+    # print()
 
     # fig, ax = plt.subplots(3, figsize = (18, 10))
     # ax[0].bar(t_, precip * 10, width = 1. / 24., label = "precipiation")

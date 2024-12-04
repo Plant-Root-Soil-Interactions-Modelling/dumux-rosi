@@ -87,12 +87,17 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         if not stochastic:
             set_all_sd(rs, 0.)
 
+        initial_age = 1
         if mods is not None:  # apply modifications
+            if "initial_age" in mods:
+                initial_age = mods["initial_age"]
+                mods.pop("initial_age")
             apply_mods(mods, rs)
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
         rs.initializeLB(4, 5)
-        rs.simulate(1., True)
+
+        rs.simulate(initial_age, True)
 
         if model == "Meunier":
             r = HydraulicModel_Meunier(rs, params)
@@ -141,7 +146,7 @@ def apply_mods(mods, plant):
         rrp[2].lmax *= mods["lmax2"]
         mods.pop("lmax2")
     if "lmax3" in mods:
-        rrp[3].lmax *= mods["lmax3"]
+        rrp[3].lmax *= modrootsyste < s["lmax3"]
         mods.pop("lmax3")
     if "lmax4" in mods:
         rrp[4].lmax *= mods["lmax4"]
@@ -309,6 +314,49 @@ def apply_mods(mods, plant):
         print()
         raise
 
-    # print("theta45", rrp[1].theta, rrp[4].theta)  # 1.5707999
-    # print("src", srp[0].maxB)  # 14
+
+def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic = False, mods = None, model = "Meunier"):
+    """ creates a mapped sinlge root"""
+
+    global picker  # make sure it is not garbage collected away...
+
+    params = PlantHydraulicParameters()
+
+    rs = create_singleroot(ns = 100, l = 50 , a = 0.05)
+
+    if mods is not None:  # apply modifications
+        apply_mods(mods, rs)
+
+    rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+    rs.initializeLB(4, 5)
+    rs.simulate(1., True)
+
+    if model == "Meunier":
+        r = HydraulicModel_Meunier(rs, params)
+    elif model == "Doussan":
+        r = HydraulicModel_Doussan(rs, params)
+    else:
+        raise "create_mapped_rootsystem(): unknown model"
+
+    r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+
+    picker = lambda x, y, z: soil_model.pick([0., 0., z])
+    r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+
+    return r, params
+
+
+def create_singleroot(ns = 100, l = 50 , a = 0.05):
+    """ creates a single root with @param ns segments, length l, and radius a """
+    radii = np.array([a] * ns)
+    nodes = [pb.Vector3d(0, 0, 0)]
+    segs = []
+    dx = l / ns
+    z_ = np.linspace(-dx, -l , ns)
+    for i in range(0, ns):
+        nodes.append(pb.Vector3d(0, 0, z_[i]))
+        segs.append(pb.Vector2i(i, i + 1))
+    rs = pb.MappedSegments(nodes, segs, radii)
+    return rs
 

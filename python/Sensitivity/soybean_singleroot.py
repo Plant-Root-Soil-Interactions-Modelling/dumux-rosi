@@ -31,12 +31,16 @@ hairsZone = 0.
 hairsLength = 0.
 hairsElongation = 0.
 
-mods = {"a145": 0.2, "a2": 0.04, "a3": 0.04,
-        "hairsZone145":hairsZone, "hairsZone2":hairsZone, "hairsZone3":hairsZone,
-        "hairsLength145":hairsLength, "hairsLength2":hairsLength, "hairsLength3":hairsLength,
-        "hairsElongation": hairsElongation, "dx": 0.1 }
+# mods = {"a145": 0.2, "a2": 0.04, "a3": 0.04,
+#         "hairsZone145":hairsZone, "hairsZone2":hairsZone, "hairsZone3":hairsZone,
+#         "hairsLength145":hairsLength, "hairsLength2":hairsLength, "hairsLength3":hairsLength,
+#         "hairsElongation": hairsElongation, "dx": 0.1 }
 
-s, r = run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
+mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+        "initial_age": 10,
+        "initial_totalpotential":-500}
+
+s, r = run_sra.run_soybean("soybean_testsingle_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
 
 # rs = r.ms
 #

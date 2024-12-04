@@ -5,6 +5,7 @@
 
 import numpy as np
 import sys
+import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
 
@@ -27,9 +28,24 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     print("run_soybean", file_name, enviro_type, sim_time)
     print(mods)
     print(kr, kx)
-    if kr_old:
-        print(kr_old, kx_old)
     print("***********************", flush = True)
+
+    if "filename" in mods:
+        xml_name = mods["filename"]
+        mods.pop("filename")
+    else:
+        xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
+
+    if "initial_age" in mods:
+        initial_age = mods["initial_age"]
+    else:
+        initial_age = 1.  # day
+
+    if "initial_totalpotential" in mods:
+        initial_totalpotential = mods["initial_totalpotential"]
+        mods.pop("initial_totalpotential")
+    else:
+        initial_totalpotential = -100.  # day
 
     dt = 360 / (24 * 3600)  # time step [day]
 
@@ -37,17 +53,17 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     water_table = 120.
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
-    x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc)
-    trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc)
+    x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age)
+    trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc, initial_age)
 
     # initialize soil
-    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "potential", bot_value = 200. - water_table)
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_,
+                                   bot_bc = "potential", bot_value = 200. - water_table, initial_totalpotential = initial_totalpotential)
     # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
     print("soil model set\n", flush = True)
 
     # initialize root system
     print("starting hydraulic model", flush = True)
-    xml_name = "data/Glycine_max_Moraes2020_opt2_modified.xml"  # root growth model parameter file
 
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
     print("***********************", "hydraulic model set\n", flush = True)
@@ -68,7 +84,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     print("sanity test done\n", flush = True)
 
     pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
-        s, r, table_name, sim_time, dt, trans_soybean, initial_age = 1., type_ = 1)
+        s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age, type_ = 1)
 
     if save_all:
         scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
@@ -141,6 +157,32 @@ if __name__ == "__main__":
         kx[1] = float(sys.argv[12])
         kx_old[1] = float(sys.argv[13])
         kx[2] = float(sys.argv[14])
+
+        run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
+
+    elif type == "singleroot_conductivities10":
+
+        print("singleroot_conductivities10", flush = True)
+        kr = np.zeros((3,))
+        kr_old = np.zeros((2,))
+        kx = np.zeros((3,))
+        kx_old = np.zeros((2,))
+
+        kr[0] = float(sys.argv[5])
+        kr_old[0] = float(sys.argv[6])
+        kr[1] = float(sys.argv[7])
+        kr_old[1] = float(sys.argv[8])
+        kr[2] = float(sys.argv[9])
+
+        kx[0] = float(sys.argv[10])
+        kx_old[0] = float(sys.argv[11])
+        kx[1] = float(sys.argv[12])
+        kx_old[1] = float(sys.argv[13])
+        kx[2] = float(sys.argv[14])
+
+        mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+        "initial_age": 10,
+        "initial_totalpotential":-500}
 
         run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
 
