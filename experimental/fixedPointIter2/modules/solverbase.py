@@ -310,9 +310,7 @@ class SolverWrapper():
         self.pointIndices = np.asarray(self._flat0(self.gather(self.pointIndices_)), np.int64) 
         self.cellIndices  = np.asarray(self._flat0(self.gather(self.cellIndices_)), np.int64) 
         self.cellsVertex = self._map(self._flat0(self.gather(self.base.getCells())), 2, np.int64)
-        if rank == 0:
-            print('len(self.dofIndices),len(self.pointIndices),len(self.cellIndices)',
-                  len(self.dofIndices),len(self.pointIndices),len(self.cellIndices))
+            
         # volumes, surface
         self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
         self.CellVolumes = self._map(self._flat0(self.gather(self.CellVolumes_)), 2)   # m2 -> cm2

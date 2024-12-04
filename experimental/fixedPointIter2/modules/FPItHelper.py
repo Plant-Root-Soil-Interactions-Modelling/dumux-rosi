@@ -31,6 +31,7 @@ def storeOldMassData1d(perirhizalModel):
         # total carbon content per 1d model
         perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore.sum(axis=1) 
         perirhizalModel.rhizoWBefore = sum(perirhizalModel.rhizoWBefore_eachCyl) 
+        
         perirhizalModel.rhizoTotCBefore = sum(perirhizalModel.rhizoTotCBefore_eachCyl) 
 
         # return component content per voxel according to 1d model data 
@@ -38,6 +39,14 @@ def storeOldMassData1d(perirhizalModel):
         perirhizalModel.soil_solute1d_perVoxelBefore = np.array([
             perirhizalModel.soil_solute1d_eachCylechSolBefore[perirhizalModel.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
         ]).T
+        
+        if perirhizalModel.debugMode:
+            write_file_array("fpit_soil_solute1d_eachCylechSolBefore1", perirhizalModel.soil_solute1d_eachCylechSolBefore[1], 
+                             directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+
+            write_file_array("fpit_rhizoWBefore_eachCyl", perirhizalModel.rhizoWBefore_eachCyl, 
+                                 directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+    
 
 def storeNewMassData1d(perirhizalModel):
     """
@@ -86,6 +95,13 @@ def storeNewMassData1d(perirhizalModel):
         perirhizalModel.rhizoWAfter_eachCyl_old = perirhizalModel.rhizoWAfter_eachCyl.copy()
         perirhizalModel.rhizoTotCAfter_eachCyl_old = perirhizalModel.rhizoTotCAfter_eachCyl.copy()
 
+        if perirhizalModel.debugMode:
+            write_file_array("fpit_soil_solute1d_perVoxelAfter1", perirhizalModel.soil_solute1d_perVoxelAfter[1], 
+                             directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+
+            write_file_array("fpit_rhizoWAfter_eachCyl", perirhizalModel.rhizoWAfter_eachCyl, 
+                                 directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+            print("perirhizalModel.rhizoWAfter_eachCyl",perirhizalModel.rhizoWAfter_eachCyl)
 
 
 
@@ -105,6 +121,11 @@ def storeOldMassData3d(s,perirhizalModel):
         perirhizalModel.soil_water3dBefore = np.multiply(water_content, s.CellVolumes)  # water per cell [cm3]
         perirhizalModel.totC3dBefore = np.sum(perirhizalModel.totC3dBefore_eachVoxeleachComp)
         assert isinstance(perirhizalModel.totC3dBefore ,float) # just test once: we did the complete sum?
+        
+        if perirhizalModel.debugMode:
+            write_file_array("fpit_soil_water3dBefore", perirhizalModel.soil_water3dBefore, 
+                             directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+            print("perirhizalModel.soil_water3dBefore",perirhizalModel.soil_water3dBefore)
 
 def storeNewMassData3d(s,perirhizalModel):
     """
@@ -128,6 +149,10 @@ def storeNewMassData3d(s,perirhizalModel):
         perirhizalModel.soil_water3dAfter_old = perirhizalModel.soil_water3dAfter.copy()
         perirhizalModel.totC3dAfter_eachVoxeleachComp_old = perirhizalModel.totC3dAfter_eachVoxeleachComp.copy()
 
+        if perirhizalModel.debugMode:
+            write_file_array("fpit_soil_water3dAfter", perirhizalModel.soil_water3dAfter, 
+                             directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+            print("perirhizalModel.soil_water3dAfter",perirhizalModel.soil_water3dAfter)
 
 
 
@@ -160,6 +185,7 @@ class fixedPointIterationHelper():
         self.seg_sol_fluxes = Q_Exud_i /sim_time# mol/day for segments
         self.seg_mucil_fluxes = Q_mucil_i/sim_time
         self.sim_time = sim_time
+        self.dt = dt
         self.initializeOldData(seg_fluxes, outer_R_bc_wat, outer_R_bc_sol)
         self.err = 1000
         self.errs= 1000
@@ -179,7 +205,9 @@ class fixedPointIterationHelper():
         self.outer_R_bc_wat =  outer_R_bc_wat #.copy() # inter-cell water flux in 3d soil model
         self.outer_R_bc_sol = outer_R_bc_sol #.copy() # inter-cell solute flux in 3d soil model
         
-        self.thetaCylOld = self.perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True)/self.cylVol # cm3/cm3
+        self.thetaCylOld = self.perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True, verbose=False)/self.cylVol # cm3/cm3
+        
+        
         #self.comp1contentOld = perirhizalModel.getContentCyl(idComp=1, doSum = False, reOrder = True) # [mol] small rhizodeposits
         #self.comp2contentOld = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
         
@@ -267,6 +295,8 @@ class fixedPointIterationHelper():
             if max(abs(outer_R_bc_wat )) > 0:
                 
                 try:
+                    
+                    # thetaCyl_4splitSoilVals: potentially available water in the cylinder
                     proposed_outer_fluxes = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_wat / dt,
                                                         seg_values=self.thetaCyl_4splitSoilVals, # water 'potentially available'
                                                        seg_volume= self.cylVol,dt = dt,
@@ -284,13 +314,10 @@ class fixedPointIterationHelper():
                 proposed_outer_fluxes = np.full(self.numSegs, 0.) 
                 
             if self.n_iter > 0:    
+                # rhizoWAfter_eachCyl4splitVals: value to go from C to C/cm3 water for the solutes
                 rhizoWAfter_eachCyl4splitVals = perirhizalModel.rhizoWAfter_eachCyl.copy()
             
                 
-            #print('len(rhizoWAfter_eachCyl4splitVals)',rhizoWAfter_eachCyl4splitVals.shape,
-            #      'max(perirhizalModel.airSegs)',
-            #     max(perirhizalModel.airSegs), 'comp1content',self.comp1content.shape, self.comp2content.shape,
-            #     'self.numSegs',self.numSegs,'len(perirhizalModel.eidx_all)',len(perirhizalModel.eidx_all))
             if len(perirhizalModel.airSegs) > 0:
                 rhizoWAfter_eachCyl4splitVals[perirhizalModel.airSegs]=1. # to avoind division by 0.
 
@@ -316,6 +343,13 @@ class fixedPointIterationHelper():
             proposed_outer_sol_fluxes = None
             proposed_outer_mucil_fluxes = None
 
+        if (rank == 0)  and (perirhizalModel.debugMode):
+            
+            print("outer_R_bc_wat",outer_R_bc_wat)
+            #print("self.thetaCyl_4splitSoilVals",self.thetaCyl_4splitSoilVals)
+            print("rhizoWAfter_eachCyl4splitVals",rhizoWAfter_eachCyl4splitVals)
+            print("proposed_outer_fluxes",proposed_outer_fluxes)
+            
 
         self.proposed_outer_fluxes = proposed_outer_fluxes #comm.bcast(, root = 0)
         self.proposed_outer_sol_fluxes = proposed_outer_sol_fluxes#comm.bcast(, root = 0)
@@ -365,6 +399,13 @@ class fixedPointIterationHelper():
             
             # [mol] small rhizodeposits
             # self.comp2content = perirhizalModel.soil_solute1d_eachCylechSolAfter[:,1]  # [mol] mucilage
+
+            if perirhizalModel.debugMode:
+                print("self.cylVol",self.cylVol)
+                print("seg_fluxes_root",seg_fluxes_root)
+                print("flow1d1d_w",perirhizalModel.flow1d1d_w)
+                write_file_array("fpit_thetaCyl_4splitSoilVals", self.thetaCyl_4splitSoilVals, 
+                             directory_ =perirhizalModel.results_dir, fileType = '.txt') 
             
         
         
@@ -459,18 +500,23 @@ class fixedPointIterationHelper():
                 sources_sol_from1d[nc][cellIds] = np.array(
                     perirhizalModel.soil_solute1d_perVoxelAfter[nc] - perirhizalModel.soil_solute1d_perVoxelBefore[nc] - self.outer_R_bc_sol[nc][cellIds]
                 )/dt
-            sources_sol_from1d = sources_sol_from1d  
+            #sources_sol_from1d = sources_sol_from1d  
             
             assert sources_sol_from1d.shape == (self.perirhizalModel.numSoluteComp, self.s.numberOfCellsTot)
             
             # store error
             self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time
+
+            if perirhizalModel.debugMode:
+                print("self.s.errSoil_source_sol_abs",self.s.errSoil_source_sol_abs,"(sum(self.Q_Exud_i) + sum(self.Q_mucil_i))",
+                      (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))," sum(sources_sol_from1d.flatten())*dt", sum(sources_sol_from1d.flatten())*dt)
             
-            if (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/dt != 0.:
+            if (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time != 0.:
                 s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time)*100)
             else:
                 s.errSoil_source_sol_rel = np.nan
             self.sources_sol_from1d = sources_sol_from1d
+
             
     def compute1dChangesWater(self, dt):
         if (rank == 0):
@@ -498,7 +544,13 @@ class fixedPointIterationHelper():
             #                  'diff',  sum(net_PWU_limited)- sum(net_PWU),sum(self.seg_fluxes)- sum(self.seg_fluxes_limited))
             perirhizalModel.SinkLim3DS =max( abs((self.net_PWU_limited - self.net_PWU)/ 
                                                 np.where(self.net_PWU,self.net_PWU,1.))*100.) # at the end of the fixed point iteration, should be ~ 0 
-                                            
+
+            if perirhizalModel.debugMode:
+                write_file_array("fpit_net_PWU", net_PWU, 
+                                     directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+                write_file_array("fpit_net_PWU_limited", net_PWU_limited, 
+                                     directory_ =perirhizalModel.results_dir, fileType = '.txt') 
+                                
         
     def compute3DSource(self, dt):
         """
@@ -585,6 +637,8 @@ class fixedPointIterationHelper():
 
         if not self.perirhizalModel.doMinimumPrint: 
             write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
+            
+            
         # send to dumux
         s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
         
@@ -933,6 +987,8 @@ class fixedPointIterationHelper():
 
             print(f"relative error balance soil 3d (%)?\n\t\tfrom PWU {s.bulkMassErrorWater_rel:.2e}, from PWU-limited {s.bulkMassErrorWater_relLim:.2e},from PCU {s.bulkMassCErrorPlant_rel:.2e}, from 1ds C-change {s.bulkMassCError1ds_rel:.2e}"
                 )
+            if perirhizalModel.debugMode:
+                print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i) + sum(self.Q_mucil_i)",sum(self.Q_Exud_i) + sum(self.Q_mucil_i)," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
 
             ### for each voxel
             s.bulkMassErrorWaterAll_abs = abs(perirhizalModel.soil_water3dAfter - (perirhizalModel.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))

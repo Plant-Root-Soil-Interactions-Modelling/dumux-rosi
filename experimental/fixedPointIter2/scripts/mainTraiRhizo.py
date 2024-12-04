@@ -42,7 +42,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     if doOld:
         xml_name = "Triticum_aestivum_test_2021_old.xml"  # root growth model parameter fileroot growth model parameter file
     else:
-        xml_name = "Triticum_aestivum_test_2021_1cm.xml"  # root growth model parameter fileroot growth model parameter file
+        xml_name = "Triticum_aestivum_test_2021_1cm.xml" #"Triticum_aestivum_test_2021_simple.xml"#  # root growth model parameter fileroot growth model parameter file
         
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
@@ -73,8 +73,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  False
-    debugMode = True
+    doMinimumPrint =  True
+    debugMode = False
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
