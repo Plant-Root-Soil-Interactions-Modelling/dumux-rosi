@@ -158,7 +158,7 @@ def local_soybean_conductivities():
     enviro_type = 0
     sim_time = 87.5  # days
 
-    kx = [0.1, 1.e-3, 1.e-3]
+    kx = np[0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
 
     kr = [1.e-3, 4.e-3, 4.e-3]
@@ -185,11 +185,11 @@ def local_singleroot_conductivities():
     enviro_type = 0
     sim_time = 28  # 87.5  # days
 
-    kx = [0.1, 1.e-3, 1.e-3]
-    kx_old = [0.35, 0.015]
+    kx = np.array([0.1]) / 4.
+    kx_old = np.array([0.35]) / 4.
 
-    kr = [1.e-3, 4.e-3, 4.e-3]
-    kr_old = [5e-4, 0.0015]
+    kr = np.array([1.e-3]) * 4
+    kr_old = np.array([5e-4]) * 4
 
     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 17)])

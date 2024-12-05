@@ -87,7 +87,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 4, figsize = (16, 16))
+fig, ax = plt.subplots(2, 2, figsize = (16, 16))
 final = []
 finaln = []
 
