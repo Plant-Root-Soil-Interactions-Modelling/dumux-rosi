@@ -192,7 +192,7 @@ def local_singleroot_conductivities():
     kr_old = np.array([5e-4]) * 16 * 4
 
     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-    p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 17)])
+    p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 35)])
     write_ranges("results/" + file_name,
                  ["ykr1", "okr1", "ykx1", "okx1"],
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
