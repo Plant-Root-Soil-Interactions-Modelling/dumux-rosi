@@ -78,15 +78,15 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     if kr_old is not None:
         print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
-        print(kr)
-        print(kr_old)
-        print(kr[0], kr[1])
+        # print(kr)
+        # print(kr_old)
+        # print(kr[0], kr[1])
         scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
         scenario.init_lupine_conductivities(r, kr, kx)
 
-    params.plot_conductivities(False, lateral_ind = [2, 3])  #
-    dd
+    # params.plot_conductivities(False, lateral_ind = [2, 3])  #
+    # dd
 
     print("conductivities set\n", flush = True)
 
