@@ -178,15 +178,8 @@ if __name__ == "__main__":
 
         kr[0] = float(sys.argv[5])
         kr_old[0] = float(sys.argv[6])
-        kr[1] = float(sys.argv[7])
-        kr_old[1] = float(sys.argv[8])
-        kr[2] = float(sys.argv[9])
-
-        kx[0] = float(sys.argv[10])
-        kx_old[0] = float(sys.argv[11])
-        kx[1] = float(sys.argv[12])
-        kx_old[1] = float(sys.argv[13])
-        kx[2] = float(sys.argv[14])
+        kx[0] = float(sys.argv[7])
+        kx_old[0] = float(sys.argv[8])
 
         mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
         "initial_age": 1.,  # TODO need to check with plots, and net_inf, trans_f

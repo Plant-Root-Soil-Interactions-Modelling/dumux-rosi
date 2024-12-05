@@ -139,7 +139,7 @@ for lind in range(0, len(names)):
         vol = vol / vol[sa_len // 2]  # nondimensionalize
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
-        ax.flat[ac].plot(ranges[lind], trans, '*-', label = "water")
+        ax.flat[ac].plot(np.array(ranges[lind]) / ranges[lind][sa_len // 2], trans, '*-', label = "water")
         print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]))
 
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
@@ -150,7 +150,7 @@ for lind in range(0, len(names)):
         finaln.append(nitrate[-1] / vol[-1])
 
         # center
-        x = ranges[lind][sa_len // 2]
+        x = 1.  # ranges[lind][sa_len // 2]
         ax.flat[ac].plot([x], [1.], 'r*')
 
         ax.flat[ac].legend()

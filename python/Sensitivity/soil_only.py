@@ -100,7 +100,7 @@ if __name__ == '__main__':
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(envirotype_number)
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
-    times, net_inf = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc)
+    times, net_inf = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age = 0.)
     # trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc)
 
     """ initialize """
@@ -163,10 +163,10 @@ if __name__ == '__main__':
 
     plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), -top_new[:, 2])
 
-    print()
-
-    plt.plot(soil_times, top_new[:, 2])
-    plt.plot(soil_times, bot_new[:, 2])
+    # print()
+    #
+    # plt.plot(soil_times, top_new[:, 2])
+    # plt.plot(soil_times, bot_new[:, 2])
 
     plt.show()
 

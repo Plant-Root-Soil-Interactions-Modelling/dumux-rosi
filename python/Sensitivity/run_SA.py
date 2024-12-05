@@ -192,11 +192,11 @@ def local_singleroot_conductivities():
     kr_old = [5e-4, 0.0015]
 
     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-    p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
+    p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 17)])
     write_ranges("results/" + file_name,
-                 ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
-                 [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
-    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
+                 ["ykr1", "okr1", "ykx1", "okx1"],
+                 [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
+    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
