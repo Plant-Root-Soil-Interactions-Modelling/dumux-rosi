@@ -181,15 +181,15 @@ def local_singleroot_conductivities():
     print("local_singleroot_conductivities")
     type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
-    file_name = "local_singleroot_conductivities_"
+    file_name = "local_singleroot_conductivities10_"
     enviro_type = 0
-    sim_time = 28  # 87.5  # days
+    sim_time = 40  # 87.5  # days
 
-    kx = np.array([0.1]) / 4.
-    kx_old = np.array([0.35]) / 4.
+    kx = np.array([0.1]) / 10.
+    kx_old = np.array([0.35]) / 10.
 
-    kr = np.array([1.e-3]) * 4
-    kr_old = np.array([5e-4]) * 4
+    kr = np.array([1.e-3]) * 10
+    kr_old = np.array([5e-4]) * 10
 
     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 17)])
@@ -198,7 +198,7 @@ def local_singleroot_conductivities():
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
 def local_soybean_tropisms():
