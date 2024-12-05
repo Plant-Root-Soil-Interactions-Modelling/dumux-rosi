@@ -179,9 +179,9 @@ def local_singleroot_conductivities():
        for young and old parts, dependent on root order (145, 2, 3)
     """
     print("local_singleroot_conductivities")
-    type_str = "singleroot_conductivities1"  # varying age dependent conductiviies
+    type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
     root_type = "soybean"
-    file_name = "local_singleroot_conductivities10_"
+    file_name = "local_singleroot_conductivities1_"
     enviro_type = 0
     sim_time = 40  # 87.5  # days
 
