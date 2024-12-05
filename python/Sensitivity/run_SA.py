@@ -198,7 +198,7 @@ def local_singleroot_conductivities():
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_tropisms():
