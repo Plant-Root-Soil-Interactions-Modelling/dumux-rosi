@@ -23,11 +23,11 @@ def start_index(ind, ranges):
 # file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 file_name = "local_soybean_radii_"
-file_name = "local_singleroot_conductivities_"
+file_name = "local_singleroot_conductivities10_"
 path = "results/"
 # not_xlog = []
 
-analysis_time = 28  # 87.5  # days  (day 60 is fine already)
+analysis_time = 40  # 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
 

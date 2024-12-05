@@ -1,5 +1,4 @@
-from hyperopt import hp, Trials, STATUS_OK
-from hyperopt.tpe import suggest
+from hyperopt import fmin, tpe, hp, Trials, STATUS_OK
 from mpi4py import MPI
 import pickle
 
@@ -25,13 +24,13 @@ space = {
 
 # Number of evaluations
 max_evals = 50
+tid = 0
 
 # Master node
 if rank == 0:
     trials = Trials()
     eval_count = 0
     active_workers = size - 1  # All workers except the master
-    task_id = 0  # Unique task identifier
 
     while eval_count < max_evals or active_workers > 0:
         # Check for messages from workers
@@ -40,33 +39,45 @@ if rank == 0:
 
         if status.tag == 1:  # Worker is requesting a task
             if eval_count < max_evals:
-                # Generate a new hyperparameter set with TPE
-                new_trials = suggest(
-                    n_startup_jobs = 10,  # Use random sampling for the first few trials
-                    domain = None,
+                # Generate a new hyperparameter set
+                param = fmin(
+                    fn = lambda p: 0,  # Dummy function (we handle evaluations manually)
+                    space = space,
+                    algo = tpe.suggest,
+                    max_evals = 1,
                     trials = trials,
-                    max_evals = eval_count + 1,
                 )
-                trial = new_trials[-1]  # Get the new trial
+                # trials["tid"] = tid
+                #
 
-                # Assign a unique task ID (tid)
-                trial["tid"] = task_id
-                task_id += 1
-
-                # Send the task to the worker
-                comm.send(pickle.dumps(trial), dest = status.source, tag = 2)
+                comm.send(param, dest = status.source, tag = 2)
                 eval_count += 1
             else:
                 # No more tasks; tell the worker to stop
                 comm.send(None, dest = status.source, tag = 0)
 
         elif status.tag == 3:  # Worker sending back results
-            result = pickle.loads(message)
-            trials.insert_trial_doc(result)
+            worker_result = pickle.loads(message)
+            tid += 1
+            doc = {
+                "tid":tid,
+                "result": worker_result["loss"],
+                "spec": "tpe.suggest, max_evals 1",
+                "misc": {"tid":tid },
+                "state": worker_result["status"],
+                "owner": "root",  # chatGPT told me
+                "book_time": 0.,  # no glue
+                "refresh_time": 0.,  # no glue
+                "exp_key": "myexperiment",
+                "cmd": None
+                }
+
+            print(worker_result)
+            trials.insert_trial_doc(doc)
             trials.refresh()
 
             # Reduce active worker count if stopping
-            if result.get("stop", False):
+            if worker_result.get("stop", False):
                 active_workers -= 1
 
     print("Optimization completed.")
@@ -77,16 +88,14 @@ else:
     while True:
         # Request a task from the master
         comm.send(None, dest = 0, tag = 1)  # Request a task
-        task_message = comm.recv(source = 0, tag = MPI.ANY_TAG)
+        task = comm.recv(source = 0, tag = MPI.ANY_TAG)
 
-        if task_message is None:
+        if task is None:
             # No more tasks; terminate
             break
 
         # Evaluate the task
-        trial = pickle.loads(task_message)
-        trial["result"] = objective(trial["misc"]["vals"])  # Compute the loss
-        trial["state"] = STATUS_OK
+        result = objective(task)
 
         # Send the result back to the master
-        comm.send(pickle.dumps(trial), dest = 0, tag = 3)
+        comm.send(pickle.dumps(result), dest = 0, tag = 3)
