@@ -19,15 +19,15 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-#file_name = "local_soybean_"
-#file_name = "local_soybean_conductivities_"
+# file_name = "local_soybean_"
+# file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 file_name = "local_soybean_radii_"
-# file_name = "local_timing"
+file_name = "local_singleroot_conductivities_"
 path = "results/"
 # not_xlog = []
 
-analysis_time = 87.5  # days  (day 60 is fine already)
+analysis_time = 28  # 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -87,7 +87,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 3, figsize = (16, 16))
+fig, ax = plt.subplots(3, 4, figsize = (16, 16))
 final = []
 finaln = []
 
@@ -155,11 +155,11 @@ for lind in range(0, len(names)):
 
         ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
-        #ax.flat[ac].set_ylim(0.8, 1.2)
+        # ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
         # if not lind in not_xlog:
-        
-        #ax.flat[ac].set_xscale('log', base = 2)
+
+        ax.flat[ac].set_xscale('log', base = 2)
         ac += 1
 
 plt.tight_layout(pad = 4.)

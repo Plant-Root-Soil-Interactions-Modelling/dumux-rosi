@@ -192,7 +192,7 @@ if __name__ == "__main__":
         "initial_age": 1.,  # TODO need to check with plots, and net_inf, trans_f
         "initial_totalpotential":-500}
 
-        run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
+        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
 
     elif type == "tropisms":
 
