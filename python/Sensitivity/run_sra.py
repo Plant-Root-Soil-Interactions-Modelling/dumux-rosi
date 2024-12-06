@@ -57,9 +57,6 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
 
-    # min_b = [-1., -1., -200.]  # ######################## SINGLE ROOT HACK ###############################################################
-    # max_b = [1., 1., 0.]
-
     start_date = '2021-05-10 00:00:00'  # INARI csv data
     x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age)
     trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc, initial_age)
@@ -184,9 +181,11 @@ if __name__ == "__main__":
         kx[0] = float(sys.argv[7])
         kx_old[0] = float(sys.argv[8])
 
-        mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+        mods = {
+        "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
         "initial_age": 1.,  # TODO need to check with plots, and net_inf, trans_f
-        "initial_totalpotential":-500}
+        "initial_totalpotential":-500
+        }
 
         run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
 

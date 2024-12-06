@@ -23,22 +23,23 @@ envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
 
-hairsZone = 1.7
-hairsLength = 0.1
+hairsZone = 1.
+hairsLength = 0.2
 hairsElongation = 0.3
 
-hairsZone = 0.
-hairsLength = 0.
-hairsElongation = 0.
-
-# mods = {"a145": 0.2, "a2": 0.04, "a3": 0.04,
-#         "hairsZone145":hairsZone, "hairsZone2":hairsZone, "hairsZone3":hairsZone,
-#         "hairsLength145":hairsLength, "hairsLength2":hairsLength, "hairsLength3":hairsLength,
-#         "hairsElongation": hairsElongation, "dx": 0.1 }
+# hairsZone = 0.
+# hairsLength = 0.
+# hairsElongation = 0.
 
 mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-        "initial_age": 1.,
-        "initial_totalpotential":-500}
+        "a145": 0.2, "a2": 0.04, "a3": 0.04,
+        "hairsZone145":hairsZone, "hairsZone2":hairsZone, "hairsZone3":hairsZone,
+        "hairsLength145":hairsLength, "hairsLength2":hairsLength, "hairsLength3":hairsLength,
+        "hairsElongation": hairsElongation, "dx": 0.1 }
+
+# mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+#         "initial_age": 1.,
+#         "initial_totalpotential":-100}
 
 s, r = run_sra.run_soybean("soybean_testsingle_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
 

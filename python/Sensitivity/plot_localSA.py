@@ -22,10 +22,8 @@ def start_index(ind, ranges):
 # file_name = "local_soybean_"
 # file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
-file_name = "local_soybean_radii_"
+# file_name = "local_soybean_radii_"
 file_name = "local_singleroot_conductivities64_"
-file_name = "local_soybean_radii_"
-file_name = "local_soybean_tropisms_"
 
 path = "results/"
 # not_xlog = []

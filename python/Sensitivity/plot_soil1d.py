@@ -24,6 +24,8 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 name = "local_soybean_1"
 name = "soybean_testsingle_0"
+name = "local_singleroot_conductivities64_27"
+name = "soybean_test_0"
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
@@ -145,7 +147,7 @@ else:
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
     print("data", data.shape)
     im = ax[1].imshow(data, cmap = cmap_reversed, vmin = -10000, aspect = 'auto', extent = [times[0] , times[-1], -yy, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    ax[1].plot(times[::10], depths, 'k:')
+    ax[1].plot(times[::10], depths[:-1], 'k:')
     x = np.linspace(0, times[-1], data.shape[1])
     y = np.linspace(0, -yy, data.shape[0])
     X, Y = np.meshgrid(x, y)

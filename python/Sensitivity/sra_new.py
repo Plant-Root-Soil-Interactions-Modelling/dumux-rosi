@@ -34,7 +34,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     vol_                         root system volume 
     surf_                        root system surface [cm2]
     krs_                         root system hydraulic conductivity [cm2/day]
-    depth_                       root system depth [cm]
+    depth_                       root system depth [cm] 
     """
 
     wilting_point = -15000  # cm
@@ -89,7 +89,8 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         rsx = np.hstack((rsx, hsb_[rsx.shape[0]:]))  # initial values for fix point iteration
 
         outer_r = peri.get_outer_radii("length")
-        inner_r = rs.radii
+        n = len(rs.radii)
+        inner_r = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])  # rs.radii
         types = rs.subTypes
         rho_ = np.divide(outer_r, np.array(inner_r))
         rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
@@ -240,34 +241,45 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
             depth_.append(ana.getMinBounds().z)
 
             """ direct vtp output """
-            # psi_x_.append(rx.copy())  # cm (per root node)
-            # psi_s_.append(rsx.copy())  # cm (per root segment)
-            # ana.addData("rx", rx[1:])
-            # ana.addData("rsx", rsx)
-            # ana.addAge(initial_age + t)  # "age"
-            # ana.addConductivities(r, initial_age + t)  # "kr", "kx"
-            # ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
+            psi_x_.append(rx.copy())  # cm (per root node)
+            psi_s_.append(rsx.copy())  # cm (per root segment)
 
-    # rs = r.ms
-    # n = len(rs.radii)
-    # radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
-    # rs.radii = radii
-    # ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
-    # for j in range(0, 6):  # root types
-    #     anac = pb.SegmentAnalyser(ana)
-    #     anac.filter("subType", j)
-    #     vol_[j].append(anac.getSummed("volume"))
-    #     surf_[j].append(anac.getSummed("surface"))
-    # krs, _ = r.get_krs(initial_age + t)
-    # krs_.append(krs)  # KRS
-    # depth_.append(ana.getMinBounds().z)
-    # ana.addData("rx", rx[1:])
-    # ana.addData("rsx", rsx)
-    # ana.addHydraulicConductivities(r.params, sim_time)
-    # ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
-    # vtk.plot_roots(ana, "rsx")
+            rs = r.ms
+            n = len(rs.radii)
+            radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+            old_radii = rs.radii
+            rs.radii = radii
+            ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
+            rs.radii = old_radii
+            ana.addData("rx", rx[1:])
+            ana.addData("rsx", rsx)
+            ana.addAge(initial_age + t)  # "age"
+            ana.addHydraulicConductivities(r.params, initial_age + t)  # "kr", "kx"
+            ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
+
+    rs = r.ms
+    n = len(rs.radii)
+    radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+    rs.radii = radii
+    ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
+    for j in range(0, 6):  # root types
+        anac = pb.SegmentAnalyser(ana)
+        anac.filter("subType", j)
+        vol_[j].append(anac.getSummed("volume"))
+        surf_[j].append(anac.getSummed("surface"))
+    krs, _ = r.get_krs(initial_age + t)
+    krs_.append(krs)  # KRS
+    depth_.append(ana.getMinBounds().z)
+    ana.addData("rx", rx[1:])
+    ana.addData("rsx", rsx)
+    ana.addHydraulicConductivities(r.params, sim_time)
+    ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
+    vtk.plot_roots(ana, "radial_flux")
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
+
+    psi_x = []  # what do I do with nested arrays?
+    psi_s = []
 
     return pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
     """ 

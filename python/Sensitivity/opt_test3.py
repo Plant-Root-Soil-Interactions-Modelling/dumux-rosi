@@ -22,6 +22,8 @@ space = {
     "y": hp.uniform("y", -10, 10),
 }
 
+best = fmin(objective, space, algo = tpe.suggest, max_evals = 100)
+
 # Number of evaluations
 max_evals = 50
 tid = 0
