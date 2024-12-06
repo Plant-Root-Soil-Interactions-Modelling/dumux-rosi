@@ -31,7 +31,7 @@ hairsElongation = 0.3
 # hairsLength = 0.
 # hairsElongation = 0.
 
-mods = {"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+mods = {  # "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
         "a145": 0.2, "a2": 0.04, "a3": 0.04,
         "hairsZone145":hairsZone, "hairsZone2":hairsZone, "hairsZone3":hairsZone,
         "hairsLength145":hairsLength, "hairsLength2":hairsLength, "hairsLength3":hairsLength,

@@ -255,6 +255,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
             ana.addData("rsx", rsx)
             ana.addAge(initial_age + t)  # "age"
             ana.addHydraulicConductivities(r.params, initial_age + t)  # "kr", "kx"
+            ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
             ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
 
     rs = r.ms
