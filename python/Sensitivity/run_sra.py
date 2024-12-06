@@ -57,8 +57,8 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
 
-    min_b = [-1., -1., -200.]  # ######################## SINGLE ROOT HACK ###############################################################
-    max_b = [1., 1., 0.]
+    # min_b = [-1., -1., -200.]  # ######################## SINGLE ROOT HACK ###############################################################
+    # max_b = [1., 1., 0.]
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
     x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age)

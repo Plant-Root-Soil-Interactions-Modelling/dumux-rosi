@@ -24,10 +24,13 @@ def start_index(ind, ranges):
 # file_name = "local_soybean_tropisms_"
 file_name = "local_soybean_radii_"
 file_name = "local_singleroot_conductivities64_"
+file_name = "local_soybean_radii_"
+file_name = "local_soybean_tropisms_"
+
 path = "results/"
 # not_xlog = []
 
-analysis_time = 40  # 87.5  # days  (day 60 is fine already)
+analysis_time = 87.5  # 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -87,7 +90,7 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(2, 2, figsize = (16, 16))
+fig, ax = plt.subplots(3, 4, figsize = (16, 16))
 final = []
 finaln = []
 

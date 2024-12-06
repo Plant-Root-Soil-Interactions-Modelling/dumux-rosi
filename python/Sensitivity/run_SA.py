@@ -237,9 +237,9 @@ def local_soybean_radii():
     enviro_type = 0
     sim_time = 87.5  # days
 
-    a145 = np.linspace(0., .5, 9)
-    a2 = np.linspace(0., .1, 9)
-    a3 = np.linspace(0., .1, 9)
+    a145 = np.linspace(0.01, .5, 9)
+    a2 = np.linspace(0.01, .1, 9)
+    a3 = np.linspace(0.01, .1, 9)
 
     hz = np.linspace(0., 4., 9)
     hairsZone145, hairsZone2, hairsZone3 = hz, hz, hz
@@ -250,7 +250,7 @@ def local_soybean_radii():
     write_ranges("results/" + file_name,
                  ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength3"],
                  [a145, a2, a3, hz, hz, hz, hl, hl, hl])
-    jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0.)  # currently we always pass 10 valeus to run_sra
+    jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0.)  # currently we always pass 10 values to run_sra
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
@@ -262,7 +262,7 @@ def local_soybean_radii():
 
 if __name__ == "__main__":
 
-    i = 5
+    i = 4
 
     if i == 1:
         local_soybean()
