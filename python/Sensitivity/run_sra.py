@@ -4,6 +4,7 @@
 """
 
 import numpy as np
+import scipy
 import sys
 import matplotlib.pyplot as plt
 
@@ -56,22 +57,32 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     dt = 360 / (24 * 3600)  # time step [day]
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
+    if "domain_size" in mods:
+        domain_size = np.array(mods["domain_size"])
+        min_b = -np.array([domain_size[0] / 2., domain_size[1] / 2., domain_size[2]])
+        max_b = np.array([domain_size[0] / 2., domain_size[1] / 2., 0.])
+        area = domain_size[0] * domain_size[1]
+        # print("Changed domain size to", min_b, max_b, area)
+        mods.pop("domain_size")
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
     x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age)
     trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc, initial_age)
 
     # initialize soil
+    if "bot_bc" in mods:
+        bot_bc = np.array(mods["bot_bc"])
+        mods.pop("bot_bc")
+    else:
+        bot_bc = "potential"
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_,
-                                   bot_bc = "potential", bot_value = 200. - water_table, initial_totalpotential = initial_totalpotential)
-    # s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_, bot_bc = "noFlux", bot_value = 0.)
-    print("soil model set\n", flush = True)
+                                   bot_bc = bot_bc, bot_value = 200. - water_table, initial_totalpotential = initial_totalpotential)
+    # print("soil model set\n", flush = True)
 
     # initialize root system
-    print("starting hydraulic model", flush = True)
-
+    # print("starting hydraulic model", flush = True)
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
-    print("***********************", "hydraulic model set\n", flush = True)
+    # print("***********************", "hydraulic model set\n", flush = True)
 
     if kr_old is not None:
         print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
@@ -84,28 +95,29 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     # params.plot_conductivities(False, lateral_ind = [2, 3])  #
     # dd
-
-    print("conductivities set\n", flush = True)
+    # print("conductivities set\n", flush = True)
 
     """ sanity checks """
     r.test()  # sanity checks
-    print("sanity test done\n", flush = True)
+    # print("sanity test done\n", flush = True)
 
-    pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra_new.simulate_dynamic(
-        s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age, type_ = 1)
+    pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra_new.simulate_dynamic(
+        s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age)
 
     if save_all:
         scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
     else:
-        scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
+        pass
+        # scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
 
-    print("writing parameters", file_name)
+    # print("writing parameters", file_name)
     r.ms.writeParameters("results/" + file_name + ".xml")  # corresponding xml parameter set
-
-    # np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))
     print("finished " + file_name)
 
-    return s, r
+    cu = scipy.integrate.simpson(y_, x = x_)
+    # print("cumulative uptake is", cu, np.sum(np.multiply(y_[1:], np.diff(x_))))
+
+    return cu
 
 
 if __name__ == "__main__":

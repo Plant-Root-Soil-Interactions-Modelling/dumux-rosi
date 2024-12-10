@@ -11,7 +11,7 @@ from functional.Perirhizal import PerirhizalPython
 import evapotranspiration as evap
 
 
-def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age = 1., type_ = 1):
+def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age = 1.):
     """     
     simulates the coupled scenario       
         
@@ -22,15 +22,14 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     dt                           time step
     trans_f                      potential transpiration function 
     initial_age                       initial root system age  
-    type_                        1 = water only, 2 = water and nitrate
     
     return: 
-    psi_x_                       root xylem potential (per node) 
-    psi_s_                       soil matric potential (per cell)
-    sink_                        -  
-    x_                           times
-    y_                           actual transpiration (?)
-    psi_s2_                      sds 
+    psi_x                        root xylem potential (per node) 
+    psi_rsx_                     matric potential at the soil root interface (per segment)
+    sink_                        water uptake (per cell)   
+    times_                       times
+    act_trans_                   actual transpiration 
+    psi_s_                       soil matric potential (per cell) 
     vol_                         root system volume 
     surf_                        root system surface [cm2]
     krs_                         root system hydraulic conductivity [cm2/day]
@@ -39,7 +38,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
     wilting_point = -15000  # cm
     skip = 10  # for output and results, skip iteration (TODO)
-    max_iter = 10  # maximum for fix point iteration
+    matimes_iter = 10  # maximum for fix point iteration
 
     print("simulate_dynamic starting" , flush = True)
     peri = PerirhizalPython(r.ms)
@@ -48,14 +47,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
     start_time = timeit.default_timer()
 
-    psi_x_, psi_s_, sink_ , x_, y_, psi_s2_ = [], [], [], [], [], []  # for post processing
-    net_change = []
-    soil_c_, c_ = [], []
+    psi_x, psi_rsx_, sink_ , times_, act_trans_, psi_s_ = [], [], [], [], [], []  # for post processing
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
-    krs_ = []
-    depth_ = []
-    pot_trans = []
+    net_change_, krs_, depth_, pot_trans_ = [], [], [], []
 
     rs = r.ms
     nodes = rs.nodes
@@ -65,7 +60,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     hsb_ = np.array(rs.getHs(sx))  # matric potential per segment
     rsx = hsb_.copy()  # initial values for fix point iteration
     rx = r.solve(initial_age, trans_f(0, dt), rsx, cells = False)
-    rx_old = rx.copy()
+    rx_ = rx.copy()
 
     N = int(np.ceil(sim_time / dt))  # number of iterations
 
@@ -83,6 +78,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         mapping = rs.getSegmentMapper()  # because seg2cell is a dict
         sx = s.getSolutionHead_()  # richards.py
         hsb_ = np.array(rs.getHs(sx))
+
         hsb_ = np.maximum(hsb_, np.ones(hsb_.shape) * -15000.)  ############################################ (too keep within table)
         hsb_ = np.minimum(hsb_, np.zeros(hsb_.shape))  ############################################ (too keep within table)
 
@@ -93,10 +89,12 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         inner_r = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])  # rs.radii
         types = rs.subTypes
         rho_ = np.divide(outer_r, np.array(inner_r))
+
         rho_ = np.minimum(rho_, np.ones(rho_.shape) * 200)  ############################################ (too keep within table)
 
         kr_ = r.params.getKr(initial_age + t)
         inner_kr_ = np.multiply(inner_r, kr_)  # multiply for table look up; here const
+
         inner_kr_ = np.maximum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-7)  ############################################ (too keep within table)
         inner_kr_ = np.minimum(inner_kr_, np.ones(inner_kr_.shape) * 1.e-4)  ############################################ (too keep within table)
 
@@ -108,9 +106,9 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         c = 0
 
         rx = r.solve(initial_age + t, trans_f(t, dt), rsx, cells = False)
-        rx_old = rx.copy()
+        rx_ = rx.copy()
 
-        while err_ > 1 and c < max_iter:
+        while err_ > 1 and c < matimes_iter:
 
             """ interpolation """
             wall_interpolation = timeit.default_timer()
@@ -126,23 +124,14 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
-            rx = r.solve_again(initial_age + t, trans_f(initial_age + t, dt), rsx, cells = False)
-            err_ = np.linalg.norm(rx - rx_old) / np.sqrt(rx.shape[0])  # rmse
+            rx = r.solve_again(initial_age + t, trans_f(t, dt), rsx, cells = False)
+            err_ = np.linalg.norm(rx - rx_) / np.sqrt(rx.shape[0])  # rmse
             wall_xylem = timeit.default_timer() - wall_xylem
 
-            rx_old = rx.copy()
+            rx_ = rx.copy()
             c += 1
 
         wall_fixpoint = timeit.default_timer() - wall_fixpoint
-
-        # if type_ == 2:
-        #     cc = s.getSolution_(1)  # kg/m3
-        #     rsc = np.array([cc[i] for i in mapping])  # kg/m3
-        #     seg_sol_fluxes = np.array(r.solute_fluxes(rsc))  # [g/day]
-        #     soil_sol_fluxes = r.sumSegFluxes(seg_sol_fluxes)  # [g/day]
-        #     # evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day
-        #     evap.add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.)  # = 1.14e-4 g/day 1.e-7 * (75 * 16 * 1)
-        #     s.setSource(soil_sol_fluxes.copy(), eq_idx = 1)  # [g/day], in moduels/richards.py
 
         wall_soil = timeit.default_timer()
         fluxes = r.radial_fluxes(initial_age + t, rx, rsx)
@@ -151,19 +140,19 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         if err > 1.e-6:
             print("error: summed root surface fluxes and root collar flux differ" , err, r.neumann_ind, collar_flux, np.sum(fluxes))
         if rx[0] > -14999:
-            err2 = np.linalg.norm(trans_f(initial_age + t, dt) - collar_flux)
+            err2 = np.linalg.norm(trans_f(t, dt) - collar_flux)
             if err2 > 1.e-6:
                 print("")
                 print("simulate_dynamic() potential transpiration differs from root collar flux in Neumann case" , err2, rx[0])
-                print("fluxes: ", trans_f(initial_age + t, dt), collar_flux)
+                print("fluxes: ", trans_f(t, dt), collar_flux)
                 print("")
 
         soil_fluxes = r.sumSegFluxes(fluxes.copy())
         s.setSource(soil_fluxes.copy())  # richards.py
 
         water_ = s.getWaterVolume()
-        s.solve(dt)
-        net_change.append(s.getWaterVolume() - water_)
+        s.solve(dt, doMPIsolve_ = False)
+        net_change_.append(s.getWaterVolume() - water_)
 
         # for key, value in cell2seg.items():  # check cell2seg
         #     if key < 0:
@@ -186,9 +175,9 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         # if initial_age + t > 24.5:
         #     pass
         #     min_b = [-19, -2.5, -200.]  # for soybean
-        #     max_b = [19, 2.5, 0.]
+        #     matimes_b = [19, 2.5, 0.]
         #     cell_number = [1, 1, 200]
-        #     vtk.plot_roots_and_soil(rs, "fluxes", fluxes.copy()[1:], s, True, min_b, max_b, cell_number, "nice_plot")
+        #     vtk.plot_roots_and_soil(rs, "fluxes", fluxes.copy()[1:], s, True, min_b, matimes_b, cell_number, "nice_plot")
         #     # vtk.plot_roots(pd, p_name:str, win_title:str = "", render:bool = True):
         #     # ind0 = s.pick([0, 0, -3.5])
         #     # ind1 = s.pick([0, 0, -15.])
@@ -208,14 +197,11 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         sink = np.zeros(sx.shape)
         for k, v in soil_fluxes.items():
             sink[k] += v
-        x_.append(initial_age + t)  # day
-        # y_.append(np.sum(sink))  # cm3/day
-        y_.append(np.sum(fluxes))  # cm3/day
+        times_.append(initial_age + t)  # day
+        # act_trans_.append(np.sum(sink))  # cm3/day
+        act_trans_.append(np.sum(fluxes))  # cm3/day
 
-        pot_trans.append(trans_f(initial_age + t, dt))  # cm3/day
-
-        if type_ == 2:
-            c_.append(-np.sum(seg_sol_fluxes))  # [g/day]
+        pot_trans_.append(trans_f(t, dt))  # cm3/day
 
         if i % skip == 0:
 
@@ -224,11 +210,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
                   "number of segments", rs.getNumberOfSegments(), "collar potential {:g}".format(rx[0]), flush = True)
 
             sink_.append(sink)  # cm3/day (per soil cell)
-
-            psi_s2_.append(sx.copy())  # cm (per soil cell)
-
-            if type_ == 2:
-                soil_c_.append(cc)  # [kg/m3]
+            psi_s_.append(sx.copy())  # cm (per soil cell)
 
             ana = pb.SegmentAnalyser(r.ms.mappedSegments())  # VOLUME and SURFACE
             for j in range(0, 6):  # root types
@@ -241,56 +223,56 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
             depth_.append(ana.getMinBounds().z)
 
             """ direct vtp output """
-            psi_x_.append(rx.copy())  # cm (per root node)
-            psi_s_.append(rsx.copy())  # cm (per root segment)
+            # psi_x.append(rx.copy())  # cm (per root node)
+            # psi_rsx_.append(rsx.copy())  # cm (per root segment)
 
-            rs = r.ms
-            n = len(rs.radii)
-            radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
-            old_radii = rs.radii
-            rs.radii = radii
-            ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
-            rs.radii = old_radii
-            ana.addData("rx", rx[1:])
-            ana.addData("rsx", rsx)
-            ana.addAge(initial_age + t)  # "age"
-            ana.addHydraulicConductivities(r.params, initial_age + t)  # "kr", "kx"
-            ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
-            ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
+            # rs = r.ms
+            # n = len(rs.radii)
+            # radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+            # old_radii = rs.radii
+            # rs.radii = radii
+            # ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
+            # rs.radii = old_radii
+            # ana.addData("rx", rx[1:])
+            # ana.addData("rsx", rsx)
+            # ana.addAge(initial_age + t)  # "age"
+            # ana.addHydraulicConductivities(r.params, initial_age + t)  # "kr", "kx"
+            # ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
+            # ana.write("results/rs{0:05d}.vtp".format(int(i / skip)), ["radius", "subType", "creationTime", "organType", "rx", "rsx", "age", "kr", "kx", "axial_flux", "radial_flux"])
 
-    rs = r.ms
-    n = len(rs.radii)
-    radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
-    rs.radii = radii
-    ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
-    for j in range(0, 6):  # root types
-        anac = pb.SegmentAnalyser(ana)
-        anac.filter("subType", j)
-        vol_[j].append(anac.getSummed("volume"))
-        surf_[j].append(anac.getSummed("surface"))
-    krs, _ = r.get_krs(initial_age + t)
-    krs_.append(krs)  # KRS
-    depth_.append(ana.getMinBounds().z)
-    ana.addData("rx", rx[1:])
-    ana.addData("rsx", rsx)
-    ana.addHydraulicConductivities(r.params, sim_time)
-    ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
-    vtk.plot_roots(ana, "radial_flux")
+    # rs = r.ms
+    # n = len(rs.radii)
+    # radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+    # rs.radii = radii
+    # ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
+    # for j in range(0, 6):  # root types
+    #     anac = pb.SegmentAnalyser(ana)
+    #     anac.filter("subType", j)
+    #     vol_[j].append(anac.getSummed("volume"))
+    #     surf_[j].append(anac.getSummed("surface"))
+    # krs, _ = r.get_krs(initial_age + t)
+    # krs_.append(krs)  # KRS
+    # depth_.append(ana.getMinBounds().z)
+    # ana.addData("rx", rx[1:])
+    # ana.addData("rsx", rsx)
+    # ana.addHydraulicConductivities(r.params, sim_time)
+    # ana.addFluxes(r, rx[1:], rsx, initial_age + t)  # "axial_flux", "radial_flux"
+    # vtk.plot_roots(ana, "radial_flux")
 
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
 
-    psi_x = []  # what do I do with nested arrays?
-    psi_s = []
+    # psi_x = []  # what do I do with nested arrays?
+    # psi_rsx = []
 
-    return pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_
+    return pot_trans_, psi_x, psi_rsx_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_
     """ 
-    pot_trans                    potential transpiration
-    psi_x_                       root xylem potential (per node) 
-    psi_s_                       soil matric potential (per cell)
-    sink_                        -  
-    x_                           times
-    y_                           actual transpiration
-    psi_s2_                      - 
+    pot_trans_                    potential transpiration
+    psi_x                        root xylem potential (per node) 
+    psi_rsx_                     soil matric potential (per segment)
+    sink_                        water uptake (per cell)  
+    times_                       times
+    act_trans_                   actual transpiration
+    psi_s_                       soil matric potentials (per cell) 
     vol_                         root system volume 
     surf_                        root system surface [cm2]
     krs_                         root system hydraulic conductivity [cm2/day]

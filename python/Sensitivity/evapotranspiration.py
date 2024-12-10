@@ -155,10 +155,20 @@ def get_transpiration_beers_csv(start_date, sim_time, area, lai_f, Kc):
 
 
 def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_age):
-    """ calculates transpiration with Beer's law from start_date from a pickle file"""
+    """ ! used by run_sra ! 
+    calculates transpiration with Beer's law from start_date from a pickle file
+        
+    start_date              format '%Y-%m-%d %H:%M:%S'
+    sim_time                maximal simulation time (to calculate end date)
+    area                    soil surface area   
+    lai_f                   time dependent leaf area index (lai_soybean2)   
+    Kc                      crop coefficient  
+    initial_age             initial_age root system age (shifts start and end date)               
+    """
 
     sim_time += initial_age  # root system starts to grow one day earlier (+max dat)
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    start_date = start_date + timedelta(days = initial_age)
     end_date = start_date + timedelta(sim_time + 1, 0)  # +1 just to be sure
     range_ = [str(start_date), str(end_date)]
 
@@ -331,12 +341,11 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc , initial_
     lai_f                   time dependent leaf area index (lai_soybean2)   
     Kc                      crop coefficient  
     initial_age             initial_age root system age (shifts start and end date)   
-    
-    TODO
     """
 
     sim_time += initial_age
     start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    start_date = start_date + timedelta(days = initial_age)
     end_date = start_date + timedelta(sim_time, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
 

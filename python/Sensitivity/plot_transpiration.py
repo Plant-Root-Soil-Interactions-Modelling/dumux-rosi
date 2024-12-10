@@ -17,9 +17,9 @@ Kc_soybean = 1.15
 name = "soybean_water_0"
 name = "local_soybean_noFlux_1"
 name = "local_soybean_1"
-name = "local_singleroot_conductivities64_27"
-name = "soybean_test_0"
-name = "soybean_test_1"
+name = "local_singleroot_conductivities1_1"
+name = "singleroot_test"
+# name = "soybean_test_1"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -89,6 +89,7 @@ dt_ = 360 / (24 * 3600)
 
 alldata = np.load(path + name + ".npz")
 times = alldata["times"]
+times = times - times[0] * np.ones(times.shape)
 pot_trans = alldata["pot_trans"]
 act_trans = alldata["act_trans"]
 print(times)

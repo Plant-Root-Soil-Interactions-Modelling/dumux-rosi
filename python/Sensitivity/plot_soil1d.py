@@ -25,33 +25,28 @@ Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 name = "local_soybean_1"
 name = "soybean_testsingle_0"
 name = "local_singleroot_conductivities64_27"
-name = "soybean_test_0"
+name = "singleroot_test"
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
 ylim_ = None
-sim_time = 87.5
 
 # name = "local_soybean"
 # str_ = "1"
 # Kc = Kc_soybean
 # lai = evap.lai_soybean
 # ylim_ = None
-# sim_time = 87.5
-#
 # name = "maize"
 # str_ = "_sra100"
 # Kc = Kc_maize
 # lai = evap.lai_maize
 # ylim_ = None
-# sim_time = 95
 
 # name = "maize"
 # str_ = "_sra0d"
 # Kc = Kc_maize
 # lai = evap.lai_maize2
 # ylim_ = None  # -10
-# sim_time = 95
 
 fname = name + str_
 
@@ -76,6 +71,7 @@ colors = prop_cycle.by_key()['color']
 """ load data """
 alldata = np.load(path + name + ".npz")
 times = alldata["times"]
+times = times - times[0] * np.ones(times.shape)
 pot_trans = alldata["pot_trans"]
 act_trans = alldata["act_trans"]
 sim_time = np.max(times)
@@ -147,7 +143,7 @@ else:
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
     print("data", data.shape)
     im = ax[1].imshow(data, cmap = cmap_reversed, vmin = -10000, aspect = 'auto', extent = [times[0] , times[-1], -yy, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    ax[1].plot(times[::10], depths[:-1], 'k:')
+    ax[1].plot(times[::10], depths, 'k:')
     x = np.linspace(0, times[-1], data.shape[1])
     y = np.linspace(0, -yy, data.shape[0])
     X, Y = np.meshgrid(x, y)
