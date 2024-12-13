@@ -80,6 +80,43 @@ def printPlantShape(rs,r, results_dir):
     volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
     write_file_array("volOrg", volOrg, directory_ =results_dir)
     
+def printRSShape(rs,r, results_dir):
+    """ store plant shape data after doing growth simulation"""
+    write_file_array('seg2cell_keys',rs.seg2cell,directory_ =results_dir, 
+                             fileType = '.csv')
+    write_file_array('seg2cell_vals',np.array(list(rs.seg2cell.values())),
+                     directory_ =results_dir, fileType = '.csv')
+    write_file_array("organTypes", np.array(rs.organTypes), directory_ =results_dir)
+    write_file_array("subTypes", np.array(r.rs.subTypes), directory_ =results_dir)
+    length_Segs = np.array(r.rs.segLength())
+    write_file_array("length_Segs", length_Segs, directory_ =results_dir)
+    write_file_array("root_radii", np.array(r.rs.radii), directory_ =results_dir)
+    orgs = r.plant.getOrgans(-1, False)
+    #parentorgid = np.array([org.getParent().getId() for org in orgs])
+    #parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
+    #id_orgs = np.array([org.getId() for org in orgs])
+    #ot_orgs = np.array([org.organType() for org in orgs])
+    #st_orgs = np.array([org.getParameter("subType") for org in orgs])
+    #lenOrg = np.array([org.getLength(False) for org in orgs])   
+    #write_file_array("id_orgs", id_orgs, directory_ =results_dir)
+    #write_file_array("ot_orgs", ot_orgs, directory_ =results_dir)
+    #write_file_array("st_orgs", st_orgs, directory_ =results_dir)  
+    #write_file_array("lenOrg", lenOrg, directory_ =results_dir) 
+    #write_file_array("parentNidx", parentNidx, directory_ =results_dir) 
+
+    write_file_array("nodes_X",
+                     np.array([tempnode[0] for tempnode in r.get_nodes()]), 
+                     directory_ =results_dir)
+    write_file_array("nodes_Y", np.array([tempnode[1] for tempnode in r.get_nodes()]), directory_ =results_dir)
+    write_file_array("nodes_Z", np.array([tempnode[2] for tempnode in r.get_nodes()]), directory_ =results_dir)
+    idPerNode = np.concatenate([
+        np.full(org.getNumberOfNodes()-1,org.getId()) for org in orgs]).reshape(-1)
+    globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
+    write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
+    write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
+    volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
+    write_file_array("volOrg", volOrg, directory_ =results_dir)
+    
 def printDiff1d3d(perirhizalModel, s):
     """print differences between 1d and 3d soil models"""
     results_dir = perirhizalModel.results_dir

@@ -256,19 +256,19 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
-        perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
+        if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
+            perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
                                            hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
                                            spellData= perirhizalModel.spellData)
-        if rank==0:
-            # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
-            # , transpiration: {transpiration:.2e} cm3/d
-            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
+            if rank==0:
+                # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+                # , transpiration: {transpiration:.2e} cm3/d
+                print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
         
         
         
-        weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
+            weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
         
-        if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
             PhloemPhotosynthesis.computeAtmosphereData(plantModel, perirhizalModel)
             
         ####

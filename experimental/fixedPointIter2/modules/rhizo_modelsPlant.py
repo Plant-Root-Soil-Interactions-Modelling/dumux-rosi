@@ -1392,45 +1392,55 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.setParameter("Soil.MolarMass", str(self.soilModel.solidMolarMass))
             cyl.setParameter("Soil.solidDensity", str(self.soilModel.solidDensity))
             cyl.setParameter("Flux.UpwindWeight", "1")
-            cyl.setParameter("Soil.betaC", str(self.soilModel.betaC ))
-            cyl.setParameter("Soil.betaO", str(self.soilModel.betaO))
-            cyl.setParameter("Soil.C_S_W_thresC", str(self.soilModel.C_S_W_thresC )) #mol/cm3
-            cyl.setParameter("Soil.C_S_W_thresO", str(self.soilModel.C_S_W_thresO )) #mol/cm3
-            cyl.setParameter("Soil.k_decay", str(self.soilModel.k_decay))
-            cyl.setParameter("Soil.k_decay2", str(self.soilModel.k_decay2 ))
-            cyl.setParameter("Soil.k_DC", str(self.soilModel.k_DC  )) # 1/d
-            cyl.setParameter("Soil.k_DO", str(self.soilModel.k_DO  )) # 1/d
-            cyl.setParameter("Soil.k_growthC", str(self.soilModel.k_growthC))
-            cyl.setParameter("Soil.k_growthO", str(self.soilModel.k_growthO))
-            cyl.setParameter("Soil.K_L", str(self.soilModel.K_L))#[mol/cm3]
-            cyl.setParameter("Soil.k_phi", str(self.soilModel.k_phi ))
-            cyl.setParameter("Soil.k_RC", str(self.soilModel.k_RC))
-            cyl.setParameter("Soil.k_RO", str(self.soilModel.k_RO ))
-
-            cyl.setParameter("Soil.k_SC", str(self.soilModel.k_SC )) #cm^3/mol/d
-            cyl.setParameter("Soil.k_SO", str(self.soilModel.k_SO )) #cm^3/mol/d
             
-            cyl.setParameter("Soil.m_maxC", str(self.soilModel.m_maxC  ))# 1/d
-            cyl.setParameter("Soil.m_maxO", str(self.soilModel.m_maxO  ))# 1/d
-            cyl.setParameter("Soil.micro_maxC", str(self.soilModel.micro_maxC ))# 1/d
-            cyl.setParameter("Soil.micro_maxO", str(self.soilModel.micro_maxO ))# 1/d
-            cyl.setParameter("Soil.v_maxL", str(self.soilModel.v_maxL))#[d-1]
+            if self.soilModel.doSimpleReaction < 1:
+                cyl.setParameter("Soil.betaC", str(self.soilModel.betaC ))
+                cyl.setParameter("Soil.betaO", str(self.soilModel.betaO))
+                cyl.setParameter("Soil.C_S_W_thresC", str(self.soilModel.C_S_W_thresC )) #mol/cm3
+                cyl.setParameter("Soil.C_S_W_thresO", str(self.soilModel.C_S_W_thresO )) #mol/cm3
+                cyl.setParameter("Soil.k_decay", str(self.soilModel.k_decay))
+                cyl.setParameter("Soil.k_decay2", str(self.soilModel.k_decay2 ))
+                cyl.setParameter("Soil.k_DC", str(self.soilModel.k_DC  )) # 1/d
+                cyl.setParameter("Soil.k_DO", str(self.soilModel.k_DO  )) # 1/d
+                cyl.setParameter("Soil.k_growthC", str(self.soilModel.k_growthC))
+                cyl.setParameter("Soil.k_growthO", str(self.soilModel.k_growthO))
+                cyl.setParameter("Soil.K_L", str(self.soilModel.K_L))#[mol/cm3]
+                cyl.setParameter("Soil.k_phi", str(self.soilModel.k_phi ))
+                cyl.setParameter("Soil.k_RC", str(self.soilModel.k_RC))
+                cyl.setParameter("Soil.k_RO", str(self.soilModel.k_RO ))
 
-            cyl.setParameter("Soil.k_sorp", str(self.soilModel.k_sorp)) # mol / cm3 or mol
-            cyl.setParameter("Soil.f_sorp", str(self.soilModel.f_sorp)) #[-]
+                cyl.setParameter("Soil.k_SC", str(self.soilModel.k_SC )) #cm^3/mol/d
+                cyl.setParameter("Soil.k_SO", str(self.soilModel.k_SO )) #cm^3/mol/d
+                
+                cyl.setParameter("Soil.m_maxC", str(self.soilModel.m_maxC  ))# 1/d
+                cyl.setParameter("Soil.m_maxO", str(self.soilModel.m_maxO  ))# 1/d
+                cyl.setParameter("Soil.micro_maxC", str(self.soilModel.micro_maxC ))# 1/d
+                cyl.setParameter("Soil.micro_maxO", str(self.soilModel.micro_maxO ))# 1/d
+                cyl.setParameter("Soil.v_maxL", str(self.soilModel.v_maxL))#[d-1]
 
-            cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
-            cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
-            cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
-            cyl.setParameter("Soil.alpha", str(self.soilModel.alpha)) #[1/d]
+                cyl.setParameter("Soil.k_sorp", str(self.soilModel.k_sorp)) # mol / cm3 or mol
+                cyl.setParameter("Soil.f_sorp", str(self.soilModel.f_sorp)) #[-]
+
+                cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
+                cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
+                cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
+                cyl.setParameter("Soil.alpha", str(self.soilModel.alpha)) #[1/d]
 
 
-            cyl.setParameter("Soil.C_aOLim", str(self.soilModel.C_aOLim)) #[molC/cm3 scv]
-            cyl.setParameter("Soil.C_aCLim", str(self.soilModel.C_aCLim)) #[molC/cm3 scv]
-            cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(self.soilModel.Ds)) #m^2/s
+                cyl.setParameter("Soil.C_aOLim", str(self.soilModel.C_aOLim)) #[molC/cm3 scv]
+                cyl.setParameter("Soil.C_aCLim", str(self.soilModel.C_aCLim)) #[molC/cm3 scv]
+                cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(self.soilModel.Ds)) #m^2/s
 
-            cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(self.soilModel.Dl)) #m^2/s
-            
+                cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(self.soilModel.Dl)) #m^2/s
+            else: 
+                cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(self.soilModel.Ds)) #m^2/s
+                
+                cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
+                cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
+                cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
+                
+                cyl.setParameter("Soil.CSSmax", str(self.soilModel.Vmax)) #mol C / m^3 scv / s
+                cyl.setParameter("Soil.CSSmax", str(self.soilModel.Km)) #mol C / m^3 scv
 
             
             for j in range( 1, self.numComp):
@@ -1495,9 +1505,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.solidDensity =self.soilModel.solidDensity 
             cyl.solidMolarMass =self.soilModel.solidMolarMass
             cyl.solidMolDensity =self.soilModel.solidMolDensity         
-            cyl.k_sorp =self.soilModel.k_sorp               
-            cyl.CSSmax = self.soilModel.CSSmax               
-            cyl.f_sorp =self.soilModel.f_sorp    
+            if self.soilModel.doSimpleReaction < 1:
+                cyl.k_sorp =self.soilModel.k_sorp 
+                cyl.f_sorp =self.soilModel.f_sorp            
+            cyl.CSSmax = self.soilModel.CSSmax                   
             cyl.css1Function = self.soilModel.css1Function
             cyl.ddt = 1.e-3
             cyl.gId = gId    
@@ -1551,7 +1562,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             raise Exception
             return []
 
-
+    def get_inner_heads_RS(self):#        
+        """ matric potential at the root surface interface [cm]"""
+        rsx = np.array([
+            cyl.getInnerHead() for cyl in self.cyls
+        ])  # [cm] (in richards.py, then richards_cyl.hh) 
+        
+        inner_heads= self.gather( rsx)#_flat0(comm)) #self._map(# gathers and maps correctly
+        return inner_heads
 
     def get_inner_heads(self,  weather:dict={}):#        
         """ matric potential at the root surface interface [cm]"""
@@ -1695,7 +1713,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
         for nc in range(self.numDissolvedSoluteComp):
             divideQout = outer_fluxes_solMucilbu[nc] if outer_fluxes_solMucilbu[nc] != 0 else 1
-            if verbose or (abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100 > 1.):
+
+
+            #print('here', outer_fluxes_solMucil[nc],outer_fluxes_solMucilbu[nc])
+            #if verbose or (abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100 > 1.):
+            if (abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100 > 1.):
                 print('rhizo_modelsPlant::_calculate_and_set_initial_solute_flows, gId',gId,
                       ' qIn',qIn_solMucil, 
                 inner_fluxes_solMucil,'qout', QflowOutCellLim,outer_fluxes_solMucil,
@@ -1850,9 +1872,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             proposed_outer_fluxes_mucil: 1d-3d or 1d-1d large C molecul exchanges,  [mol C day-1] 
         """
 
-        inner_fluxes_water, outer_fluxes_water = self._calculate_and_set_initial_water_flows(cyl,dt, inner_fluxes, outer_fluxes, verbose)
-          
-         
+        inner_fluxes_water, outer_fluxes_water = self._calculate_and_set_initial_water_flows(cyl,dt, inner_fluxes, outer_fluxes, verbose) 
+        
+        
         inner_fluxes_solMucil, outer_fluxes_solMucil = self._calculate_and_set_initial_solute_flows(cyl, dt, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil, verbose)    
             
         

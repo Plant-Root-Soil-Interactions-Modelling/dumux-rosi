@@ -372,15 +372,17 @@ def saveData(plantModel, perirhizalModel, s):
     # save data before entering iteration loop
     s.saveManual()
     perirhizalModel.saveManual()
-    perirhizalModel.leftSpellBU = perirhizalModel.leftSpell
-    perirhizalModel.enteredSpellBU = perirhizalModel.enteredSpell
+    if s.doSimpleReaction < 1:
+        perirhizalModel.leftSpellBU = perirhizalModel.leftSpell
+        perirhizalModel.enteredSpellBU = perirhizalModel.enteredSpell
 
 def resetData(plantModel, perirhizalModel, s):
 
     s.resetManual()
     perirhizalModel.resetManual()
-    perirhizalModel.leftSpell = perirhizalModel.leftSpellBU
-    perirhizalModel.enteredSpell = perirhizalModel.enteredSpellBU
+    if s.doSimpleReaction < 1:
+        perirhizalModel.leftSpell = perirhizalModel.leftSpellBU
+        perirhizalModel.enteredSpell = perirhizalModel.enteredSpellBU
 
     # to get the error values for the old solution vector
     perirhizalModel.check1d3dDiff()

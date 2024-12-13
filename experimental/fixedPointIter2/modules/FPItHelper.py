@@ -212,7 +212,10 @@ class fixedPointIterationHelper():
         #self.comp2contentOld = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
         
         # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
-        self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
+        if self.s.doSimpleReaction < 1:
+            self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
+        else: 
+            self.rsx_init  = self.perirhizalModel.get_inner_heads_RS() # ???? what is correct??? from transüiration data?  store value at beginning time step    
         self.rsx_input = self.rsx_init # rsx used as input
         self.rsx_old = self.rsx_input.copy() # rsx used to compute convergence rate
         self.rsx_olds = []#[self.rsx_input.copy()] # rsx used to compute convergence rate
@@ -748,7 +751,10 @@ class fixedPointIterationHelper():
         plantModel = self.plantModel
         
         # convergence wat. pot. at root-soil interface
-        rsx = perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX)
+        if s.doSimpleReaction<1: 
+            rsx = perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX)
+        else: 
+            rsx = perirhizalModel.get_inner_heads()
 
         if rank == 0:
             # convergence plant wat. pot
