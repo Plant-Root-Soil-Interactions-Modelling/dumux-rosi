@@ -89,7 +89,6 @@ dt_ = 360 / (24 * 3600)
 
 alldata = np.load(path + name + ".npz")
 times = alldata["times"]
-times = times - times[0] * np.ones(times.shape)
 pot_trans = alldata["pot_trans"]
 act_trans = alldata["act_trans"]
 print(times)

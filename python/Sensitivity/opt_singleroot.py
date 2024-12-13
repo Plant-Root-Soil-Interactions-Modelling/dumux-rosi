@@ -33,12 +33,14 @@ def objective_function(x):
 
     mods = {
     "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-    "initial_age": 1.,  # TODO need to check with plots, and net_inf, trans_f
-    "initial_totalpotential":-500,
-    "domain_size": [1., 1., 200.]
+    "initial_age": 1.,
+    "initial_totalpotential":-500
+    # "domain_size": [10., 10., 200.]
     }
-
-    cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = False)
+    try:
+        cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = False)
+    except:
+        cu = 1.e6  # bad
 
     return cu
 
@@ -49,10 +51,10 @@ def get_bounds():
     # kx_old = np.array([0.35])
     # kr = np.array([1.e-3])
     # kr_old = np.array([5e-4])
-    kr = [0., 1.]
-    kr_old = [0., 1.]
-    kx = [0., 1.]
-    kx_old = [0., 1.]
+    kr = [1.e-6, 1.]
+    kr_old = [1.e-6, 1.]
+    kx = [1.e-6, 1.]
+    kx_old = [1.e-6, 1.]
 
     return [kr, kr_old, kx, kx_old]
 

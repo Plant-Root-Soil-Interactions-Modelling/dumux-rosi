@@ -196,6 +196,7 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
     #               [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
+# scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
 def init_lupine_conductivities_sa(r, ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, ykx2, okx2, kx3_):
     """ 10 variable set up for sensitivity analysis"""
     kr00 = np.array([[0., 0.]])  # artificial shoot
@@ -232,28 +233,18 @@ def init_lupine_conductivities2(r, skr = 1., skx = 1.):
                   [kx00[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0], kx[:, 0]])
 
 
-def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_):
+def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_):
     """  saves numpy arrays in a npz file """
-    np.savez("results/" + file_name, pot_trans = np.array(pot_trans_), psi_x = psi_x_, psi_rs = psi_i_, sink = sink_, times = times_,
-             act_trans = act_trans_, psi_s = psi_s_, vol = vol_, surf = surf_, krs = krs_, depth = depth_)
+    np.savez("results/" + file_name,
+             pot_trans = np.array(pot_trans_),
+             psi_x = psi_x_,
+             psi_rs = psi_i_,
+             sink = sink_,
+             times = times_,
+             act_trans = act_trans_,
+             psi_s = psi_s_,
+             vol = vol_, surf =
+             surf_, krs = krs_,
+             depth = depth_,
+             collar_pot = collar_pot_)
 
-
-def write_files(file_name, psi_x, psi_i, sink, times, trans, psi_s, vol_, surf_, krs_, depth_, conc = None, c_ = None):  ###### TODO change to savez #######
-    """  saves numpy arrays as npy files """
-
-    print("depricated")
-    dd
-
-    np.save('results/psix_' + file_name, np.array(psi_x))  # xylem pressure head per segment [cm]
-    np.save('results/psiinterface_' + file_name, np.array(psi_i))  # pressure head at interface per segment [cm]
-    np.save('results/sink_' + file_name, -np.array(sink))  # sink per segment [cm3/day]
-    np.save('results/transpiration_' + file_name, np.vstack((times, -np.array(trans))))  # time [day], transpiration [cm3/day]
-    np.save('results/soil_' + file_name, np.array(psi_s))  # soil potential per cell [cm]
-    np.save('results/vol_' + file_name, np.array(vol_))  # volume per subType [cm3]
-    np.save('results/surf_' + file_name, np.array(surf_))  # surface per subType [cm2]
-    np.save('results/krs_' + file_name, np.array(krs_))  # soil potential per cell [cm2/day]
-    np.save('results/depth_' + file_name, np.array(depth_))  # root system depth [cm]
-    if conc is not None:
-        np.save('results/soilc_' + file_name, np.array(conc))  # soil potential per cell [cm]
-    if c_ is not None:
-        np.save('results/nitrate_' + file_name, np.array(c_))  # soil potential per cell [cm]

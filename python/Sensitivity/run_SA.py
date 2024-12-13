@@ -68,8 +68,8 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     run_local                if True calls pyhton3, else for cluster calls sbatch
     """
     job_directory = os.path.join(os.getcwd(), file_name)
-    mkdir_p(job_directory)
-    print(job_directory)
+    # mkdir_p(job_directory)
+    # print(job_directory)
     jobs = np.array(jobs)
 
     for job in jobs:
@@ -79,7 +79,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
 
         if run_local:
 
-            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}& \n".
                               format(type_str, job_name, enviro_type, sim_time, *job[1:]))
         else:
             job_file = os.path.join(job_directory, job_name + ".job")

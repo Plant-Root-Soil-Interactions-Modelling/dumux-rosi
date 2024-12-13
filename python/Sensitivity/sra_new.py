@@ -51,6 +51,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     vol_ = [[], [], [], [], [], []]
     surf_ = [[], [], [], [], [], []]
     net_change_, krs_, depth_, pot_trans_ = [], [], [], []
+    collar_pot_ = []
 
     rs = r.ms
     nodes = rs.nodes
@@ -200,6 +201,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
         times_.append(initial_age + t)  # day
         # act_trans_.append(np.sum(sink))  # cm3/day
         act_trans_.append(np.sum(fluxes))  # cm3/day
+        collar_pot_.append(rx[0])
 
         pot_trans_.append(trans_f(t, dt))  # cm3/day
 
@@ -264,7 +266,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     # psi_x = []  # what do I do with nested arrays?
     # psi_rsx = []
 
-    return pot_trans_, psi_x, psi_rsx_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_
+    return pot_trans_, psi_x, psi_rsx_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_
     """ 
     pot_trans_                    potential transpiration
     psi_x                        root xylem potential (per node) 
@@ -277,4 +279,5 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
     surf_                        root system surface [cm2]
     krs_                         root system hydraulic conductivity [cm2/day]
     depth_                       root system depth [cm]
+    collar_pot_                  root collar potential [cm]  
     """

@@ -100,12 +100,19 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     """ sanity checks """
     r.test()  # sanity checks
     # print("sanity test done\n", flush = True)
-
-    pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_ = sra_new.simulate_dynamic(
-        s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age)
+    try:
+        pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_ = sra_new.simulate_dynamic(
+            s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age)
+    except:
+        print("***********************")
+        print("EXCEPTION run_soybean", file_name, enviro_type, sim_time)
+        print(mods)
+        print(kr, kx)
+        print("***********************", flush = True)
+        raise
 
     if save_all:
-        scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_)
+        scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
     else:
         pass
         # scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
@@ -114,7 +121,9 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     r.ms.writeParameters("results/" + file_name + ".xml")  # corresponding xml parameter set
     print("finished " + file_name)
 
-    cu = scipy.integrate.simpson(y_, x = x_)
+    cu = scipy.integrate.simpson(y_, x = x_)  # cumulative uptake
+    mean_pot = np.mean(collar_pot_)  # mean collar potential
+
     # print("cumulative uptake is", cu, np.sum(np.multiply(y_[1:], np.diff(x_))))
 
     return cu
@@ -195,8 +204,9 @@ if __name__ == "__main__":
 
         mods = {
         "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-        "initial_age": 1.,  # TODO need to check with plots, and net_inf, trans_f
+        "initial_age": 1.,
         "initial_totalpotential":-500
+        # "domain_size": [10., 10., 200.]
         }
 
         run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
