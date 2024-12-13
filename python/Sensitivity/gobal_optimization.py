@@ -52,7 +52,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local):
     starts the optimizer
     """
     iterations = 10
-    points_per_iteration = 4
+    points_per_iteration = 64
 
     for i in range(0, iterations):
 
@@ -98,9 +98,9 @@ def experiment_singleroot():
 
     type_str = "singleroot_conductivities10"  # change experimental setup in run_sra.py
     enviro_type = 0
-    sim_time = 80.
+    sim_time = 10.
 
-    acquisition_function = acquisition.UpperConfidenceBound(kappa = 10.)
+    # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
 
     pbounds = {
         'kr_young': (1.e-6, 1.),
@@ -113,7 +113,7 @@ def experiment_singleroot():
 
     optimizer = BayesianOptimization(
         f = None,  # dummy (never called)
-        acquisition_function = acquisition_function,
+        # acquisition_function = acquisition_function,
         pbounds = pbounds,
         verbose = 2,  # verbose = 1 prints only when a maximum is observed, verbose = 0 is silent
         random_state = 1,
@@ -126,7 +126,7 @@ def experiment_singleroot():
     # start_objective(type_str, enviro_type, sim_time, job, True)
     # print(finished_objective(type_str, enviro_type, sim_time, job))
 
-    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = True)
+    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = False)
 
     print("\n ... and the answer is")
     print(optimizer.max)
