@@ -6,7 +6,7 @@ import numpy as np
 from bayes_opt import BayesianOptimization
 from bayes_opt.logger import JSONLogger
 from bayes_opt.event import Events
-from bayes_opt import acquisition
+# from bayes_opt import acquisition
 
 import run_SA
 
