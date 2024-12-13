@@ -68,8 +68,9 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     run_local                if True calls pyhton3, else for cluster calls sbatch
     """
     job_directory = os.path.join(os.getcwd(), file_name)
-    # mkdir_p(job_directory)
-    # print(job_directory)
+    if not run_local:
+        mkdir_p(job_directory)
+
     jobs = np.array(jobs)
 
     for job in jobs:
