@@ -128,7 +128,7 @@ def experiment_singleroot():
     # start_objective(type_str, enviro_type, sim_time, job, True)
     # print(finished_objective(type_str, enviro_type, sim_time, job))
 
-    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = True)
+    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = False)
 
     print("\n ... and the answer is")
     print(optimizer.max)
