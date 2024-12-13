@@ -1,3 +1,5 @@
+import sys; sys.path.append("../../../BayesianOptimization")
+
 import scipy
 import os
 import time
@@ -6,7 +8,7 @@ import numpy as np
 from bayes_opt import BayesianOptimization
 from bayes_opt.logger import JSONLogger
 from bayes_opt.event import Events
-# from bayes_opt import acquisition
+from bayes_opt import acquisition
 
 import run_SA
 
@@ -126,7 +128,7 @@ def experiment_singleroot():
     # start_objective(type_str, enviro_type, sim_time, job, True)
     # print(finished_objective(type_str, enviro_type, sim_time, job))
 
-    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = False)
+    run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local = True)
 
     print("\n ... and the answer is")
     print(optimizer.max)
