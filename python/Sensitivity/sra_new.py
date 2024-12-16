@@ -268,7 +268,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
     return pot_trans_, psi_x, psi_rsx_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_
     """ 
-    pot_trans_                    potential transpiration
+    pot_trans_                   potential transpiration
     psi_x                        root xylem potential (per node) 
     psi_rsx_                     soil matric potential (per segment)
     sink_                        water uptake (per cell)  

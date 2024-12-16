@@ -46,7 +46,7 @@ def get_objective(type_str, enviro_type, sim_time, job):
     collar_pot_ = alldata["collar_pot"]
     mean_pot = np.mean(collar_pot_)  # mean collar potential over time
 
-    return mean_pot  # cu, mean_pot
+    return cu  # cu, mean_pot
 
 
 def run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local):
@@ -85,10 +85,6 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, run_local):
 # def run_otpimizer_async (if one is finished, start next suggestion)
 
 
-def run_otpimizer_sbatch():
-    pass
-
-
 def params_as_tuple(p, type_str, enviro_type, sim_time):
     if type_str == "singleroot_conductivities10":
         return tuple([0., p["kr_young"], p["kr_old"], p["kx_young"], p["kx_old"], 0., 0., 0., 0., 0., 0., enviro_type, sim_time])  # first parameter is id in run_SA
@@ -100,7 +96,7 @@ def experiment_singleroot():
 
     type_str = "singleroot_conductivities10"  # change experimental setup in run_sra.py
     enviro_type = 0
-    sim_time = 10.
+    sim_time = 80.
 
     # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
 

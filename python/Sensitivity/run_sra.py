@@ -71,7 +71,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     # initialize soil
     if "bot_bc" in mods:
-        bot_bc = np.array(mods["bot_bc"])
+        bot_bc = mods["bot_bc"]
         mods.pop("bot_bc")
     else:
         bot_bc = "potential"
@@ -205,8 +205,9 @@ if __name__ == "__main__":
         mods = {
         "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
         "initial_age": 1.,
-        "initial_totalpotential":-500
-        # "domain_size": [10., 10., 200.]
+        "initial_totalpotential":-1000,
+        "domain_size": [1., 1., 200.],
+        "bot_bc": "noFlux"
         }
 
         run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)

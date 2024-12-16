@@ -27,25 +27,26 @@ kr_old = np.zeros((2,))
 kx = np.zeros((3,))
 kx_old = np.zeros((2,))
 
-# 0.46099626 0.48455621 0.94957632 0.08700488
-kr[0] = float(0.46099626)
-kr_old[0] = float(0.48455621)
-kx[0] = float(0.94957632)
-kx_old[0] = float(0.08700488)
+# # dict = {'target': np.float64(-82.46445584745524), 'params': {'kr_old': np.float64(0.5116869897382039), 'kr_young': np.float64(0.0034975618797799743), 'kx_old': np.float64(0.023425562579446186), 'kx_young': np.float64(0.9137659997167616)}}
+# dict_ = {'target': np.float64(-2389.686317347679), 'params': {'kr_old': np.float64(0.8738806656367334), 'kr_young': np.float64(0.9174124387499213), 'kx_old': np.float64(0.13290837152096602), 'kx_young': np.float64(0.9973715609813951)}}  # 80 days
+# dict_ = {'target': np.float64(-1158.4424888284882), 'params': {'kr_old': np.float64(0.679069157496593), 'kr_young': np.float64(0.9186018593757479), 'kx_old': np.float64(0.0004030244893325418), 'kx_young': np.float64(0.9767591722719107)}}
+# p = dict_["params"]
+# kr[0] = p["kr_young"]
+# kr_old[0] = p["kr_old"]
+# kx[0] = p["kx_young"]
+# kx_old[0] = p["kx_old"]
 
-# dict = {'target': np.float64(-82.46445584745524), 'params': {'kr_old': np.float64(0.5116869897382039), 'kr_young': np.float64(0.0034975618797799743), 'kx_old': np.float64(0.023425562579446186), 'kx_young': np.float64(0.9137659997167616)}}
-dict = {'target': np.float64(-2389.686317347679), 'params': {'kr_old': np.float64(0.8738806656367334), 'kr_young': np.float64(0.9174124387499213), 'kx_old': np.float64(0.13290837152096602), 'kx_young': np.float64(0.9973715609813951)}}  # 80 days
-p = dict["params"]
-kr[0] = p["kr_young"]
-kr_old[0] = p["kr_old"]
-kx[0] = p["kx_young"]
-kx_old[0] = p["kx_old"]
+kx = [0.1, 1.e-3, 1.e-3]
+kx_old = [0.35, 0.015]
+kr = [1.e-3, 4.e-3, 4.e-3]
+kr_old = [5e-4, 0.0015]
 
 mods = {
 "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
 "initial_age": 1.,
-"initial_totalpotential":-500
-# "domain_size": [10., 10., 200.]
+"initial_totalpotential":-1000,
+"domain_size": [1., 1., 200.],
+"bot_bc": "noFlux"
 }
 
 cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
