@@ -34,7 +34,7 @@ def plot_soil(sim_time, times, net_inf, h, soil_times, top, top2):
     fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1.5, 3]})
     bar = ax[0].bar(times[::2], np.array(net_inf[::2]) * 10, 100 * 0.8 / len(times[::2]))  # cm -> mm
     ax[0].plot(soil_times, -10.*top, "r:")
-    ax[0].plot(soil_times, -10.*top, "g:")
+    ax[0].plot(soil_times, -10.*top2, "g:")
     ax[0].set_ylabel("net inf [mm/day]")
     ax[0].set_xlim(times[0], times[-1])
     divider = make_axes_locatable(ax[0])
@@ -161,7 +161,7 @@ if __name__ == '__main__':
     print("balances (should be 0)", (water - water0) + topflux * area - botflux * area, "cm3")
     print()
 
-    plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), -top_new[:, 2])
+    plot_soil(sim_time, times, net_inf, h, soil_times, np.array(top_), top_new[:, 2])
 
     # print()
     #

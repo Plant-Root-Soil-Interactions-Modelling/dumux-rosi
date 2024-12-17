@@ -18,7 +18,7 @@ import run_sra
 
 import numpy as np
 
-sim_time = 80  # 87.
+sim_time = 10  # 87.
 enviro_type = 0
 file_name = "singleroot_test"
 
@@ -30,21 +30,22 @@ kx_old = np.zeros((2,))
 # # dict = {'target': np.float64(-82.46445584745524), 'params': {'kr_old': np.float64(0.5116869897382039), 'kr_young': np.float64(0.0034975618797799743), 'kx_old': np.float64(0.023425562579446186), 'kx_young': np.float64(0.9137659997167616)}}
 # dict_ = {'target': np.float64(-2389.686317347679), 'params': {'kr_old': np.float64(0.8738806656367334), 'kr_young': np.float64(0.9174124387499213), 'kx_old': np.float64(0.13290837152096602), 'kx_young': np.float64(0.9973715609813951)}}  # 80 days
 # dict_ = {'target': np.float64(-1158.4424888284882), 'params': {'kr_old': np.float64(0.679069157496593), 'kr_young': np.float64(0.9186018593757479), 'kx_old': np.float64(0.0004030244893325418), 'kx_young': np.float64(0.9767591722719107)}}
-# p = dict_["params"]
-# kr[0] = p["kr_young"]
-# kr_old[0] = p["kr_old"]
-# kx[0] = p["kx_young"]
-# kx_old[0] = p["kx_old"]
+dict_ = {'target': np.float64(41.86134877826826), 'params': {'kr_old': np.float64(0.9501761690709605), 'kr_young': np.float64(0.5566536315419682), 'kx_old': np.float64(0.9156064341599248), 'kx_young': np.float64(0.6415665673801286)}}
+p = dict_["params"]
+kr[0] = p["kr_young"] * 0.1
+kr_old[0] = p["kr_old"] * 0.1
+kx[0] = p["kx_young"]
+kx_old[0] = p["kx_old"]
 
-kx = [0.1, 1.e-3, 1.e-3]
-kx_old = [0.35, 0.015]
-kr = [1.e-3, 4.e-3, 4.e-3]
-kr_old = [5e-4, 0.0015]
+# kx = np.array([0.1, 1.e-3, 1.e-3])
+# kx_old = np.array([0.35, 0.015])
+# kr = np.array([1.e-3, 4.e-3, 4.e-3])
+# kr_old = np.array([5e-4, 0.0015])
 
 mods = {
 "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
 "initial_age": 1.,
-"initial_totalpotential":-1000,
+"initial_totalpotential":-100,
 "domain_size": [1., 1., 200.],
 "bot_bc": "noFlux"
 }

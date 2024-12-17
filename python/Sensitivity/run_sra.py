@@ -77,6 +77,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
         bot_bc = "potential"
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_,
                                    bot_bc = bot_bc, bot_value = 200. - water_table, initial_totalpotential = initial_totalpotential)
+    water0 = s.getWaterVolume()
     # print("soil model set\n", flush = True)
 
     # initialize root system
@@ -124,7 +125,10 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     cu = scipy.integrate.simpson(y_, x = x_)  # cumulative uptake
     mean_pot = np.mean(collar_pot_)  # mean collar potential
 
-    # print("cumulative uptake is", cu, np.sum(np.multiply(y_[1:], np.diff(x_))))
+    water_end = s.getWaterVolume()
+
+    print("cumulative uptake is", cu, np.sum(np.multiply(y_[1:], np.diff(x_))))
+    print("net water change is", water_end - water0)
 
     return cu
 
