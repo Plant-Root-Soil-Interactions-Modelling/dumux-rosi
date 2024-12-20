@@ -67,7 +67,13 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
 
     start_date = '2021-05-10 00:00:00'  # INARI csv data
     x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_soybean2, Kc, initial_age)
-    trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc, initial_age)
+    trans_soybean = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_soybean2, Kc, initial_age)  # lambda t, d
+    if "scale_trans" in mods:
+        scale_trans = mods["scale_trans"]
+        trans_ = lambda t, dt: trans_soybean(t, dt) * scale_trans
+        mods.pop("scale_trans")
+    else:
+        trans_ = trans_soybean
 
     # initialize soil
     if "bot_bc" in mods:
@@ -103,7 +109,7 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
     # print("sanity test done\n", flush = True)
     try:
         pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_ = sra_new.simulate_dynamic(
-            s, r, table_name, sim_time, dt, trans_soybean, initial_age = initial_age)
+            s, r, table_name, sim_time, dt, trans_, initial_age = initial_age)
     except:
         print("***********************")
         print("EXCEPTION run_soybean", file_name, enviro_type, sim_time)
