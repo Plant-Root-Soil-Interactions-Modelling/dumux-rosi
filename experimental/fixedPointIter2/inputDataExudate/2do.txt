@@ -1,2 +1,3 @@
 FPitHelper: line 218
-PhloemPhotosynthesis: lien 379
+PhloemPhotosynthesis: line 379
+FPitHelper: line 186,187 --> mol/d and not mol/cm^2 seg / d

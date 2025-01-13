@@ -47,12 +47,11 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             # 1.1 plant water flow (and photosynthesis)
             ##
             
-            
             plantModel.time_start_plant = timeit.default_timer() # to compute time spent in water flow simulation
             
-            
+
             PhloemPhotosynthesis.computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
-            
+
             # store time spent in computing plant water flow
             plantModel.time_plant_cumulW += (timeit.default_timer() - plantModel.time_start_plant)
             
@@ -64,7 +63,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             ##
             
             fpit_Helper.distribute3dto1dFlows(rs_age_i_dt, dt)
-            
+
             
             ##
             # 2.2 reset 1d models + store data before solve, for post processing
@@ -79,7 +78,6 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             else:
                 FPItHelper.storeOldMassData1d(perirhizalModel)
                     
-                
             
 
             ##
@@ -90,7 +88,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             
             if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
                     print("\t\tsolve all 1d soils ")
-                    
+
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
                                   fpit_Helper.proposed_outer_fluxes, # outer BC water
@@ -101,7 +99,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                                   # solute 2
                                   # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
-            
+
             if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
                     print("\t\tsolve all 1d soils finished")
                     
@@ -109,8 +107,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             
             fpit_Helper.storeLimitedFluxes() # store actual BC of 1d models (to compare with prescribed BC)
             
-            
-            
+
+
             ##
             # 2.4 data after, for post processing
             ##
@@ -201,6 +199,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     results_dir = s.results_dir
     cell_volumes = s.getCellVolumes() #cm3    
     N = int(np.ceil(sim_time / dt))  # number of iterations
+    
      
     # max num of iteration needed for the fixed-point iteration loop. used by @see helpfull::suggestNumStepsChange
     n_iter_inner_max = 0  
@@ -212,8 +211,9 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         print("cylVol",cylVol)
         print("perirhizalModel.rhizoVol",perirhizalModel.rhizoVol)
         print("perirhizalModel.eidx_all_",perirhizalModel.eidx_all_)
-        
-    airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
+    
+    if perirhizalModel.plant_or_RS == 0:
+        airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
     rhizoSegsId = perirhizalModel.rhizoSegsId # id of plant segments WITH perirhizal zones   
     cellIds = perirhizalModel.cellWithRoots # only id of cells with roots
     emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
@@ -230,25 +230,27 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     if len(Q_Exud_i) > 0: # resize vector if needed
         Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
         Q_mucil_i.resize(len(organTypes), refcheck=False)
-        try:
-            # make sure that no exudation in shoot segments or roots aboveground
-            assert (Q_Exud_i[airSegsId] == 0).all()
-            assert (Q_mucil_i[airSegsId] == 0).all()
-        except:
-            print(Q_Exud_i[airSegsId] )
-            print(Q_mucil_i[airSegsId])
-            print(organTypes[airSegsId])
-            raise Exception
+        
+        if plant_or_RS == 0:
+            try:
+                # make sure that no exudation in shoot segments or roots aboveground
+                assert (Q_Exud_i[airSegsId] == 0).all()
+                assert (Q_mucil_i[airSegsId] == 0).all()
+            except:
+                print(Q_Exud_i[airSegsId] )
+                print(Q_mucil_i[airSegsId])
+                print(organTypes[airSegsId])
+                raise Exception
     else:# first loop: create array of 0
         Q_Exud_i = np.full(len(organTypes),0.)
         Q_mucil_i = np.full(len(organTypes),0.)
+
 
     # first loop: create array of 0
     if(len(outer_R_bc_sol[0]) == 0):
         outer_R_bc_sol = np.full((perirhizalModel.numSoluteComp,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
         outer_R_bc_wat = np.full(cell_volumes.shape, 0.)     
-        
         
         
     """ simualtion loop """
@@ -337,7 +339,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                     
             assert not failedInnerLoop
 
-                
+   
             """ 3. global soil models (3DS)"""
             
             ##

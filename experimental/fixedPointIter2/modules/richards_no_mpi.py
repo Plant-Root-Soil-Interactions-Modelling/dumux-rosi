@@ -91,7 +91,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
-        """                            
+        """   
         self.base.solveNoMPI(dt * 24.*3600., saveInnerDumuxValues =
         saveInnerDumuxValues_)  # days -> s
 

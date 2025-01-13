@@ -117,6 +117,7 @@ def storeOldMassData3d(s,perirhizalModel):
     # 3d soil solute content per solute type and voxel
     perirhizalModel.totC3dBefore_eachVoxeleachComp = s.getTotCContent_each() 
 
+
     if rank ==0:
         perirhizalModel.soil_water3dBefore = np.multiply(water_content, s.CellVolumes)  # water per cell [cm3]
         perirhizalModel.totC3dBefore = np.sum(perirhizalModel.totC3dBefore_eachVoxeleachComp)
@@ -172,7 +173,8 @@ class fixedPointIterationHelper():
         self.plantModel = plantModel
         self.numSegs = len(np.asarray(plantModel.rs.organTypes, int))
         
-        self.airSegsId = self.perirhizalModel.airSegs
+        if perirhizalModel.plant_or_RS == 0:
+            self.airSegsId = self.perirhizalModel.airSegs
         self.cylVol = cylVol
         self.emptyCells = emptyCells
         self.cell_volumes = s.CellVolumes 
@@ -358,7 +360,6 @@ class fixedPointIterationHelper():
         self.proposed_outer_sol_fluxes = proposed_outer_sol_fluxes#comm.bcast(, root = 0)
         self.proposed_outer_mucil_fluxes = proposed_outer_mucil_fluxes#comm.bcast(, root = 0)
         
-        
     def getCyldatafor3d1dFlow(self, rs_age_i_dt, dt):
         perirhizalModel = self.perirhizalModel
 
@@ -457,12 +458,13 @@ class fixedPointIterationHelper():
                                                                    idCyll_=None, doSum = False, reOrder = True) 
 
         if rank ==0:
-            if len(self.airSegsId)>0:                
-                try:
-                    assert (self.seg_fluxes_limited[self.airSegsId] == self.seg_fluxes[self.airSegsId]).all()
-                except:
-                    print('seg_fluxes_limited vs seg_flux', self.seg_fluxes_limited[self.airSegsId] - self.seg_fluxes[self.airSegsId])
-                    raise Exception
+            if perirhizalModel.plant_or_RS == 0:
+                if len(self.airSegsId)>0:                
+                    try:
+                        assert (self.seg_fluxes_limited[self.airSegsId] == self.seg_fluxes[self.airSegsId]).all()
+                    except:
+                        print('seg_fluxes_limited vs seg_flux', self.seg_fluxes_limited[self.airSegsId] - self.seg_fluxes[self.airSegsId])
+                        raise Exception
 
             # get limited vs real boundary fluxes. if we always have a difference, the loop failes        
             perirhizalModel.SinkLim1DS =max( abs((self.seg_fluxes_limited - self.seg_fluxes)/ 
@@ -754,7 +756,7 @@ class fixedPointIterationHelper():
         if s.doSimpleReaction<1: 
             rsx = perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX)
         else: 
-            rsx = perirhizalModel.get_inner_heads()
+            rsx = perirhizalModel.get_inner_heads_RS()
 
         if rank == 0:
             # convergence plant wat. pot
@@ -898,7 +900,8 @@ class fixedPointIterationHelper():
         if rank == 0:
             perirhizalModel = self.perirhizalModel
             rhizoSegsId = perirhizalModel.rhizoSegsId # plant segments with a rhizosphere model
-            airSegsId = self.airSegsId
+            if perirhizalModel.plant_or_RS == 0:
+                airSegsId = self.airSegsId
 
             ############ solutes
             # get error according to the 'limited' (== realised ) boundary fluxes

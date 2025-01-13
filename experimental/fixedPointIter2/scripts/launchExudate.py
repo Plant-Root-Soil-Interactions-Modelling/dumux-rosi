@@ -6,6 +6,6 @@ import mainExudate
 
 #spellData = {'scenario': 'none', 'spellStart': 30, 'spellEnd': 35,'soil_type': 'loam'}
 scenarioData = {'soil_type': 'loam'}
-results_dir = mainExudate.XcGrowth(10, scenarioData )
+results_dir = mainExudate.XcGrowth(100, scenarioData )
 
 

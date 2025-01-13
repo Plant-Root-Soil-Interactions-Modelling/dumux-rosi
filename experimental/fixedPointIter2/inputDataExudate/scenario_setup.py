@@ -38,7 +38,7 @@ def getBiochemParam(s,soil_type):
         @ param: index of the TraiRhizo parameter set to use
         
     """
-    s.doSimpleReaction = 1
+    s.doSimpleReaction = 1 #only diffusion, decay, sorption and not Mona's complete model 
     
     # file containing the TraiRhizo parameter sets
     paramSet = pd.read_csv('./output_random_rows.csv').iloc[soil_type].to_dict()
@@ -168,7 +168,6 @@ def setDefault(s):
     s.molarDensityWat = molarDensityWat
 
     # low MaxRelativeShift == higher precision in dumux
-    #s.setParameter("Problem.dobioChemicalReaction",str(s.doBioChemicalReaction))
     s.setParameter("Problem.dobioChemicalReaction",str(s.doBioChemicalReaction))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.Verbosity", "0") 
@@ -205,6 +204,7 @@ def vg_SPP(i = int(1)):
         
     soil = {}
     # theta_r, theta_s, alpha, n, Ks
+    #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
     soil[0] = [0.041, 0.494, 0.0256, 1.49, 245]
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
@@ -213,10 +213,14 @@ def getSoilTextureAndShape(soil_= "loam"):
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    min_b = np.array([-10., -22, -74.]) # np.array( [5, 5, 0.] )
-    max_b =np.array( [10., 22, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array([10,22,37]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
-    area = 20 * 44  # cm2
+    min_b = np.array([-3./2, -3./2, -5.]) # np.array( [5, 5, 0.] )
+    max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
+    cell_number = np.array( [3,3,5]) #np.array( [1,1,1]) # 1cm3
+    area = 3*3
+    #min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
+    #max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
+    #cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
+    #area = 20 * 45  # cm2
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -362,8 +366,7 @@ def setupOther(s, soil_type, simMax):
             s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
         else:
             s.setTopBC("noFlux")
-
-        s.setBotBC("freeDrainage") 
+        s.setBotBC("freeDrainage")
     
         for i in range(1, s.numComp):# no flux
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
@@ -385,7 +388,7 @@ def setupOther(s, soil_type, simMax):
     h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
     h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
     h = h.flatten()
-    #h = np.ones((20*45*75))*-100 #TODO
+    #h = np.ones((20*44*75))*-100 #TODO
     s.setInitialConditionHead(h)  # cm
     
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
@@ -431,7 +434,7 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
         
         perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
         perirhizalModel.ms.initializeLB(5,4)
-        perirhizalModel.ms.simulate(initSim,verbose= False) #initsim or 1?
+        perirhizalModel.ms.simulate(initSim,verbose= False) #initsim
         plantModel = XylemFluxPython(perirhizalModel.ms)
             
     #perirhizalModel.ms.constantLoc = True
@@ -447,6 +450,7 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     plantModel.rs.setSoilGrid(picker)
     
     plantModel.wilting_point = -15000.
+    plantModel.exudf = plantParameters.prescribed_exudation(soil_type)
     plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
     # set kr and kx for root system or plant
     

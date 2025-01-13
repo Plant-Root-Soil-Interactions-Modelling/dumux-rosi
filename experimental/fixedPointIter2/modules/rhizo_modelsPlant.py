@@ -203,7 +203,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.airSegs = np.array(list(set(np.concatenate((aboveGround,
                                                     np.where(np.array(self.organTypes) != 2)[0])) )))
         self.airSegs.sort()#to go from local segIdx to global segIdx easely
-    
     def getNewCyldistribution(self):
         """ get new ids and shape of 1d models and define distribute between the threads """
         self.outer_radii = np.array(self.segOuterRadii(type = 0,vols = self.soilModel.CellVolumes )) 
@@ -1689,7 +1688,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             outer_fluxes_sol += self.flow1d1d_sol[gId]
             outer_fluxes_mucil += self.flow1d1d_mucil[gId]
         
-        
+
         # plant-soil solute exchange
         inner_fluxes_solMucil = np.array([inner_fluxes_sol, inner_fluxes_mucil]) # todo: add 1d1d flow
         qIn_solMucil = np.full(self.numSoluteComp, 0.)
@@ -1701,8 +1700,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
         # soil-soil solute exchange
         outer_fluxes_solMucil = np.array([outer_fluxes_sol, outer_fluxes_mucil]) # todo: add 1d1d flow
-        
-        
+
+        if self.doExudation:
+            outer_fluxes_solMucil[1] = outer_fluxes_solMucil[1]*int(0) 
         QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_solMucil,
                                inner_fluxs=[inner_fluxes_sol*dt,inner_fluxes_mucil*dt ], 
                                eqIdx =  np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]),plantM=self)
@@ -1714,10 +1714,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         for nc in range(self.numDissolvedSoluteComp):
             divideQout = outer_fluxes_solMucilbu[nc] if outer_fluxes_solMucilbu[nc] != 0 else 1
 
-
             #print('here', outer_fluxes_solMucil[nc],outer_fluxes_solMucilbu[nc])
-            #if verbose or (abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100 > 1.):
-            if (abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100 > 1.):
+            if self.plant_or_RS == 0: 
+                test = abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100
+            else: 
+                test = abs((outer_fluxes_solMucil[nc])/ divideQout)*100
+
+            #if verbose or (test > 1.):
+            if (test > 1.):
                 print('rhizo_modelsPlant::_calculate_and_set_initial_solute_flows, gId',gId,
                       ' qIn',qIn_solMucil, 
                 inner_fluxes_solMucil,'qout', QflowOutCellLim,outer_fluxes_solMucil,
@@ -1739,7 +1743,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         """
         l = cyl.segLength
         gId = cyl.gId
-        
+
         # PWU
         inner_fluxes = inner_fluxes[gId]
         qIn = inner_fluxes / (2 * np.pi * self.radii[gId] * l)
@@ -1827,14 +1831,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             proposed_outer_fluxes_sol = None
             proposed_inner_fluxes_mucil = None
             proposed_outer_fluxes_mucil = None
-        
+            
+
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root=0)
         proposed_inner_fluxes_sol = comm.bcast(proposed_inner_fluxes_sol, root=0)
         proposed_outer_fluxes_sol = comm.bcast(proposed_outer_fluxes_sol, root=0)
         proposed_inner_fluxes_mucil = comm.bcast(proposed_inner_fluxes_mucil, root=0)
         proposed_outer_fluxes_mucil = comm.bcast(proposed_outer_fluxes_mucil, root=0)
-        
         
         self._initialize_flux_storage()
         
@@ -1858,7 +1862,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                     proposed_outer_fluxes_sol,
                                     proposed_inner_fluxes_mucil,
                                     proposed_outer_fluxes_mucil, verbose)
-  
 
 
     def _handle_non_air_segment(self, cyl,lId, dt, inner_fluxes, outer_fluxes, inner_fluxes_sol,
@@ -1871,16 +1874,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             proposed_inner_fluxes_mucil : net plant large C molecule releases,  [mol C day-1] 
             proposed_outer_fluxes_mucil: 1d-3d or 1d-1d large C molecul exchanges,  [mol C day-1] 
         """
-
         inner_fluxes_water, outer_fluxes_water = self._calculate_and_set_initial_water_flows(cyl,dt, inner_fluxes, outer_fluxes, verbose) 
-        
-        
         inner_fluxes_solMucil, outer_fluxes_solMucil = self._calculate_and_set_initial_solute_flows(cyl, dt, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil, verbose)    
-            
         
         self._run_solver(cyl, dt, lId,  inner_fluxes_water, 
                         outer_fluxes_water,  inner_fluxes_solMucil, outer_fluxes_solMucil, verbose)
-     
+        
+        #print(lId, inner_fluxes_water, outer_fluxes_water,  inner_fluxes_solMucil, outer_fluxes_solMucil)
+        #sys.exit()
                 
     def _check_Ccontent(self, cyl):
         for ncomp in range(self.numSoluteComp):
@@ -1946,7 +1947,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             return
             inner_fluxes_real: inner BC as implemented in dumux [cm3 day-1]  or [mol C day-1] 
         """          
-                
+        
         maxRelShift = float(cyl.MaxRelativeShift)
         
         # use first ddt during last simulation
@@ -1958,7 +1959,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         a_in = self.radii[gId]
         a_out = np.array( self.outer_radii)[gId]
         l = cyl.segLength
-        
+
+
         if self.changedLen(cyl):
             print('wrong segLengthG',gId,str(self.seg_length[gId]),self.seg_length[gId], cyl.segLength,
                   (self.seg_length[gId] -  cyl.segLength),
@@ -1990,12 +1992,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 
                 didReset = False
                 #cyl.solve(dt)
-                helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
+                #helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
                 # error, time out error
-                
                 # cm3 water or  mol C /cm3
-                inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(a_in, a_out)     
-                
+                inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(a_in, a_out)  
                 assert (outer_fluxes_real == 0.).all() # outer exchange implemented via sinks not via outer BC
                      
                 
