@@ -3,9 +3,10 @@
     and passing parameters for steady state analysis
 """
 
+import sys
 import numpy as np
 import scipy
-import sys
+import copy
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
@@ -23,6 +24,8 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
         enviro_type             envirotype (number)
         sim_time                simulation time [days]
     """
+
+    sim_params = {"exp_name": exp_name, "enviro_type": enviro_type, "sim_time":sim_time}
 
     print("***********************")
     print("run_soybean", exp_name, enviro_type, sim_time)
