@@ -1,4 +1,3 @@
-
 """ 
 Analyse and choose (modify) soybean system parameters 
 """

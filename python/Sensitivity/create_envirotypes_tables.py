@@ -5,7 +5,8 @@ import functional.van_genuchten as vg
 from functional.Perirhizal import *
 
 """
-    Creates a 4d look up table representing the van Genucthen paraemters of the envirotypes 
+    Creates a 4d look up table for root-soil interface potentials for specific van Genucthen parameters 
+    of the envirotypes 
 """
 
 if __name__ == "__main__":

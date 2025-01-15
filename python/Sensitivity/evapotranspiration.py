@@ -5,6 +5,12 @@ import pandas as pd
 from datetime import *
 from functional.xylem_flux import sinusoidal2
 
+"""
+this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
+
+using Beer's law, (assuming a predefined dynamic LAI)
+"""
+
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
 BIGGER_SIZE = 16
@@ -122,7 +128,7 @@ def get_transpiration_beers_pickle(filename, start_date, sim_time, area, lai_f, 
 
 def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_age):
     """ ! used by run_sra ! 
-    calculates transpiration with Beer's law from start_date from a csv file
+    calculates potential transpiration with Beer's law from start_date from a csv file
         
     start_date              format '%Y-%m-%d %H:%M:%S'
     sim_time                maximal simulation time (to calculate end date)

@@ -1,5 +1,6 @@
 """ 
-             TODO TODO TODO
+    Helps to set up the root architecture or a single root (and applies possible modifications), and 
+    the root hydraulic model (RootHydraulicModel) 
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -92,6 +93,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             if "initial_age" in mods:
                 initial_age = mods["initial_age"]
                 mods.pop("initial_age")
+                
             apply_mods(mods, rs)
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
@@ -146,7 +148,7 @@ def apply_mods(mods, plant):
         rrp[2].lmax *= mods["lmax2"]
         mods.pop("lmax2")
     if "lmax3" in mods:
-        rrp[3].lmax *= modrootsyste < s["lmax3"]
+        rrp[3].lmax *= mods["lmax3"]
         mods.pop("lmax3")
     if "lmax4" in mods:
         rrp[4].lmax *= mods["lmax4"]

@@ -1,5 +1,7 @@
 """ 
     Maize (water and nitrate, SRA), wet scenario 
+
+    TODO adapt, see soybean_water_wet
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

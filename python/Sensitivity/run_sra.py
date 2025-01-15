@@ -17,16 +17,15 @@ import hydraulic_model
 import sra_new
 
 
-def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx_old = None, save_all = False):
+def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx_old = None, save_all = False):
     """
-        file_name                output file_name
-        enviro_type              envirotype (number)
-        sim_time                 simulation time [days]
-        lmax                     [lmax1, lmax2, lmax3]
+        exp_name                experiment name (name for output files)
+        enviro_type             envirotype (number)
+        sim_time                simulation time [days]
     """
 
     print("***********************")
-    print("run_soybean", file_name, enviro_type, sim_time)
+    print("run_soybean", exp_name, enviro_type, sim_time)
     print(mods)
     print(kr, kx)
     print("***********************", flush = True)
@@ -96,9 +95,9 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
         # print(kr)
         # print(kr_old)
         # print(kr[0], kr[1])
-        scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
+        scenario.init_lupine_conductivities_sa(r.params, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
     else:
-        scenario.init_lupine_conductivities(r, kr, kx)
+        scenario.init_lupine_conductivities(r.params, kr, kx)
 
     # params.plot_conductivities(False, lateral_ind = [2, 3])  #
     # dd
@@ -112,21 +111,21 @@ def run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, k
             s, r, table_name, sim_time, dt, trans_, initial_age = initial_age)
     except:
         print("***********************")
-        print("EXCEPTION run_soybean", file_name, enviro_type, sim_time)
+        print("EXCEPTION run_soybean", exp_name, enviro_type, sim_time)
         print(mods)
         print(kr, kx)
         print("***********************", flush = True)
         raise
 
     if save_all:
-        scenario.write_results(file_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
+        scenario.write_results(exp_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
     else:
         pass
-        # scenario.write_results(file_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
+        # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
 
-    # print("writing parameters", file_name)
-    r.ms.writeParameters("results/" + file_name + ".xml")  # corresponding xml parameter set
-    print("finished " + file_name)
+    # print("writing parameters", exp_name)
+    r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
+    print("finished " + exp_name)
 
     cu = scipy.integrate.simpson(y_, x = x_)  # cumulative uptake
     mean_pot = np.mean(collar_pot_)  # mean collar potential
@@ -152,7 +151,7 @@ if __name__ == "__main__":
     # run_soybean("test", enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
 
     type = sys.argv[1]
-    file_name = sys.argv[2]
+    exp_name = sys.argv[2]
     enviro_type = int(float(sys.argv[3]))
     sim_time = float(sys.argv[4])
 
@@ -175,7 +174,7 @@ if __name__ == "__main__":
         mods["theta45"] = theta1
         mods["src"] = src
 
-        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, save_all = True)
 
     elif type == "conductivities10":
 
@@ -197,7 +196,7 @@ if __name__ == "__main__":
         kx_old[1] = float(sys.argv[13])
         kx[2] = float(sys.argv[14])
 
-        run_soybean(file_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
 
     elif type == "singleroot_conductivities10":
 
@@ -220,7 +219,7 @@ if __name__ == "__main__":
         "bot_bc": "noFlux"
         }
 
-        run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
 
     elif type == "tropisms":
 
@@ -232,7 +231,7 @@ if __name__ == "__main__":
         mods = {"tropismN145":n145, "tropismN2":n2, "tropismN3":n3,
                 "tropismS145":s145, "tropismS2":s2, "tropismS3":s3 }
 
-        run_soybean(file_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
 
     elif type == "radii":
 
@@ -246,13 +245,13 @@ if __name__ == "__main__":
                 "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
                 "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3 }
 
-        run_soybean(file_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
 
     else:
 
         print("Unknown run sa type")
 
-# def run_maize(file_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
+# def run_maize(exp_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
 #
 #     # parameters
 #     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(int(enviro_type))
@@ -277,8 +276,8 @@ if __name__ == "__main__":
 #
 #     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
 #         s, r, soil, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)  # soil, sra_table_lookup
-#     # scenario.write_files(file_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
-#     np.save('results/transpiration_' + file_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
-#     np.save('results/nitrate_' + file_name, c_)  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
+#     # scenario.write_files(exp_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
+#     np.save('results/transpiration_' + exp_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
+#     np.save('results/nitrate_' + exp_name, c_)  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
 #
-#     print("finished " + file_name)
+#     print("finished " + exp_name)
