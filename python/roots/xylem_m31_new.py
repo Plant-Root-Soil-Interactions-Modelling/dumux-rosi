@@ -1,3 +1,7 @@
+""" 
+Benchmark M3.1 Single root: steady state vertical root solved with the NEW PlantHydraulicModel and PlantHydraulicParameters classes
+"""
+
 import sys; sys.path.append("../modules"); sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
 
 import plantbox as pb
@@ -9,11 +13,6 @@ import visualisation.vtk_plot as vp
 
 import numpy as np
 import matplotlib.pyplot as plt
-
-""" 
-Benchmark M3.1 Single root: steady state vertical root solved with the NEW PlantHydraulicModel class
-(does not work in parallel)
-"""
 
 """ Parameters """
 g = 9.8065 * 100.*24.*3600.*24.*3600.  # gravitational acceleration [cm day-2]
@@ -58,11 +57,11 @@ soil_index = lambda x, y, z: 0
 rs.setSoilGrid(soil_index)
 
 params = PlantHydraulicParameters(rs)
-params.setKr([kr0])
-params.setKx([kz0])
+params.set_kr_const(kr0)
+params.set_kx_const(kz0)
 
-r = HydraulicModel_Doussan(rs, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
-# r = HydraulicModel_Meunier(rs, params, cached = False)
+# r = HydraulicModel_Doussan(rs, params, cached = False)  # or HydraulicModel_Doussan, HydraulicModel_Meunier
+r = HydraulicModel_Meunier(rs, params, cached = False)
 kx = params.getKx(0.)
 # print(kx)
 rx = r.solve_dirichlet(0., p0, [p_s], cells = True)
