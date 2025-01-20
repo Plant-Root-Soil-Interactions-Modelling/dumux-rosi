@@ -836,7 +836,12 @@ public:
 		 */
 		double f = 0.; // return value [kg m-2 s-1)] or [mol m-2 s-1]
 		double pos0 = 1;
-		if(dimWorld == 1){pos0 =pos[0]; }
+		double scvf_area = scvf.area();
+		if(dimWorld == 1){
+			pos0 =pos[0]; 
+			scvf_area = 2 * M_PI * pos0 * segLength;//m2
+		}
+				
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
 			Scalar s = volVars.saturation(h2OIdx);
@@ -977,6 +982,7 @@ public:
 		}
 		
 		flux[h2OIdx] = f;// [mol /(m^2 * s)] * pos0
+		
 
 		/*
 		 * SOLUTES
@@ -1133,6 +1139,8 @@ public:
 							 
 		}
 
+		setFaceFlux(flux/pos0*scvf_area, scvf.index()); // kg or mol /s
+		
 		return flux;
 	}
 

@@ -1438,8 +1438,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
                 
-                cyl.setParameter("Soil.CSSmax", str(self.soilModel.Vmax)) #mol C / m^3 scv / s
-                cyl.setParameter("Soil.CSSmax", str(self.soilModel.Km)) #mol C / m^3 scv
+                cyl.setParameter("Soil.Vmax", str(self.soilModel.Vmax)) #mol C / m^3 scv / s
+                cyl.setParameter("Soil.Km", str(self.soilModel.Km)) #mol C / m^3 scv
 
             
             for j in range( 1, self.numComp):
@@ -1715,18 +1715,17 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             divideQout = outer_fluxes_solMucilbu[nc] if outer_fluxes_solMucilbu[nc] != 0 else 1
 
             #print('here', outer_fluxes_solMucil[nc],outer_fluxes_solMucilbu[nc])
-            if self.plant_or_RS == 0: 
-                test = abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100
-            else: 
-                test = abs((outer_fluxes_solMucil[nc])/ divideQout)*100
+            test = abs((outer_fluxes_solMucil[nc] - (outer_fluxes_solMucilbu[nc]))/ divideQout)*100
 
             #if verbose or (test > 1.):
             if (test > 1.):
                 print('rhizo_modelsPlant::_calculate_and_set_initial_solute_flows, gId',gId,
                       ' qIn',qIn_solMucil, 
-                inner_fluxes_solMucil,'qout', QflowOutCellLim,outer_fluxes_solMucil,
-                      'qout init',outer_fluxes_solMucilbu,'shape', self.radii[gId],  
-                      np.array( self.outer_radii)[gId] , 'length', cyl.segLength )
+                inner_fluxes_solMucil,'qout', QflowOutCellLim,'outer_fluxes_solMucil',
+                outer_fluxes_solMucil,
+                      'qout init',outer_fluxes_solMucilbu,'divideQout',divideQout,
+                      'shape', self.radii[gId],  
+                      np.array( self.outer_radii)[gId] , 'length', cyl.segLength,'nc',nc,self.plant_or_RS,test )
                 raise Exception
         return  inner_fluxes_solMucil, outer_fluxes_solMucil                    
                      
@@ -1769,21 +1768,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             
             
           
-    def _finalize_solution(self, lId, inner_fluxes_water, outer_fluxes_water, inner_fluxes_solMucil, outer_fluxes_solMucil):
-        """ store final flow value of the segment.
-        
-            inner_fluxes_water: PWU,  [cm3 day-1] 
-            outer_fluxes_water: 1d-3d or 1d-1d water exchanges,  [cm3 day-1] 
-            inner_fluxes_solMucil : net plant  C molecule releases,  [mol C day-1] 
-            outer_fluxes_solMucil: 1d-3d or 1d-1d  C molecule exchanges,  [mol C day-1] 
-        """
-        self.seg_fluxes_limited[lId] = inner_fluxes_water
-        self.seg_fluxes_limited_Out[lId] = outer_fluxes_water
-        self.seg_fluxes_limited_sol_In[lId] = inner_fluxes_solMucil[0]
-        self.seg_fluxes_limited_sol_Out[lId] = outer_fluxes_solMucil[0]
-        self.seg_fluxes_limited_mucil_In[lId] = inner_fluxes_solMucil[1]   
-        self.seg_fluxes_limited_mucil_Out[lId] = outer_fluxes_solMucil[1]     
-            
     
     def _run_solver(self, cyl, dt, lId,  inner_fluxes_water,  outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil, verbose):
         """Run the solver for the segment.
@@ -1801,8 +1785,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                                     lId, inner_fluxes_water, 
                                                     outer_fluxes_water,   inner_fluxes_solMucil, 
                                                     outer_fluxes_solMucil, verbose)
-
-        self._finalize_solution(lId, inner_fluxes_water, outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil)
+        # store boundary fluxes for mass balance check
+        self.seg_fluxes_limited[lId] = inner_fluxes_water
+        self.seg_fluxes_limited_Out[lId] = outer_fluxes_water
+        self.seg_fluxes_limited_sol_In[lId] = inner_fluxes_solMucil[0]
+        self.seg_fluxes_limited_sol_Out[lId] = outer_fluxes_solMucil[0]
+        self.seg_fluxes_limited_mucil_In[lId] = inner_fluxes_solMucil[1]   
+        self.seg_fluxes_limited_mucil_Out[lId] = outer_fluxes_solMucil[1]  
     
     def solve(self, dt, *argv):
         """ set bc and sinks for cyl and solves it 
@@ -1992,7 +1981,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 
                 didReset = False
                 #cyl.solve(dt)
-                #helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
+                helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
                 # error, time out error
                 # cm3 water or  mol C /cm3
                 inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(a_in, a_out)  

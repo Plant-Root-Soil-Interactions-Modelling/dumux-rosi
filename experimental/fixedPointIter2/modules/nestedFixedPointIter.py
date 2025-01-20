@@ -212,8 +212,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         print("perirhizalModel.rhizoVol",perirhizalModel.rhizoVol)
         print("perirhizalModel.eidx_all_",perirhizalModel.eidx_all_)
     
-    if perirhizalModel.plant_or_RS == 0:
-        airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
+    # we also have air segments with RS (potentially)
+    airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones (shoot segments + roots aboveground)
     rhizoSegsId = perirhizalModel.rhizoSegsId # id of plant segments WITH perirhizal zones   
     cellIds = perirhizalModel.cellWithRoots # only id of cells with roots
     emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
@@ -231,7 +231,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
         Q_mucil_i.resize(len(organTypes), refcheck=False)
         
-        if plant_or_RS == 0:
+        if len(airSegsId) > 0:
             try:
                 # make sure that no exudation in shoot segments or roots aboveground
                 assert (Q_Exud_i[airSegsId] == 0).all()
@@ -258,16 +258,17 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
+        perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
+                                        hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
+                                        #spellData= perirhizalModel.spellData
+                                        )
+        if rank==0:
+            # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+            # , transpiration: {transpiration:.2e} cm3/d
+            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
+    
+        
         if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
-            perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
-                                           hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
-                                           spellData= perirhizalModel.spellData)
-            if rank==0:
-                # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
-                # , transpiration: {transpiration:.2e} cm3/d
-                print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
-        
-        
         
             weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
         
