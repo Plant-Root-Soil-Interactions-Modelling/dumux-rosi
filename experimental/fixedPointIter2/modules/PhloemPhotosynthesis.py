@@ -206,16 +206,16 @@ class exudateDataStorage():
         self.soil_type = soilModel.pindx
         self.Nt = len(perirhizalModel.ms.nodes)
         
-        self.Q_Exud    = np.zeros(self.Nt) 
-        self.Q_Exudbu    = np.zeros(self.Nt)
+        self.Q_Exud    = np.zeros(self.Nt-1) 
+        self.Q_Exudbu    = np.zeros(self.Nt-1)
         self.Q_Exud_cumul = 0.; 
-        self.Q_Exud_i =  np.zeros(self.Nt)
+        #self.Q_Exud_i =  np.zeros(self.Nt)
         self.Q_Exud_i_seg = np.array([]);  
         
-        self.Q_Mucil   = np.zeros(self.Nt)
-        self.Q_Mucilbu   = np.zeros(self.Nt)
+        self.Q_Mucil   = np.zeros(self.Nt-1)
+        self.Q_Mucilbu   = np.zeros(self.Nt-1)
         self.Q_Mucil_cumul = 0.
-        self.Q_Mucil_i =  np.zeros(self.Nt)
+        #self.Q_Mucil_i =  np.zeros(self.Nt)
         self.Q_Mucil_i_seg = np.array([])  
         
         self.error_st_abs = 0;
@@ -237,55 +237,42 @@ class exudateDataStorage():
             else: 
                 stopgr = False
                     
-            kexu = plantParameters.exudation_rates(plantModel.exudf, rs_age) #[kg/(m2 day)]
-            exud  = plantModel.exudate_fluxes(dt, kexu, stopgr)
-            
-            self.Q_Exud_i[1:] = exud[0] #mol/seg
-            self.Q_Exud  = self.Q_Exudbu + self.Q_Exud_i
+            kexu = self.plantModel.exudation_rates(self.plantModel.exudf, rs_age) #[kg/(m2 day)]
+            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr)
+            print('exud',exud)
+            self.Q_Exud_i_seg = np.array( exud[0] )  #per segment, mol/seg , np.zeros(self.Nt-1)#
+            #self.Q_Exud_i[1:] = exud[0] #mol/seg, not needed?
+            self.Q_Exudbu     =   np.concatenate((self.Q_Exudbu, np.full(self.Nt - self.Ntbu, 0.))) 
+            print('Q_Exudbu', self.Nt , self.Ntbu, len(exud))
+            self.Q_Exud  = self.Q_Exudbu + self.Q_Exud_i_seg
 
 
-            assert self.Q_Exud_i[0] == 0#no exudation in seed node 
-            assert np.array(self.plantModel.Csoil_node)[0] == 0
-
-
-            try:
-                assert (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]).all()
-            except:
-                print(np.array(self.plantModel.Csoil_seg ), np.array(self.plantModel.Csoil_node))
-                print( (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]),
-                         (np.array(self.plantModel.Csoil_seg ) == np.array(self.plantModel.Csoil_node)[1:]).all())
-                raise Exception
-
-            self.Q_Exud_i_seg = np.array( self.Q_Exud_i[1:] )  #from nod to semgment
 
             airSegsId = self.perirhizalModel.airSegs
 
-            write_file_array("Q_Exud_i_real",  self.Q_Exud_i, 
+            write_file_array("Q_Exud_i_real",  self.Q_Exud_i_seg, 
                              directory_ =self.perirhizalModel.results_dir)# to see if get val < 0
 
             try:
-                assert (self.Q_Exud_i_seg[airSegsId] == 0).all()
-                assert (self.Q_Mucil_i_seg[airSegsId] == 0).all()
-                assert (np.array(self.plantModel.Q_Exudmax)[airSegsId+1] == 0).all()
+                if len(airSegsId)>0:
+                    assert (self.Q_Exud_i_seg[airSegsId] == 0).all()
+                    assert (self.Q_Mucil_i_seg[airSegsId] == 0).all()
             except:
                 print("Q_Exud_i_seg", self.Q_Exud_i_seg[airSegsId] )
                 print("Csoil_seg", np.array(self.plantModel.Csoil_seg)[airSegsId])
-                print("Q_Exudmax",np.array(self.plantModel.Q_Exudmax)[airSegsId+1])
                 print("airSegsId", airSegsId, np.where(airSegsId))
                 print(len(airSegsId), len(self.plantModel.k_mucil_))
                 raise Exception
 
             try: # currently, only have a release of carbon
                 
-                if ((min(self.Q_Exud_i_seg) < 0) or (min(self.Q_Mucil_i_seg)<0)):
+                if ((min(self.Q_Exud_i_seg) < 0) ):
                     write_file_float("timeNegativeExudMucil", rs_age, 
                                      directory_ =self.perirhizalModel.results_dir)
                     
             
                 #assert min(self.Q_Exud_i_seg) >= -1e-13
                 self.Q_Exud_i_seg[np.where(self.Q_Exud_i_seg<0)] = 0.
-                #assert min(self.Q_Mucil_i_seg) >= -1e-13
-                self.Q_Mucil_i_seg[np.where(self.Q_Mucil_i_seg<0)] = 0.
             except:
                 print(self.plantModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)
                 raise Exception
@@ -489,6 +476,8 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                             rx = list(rx), sx= list(fpit_Helper.rsx_input), 
                                                approx=False, cells=False, #approx, cells
                                                soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate
+                else:
+                    seg_fluxes = np.full((len(plantModel.psiXyl)-1),0.)
             elif s.doSimpleReaction == 1:
                     seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
                             rx = list(rx), sx= list(fpit_Helper.rsx_input), 
