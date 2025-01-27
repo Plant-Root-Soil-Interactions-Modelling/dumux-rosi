@@ -248,7 +248,7 @@ if __name__ == "__main__":
                 "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
                 "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3 }
 
-        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1., save_all = True)
 
     else:
 

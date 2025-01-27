@@ -34,7 +34,7 @@ names, ranges = sa.read_ranges(path + file_name)
 
 print(len(names), "variables:")
 print(names)
-print(len(ranges))
+print(ranges)
 print()
 
 # for i, _ in enumerate(names):
