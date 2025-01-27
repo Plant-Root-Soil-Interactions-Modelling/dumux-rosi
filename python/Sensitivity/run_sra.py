@@ -7,6 +7,7 @@ import sys
 import numpy as np
 import scipy
 import copy
+import json
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
@@ -32,6 +33,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
     print(mods)
     print(kr, kx)
     print("***********************", flush = True)
+    mods_copy = copy.deepcopy(mods)
 
     if "filename" in mods:
         xml_name = mods["filename"]
@@ -48,7 +50,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
         initial_totalpotential = mods["initial_totalpotential"]
         mods.pop("initial_totalpotential")
     else:
-        initial_totalpotential = -100.  # day
+        initial_totalpotential = -100.  # cm
 
     if "water_table" in mods:
         water_table = mods["water_table"]
@@ -128,6 +130,9 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
 
     # print("writing parameters", exp_name)
     r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
+    with open("results/" + exp_name + "_mods.json", "w+") as f:
+        json.dump(mods_copy, f)
+
     print("finished " + exp_name)
 
     cu = scipy.integrate.simpson(y_, x = x_)  # cumulative uptake

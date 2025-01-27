@@ -33,17 +33,25 @@ def mkdir_p(dir):
         os.mkdir(dir)
 
 
-def make_local(*args):
+def make_local(*args, ref = "mid"):
     """ creates the jobs for a local sensitivity analysis: 
         
         the input *args are lists representing value ranges, 
-        values are varied for each range, using the mid values for the other ranges,         
+        values are varied for each range, using the mid values for the other ranges         
     """
     ranges = make_lists(*args)  # puts floats into single valued lists
     jobs = []
 
     c = 1  # job counter
-    mids = [mid_(r) for r in ranges]
+    if ref == "mid":
+        mids = [mid_(r) for r in ranges]
+    elif ref == "left":
+        mids = [r[0] for r in ranges]
+    elif ref == "right":
+        mids = [r[-1] for r in ranges]
+    else:
+        raise "make_local(): ref value unknown"
+
     jobs.append([c, *mids])
 
     for i, r in enumerate(ranges):
@@ -236,7 +244,7 @@ def local_soybean_radii():
     root_type = "soybean"
     file_name = "local_soybean_radii_"
     enviro_type = 0
-    sim_time = 87.5  # days
+    sim_time = 87.5  # 87.5  # days
 
     a145 = np.linspace(0.01, .5, 9)
     a2 = np.linspace(0.01, .1, 9)
@@ -251,14 +259,11 @@ def local_soybean_radii():
     write_ranges("results/" + file_name,
                  ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength3"],
                  [a145, a2, a3, hz, hz, hz, hl, hl, hl])
-    jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0.)  # currently we always pass 10 values to run_sra
+    jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0., ref = "left")  # currently we always pass 10 values to run_sra
+
+    jobs = np.array(jobs)
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
-
-# def local_soybean_roothairs():
-#     p.hairsZone = 0.5
-#     p.hairsLength = 0.05
-#     p.hairsElongation = 0.5
 
 
 if __name__ == "__main__":

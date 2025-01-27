@@ -34,12 +34,9 @@ names, ranges = sa.read_ranges(path + file_name)
 
 print(len(names), "variables:")
 print(names)
-print(ranges)
+for i, r in enumerate(ranges):
+    print(names[i], r)
 print()
-
-# for i, _ in enumerate(names):
-#     print(names[i])
-#     print(ranges[i])
 
 # SOYBEAN
 # names[2] = "lmax, primaries"  # seminal and tap
@@ -49,15 +46,7 @@ print()
 # names[6] = "root radii scale"
 # names[7] = "seminal root count"
 
-# MAIZE
-# names[2] = "lmax, primaries"  # brace, seminal and tap
-# names[3] = "lmax, first order"
-# names[4] = "lmax, second order"
-# names[5] = "insertion angle, brace and seminals"
-# names[6] = "root radii scale"
-# names[7] = "brace root delay"
-
-alldata = np.load(path + file_name + "2" + ".npz")
+alldata = np.load(path + file_name + "1" + ".npz")
 trans_ = alldata["act_trans"]
 times = alldata["times"]
 print("Simulation time from", min(times), "to ", max(times), "days")
@@ -97,7 +86,7 @@ for lind in range(0, len(names)):
 
     file_start_ind = 2 + start_index(lind, ranges)  # 1 is initial simulation
     sa_len = len(ranges[lind])
-    print("\nproducing sub-plot", names[lind], "from", file_start_ind, "to", file_start_ind + sa_len)
+    print("\nproducing sub-plot", names[lind], "from", file_start_ind, "to", file_start_ind + sa_len - 1)  # to make sure it works
 
     if sa_len > 1:
         trans = np.zeros((sa_len,))

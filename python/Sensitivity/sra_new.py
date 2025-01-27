@@ -87,7 +87,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, initial_age 
 
         outer_r = peri.get_outer_radii("length")
         n = len(rs.radii)
-        inner_r = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])  # rs.radii
+        inner_r = np.array([rs.getEffectiveRadius(i) for i in range(0, n)])  # rs.radii
         types = rs.subTypes
         rho_ = np.divide(outer_r, np.array(inner_r))
 

@@ -18,7 +18,7 @@ import run_sra
 
 import numpy as np
 
-sim_time = 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 10  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
@@ -49,13 +49,13 @@ hairsElongation = 0.3
 #         }
 #
 
-#3
+# 3
 mods = {"a145": 0.2, "a2": 0.04, "a3": 0.04,
         "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
         "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
         "hairsElongation": 0.3, "dx": 0.1 }
 
-s, r = run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
+run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
 
 # kr = np.zeros((3,))
 # kr_old = np.zeros((2,))
@@ -74,9 +74,6 @@ s, r = run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, s
 # }
 #
 # cu = run_sra.run_soybean("soybean_test_{:g}".format(1), envirotype, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
-
-
-
 
 #
 # n = len(rs.radii)
