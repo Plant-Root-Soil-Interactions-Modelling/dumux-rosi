@@ -62,7 +62,7 @@ for p in rrp:
 
 rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
-rs.writeParameters("data/" + name + "_modified3" + ".xml")  # remember the modifications ################################### not touching the original
+rs.writeParameters("data/" + name + "_modified3" + ".xml")  # remember the modifications ################################### not touching the original _modified
 
 """ 2. Analyse ******************************************************** """
 p = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])

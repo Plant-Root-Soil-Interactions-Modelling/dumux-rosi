@@ -2,7 +2,7 @@ import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cp
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 """
-    recreates the root system using the xml files and visualizes simulation results on that
+   TODO recreates the root system using the xml files and visualizes simulation results on that
 """
 import matplotlib.pyplot as plt
 import numpy as np

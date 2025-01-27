@@ -1,5 +1,5 @@
 """
-    Simulates water movement in soil without any roots (see also spin_up.py for water and nitrate)
+    Simulates water movement in soil without any roots 
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

@@ -1,5 +1,5 @@
 """
-Sink plot (noon and midnight), of a 1d soil 
+ TODO Sink plot (noon and midnight), of a 1d soil 
 """
 import matplotlib.pyplot as plt
 import numpy as np

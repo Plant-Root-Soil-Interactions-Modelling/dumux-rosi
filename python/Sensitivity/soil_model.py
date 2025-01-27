@@ -1,5 +1,5 @@
 """ 
-Functions to simplify setup of the scenarios for the INARI project
+Sets up the soil model 
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -9,7 +9,6 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 # from rosi_richards import RichardsSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
@@ -56,7 +55,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
 
 
 def set_initial_conditions(s, filename):
-    """ set constant total potential or from file """
+    """ TODO set constant total potential or from file """
     if  isinstance(filename, str):
        h = np.load(filename)
        s.setInitialConditionHead(h)  # cm
@@ -65,7 +64,7 @@ def set_initial_conditions(s, filename):
 
 
 def set_bottom_bc_watertable(s, times, values):
-    """ set variable water table """
+    """ TODO set variable water table """
     pass
 
 
