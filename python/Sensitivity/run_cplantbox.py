@@ -121,7 +121,6 @@ def run_(r, sim_time, initial_age, area, out_times):
     for dt in dt_:
         r.ms.simulate(dt, False)
         t += dt  # current simulation time
-
         length.append(r.ms.getParameter("length"))
         volume.append(r.ms.getParameter("volume"))
         surface.append(r.ms.getParameter("surface"))
