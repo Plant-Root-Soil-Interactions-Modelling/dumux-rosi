@@ -29,7 +29,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
     sim_params = {"exp_name": exp_name, "enviro_type": enviro_type, "sim_time":sim_time}
 
     print("***********************")
-    print("run_soybean", exp_name, enviro_type, sim_time)
+    print("run_sra.run_soybean", exp_name, enviro_type, sim_time)
     print(mods)
     print(kr, kx)
     print("***********************", flush = True)

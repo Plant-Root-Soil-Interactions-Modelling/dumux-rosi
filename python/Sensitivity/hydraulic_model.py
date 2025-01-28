@@ -88,12 +88,12 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         if not stochastic:
             set_all_sd(rs, 0.)
 
-        initial_age = 1
+        initial_age = 1.
         if mods is not None:  # apply modifications
             if "initial_age" in mods:
                 initial_age = mods["initial_age"]
                 mods.pop("initial_age")
-                
+
             apply_mods(mods, rs)
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
@@ -111,8 +111,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
                             pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
 
-    picker = lambda x, y, z: soil_model.pick([0., 0., z])
-    r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
+    if soil_model is not None:
+        picker = lambda x, y, z: soil_model.pick([0., 0., z])
+        r.ms.setSoilGrid(picker)  # maps segments, maps root segments and soil grid indices to each other in both directions
 
     return r, params
 
@@ -308,13 +309,6 @@ def apply_mods(mods, plant):
         for i in range(0, len(rrp)):
             rrp[i].dx = mods["dx"]
         mods.pop("dx")
-
-    if mods:  # something unused in mods
-        print("\nscenario_setup.create_mapped_rootsystem() WARNING mods have unused parameters:")
-        for k, v in mods.items():
-            print("key:", k)
-        print()
-        raise
 
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic = False, mods = None, model = "Meunier"):

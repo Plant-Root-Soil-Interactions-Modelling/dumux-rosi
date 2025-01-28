@@ -18,7 +18,7 @@ import run_sra
 
 import numpy as np
 
-sim_time = 10  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
