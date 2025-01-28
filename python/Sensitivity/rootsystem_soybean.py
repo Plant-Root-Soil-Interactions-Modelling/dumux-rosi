@@ -30,7 +30,7 @@ colors = prop_cycle.by_key()['color']
 """ 1. Modify parameter xml file  ******************************************************** """
 # typical domain for soybean
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
-simtime = 87.5  # between 75-100 days
+simtime = 45  # 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
 rs = pb.Plant()
@@ -79,7 +79,7 @@ kx = 1.e-3
 scenario.init_conductivities_const(r.params, kr, kx)
 
 # Simulate
-rs.simulate(87, True)
+rs.simulate(simtime, True)
 # rs.calcExchangeZoneCoefs()
 
 # Analyse
@@ -105,7 +105,7 @@ print("periodic")
 print(ana.getMinBounds(), "-", ana.getMaxBounds())
 
 n = len(rs.radii)
-radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+radii = np.array([rs.getEffectiveRadius(i) for i in range(0, n)])
 print("radii max", n, np.max(radii))
 
 rs.radii = radii
