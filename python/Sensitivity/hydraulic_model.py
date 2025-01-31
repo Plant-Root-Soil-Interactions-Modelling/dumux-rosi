@@ -8,6 +8,7 @@ sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src"
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
 import numpy as np
 import timeit
+import copy
 import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
@@ -118,197 +119,173 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
     return r, params
 
 
+def get_indices(key, max_st):
+    """ parses names for subTypes, and '_a' for absolute value or '_s' for scaling """
+
+    ind_indices = [list(range(0, max_st)), [1, 4], [2, 3], [1], [2], [3], [4]]
+    if max_st < 5:
+        ind_indices[1] = [1, 4]
+    ind_names = ["", "145", "23", "1", "2", "3", "4"]
+
+    abs_ = False  # default
+    if key.endswith("_a"):
+        abs_ = True
+        key = key[0:-2]
+    if key.endswith("_s"):
+        abs_ = False
+        key = key[0:-2]
+
+    for i in range(1, len(ind_indices)):
+        if key.endswith(ind_names[i]):
+            return ind_indices[i], abs_, key[0:-len(ind_names[i])]
+
+    return ind_indices[0], abs_, key
+
+
 def apply_mods(mods, plant):
     """
     applies changes to RootRandomParameters @param rrp and SeedRandomParameters @parm srp
     
-    maximal root length:             lmax, lmax145, lmax2, lmax3, lmax4          scaling
-    insertion angle from base root:  theta45, theta2, theta3                     angles in radians
-    initial growth rate:             r, r145, r2, r3                             scaling
-    interlateral spacing:            ln, ln145, ln2                              scaling
-    root radius                      a, a145, a2, a3                             absolute
-    seminal roots:                   src [number of], src_first, src_delay       scaling 
-    tropism:                         tropismN, tropismN145, tropismN2, tropismN3 scaling 
-                                     tropismS, tropismS145, tropismS2, tropismS3 scaling 
-    root hairs:                      hairsZone, hairsLength, hairsElongation     absolute
+    maximal root length:             lmax, lmax145, lmax2, lmax3, lmax4              scaling
+    insertion angle from base root:  theta45, theta2, theta3                         angles in radians
+    initial growth rate:             r, r145, r2, r3                                 scaling
+    interlateral spacing:            ln, ln145, ln2                                  scaling
+    root radius                      a, a145, a2, a3                                 scaling
+    seminal roots:                   src [number of], src_first, src_delay           scaling 
+    tropism:                         tropismN, tropismN145, tropismN2, tropismN3     scaling 
+                                     tropismS, tropismS145, tropismS2, tropismS3     scaling 
+    root hairs:                      hairsZone, hairsLength, hairsElongation         scaling
+    aixal resolution                 dx                                              always absolute  
     """
     rrp = plant.getOrganRandomParameter(pb.OrganTypes.root)
     srp = plant.getOrganRandomParameter(pb.OrganTypes.seed)
 
-    if "lmax" in mods:
-        for i in range(0, len(rrp)):
-            rrp[i].lmax *= mods["lmax"]
-        mods.pop("lmax")
-    if "lmax145" in mods:
-        rrp[1].lmax *= mods["lmax145"]
-        rrp[4].lmax *= mods["lmax145"]
-        if len(rrp) > 5:
-            rrp[5].lmax *= mods["lmax145"]
-        mods.pop("lmax145")
-    if "lmax2" in mods:
-        rrp[2].lmax *= mods["lmax2"]
-        mods.pop("lmax2")
-    if "lmax3" in mods:
-        rrp[3].lmax *= mods["lmax3"]
-        mods.pop("lmax3")
-    if "lmax4" in mods:
-        rrp[4].lmax *= mods["lmax4"]
-        mods.pop("lmax4")
+    # print("rrp")
+    # print(len(rrp))
+    # print(rrp)
+    # for i, r in enumerate(rrp):
+    #     print("Index", i)
+    #     print("name", r.name)
+    mods_ = copy.deepcopy(mods)
+    for key in mods_.keys():
 
-    if "theta45" in mods:
-        if len(rrp) > 5:
-            print("shootbore (theta45)")
-            rrp[5].theta = mods["theta45"]
-        else:
-            print("seminal (theta45)")
-            rrp[4].theta = mods["theta45"]
-        mods.pop("theta45")
-    if "theta2" in mods:
-        rrp[2].theta = mods["theta2"]
-    if "theta3" in mods:
-        rrp[3].theta = mods["theta2"]
+        ind_, abs_, key_ = get_indices(key, len(rrp))
 
-    if "r" in mods:  # all types
-        for i in range(0, len(rrp)):
-            rrp[i].r *= mods["r"]
-        mods.pop("r")
-    if "r145" in mods:
-        rrp[1].r *= mods["r145"]
-        rrp[4].r *= mods["r145"]
-        if len(rrp) > 5:
-            rrp[5].r *= mods["r145"]
-        mods.pop("r145")
-    if "r2" in mods:
-        rrp[2].r *= mods["r2"]
-        mods.pop("r2")
-    if "r3" in mods:
-        rrp[3].r *= mods["r3"]
-        mods.pop("r3")
+        if key_ == "lmax":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].lmax = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].lmax *= mods[key]
+            mods.pop(key)
 
-    if "ln" in mods:  # all types
-        for i in range(0, len(rrp)):
-            rrp[i].ln *= mods["ln"]
-    if "ln145" in mods:
-        rrp[1].ln *= mods["ln145"]
-        rrp[4].ln *= mods["ln145"]
-        if len(rrp) > 5:
-            rrp[5].ln *= mods["ln145"]
-        mods.pop("ln")
-    if "ln1" in mods:
-        rrp[1].ln *= mods["ln1"]
-        mods.pop("ln1")
-    if "ln2" in mods:
-        rrp[2].ln *= mods["ln2"]
-        mods.pop("ln2")
+        if key_ == "theta":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].theta = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].theta *= mods[key]
+            mods.pop(key)
 
-    if "a" in mods:  # all types
-        for i in range(0, len(rrp)):
-            rrp[i].a = mods["a"]
-        mods.pop("a")
-    if "a145" in mods:
-        rrp[1].a = mods["a145"]
-        rrp[4].a = mods["a145"]
-        if len(rrp) > 5:
-            rrp[5].a = mods["a145"]
-        mods.pop("a145")
-    if "a2" in mods:
-        rrp[2].a = mods["a2"]
-        mods.pop("a2")
-    if "a3" in mods:
-        rrp[3].a = mods["a3"]
-        mods.pop("a3")
+        if key_ == "r":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].r = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].r *= mods[key]
+            mods.pop(key)
 
-    if "src" in mods:  # seminal root count, called basal roots in cplantbox
-        srp[0].maxB = mods["src"]
-        mods.pop("src")
-    if "src_first" in mods:
-        srp[0].firstB *= mods["src_first"]
-        mods.pop("src_first")
-    if "src_delay" in mods:
-        srp[0].delayB *= mods["src_delay"]
-        mods.pop("src_delay")
+        if key_ == "ln":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].ln = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].ln *= mods[key]
+            mods.pop(key)
 
-    if "tropismN" in mods:  # all types
-        for i in range(0, len(rrp)):
-            rrp[i].tropismN *= mods["tropismN"]
-        mods.pop("tropismN")
-    if "tropismN145" in mods:
-        print(rrp[1].tropismN)
-        print(type(rrp[1].tropismN))
-        print(mods["tropismN145"])
-        print(type(mods["tropismN145"]))
-        rrp[1].tropismN *= mods["tropismN145"]
-        rrp[4].tropismN *= mods["tropismN145"]
-        if len(rrp) > 5:
-            rrp[5].tropismN *= mods["tropismN145"]
-        mods.pop("tropismN145")
-    if "tropismN2" in mods:
-        rrp[2].tropismN *= mods["tropismN2"]
-        mods.pop("tropismN2")
-    if "tropismN3" in mods:
-        rrp[3].tropismN *= mods["tropismN3"]
-        mods.pop("tropismN3")
+        if key_ == "a":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].a = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].a *= mods[key]
+            mods.pop(key)
 
-    if "tropismS" in mods:  # all types
-        for i in range(0, len(rrp)):
-            rrp[i].tropismS *= mods["tropismS"]
-        mods.pop("tropismS")
-    if "tropismS145" in mods:
-        rrp[1].tropismS *= mods["tropismS145"]
-        rrp[4].tropismS *= mods["tropismS145"]
-        if len(rrp) > 5:
-            rrp[5].tropismS *= mods["tropismS145"]
-        mods.pop("tropismS145")
-    if "tropismS2" in mods:
-        rrp[2].tropismS *= mods["tropismS2"]
-        mods.pop("tropismS2")
-    if "tropismS3" in mods:
-        rrp[3].tropismS *= mods["tropismS3"]
-        mods.pop("tropismS3")
+        if key_ == "hairsZone":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].hairsZone = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].hairsZone *= mods[key]
+            mods.pop(key)
 
-    if  "hairsZone" in mods:
-        for i in range(0, len(rrp)):
-            rrp[i].hairsZone = mods["hairsZone"]
-        mods.pop("hairsZone")
-    if "hairsZone145" in mods:
-        rrp[1].hairsZone = mods["hairsZone145"]
-        rrp[4].hairsZone = mods["hairsZone145"]
-        if len(rrp) > 5:
-            rrp[5].hairsZone = mods["hairsZone145"]
-        mods.pop("hairsZone145")
-    if "hairsZone2" in mods:
-        rrp[2].hairsZone = mods["hairsZone2"]
-        mods.pop("hairsZone2")
-    if "hairsZone3" in mods:
-        rrp[3].hairsZone = mods["hairsZone3"]
-        mods.pop("hairsZone3")
+        if key_ == "hairsLength":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].hairsLength = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].hairsLength *= mods[key]
+            mods.pop(key)
 
-    if "hairsLength" in mods:
-        for i in range(0, len(rrp)):
-            rrp[i].hairsLength = mods["hairsLength"]
-        mods.pop("hairsLength")
-    if "hairsLength145" in mods:
-        rrp[1].hairsLength = mods["hairsLength145"]
-        rrp[4].hairsLength = mods["hairsLength145"]
-        if len(rrp) > 5:
-            rrp[5].hairsLength = mods["hairsLength145"]
-        mods.pop("hairsLength145")
-    if "hairsLength2" in mods:
-        rrp[2].hairsLength = mods["hairsLength2"]
-        mods.pop("hairsLength2")
-    if "hairsLength3" in mods:
-        rrp[3].hairsLength = mods["hairsLength3"]
-        mods.pop("hairsLength3")
+        if key_ == "hairsElongation":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].hairsElongation = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].hairsElongation *= mods[key]
+            mods.pop(key)
 
-    if "hairsElongation" in mods:
-        for i in range(0, len(rrp)):
-            rrp[i].hairsElongation = mods["hairsElongation"]
-        mods.pop("hairsElongation")
+        if key_ == "tropismN":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].tropismN = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].tropismN *= mods[key]
+            mods.pop(key)
 
-    if "dx" in mods:
-        for i in range(0, len(rrp)):
-            rrp[i].dx = mods["dx"]
-        mods.pop("dx")
+        if key_ == "tropismS":
+            if abs_:  # absolute value
+                for i in ind_:
+                    rrp[i].tropismS = mods[key]
+            else:  # scaling
+                for i in ind_:
+                    rrp[i].tropismS *= mods[key]
+            mods.pop(key)
+
+        if key_ == "src":  # seminal root count, called basal roots in cplantbox
+            if abs_:  # absolute value
+                srp[0].maxB = int(mods[key] + 0.5)  # round
+            else:  # scaling
+                srp[0].maxB *= mods[key]
+            mods.pop(key)
+
+        if key_ == "src_first":
+            if abs_:  # absolute value
+                srp[0].firstB = mods[key]
+            else:  # scaling
+                srp[0].firstB *= mods[key]
+            mods.pop(key)
+
+        if key_ == "src_delay":
+            if abs_:  # absolute value
+                srp[0].delayB = mods[key]
+            else:  # scaling
+                srp[0].delayB *= mods[key]
+            mods.pop(key)
+
+        if key_ == "dx":
+            for i in ind_:
+                rrp[i].dx = mods[key]
+            mods.pop(key)
 
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic = False, mods = None, model = "Meunier"):

@@ -160,10 +160,10 @@ def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_tran
              collar_pot = collar_pot_)
 
 
-def write_cplantbox_results(file_name, length, volume, surface, RLDz, krs, SUFz, RLD, SUF, write_all = True):
+def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, write_all = True):
     """  saves results from run_cplantbox in a npz file """
     if write_all:
-        np.savez("results_cplantbox/" + file_name, length = length, volue = volume, surface = surface, RLDz = RLDz, krs = krs, SUFz = SUFz, RLD = RLD, SUF = SUF)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, RLD = RLD, SUF = SUF)
     else:
-        np.savez("results_cplantbox/" + file_name, length = length, volue = volume, surface = surface, RLDz = RLDz, krs = krs, SUFz = SUFz)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz)
 

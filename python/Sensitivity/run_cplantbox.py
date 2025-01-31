@@ -91,18 +91,16 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         print("********************************************************************************\n")
         # raise
 
-    length, volume, surface, RLDz, Krs, SUFz, RLD, SUF = run_(r, sim_time, initial_age, area, output_times)
+    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF = run_(r, sim_time, initial_age, area, output_times)
 
-    # if save_all:
-    #     scenario.write_results(exp_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
-    # else:
-    #     pass
-    #     # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
-
-    # print("writing parameters", exp_name)
-    r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
+    print("writing", exp_name)
+    # results
+    scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, write_all = save_all)
+    # parameters
     with open("results_cplantbox/" + exp_name + "_mods.json", "w+") as f:
         json.dump(mods_copy, f)
+    # resulting cplantbox parameters
+    # r.ms.writeParameters("results_cplantbox/" + exp_name + ".xml")  # corresponding xml parameter set
 
     print("finished " + exp_name)
 
@@ -112,33 +110,40 @@ def run_(r, sim_time, initial_age, area, out_times):
 
     start_time = timeit.default_timer()
 
-    out_times.insert(0, 0.)
-    out_times.append(sim_time)  # always export final simulation time
-    dt_ = np.diff(out_times)
-    length, volume, surface, RLDz, krs, SUFz, RLD, SUF = [], [], [], [], [], [], [], []
+    out = out_times.copy()
+    out.insert(0, 0.)
+    out.append(sim_time)  # always export final simulation time
+    dt_ = np.diff(out)
+    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF = [], [], [], [], [], [], [], [], [], []
 
+    print("dt_", dt_)
     t = initial_age
     for dt in dt_:
+
         r.ms.simulate(dt, False)
         t += dt  # current simulation time
-        length.append(r.ms.getParameter("length"))
-        volume.append(r.ms.getParameter("volume"))
-        surface.append(r.ms.getParameter("surface"))
+        length.append(np.sum(r.ms.getParameter("length")))
+        volume.append(np.sum(r.ms.getParameter("volume")))  # we ignore root hairs
+        surface.append(np.sum(r.ms.getParameter("surface")))  # TODO: include root hairs
         suf = r.get_suf(t)
-        krs = r.get_krs(t)
+        krs_, _ = r.get_krs(t)
+        krs.append(krs_)
         z = np.linspace(0., -200, 200)
         sa = pb.SegmentAnalyser(r.ms.mappedSegments())
         sa.addData("suf", suf)
         rld = np.array(sa.distribution("length", 0., -200., 200, False)) / (area * 200)
         RLD.append(rld)
-        RLDz.append(rld.dot(z))
+        rld_ = rld / np.sum(rld)  # normalize
+        RLDz.append(rld_.dot(z))
+        RLDmean.append(np.mean(RLD))
         suf = np.array(sa.distribution("suf", 0., -200., 200, False))
         SUF.append(suf)
         SUFz.append(suf.dot(z))
+        depth.append(sa.getMinBounds().z)
 
-    print ("root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
+    print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
 
-    return length, volume, surface, RLDz, krs, SUFz, RLD, SUF
+    return np.array(length), np.array(surface), np.array(volume), np.array(depth), np.array(RLDmean), np.array(RLDz), np.array(krs), np.array(SUFz), np.array(RLD), np.array(SUF)
 
 
 if __name__ == "__main__":

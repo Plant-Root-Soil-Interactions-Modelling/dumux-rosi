@@ -19,7 +19,7 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_"
+file_name = "local_soybean_new_"
 # file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 # file_name = "local_soybean_radii_"
