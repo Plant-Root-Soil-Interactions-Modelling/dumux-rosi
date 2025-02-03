@@ -44,9 +44,14 @@ def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node
 
     return img
 
+def scale01(img):
+    """ scales the img from 0 to 1 (e.g. for color mapping) """ 
+    return np.divide( img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape)*(np.max(img.flat)-np.min(img.flat)))
+
 
 def plot_hexagons(img, ax):
-    # iteratively add hexagons
+    """ adds the img data as hexagons """
+    img = scale01(img)
     xx = list(range(0, img.shape[1]))
     yy = list(range(0, img.shape[0]))
     for i in range(img.shape[0]):
@@ -62,6 +67,30 @@ def plot_hexagons(img, ax):
     ax.set_xlim((-1, img.shape[1] + 0.5))
     ax.set_ylim((-1, img.shape[0] - 0.5))
 
+def plot_roses(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node)):
+    """ """
+    n = np.ceil(np.sqrt(len(target_indices)))
+    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
+    if n == 1:
+        ax = np.array([ax])
+    ax_ = ax.flat
+    
+    for i, target in enumerate(target_indices):
+         img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
+         # ax_[i].pcolor(img, cmap = "viridis")  # pcolor
+         plot_hexagons(img, ax_[i])
+         ax_[i].set_title(target_names[i])
+         ax_[i].set_xticks([])
+         ax_[i].set_yticks([])
+         # divider = make_axes_locatable(ax_[i])
+         # cax = divider.append_axes('right', size = '5%', pad = 0.05)
+         # fig.colorbar(img, cax = cax, orientation = 'vertical')
+
+    plt.show()    
+    
+    
+    pass
+
 
 def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
     """ plots multiple objectives using prepare_img """
@@ -73,7 +102,7 @@ def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2
 
     for i, target in enumerate(target_indices):
          img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
-         ax_[i].pcolor(img, cmap = "viridis")  # pcolor
+         # ax_[i].pcolor(img, cmap = "viridis")  # pcolor
          plot_hexagons(img, ax_[i])
          ax_[i].set_title(target_names[i])
          ax_[i].set_xticks([])
@@ -114,10 +143,12 @@ print("\nfiltered")
 got.print_info(data, target_names)  # filtered
 data = got.scale_data(data)
 
-n_neurons = 3
-m_neurons = 3
-som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
-              neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+n_neurons = 3 # 10
+m_neurons = 3 # 10
+# som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
+#               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+som = MiniSom(15, 15, data.shape[1], sigma=1.5, learning_rate=.7, activation_distance='euclidean',
+              topology='hexagonal', neighborhood_function='gaussian', random_seed=10)
 
 som.pca_weights_init(data)
 som.train(data, 1000, verbose = False)  # random training

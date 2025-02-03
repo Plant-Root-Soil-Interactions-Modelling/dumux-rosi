@@ -1,4 +1,3 @@
-from lxml.html.builder import DD
 import sys; sys.path.append("../../../BayesianOptimization")
 
 import scipy
@@ -56,9 +55,9 @@ def finished_objective(type_str, enviro_type, sim_time, job):
 
 def get_objective(type_str, enviro_type, sim_time, job):
     """ retrieves results from the output file """
-    file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))
-    alldata = np.load("results_cplantbox/" + file_name + ".npz")
-    krs = alldata["krs"]
+    # file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))
+    # alldata = np.load("results_cplantbox/" + file_name + ".npz")
+    # krs = alldata["krs"]
     return 0.  # krs[-1]  # return 0. for uniform(?) sampling
 
 
@@ -66,7 +65,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 200
+    iterations = 100
     points_per_iteration = 10
 
     for i in range(0, iterations):

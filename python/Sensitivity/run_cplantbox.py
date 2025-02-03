@@ -131,7 +131,7 @@ def run_(r, sim_time, initial_age, area, out_times):
         z = np.linspace(0., -200, 200)
         sa = pb.SegmentAnalyser(r.ms.mappedSegments())
         sa.addData("suf", suf)
-        rld = np.array(sa.distribution("length", 0., -200., 200, False)) / (area * 200)
+        rld = np.array(sa.distribution("length", 0., -200., 200, False)) / (area*1) # divide through layer volume 
         RLD.append(rld)
         rld_ = rld / np.sum(rld)  # normalize
         RLDz.append(rld_.dot(z))
