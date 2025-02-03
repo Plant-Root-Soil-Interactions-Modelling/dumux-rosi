@@ -45,7 +45,7 @@ def merge_results(folder_path, json_data_list, i = -1):
             data["RLDmean"] = results["RLDmean"][i]
             data["RLDz"] = np.abs(results["RLDz"][i])  # they are stored with a (wrong) sign
             data["krs"] = results["krs"][i]
-            data["SUFz"] = results["SUFz"][i]
+            data["SUFz"] = np.abs(results["SUFz"][i])  # they are stored with a (wrong) sign
 
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading {filename}: {e}")
@@ -62,7 +62,24 @@ def fetch_features(feature_names, all):
     data = []
     for name in feature_names:
         data.append(get_(name, all))
-    return np.array(data).transpose()
+
+    data = np.array(data).transpose()
+    return data
+
+
+def print_info(data, feature_names):
+    """ prints features min, max, mean, and sd (featrure names labels the data columns) """
+    print("name\tmin\t\tmax\t\tmean\t\tstd")
+    for i, name in enumerate(feature_names):
+        # print(name, "\t", np.min(data[:, i]), "\t", np.max(data[:, i]), "\t", np.mean(data[:, i]), "\t", np.std(data[:, i]))
+        print("{:s}\t{:10.4f}\t{:10.4f}\t{:10.4f}\t{:10.4f}".format(name, np.min(data[:, i]), np.max(data[:, i]), np.mean(data[:, i]), np.std(data[:, i])))
+
+
+def filter_data(data, feature_ind, min_, max_):
+    """ crops data to where feature_ind stays within (min_, max_) """
+    ind_ = np.bitwise_and(data[:, feature_ind] > min_, data[:, feature_ind] < max_)
+    data = data[ind_,:]
+    return data
 
 
 def scale_data(data):

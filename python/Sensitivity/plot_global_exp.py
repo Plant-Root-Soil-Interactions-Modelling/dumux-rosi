@@ -8,6 +8,8 @@ import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
+from matplotlib.patches import RegularPolygon, Ellipse
+from matplotlib import cm, colorbar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from minisom import MiniSom
@@ -17,7 +19,6 @@ import global_optimization_tools as got
 
 def make_maps(som):
     """ makes to maps node2sample (dict), and sample2node """
-
     node2sample = {}
     sample2node = []
     for i, xx in enumerate(data):
@@ -44,8 +45,26 @@ def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node
     return img
 
 
-def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
+def plot_hexagons(img, ax):
+    # iteratively add hexagons
+    xx = list(range(0, img.shape[1]))
+    yy = list(range(0, img.shape[0]))
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            wy = yy[i] * np.sqrt(3) / 2
+            hex = RegularPolygon((xx[j] + 0.5 * (i % 2) , wy),
+                                 numVertices = 6,
+                                 radius = .95 / np.sqrt(3),
+                                 facecolor = cm.viridis(img[i, j]),
+                                 alpha = 1.,
+                                 edgecolor = 'gray')
+            ax.add_patch(hex)
+    ax.set_xlim((-1, img.shape[1] + 0.5))
+    ax.set_ylim((-1, img.shape[0] - 0.5))
 
+
+def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
+    """ plots multiple objectives using prepare_img """
     n = np.ceil(np.sqrt(len(target_indices)))
     fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
     if n == 1:
@@ -54,7 +73,8 @@ def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2
 
     for i, target in enumerate(target_indices):
          img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
-         ax_[i].pcolor(img)  # pcolor
+         ax_[i].pcolor(img, cmap = "viridis")  # pcolor
+         plot_hexagons(img, ax_[i])
          ax_[i].set_title(target_names[i])
          ax_[i].set_xticks([])
          ax_[i].set_yticks([])
@@ -86,8 +106,12 @@ exp_name = "soybean_all14"
 all = got.load_json_files(exp_name, folder_path)
 got.merge_results(folder_path, all)
 
-target_names = ["length", "surface", "volume", "depth", "RLDmean", "RLDz", "krs", "SUFz"]
+target_names = ["length", "volume", "RLDmean", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 data = got.fetch_features(target_names, all)
+got.print_info(data, target_names)  # RAW
+data = got.filter_data(data, 0, 200., 14000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+print("\nfiltered")
+got.print_info(data, target_names)  # filtered
 data = got.scale_data(data)
 
 n_neurons = 3
@@ -105,12 +129,14 @@ plot_targets(ind_, target_names, data, m_neurons, n_neurons, node2sample, sample
 
 # # DISTANCE MAP
 # plt.figure(figsize = (9, 9))
+# plt.title("Distance map")
 # plt.pcolor(som.distance_map().T)  # plotting the distance map as background , cmap = 'bone_r'
 # plt.colorbar()
 # plt.show()
-
+#
 # # FREQUENCY MAP
-# plt.figure(figsize = (7, 7))
+# plt.figure(figsize = (9, 9))
+# plt.title("Frequency map")
 # frequencies = som.activation_response(data)
 # plt.pcolor(frequencies.T, cmap = 'Blues')
 # plt.colorbar()
