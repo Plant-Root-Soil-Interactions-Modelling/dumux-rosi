@@ -69,48 +69,66 @@ def plot_hexagons(img, ax, f = cm.viridis):
     ax.set_ylim((-1, img.shape[0] - 0.5))
 
 
-def plot_roses(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
+
+
+def plot_rose(data, i, j, m_neurons, n_neurons, ax):
     """ """
-    n = np.ceil(np.sqrt(len(target_indices)))
+    print(len(data) ,i, j)
+    theta_ = np.linspace(0, 2*np.pi, len(data)+1)  
+    theta, r = [], []
+    for k, d in enumerate(data):
+        r.append(d*0.1)
+        r.append(d*0.1)
+        theta.append(theta_[k])
+        theta.append(theta_[k+1])
+
+    x = r * np.cos(theta) + j + 0.5 * (i % 2)
+    y = r * np.sin(theta) + i * np.sqrt(3) / 2
+    
+    ax.plot(x, y, "*")
+
+    # ax.set_xlim((-1, n_neurons + 0.5))
+    # ax.set_ylim((-1, m_neurons - 0.5))
+
+def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node, mode = "quad"):
+    """ plots multiple objectives using prepare_img """    
+    if mode == "quad" or mode == "hexagon":
+        n = np.ceil(np.sqrt(len(target_indices)))
+    else:
+        n =1    
     fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
-
+    img_ = []    
     for i, target in enumerate(target_indices):
+         
          img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
-         # ax_[i].pcolor(img, cmap = "viridis")  # pcolor
-         plot_hexagons(img, ax_[i])
-         ax_[i].set_title(target_names[i])
-         ax_[i].set_xticks([])
-         ax_[i].set_yticks([])
-         # divider = make_axes_locatable(ax_[i])
-         # cax = divider.append_axes('right', size = '5%', pad = 0.05)
-         # fig.colorbar(img, cax = cax, orientation = 'vertical')
+         
+         if mode == "quad": 
+             ax_[i].pcolor(img, cmap = "viridis")  # pcolor         
+         elif mode == "hexagon":
+             plot_hexagons(img, ax_[i])
+         elif mode == "rose":
+             img_.append(img)
+             plot_hexagons(img, ax_[0], f = lambda c :  [1.,1.,1.])             
+         
+         if mode == "quad" or mode == "hexagon":         
+             ax_[i].set_title(target_names[i])
+             ax_[i].set_xticks([])
+             ax_[i].set_yticks([])
+         elif mode == "rose":   
+             ax_[0].set_xticks([])
+             ax_[0].set_yticks([])
 
-    plt.show()
-
-    pass
-
-
-def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
-    """ plots multiple objectives using prepare_img """
-    n = np.ceil(np.sqrt(len(target_indices)))
-    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
-    if n == 1:
-        ax = np.array([ax])
-    ax_ = ax.flat
-
-    for i, target in enumerate(target_indices):
-         img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
-         # ax_[i].pcolor(img, cmap = "viridis")  # pcolor
-         plot_hexagons(img, ax_[i])
-         ax_[i].set_title(target_names[i])
-         ax_[i].set_xticks([])
-         ax_[i].set_yticks([])
-         # divider = make_axes_locatable(ax_[i])
-         # cax = divider.append_axes('right', size = '5%', pad = 0.05)
-         # fig.colorbar(img, cax = cax, orientation = 'vertical')
+    if mode == "rose":
+        img_ = np.array(img_)
+        print(img_.shape)
+        for i in range(0, m_neurons):
+            for j in range(0, n_neurons):
+                data = img_[:,i,j]
+                plot_rose(data, i, j, m_neurons, n_neurons,ax_[0])
+    
 
     plt.show()
 
@@ -144,8 +162,9 @@ print("\nfiltered")
 got.print_info(data, target_names)  # filtered
 data = got.scale_data(data)
 
+m_neurons = 4  # 10
 n_neurons = 3  # 10
-m_neurons = 3  # 10
+
 # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
 #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
 som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
@@ -157,24 +176,24 @@ som.train(data, 1000, verbose = False)  # random training
 node2sample, sample2node = make_maps(som)
 
 ind_ = list(range(0, len(target_names)))
-plot_targets(ind_, target_names, data, m_neurons, n_neurons, node2sample, sample2node)
+plot_targets(ind_, target_names, data, m_neurons, n_neurons, node2sample, sample2node, "rose")
 
-# DISTANCE MAP
-plt.figure(figsize = (9, 9))
-plt.title("Distance map")
-# plt.pcolor(som.distance_map().T)  # plotting the distance map as background , cmap = 'bone_r'
-plot_hexagons(som.distance_map().T, plt.gca(), cm.jet)
-# plt.colorbar()
-plt.show()
-
-# FREQUENCY MAP
-plt.figure(figsize = (9, 9))
-plt.title("Frequency map")
-frequencies = som.activation_response(data)
-# plt.pcolor(frequencies.T, cmap = 'Blues')
-plot_hexagons(frequencies.T, plt.gca(), cm.jet)
-# plt.colorbar()
-plt.show()
+# # DISTANCE MAP
+# plt.figure(figsize = (9, 9))
+# plt.title("Distance map")
+# # plt.pcolor(som.distance_map().T)  # plotting the distance map as background , cmap = 'bone_r'
+# plot_hexagons(som.distance_map().T, plt.gca(), cm.jet)
+# # plt.colorbar()
+# plt.show()
+#
+# # FREQUENCY MAP
+# plt.figure(figsize = (9, 9))
+# plt.title("Frequency map")
+# frequencies = som.activation_response(data)
+# # plt.pcolor(frequencies.T, cmap = 'Blues')
+# plot_hexagons(frequencies.T, plt.gca(), cm.jet)
+# # plt.colorbar()
+# plt.show()
 
 # TARGET PERFORMANCE
 # target = 0  # "krs"
