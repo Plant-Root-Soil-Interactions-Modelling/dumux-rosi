@@ -141,6 +141,13 @@ class SolverWrapper():
         """ Gathers element volumes (Nc, 1) [cm3] """
         return self._map(self._flat0(comm.gather(self.base.getCellVolumes(), root = 0)), 2) * 1.e6  # m3 -> cm3
 
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self._flat0(comm.gather(self.base.getCellSurfacesCyl(), root = 0)), 2) * 1.e4  # m2 -> cm2
+        
+    def getCellSurfacesCyl_(self):
+        """nompi version of  """
+        return np.array(self.base.getCellSurfacesCyl()) * 1.e4  # m2 -> cm2
     def getCellVolumes_(self):
         """nompi version of  """
         return np.array(self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
@@ -220,7 +227,79 @@ class SolverWrapper():
         """nompi version of """
         self.checkGridInitialized()
         return np.array(self.base.getVelocities(eqIdx)) * 100. *24 * 3600  # cm/s -> cm/day
-
+        
+    def getFluxesPerCell(self, eqIdx = 0, length = None):
+        """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
+        scvfFluxes = self._flat0(comm.gather(self.getFluxesPerFace_(eqIdx, length), root = 0))
+        face2CellIdx = self._flat0(comm.gather(self.getFace2CellIdx_(), root = 0)) # cannotuse map, as we took out the ghost cells 
+        scvFluxes = np.array([
+             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+            ])
+        if rank == 0:
+            scvFluxes = scvFluxes[np.unique(face2CellIdx)]
+        return scvFluxes 
+ 
+    def getFluxesPerCell_(self, eqIdx = 0, length = None):
+        """nompi version of """
+        self.checkGridInitialized()
+        scvfFluxes = np.array(self.getFluxesPerFace_(eqIdx, length)  ) # [cm3/day] 
+        face2CellIdx = np.array(self.getFace2CellIdx_())
+        scvFluxes = np.array([
+             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+            ])
+        return scvFluxes
+            
+    def getFluxesPerFace_(self, eqIdx = 0, length = None):
+        """nompi version of 
+            [cm3/day] 
+        """
+        self.checkGridInitialized() 
+        scvfFluxes = self.getBoundaryFluxesPerFace_(eqIdx, length)      
+        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)   
+        return scvfFluxes 
+        
+    def getBoundaryFluxesPerFace_(self, eqIdx = 0, length = None):
+        """  [cm3/day] """
+        self.checkGridInitialized()
+        unitChange = 24 * 3600 / 1e4 # [ kgOrmol/m2/s -> kgOrmol/cm2/day]
+        if eqIdx == 0:
+            if self.useMoles:
+                unitChange *=  18.068 # [mol/cm2/day -> cm3/cm2/day]
+            else:
+                unitChange *= 1e3  # [kg/cm2/day -> cm3/cm2/day]
+        surfaces = self.getFaceSurfaces_(length)  # cm2 
+        notGhost = surfaces > 0
+        return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]) * surfaces)[notGhost] * unitChange
+        
+        
+        
+    
+    def getCell2CellFluxesPerFace_(self, eqIdx = 0, length = None):
+        """  [cm3/day] """
+        self.checkGridInitialized()
+        unitChange = 24 * 3600 # [ kgOrmol/s -> kgOrmol/day]
+        if eqIdx == 0:
+            if self.useMoles:
+                unitChange *=  18.068 # [mol/day -> cm3/day]
+            else:
+                unitChange *= 1e3  # [kg/day -> cm3/day]
+        surfaces = self.getFaceSurfaces_(length)        
+        notGhost = surfaces > 0
+        return np.array(self.base.getScvfInnerFluxes()[eqIdx])[notGhost] * unitChange
+        
+    def getFaceSurfaces_(self, length = None):
+        if self.dimWorld == 1:
+            if length is None:
+                raise Exception('getFaceSurfaces_: length parameter required to get flux of 1d domain')
+            return np.array(self.base.getCylFaceCoordinates()) * 100 * 2 * np.pi * length
+        else:
+            return np.array( self.base.getFaceSurfaces()) * 1e4 # cm2
+        
+    def getFace2CellIdx_(self):
+        face2CellIdx = np.array(self.base.getFace2CellIdx())
+        surfaces = np.array( self.base.getFaceSurfaces()) 
+        notGhost = surfaces > 0
+        return face2CellIdx[notGhost]
     def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
         return self.base.pickCell(np.array(pos) / 100.)  # cm -> m
@@ -246,6 +325,18 @@ class SolverWrapper():
         else:
             return False
 
+    @property
+    def dimWorld(self):
+        """ dimention (1 or 3 """
+        if (self.base.dimWorld != 1) and (self.base.dimWorld != 3):
+            raise Exception(f'recieved unexpected dimention: {self.base.dimWorld}')
+        return self.base.dimWorld 
+        
+    @property
+    def useMoles(self):
+        """ dumux units in moles [True] or kg [False] """
+        return self.base.useMoles() 
+        
     @property
     def simTime(self):
         """ Current simulation time (read only) [days]"""
