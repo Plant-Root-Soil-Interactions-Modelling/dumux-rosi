@@ -44,12 +44,13 @@ def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node
 
     return img
 
+
 def scale01(img):
-    """ scales the img from 0 to 1 (e.g. for color mapping) """ 
-    return np.divide( img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape)*(np.max(img.flat)-np.min(img.flat)))
+    """ scales the img from 0 to 1 (e.g. for color mapping) """
+    return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat)))
 
 
-def plot_hexagons(img, ax):
+def plot_hexagons(img, ax, f = cm.viridis):
     """ adds the img data as hexagons """
     img = scale01(img)
     xx = list(range(0, img.shape[1]))
@@ -60,21 +61,22 @@ def plot_hexagons(img, ax):
             hex = RegularPolygon((xx[j] + 0.5 * (i % 2) , wy),
                                  numVertices = 6,
                                  radius = .95 / np.sqrt(3),
-                                 facecolor = cm.viridis(img[i, j]),
+                                 facecolor = f(img[i, j]),
                                  alpha = 1.,
                                  edgecolor = 'gray')
             ax.add_patch(hex)
     ax.set_xlim((-1, img.shape[1] + 0.5))
     ax.set_ylim((-1, img.shape[0] - 0.5))
 
-def plot_roses(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node)):
+
+def plot_roses(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node):
     """ """
     n = np.ceil(np.sqrt(len(target_indices)))
     fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
-    
+
     for i, target in enumerate(target_indices):
          img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
          # ax_[i].pcolor(img, cmap = "viridis")  # pcolor
@@ -86,9 +88,8 @@ def plot_roses(target_indices, target_names, data, m_neurons, n_neurons, node2sa
          # cax = divider.append_axes('right', size = '5%', pad = 0.05)
          # fig.colorbar(img, cax = cax, orientation = 'vertical')
 
-    plt.show()    
-    
-    
+    plt.show()
+
     pass
 
 
@@ -135,7 +136,7 @@ exp_name = "soybean_all14"
 all = got.load_json_files(exp_name, folder_path)
 got.merge_results(folder_path, all)
 
-target_names = ["length", "volume", "RLDmean", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 data = got.fetch_features(target_names, all)
 got.print_info(data, target_names)  # RAW
 data = got.filter_data(data, 0, 200., 14000)  # 76 * 3  *100 * 0.6 = 13680 cm;
@@ -143,12 +144,12 @@ print("\nfiltered")
 got.print_info(data, target_names)  # filtered
 data = got.scale_data(data)
 
-n_neurons = 3 # 10
-m_neurons = 3 # 10
+n_neurons = 3  # 10
+m_neurons = 3  # 10
 # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
 #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
-som = MiniSom(15, 15, data.shape[1], sigma=1.5, learning_rate=.7, activation_distance='euclidean',
-              topology='hexagonal', neighborhood_function='gaussian', random_seed=10)
+som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
+              topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
 
 som.pca_weights_init(data)
 som.train(data, 1000, verbose = False)  # random training
@@ -158,20 +159,22 @@ node2sample, sample2node = make_maps(som)
 ind_ = list(range(0, len(target_names)))
 plot_targets(ind_, target_names, data, m_neurons, n_neurons, node2sample, sample2node)
 
-# # DISTANCE MAP
-# plt.figure(figsize = (9, 9))
-# plt.title("Distance map")
+# DISTANCE MAP
+plt.figure(figsize = (9, 9))
+plt.title("Distance map")
 # plt.pcolor(som.distance_map().T)  # plotting the distance map as background , cmap = 'bone_r'
+plot_hexagons(som.distance_map().T, plt.gca(), cm.jet)
 # plt.colorbar()
-# plt.show()
-#
-# # FREQUENCY MAP
-# plt.figure(figsize = (9, 9))
-# plt.title("Frequency map")
-# frequencies = som.activation_response(data)
+plt.show()
+
+# FREQUENCY MAP
+plt.figure(figsize = (9, 9))
+plt.title("Frequency map")
+frequencies = som.activation_response(data)
 # plt.pcolor(frequencies.T, cmap = 'Blues')
+plot_hexagons(frequencies.T, plt.gca(), cm.jet)
 # plt.colorbar()
-# plt.show()
+plt.show()
 
 # TARGET PERFORMANCE
 # target = 0  # "krs"
