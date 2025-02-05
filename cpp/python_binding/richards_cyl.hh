@@ -38,34 +38,7 @@ public:
     	outerIdx = this->pick({ rOut });
 	}
     
-	
-    /**
-     * for 1d3d coupling, useful to get from dumux 
-	 * the boundary flows at each time step
-	 * more accurate than getNeumann()
-	 * currently only implemented for richards_cyl
-     */
-	 
-    void clearSaveBC() {    
-        BC_in_vals.clear();
-        BC_out_vals.clear();
-        BC_time.clear();
-        BC_ddt.clear();
-    }
-    void doSaveBC(double ddt_current) {
-		int numC = this->numComp();
-        std::vector<double> BC_in_vals_i(numC);
-        std::vector<double> BC_out_vals_i(numC);
-        for(int nc = 0.; nc < numC; nc++)
-        {
-            BC_in_vals_i.at(nc) = this->getInnerFlux(nc)/this->rIn;// [ mol / (m^2 \cdot s)]_axissymmetric / [axyssimetric factor] = [ mol / (m^2 * s)]
-            BC_out_vals_i.at(nc) = this->getOuterFlux(nc)/this->rOut;// [ mol / (m^2 \cdot s)]_axissymmetric  / [axyssimetric factor] = [ mol / (m^2 * s)]
-        }
-        BC_in_vals.push_back(BC_in_vals_i);
-        BC_out_vals.push_back(BC_out_vals_i);
-        BC_ddt.push_back(ddt_current);
-    }
-	
+		
     /**
      * [ kg / (m^2 \cdot s)]
      */
@@ -123,10 +96,6 @@ public:
     double rIn = 0.;
     double rOut = 0.;
 
-    std::vector<std::vector<double>> BC_in_vals;
-    std::vector<std::vector<double>> BC_out_vals;
-    std::vector<double> BC_time;
-    std::vector<double> BC_ddt;
 };
 
 /**
@@ -163,11 +132,6 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def("numComp",&RichardsFoam::numComp)
-
-    .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
-    .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
-    .def_readwrite("BC_time", &RichardsFoam::BC_time) 
-    .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

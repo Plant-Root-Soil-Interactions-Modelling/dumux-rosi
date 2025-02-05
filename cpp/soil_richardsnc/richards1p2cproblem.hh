@@ -65,6 +65,7 @@ public:
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
 	static constexpr bool isBox = GridGeometry::discMethod == DiscretizationMethods::box;
+    static constexpr bool useMoles = false;
 
 	enum {		
     pressureIdx = Indices::pressureIdx, // index of primary variables

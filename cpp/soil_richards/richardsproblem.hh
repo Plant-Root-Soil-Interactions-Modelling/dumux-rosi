@@ -74,6 +74,7 @@ public:
 	};
 
 	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
+    static constexpr bool useMoles = false;
 
 	enum BCTypes {
 		constantPressure = 1,
