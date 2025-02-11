@@ -105,8 +105,6 @@ def experiment_singleroot():
         'kr_old': (1.e-6, 1.),
         'kx_young': (1.e-6, 1.),
         'kx_old': (1.e-6, 1.),
-        # "kr_age_young":(1., 30.),
-        # "kx_age_young":(1., 30.)
         }
 
     optimizer = BayesianOptimization(

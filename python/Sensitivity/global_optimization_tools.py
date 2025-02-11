@@ -86,9 +86,11 @@ def scale_data(data):
     """ scales data to have a mean of 0 and a std of 1 """
     mean = np.mean(data, axis = 0)
     std = np.std(data, axis = 0)
-    data = data - mean
-    data = np.divide(data, std)
-    return data
+    data2 = data - mean
+    data2 = np.divide(data2, std)
+    # print("data2 mean", np.mean(data2, axis = 0))
+    # print("data2 mean", np.std(data2, axis = 0))
+    return data2
 
 
 def plot_1D(nameX, nameY, all):
@@ -138,25 +140,25 @@ if __name__ == "__main__":
     folder_path = "results_cplantbox/"
     exp_name = "soybean_test"
 
-    all = load_json_files(exp_name, folder_path)
-    merge_results(folder_path, all)
-
-    # scatter_1D("lmax1_a", "length", all)
-    # scatter_1D(["r1_a"], ["length"], all)
-    # scatter_1D(["r1_a", "ln1_a"], ["length", "volume"], all)
-
-    # scatter_1D("hairsLength_a", "krs", all,  "lmax1_a")
-    # scatter_1D("hairsZone_a", "krs", all,  "lmax1_a")
-
-    print("data set", len(all), "entries")
-    print(all[10])
-
-    # StandardScaler (sklearn)
-
-    # step 1 (scale features, not targets)
-    # step 2 (pca, pca.explained_variance ratio
-
-    feature_names = ['a1_a', 'lmax1_a', 'ln1_a', 'r1_a', 'tropismN1_a', 'hairsLength_a', 'hairsZone_a', 'hairsElongation_a']
-    data = fetch_features(feature_names, all)
-    data = scale_data(data)
+    # all = load_json_files(exp_name, folder_path)
+    # merge_results(folder_path, all)
+    #
+    # # scatter_1D("lmax1_a", "length", all)
+    # # scatter_1D(["r1_a"], ["length"], all)
+    # # scatter_1D(["r1_a", "ln1_a"], ["length", "volume"], all)
+    #
+    # # scatter_1D("hairsLength_a", "krs", all,  "lmax1_a")
+    # # scatter_1D("hairsZone_a", "krs", all,  "lmax1_a")
+    #
+    # print("data set", len(all), "entries")
+    # print(all[0])
+    #
+    # # StandardScaler (sklearn)
+    #
+    # # step 1 (scale features, not targets)
+    # # step 2 (pca, pca.explained_variance ratio
+    #
+    # feature_names = ['a1_a', 'lmax1_a', 'ln1_a', 'r1_a', 'tropismN1_a', 'hairsLength_a', 'hairsZone_a', 'hairsElongation_a']
+    # data = fetch_features(feature_names, all)
+    # data = scale_data(data)
 

@@ -103,17 +103,18 @@ def cplantbox_tests():
     enviro_type = 0
     sim_time = 87.5
 
-    initial = {"output_times": [40],
-              "conductivity_mode": "scale",
-              "scale_kr": 0.1,
-              "scale_kx": 0.1 }
+    initial = {
+        "output_times": [40],
+        "conductivity_mode": "scale",
+        "scale_kr": 0.1,
+        "scale_kx": 0.1
+        }
 
-    # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
     pbounds = {
-        # 'src_a': (3, 11),
-        # 'src_first_a': (3, 14),
-        # 'src_delay_a': (3, 14),
-
+        'src_a': (3, 11),
+        'src_first_a': (3, 14),
+        'src_delay_a': (3, 14),
+         #
         'a1_a': (0.025, 0.25),
         'lmax1_a': (50, 150),
         'ln1_a': (0.2, 5.),
@@ -122,12 +123,10 @@ def cplantbox_tests():
         'hairsLength_a': (0.1, 2.),
         'hairsZone_a': (1., 10.),
         'hairsElongation_a': (0.1, 2.),
-
         }
 
     optimizer = BayesianOptimization(
         f = None,  # dummy (never called)
-        # acquisition_function = acquisition_function,
         pbounds = pbounds,
         verbose = 2,  # verbose = 1 prints only when a maximum is observed, verbose = 0 is silent
         random_state = 1,
@@ -136,17 +135,7 @@ def cplantbox_tests():
     logger = JSONLogger(path = "results_cplantbox/" + type_str + ".log")
     optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
 
-    # job = {}
-    # start_objective(type_str, enviro_type, sim_time, initial, job, True)
-    # print(finished_objective(type_str, enviro_type, sim_time, job))
-    # dd
-
     run_optimizer(optimizer, type_str, enviro_type, sim_time, initial)
-
-    print("\n ... and the answer is")
-    print(optimizer.max)
-
-    p = optimizer.max["params"]
 
 
 def cplantbox_all14():  # 30 parameters
@@ -170,6 +159,7 @@ def cplantbox_all14():  # 30 parameters
         'lmax145_a': (50, 150),
         'ln145_a': (0.5, 10.),
         'r145_a': (0.2, 7.),
+        # TODO theta !!!
         'tropismN145_a': (0., 7.),
         'tropismS145_a': (0., 1.),
         'hairsLength145_a': (0.1, 2.),
@@ -188,7 +178,7 @@ def cplantbox_all14():  # 30 parameters
 
         'a3_a': (0.01, 0.1),
         'lmax3_a': (5., 50.),
-        'ln3_a': (0.5, 10.),
+        # 'ln3_a': (0.5, 10.),
         'r3_a': (0.2, 7.),
         'tropismN3_a': (0., 7.),
         'tropismS3_a': (0., 1.),
