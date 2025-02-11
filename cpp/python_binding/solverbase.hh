@@ -376,6 +376,7 @@ public:
         ddt = -1;
 
         pointIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), dim); // global index mappers
+        faceIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 1);
         cellIdx = std::make_shared<Dune::GlobalIndexSet<GridView>>(grid->leafGridView(), 0);
 
         localCellIdx.clear();
@@ -384,6 +385,22 @@ public:
             int gIdx = cellIdx->index(e);
             localCellIdx[gIdx] = eIdx;
         }
+		int nFaces = gridGeometry->numScvf();
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		face2CellIdx = std::vector<int>(nFaces,-1);	// to sum face flow per cell	
+		 for (const auto& e : Dune::elements(gridGeometry->gridView(),Dune::Partitions::interior)) 
+        {
+            fvGeometry.bindElement(e);
+			//int i = 0;
+            for (const auto& scvf : scvfs(fvGeometry))
+            {
+				// local face to local cell indx
+				face2CellIdx.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
+            }			
+        }
+		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
+		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
+		scvSources.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
 
 
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
@@ -443,8 +460,10 @@ public:
     virtual void solve(double dt, bool doMPIsolve = true, bool saveInnerDumuxValues = false) {
         checkGridInitialized();
         using namespace Dumux;
-        clearSaveBC();
-        clearInnerFluxesAndSources();
+		
+		scvSources.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
+		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(gridGeometry->numScvf(), 0.));
+		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(gridGeometry->numScvf(), 0.)); 
 
         auto xOld = x;
 		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
@@ -482,8 +501,8 @@ public:
 
             if(saveInnerDumuxValues)
             {
-                doSaveBC(timeLoop->timeStepSize() );
-				doSaveInnerFluxesAndSources(timeLoop->timeStepSize() );
+				getScvfFluxesAtT(timeLoop->timeStepSize(),dt) ;
+				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;					   
             }
 
             gridVariables->advanceTimeStep();
@@ -811,6 +830,139 @@ public:
         }
         return fluxes;
     }
+	
+	
+    /**
+     * For a single mpi process. Gathering is done in Python
+	 * [ kg /m^3/s] or [ mol / m^3/s]
+     */
+    void getScvSourcesAtT(double dt, double outer_dt) {
+		checkGridInitialized();
+		
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		
+        auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+		
+
+        for (const auto& e : elements(gridGeometry->gridView())) { //, Dune::Partitions::interior
+
+            fvGeometry.bind(e);
+			
+            elemVolVars.bind(e, fvGeometry, x);
+			
+			for (const auto& scv : scvs(fvGeometry))
+            {
+				double pos0 = 1;
+				if(dimWorld == 1){
+					pos0 = scv.center()[0]; 
+				}
+				NumEqVector scvfSource_(0.0);
+				scvfSource_ = problem->source(e, fvGeometry, elemVolVars, scv); // [ kg / (m^3 \cdot s)] or [ mol / (m^3 \cdot s)]
+				
+				for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
+				{
+					scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
+				}
+			}
+		}
+		
+	}
+    /**
+     * For a single mpi process. Gathering is done in Python
+	 * [ kg/s] or [ mol/s]
+     */
+    void getScvfFluxesAtT(double dt, double outer_dt) {
+
+        checkGridInitialized();
+		
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		
+        auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+		
+		auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());	
+		
+		//localResidual = std::make_shared<assembler->localResidual()>;
+
+
+        for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
+
+            fvGeometry.bind(e);
+			
+            elemVolVars.bind(e, fvGeometry, x);
+            // std::cout << "f\n" << std::flush;
+
+
+            elemFluxVarsCache.bind(e, fvGeometry, elemVolVars); // check workspace
+            //std::cout << "g" << std::flush;
+			
+			//LocalAssembler localAssembler(assembler, e, x);	
+			//std::make_shared<Assembler>
+			
+            for (const auto& scvf : scvfs(fvGeometry))
+            {
+				double pos0 = 1;
+				//double scvf_area = scvf.area();
+				if(dimWorld == 1){
+					pos0 = scvf.center()[0]; 
+					//scvf_area = 2 * M_PI * pos0 * segLength;//m2 TODO handle 1D area?
+				}
+				NumEqVector scvfFlux_(0.0);
+				if(scvf.boundary())
+				{
+					scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);					
+					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
+					{
+						scvfBoundaryFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;
+					}
+				}
+				else{
+					scvfFlux_ = assembler->localResidual().computeFlux(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
+					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
+					{
+						scvfInnerFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;
+					}
+				}
+            }
+        }
+    }
+
+	std::vector<double> getFaceSurfaces() {
+
+        checkGridInitialized();
+		
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		std::vector<double> scvfSurface(gridGeometry->numScvf());
+        for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
+
+            fvGeometry.bind(e);
+			
+			
+            for (const auto& scvf : scvfs(fvGeometry))
+            {
+				scvfSurface[scvf.index()] = scvf.area();
+            }
+        }
+		return scvfSurface;
+    }
+
+	std::vector<double> getCylFaceCoordinates() {
+
+        checkGridInitialized();
+		
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		std::vector<double> scvfSurface(gridGeometry->numScvf());
+        for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
+
+            fvGeometry.bind(e);
+			
+			
+            for (const auto& scvf : scvfs(fvGeometry))
+            {
+				scvfSurface[scvf.index()] = scvf.center()[0];
+            }
+        }
+		return scvfSurface;
+    }
 
         /**
      * For a single mpi process. Gathering is done in Python
@@ -947,6 +1099,11 @@ public:
         }
     }
 
+
+	bool useMoles()
+	{
+		return problem->useMoles;
+	}
     /**
      * Checks if the problem was initialized
      */
@@ -961,11 +1118,28 @@ public:
     virtual std::vector<int> getLocal2globalPointIdx() {
         return globalPointIdx;
     }
-    std::vector<std::vector<std::vector<double>>> inSources;//[time][cellidx][eqIdx]
-    std::vector<std::vector<std::vector<double>>> inFluxes;//[time][cellidx][eqIdx]
-    std::vector<std::vector<int>> face2CellIds;
-	std::vector<double> inFluxes_time;
-    std::vector<double> inFluxes_ddt;
+    
+    virtual std::vector<int> getFace2CellIdx() {
+        return face2CellIdx;
+    }
+	/*
+	 * [ kg/s] or [ mol/s]
+	 */
+    virtual std::vector<std::vector<double>> getScvfInnerFluxes() {
+        return scvfInnerFluxes;
+    }
+	/*
+	 * [ kg /m^2/s] or [ mol / m^2/s]
+	 */
+    virtual std::vector<std::vector<double>> getScvfBoundaryFluxes() {
+        return scvfBoundaryFluxes;
+    }
+	/*
+	 * [ kg /m^3/s] or [ mol / m^3/s]
+	 */
+    virtual std::vector<std::vector<double>> getScvSources() {
+        return scvSources;
+    }
 
 	// reset to value before the last call to solve()
     virtual void reset() {
@@ -1017,9 +1191,14 @@ protected:
     std::shared_ptr<PorousMediumFlowVelocity> flowVelocities;
 
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> pointIdx; // global index mappers
+    std::shared_ptr<Dune::GlobalIndexSet<GridView>> faceIdx; // global index mappers
     std::shared_ptr<Dune::GlobalIndexSet<GridView>> cellIdx; // global index mappers
     std::map<int, int> localCellIdx; // global to local index mapper
     std::vector<int> globalPointIdx; // local to global index mapper
+    std::vector<int> face2CellIdx;
+    std::vector<std::vector<double>> scvfBoundaryFluxes;
+    std::vector<std::vector<double>> scvfInnerFluxes;
+    std::vector<std::vector<double>> scvSources;
 
     SolutionVector x;
 	SolutionVector xBackUp;
@@ -1028,95 +1207,6 @@ protected:
     double simTimeBackUpManual;
 
 
-    /**
-     * @see richards_cyl::clearSaveBC
-     */
-    virtual void clearSaveBC() {}
-
-    /**
-     * @see richards_cyl::doSaveBC
-     */
-    virtual void doSaveBC(double ddt_current) {}
-
-
-    /**
-     * for 1d3d coupling (and to compute the error),
-	 * useful to get from dumux
-	 * the inter-cell flow and sources
-	 * only implemented for richards10c(_cyl)
-     */
-    void doSaveInnerFluxesAndSources(double ddt_current) {
-		//need to save it per face and not per cell (for when we have mpi)
-        std::vector<std::vector<double>> inFluxes_i = getFlux();//per face
-        std::vector<int> face2CellId_i = getFluxScvf_idx();//per face
-        std::vector<std::vector<double>> inSources_i = getSource();//per cell
-
-		inSources.push_back(inSources_i);
-        face2CellIds.push_back(face2CellId_i);
-        inFluxes.push_back(inFluxes_i);
-        inFluxes_ddt.push_back(ddt_current);
-		resetSetFaceFlux();
-    }
-
-
-    std::vector<std::vector<double>> getFlux() {
-    	std::vector<NumEqVector> flux_ = getProblemFlux();
-		int numComp_ = numComp();
-		std::vector<double> flx_row(numComp_);
-		std::vector<std::vector<double>> flux(flux_.size(), flx_row);
-
-		for(int faceIdx_ = 0; faceIdx_ < flux.size(); faceIdx_ ++)
-		{
-			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
-			{
-				flux.at(faceIdx_).at(eqIdx) = flux_.at(faceIdx_)[eqIdx];
-			}
-		}
-		return flux;
-    }
-
-    std::vector<std::vector<double>> getSource() {
-    	std::vector<NumEqVector> source_ = getProblemSource();
-		int numComp_ = numComp();
-		std::vector<double> src_row(numComp_);
-		std::vector<std::vector<double>> source(source_.size(), src_row);
-
-		for(int cellIdx = 0; cellIdx < source.size(); cellIdx ++)
-		{
-			for(int eqIdx = 0; eqIdx < numComp_; eqIdx ++)
-			{
-				source.at(cellIdx).at(eqIdx) = source_.at(cellIdx)[eqIdx];
-			}
-		}
-		return source;
-    }
-
-	virtual std::vector<NumEqVector> getProblemFlux()
-	{
-		std::vector<NumEqVector> flux_;
-		return flux_;
-	}
-	virtual std::vector<NumEqVector> getProblemSource()
-	{
-		std::vector<NumEqVector> source_;
-		return source_;
-	}
-
-	virtual std::vector<int> getFluxScvf_idx()
-	{
-		std::vector<int> face2CellId;
-		return face2CellId;
-	}
-
-    void clearInnerFluxesAndSources() {
-        inSources.clear();
-        inFluxes.clear();
-		face2CellIds.clear();
-        inFluxes_time.clear();
-        inFluxes_ddt.clear();
-    }
-
-	void virtual resetSetFaceFlux(){}
 
 };
 
@@ -1157,12 +1247,15 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getCells", &Solver::getCells)
             .def("getCellVolumes", &Solver::getCellVolumes)
             .def("getCellVolumesCyl", &Solver::getCellVolumesCyl)
+			.def("getFaceSurfaces", &Solver::getFaceSurfaces)
+			.def("getCylFaceCoordinates", &Solver::getCylFaceCoordinates)
             .def("getCellSurfacesCyl", &Solver::getCellSurfacesCyl)
             .def("getDofCoordinates", &Solver::getDofCoordinates)
             .def("getPointIndices", &Solver::getPointIndices)
             .def("getCellIndices", &Solver::getCellIndices)
 			.def("getGlobal2localCellIdx", &Solver::getGlobal2localCellIdx) // localCellIdx
             .def("getLocal2globalPointIdx", &Solver::getLocal2globalPointIdx) // globalPointIdx
+			.def("getFace2CellIdx", &Solver::getFace2CellIdx)
             .def("getDofIndices", &Solver::getDofIndices)
             .def("getOldSolution", &Solver::getOldSolution, py::arg("eqIdx") = 0)
             .def("getSolution", &Solver::getSolution, py::arg("eqIdx") = 0)
@@ -1171,14 +1264,13 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getNeumann", &Solver::getNeumann, py::arg("gIdx"), py::arg("eqIdx") = 0)
             .def("getAllNeumann", &Solver::getAllNeumann, py::arg("eqIdx") = 0)
             .def("getVelocities", &Solver::getVelocities, py::arg("eqIdx") = 0)
+            .def("getScvfBoundaryFluxes", &Solver::getScvfBoundaryFluxes)
+            .def("getScvfInnerFluxes", &Solver::getScvfInnerFluxes)
+            .def("getScvSources", &Solver::getScvSources)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
+			.def("useMoles",&Solver::useMoles)
             // members
-			.def_readonly("face2CellIds", &Solver::face2CellIds)
-			.def_readonly("inSources", &Solver::inSources) // read only
-            .def_readonly("inFluxes", &Solver::inFluxes) // read only
-            .def_readonly("inFluxes_time", &Solver::inFluxes_time) // read only
-            .def_readonly("inFluxes_ddt", &Solver::inFluxes_ddt) // read only
             .def_readonly("dimWorld", &Solver::dimWorld) // read only
             .def_readonly("simTime", &Solver::simTime) // read only
             .def_readwrite("ddt", &Solver::ddt) // initial internal time step
