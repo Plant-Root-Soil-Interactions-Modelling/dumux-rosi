@@ -1,14 +1,19 @@
 """
 (experimental) plots data from global optimization 
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+import sys
+
+from scipy import stats; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import os
 import json
 import numpy as np
 import matplotlib.pyplot as plt
-# import pandas as pd
+from matplotlib.patches import Polygon, RegularPolygon, Ellipse
+from matplotlib import cm, colorbar
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from scipy.cluster.vq import whiten
 
 
 def load_json_files(exp_name, folder_path):
@@ -68,11 +73,22 @@ def fetch_features(feature_names, all):
 
 
 def print_info(data, feature_names):
-    """ prints features min, max, mean, and sd (featrure names labels the data columns) """
-    print("name\tmin\t\tmax\t\tmean\t\tstd")
+    """ prints features min, max, mean, and sd (parameter names labels the data columns) """
+    print("name".ljust(20) + "\tmin\t\tmax\t\tmean\t\tstd\t\trstd")
+    rstd_ = []
     for i, name in enumerate(feature_names):
         # print(name, "\t", np.min(data[:, i]), "\t", np.max(data[:, i]), "\t", np.mean(data[:, i]), "\t", np.std(data[:, i]))
-        print("{:s}\t{:10.4f}\t{:10.4f}\t{:10.4f}\t{:10.4f}".format(name, np.min(data[:, i]), np.max(data[:, i]), np.mean(data[:, i]), np.std(data[:, i])))
+        print("{:s}\t{:10.4f}\t{:10.4f}\t{:10.4f}\t{:10.4f}\t{:10.4f}".format(
+            name.ljust(20), np.min(data[:, i]), np.max(data[:, i]), np.mean(data[:, i]),
+            np.std(data[:, i]), 100.* np.std(data[:, i]) / np.mean(data[:, i])))
+        rstd_.append(100.* np.std(data[:, i]) / np.mean(data[:, i]))
+    print("\tmean rstd", np.mean(rstd_))
+
+
+def rstd_(data, feature_names):
+    """ mean of the relative standard deviations, i.e. standard deviations in percent of mean value """
+    rstd_ = [rstd_.append(100.* np.std(data[:, i]) / np.mean(data[:, i])) for i in range(0, data.shape[1])]
+    return np.mean(rstd_)
 
 
 def filter_data(data, feature_ind, min_, max_):
@@ -81,6 +97,13 @@ def filter_data(data, feature_ind, min_, max_):
     data = data[ind_,:]
     return data
 
+def filter_list(data, feature_str, min_, max_):
+    """ crops data to values where feature_ind stays within (min_, max_) """
+    ind_ = []
+    for d in data: 
+        if d[feature_str] > min_ and d[feature_str] < max_:
+            ind_.append(d)
+    return ind_
 
 def scale_data(data):
     """ scales data to have a mean of 0 and a std of 1 """
@@ -89,7 +112,7 @@ def scale_data(data):
     data2 = data - mean
     data2 = np.divide(data2, std)
     # print("data2 mean", np.mean(data2, axis = 0))
-    # print("data2 mean", np.std(data2, axis = 0))
+    # print("data2 std", np.std(data2, axis = 0))
     return data2
 
 
@@ -114,7 +137,7 @@ def scatter_1D(nameX, nameY, all, nameC = None):
 
     n = np.ceil(np.sqrt(len(nameX)))
     print(n, np.sqrt(len(nameX)))
-    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
+    fig, ax = plt.subplots(int(len(nameX)//n)+1, int(n), figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
@@ -126,13 +149,135 @@ def scatter_1D(nameX, nameY, all, nameC = None):
             c = get_(nameC, all)
         I = np.argsort(x)
         if nameC is not None:
-            ax_[i].scatter(x[I], y[I], c = c[I])
+            ax_[i].scatter(x[I], y[I], c = c[I], alpha = 0.5)
         else:
             ax_[i].scatter(x[I], y[I])
+        
+        res = stats.linregress(x[I], y[I])
+        ax_[i].plot(x[I], res.intercept + res.slope*x[I], 'k:', label='fitted')
+
         ax_[i].set_xlabel(nameX[i])
         ax_[i].set_ylabel(nameY[i])
+    plt.tight_layout()
+    plt.show()
+
+def scatter_1D_cross(names, all):
+    """Generates pairs of names for 1D scatter plots and calls the scatter_1D function."""
+    nameX = []
+    nameY = []
+    for i, nx in enumerate(names):
+        for j, ny in enumerate(names):
+            if i<j:
+                nameX.append(nx)
+                nameY.append(ny)    
+    scatter_1D(nameX, nameY, all)
+
+
+def plot_hexagons(img, ax, f = cm.viridis):
+    """ adds the img data as hexagons """
+    img = scale01(img)
+    xx = list(range(0, img.shape[1]))
+    yy = list(range(0, img.shape[0]))
+    for i in range(img.shape[0]):
+        for j in range(img.shape[1]):
+            wy = yy[i] * np.sqrt(3) / 2
+            hex = RegularPolygon((xx[j] + 0.5 * (i % 2) , wy),
+                                 numVertices = 6,
+                                 radius = .95 / np.sqrt(3),
+                                 facecolor = f(img[i, j]),
+                                 alpha = 1.,
+                                 edgecolor = 'gray')
+            ax.add_patch(hex)
+    ax.set_xlim((-1, img.shape[1] + 0.5))
+    ax.set_ylim((-1, img.shape[0] - 0.5))
+
+
+def plot_rose(data, i, j, m_neurons, n_neurons, ax, f = cm.jet):
+    """ """
+    margin = 2. / 180. * np.pi
+    theta_ = np.linspace(0, 2 * np.pi, len(data) + 1)
+
+    for k, d in enumerate(data):
+        x0 = j + 0.5 * (i % 2)
+        y0 = i * np.sqrt(3) / 2
+        x1 = 0.5 * d * np.cos(theta_[k] + margin) + x0
+        y1 = 0.5 * d * np.sin(theta_[k] + margin) + y0
+        x2 = 0.5 * d * np.cos(theta_[k + 1] - margin) + x0
+        y2 = 0.5 * d * np.sin(theta_[k + 1] - margin) + y0
+        tri = Polygon([[x0, y0], [x1, y1], [x2, y2], [x0, y0]],
+                        facecolor = f(k / len(data)),
+                        alpha = 1.,
+                        edgecolor = 'gray')
+
+        ax.add_patch(tri)
+        ax.text(x0, y0 + 0.5, "({:g},{:g})".format(j, i), size = 24)  # why j, i? (som did it)
+
+    # ax.set_xlim((-1, n_neurons + 0.5))
+    # ax.set_ylim((-1, m_neurons - 0.5))
+
+
+def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node, mode = "quad"):
+    """ plots multiple objectives using prepare_img """
+    if mode == "quad" or mode == "hexagon":
+        n = np.ceil(np.sqrt(len(target_indices)))
+    else:
+        n = 1
+    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
+    if n == 1:
+        ax = np.array([ax])
+    ax_ = ax.flat
+    img_ = []
+    for k, target in enumerate(target_indices):
+
+         img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
+
+         if mode == "quad":
+             ax_[k].pcolor(img, cmap = "viridis")  # pcolor
+         elif mode == "hexagon":
+             plot_hexagons(img, ax_[k])
+         elif mode == "rose":
+             img_.append(img)
+             plot_hexagons(img, ax_[0], f = lambda c: [1., 1., 1.])
+
+         if mode == "quad" or mode == "hexagon":
+             ax_[k].set_title(target_names[k])
+             ax_[k].set_xticks([])
+             ax_[k].set_yticks([])
+         elif mode == "rose":
+             ax_[0].set_xticks([])
+             ax_[0].set_yticks([])
+
+    if mode == "rose":
+        img_ = np.array(img_)
+        for k, target in enumerate(target_indices):
+            img_[k,:,:] = img_[k,:,:] / np.max(img_[k,:,:].flat)
+        for i in range(0, m_neurons):
+            for j in range(0, n_neurons):
+                data = img_[:, i, j]
+                plot_rose(data, i, j, m_neurons, n_neurons, ax_[0])
+        for k, name in enumerate(target_names):
+            plt.plot(0, 0, color = cm.jet(k / len(target_names)), label = name, linewidth = 5)
+        plt.legend()
 
     plt.show()
+
+
+def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node):
+    """ prepares an image representing the mean target value on the nodes """
+    img = np.zeros((m_neurons, n_neurons))
+    for i in range(0, m_neurons):
+        for j in range(0, n_neurons):
+            node = (j, i)
+            if node in node2sample:
+                ind_ = node2sample[node]
+                img[i, j] = np.mean(data[ind_, target_ind])
+
+    return img
+
+
+def scale01(img):
+    """ scales the img from 0 to 1 (e.g. for color mapping) """
+    return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat)))
 
 
 if __name__ == "__main__":

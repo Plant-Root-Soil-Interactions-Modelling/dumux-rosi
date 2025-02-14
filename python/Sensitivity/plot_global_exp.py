@@ -7,10 +7,8 @@ sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src"
 import os
 import json
 import numpy as np
+from scipy.cluster.vq import vq, whiten, kmeans
 import matplotlib.pyplot as plt
-from matplotlib.patches import Polygon, RegularPolygon, Ellipse
-from matplotlib import cm, colorbar
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from minisom import MiniSom
 
@@ -29,8 +27,8 @@ plt.rc('legend', fontsize = BIGGER_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def make_maps(som, data):
-    """ makes to maps node2sample (dict), and sample2node """
+def make_som_maps(som, data):
+    """ makes two maps: node2sample (dict), and sample2node """
     node2sample = {}
     sample2node = []
     for i, xx in enumerate(data):
@@ -44,111 +42,38 @@ def make_maps(som, data):
     return node2sample, sample2node
 
 
-def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node):
-    """ prepares an image representing the mean target value on the nodes """
-    img = np.zeros((m_neurons, n_neurons))
-    for i in range(0, m_neurons):
-        for j in range(0, n_neurons):
-            node = (j, i)
-            if node in node2sample:
-                ind_ = node2sample[node]
-                img[i, j] = np.mean(data[ind_, target_ind])
+def make_kmeans_maps(obs, code_block, n):
+    """ makes two maps: node2sample (dict), and sample2node """
+    sample2node, dist = vq(obs, code_block)
+    node2sample_ = {}
+    node2sample = {}
+    for i, node in enumerate(sample2node):
+        if node in node2sample_:
+            node2sample_[node].append(i)
+            node2sample[(node % n, node // n)].append(i)  # (j,i)
+        else:
+            node2sample_[node] = [i]
+            node2sample[(node % n, node // n)] = [i]  # (j,i)
 
-    return img
-
-
-def scale01(img):
-    """ scales the img from 0 to 1 (e.g. for color mapping) """
-    return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat)))
+    return node2sample, sample2node, node2sample_
 
 
-def plot_hexagons(img, ax, f = cm.viridis):
-    """ adds the img data as hexagons """
-    img = scale01(img)
-    xx = list(range(0, img.shape[1]))
-    yy = list(range(0, img.shape[0]))
-    for i in range(img.shape[0]):
-        for j in range(img.shape[1]):
-            wy = yy[i] * np.sqrt(3) / 2
-            hex = RegularPolygon((xx[j] + 0.5 * (i % 2) , wy),
-                                 numVertices = 6,
-                                 radius = .95 / np.sqrt(3),
-                                 facecolor = f(img[i, j]),
-                                 alpha = 1.,
-                                 edgecolor = 'gray')
-            ax.add_patch(hex)
-    ax.set_xlim((-1, img.shape[1] + 0.5))
-    ax.set_ylim((-1, img.shape[0] - 0.5))
-
-
-def plot_rose(data, i, j, m_neurons, n_neurons, ax, f = cm.jet):
-    """ """
-    margin = 2. / 180. * np.pi
-    theta_ = np.linspace(0, 2 * np.pi, len(data) + 1)
-
-    for k, d in enumerate(data):
-        x0 = j + 0.5 * (i % 2)
-        y0 = i * np.sqrt(3) / 2
-        x1 = 0.5 * d * np.cos(theta_[k] + margin) + x0
-        y1 = 0.5 * d * np.sin(theta_[k] + margin) + y0
-        x2 = 0.5 * d * np.cos(theta_[k + 1] - margin) + x0
-        y2 = 0.5 * d * np.sin(theta_[k + 1] - margin) + y0
-        tri = Polygon([[x0, y0], [x1, y1], [x2, y2], [x0, y0]],
-                        facecolor = f(k / len(data)),
-                        alpha = 1.,
-                        edgecolor = 'gray')
-
-        ax.add_patch(tri)
-        # ax.text(x0, y0, "{:g}, {:g}".format(i, j), color = 'k', fontsize = 24)
-
-    # ax.set_xlim((-1, n_neurons + 0.5))
-    # ax.set_ylim((-1, m_neurons - 0.5))
-
-
-def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node, mode = "quad"):
-    """ plots multiple objectives using prepare_img """
-    if mode == "quad" or mode == "hexagon":
-        n = np.ceil(np.sqrt(len(target_indices)))
-    else:
-        n = 1
-    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
-    if n == 1:
-        ax = np.array([ax])
-    ax_ = ax.flat
-    img_ = []
-    for k, target in enumerate(target_indices):
-
-         img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
-
-         if mode == "quad":
-             ax_[k].pcolor(img, cmap = "viridis")  # pcolor
-         elif mode == "hexagon":
-             plot_hexagons(img, ax_[k])
-         elif mode == "rose":
-             img_.append(img)
-             plot_hexagons(img, ax_[0], f = lambda c: [1., 1., 1.])
-
-         if mode == "quad" or mode == "hexagon":
-             ax_[k].set_title(target_names[k])
-             ax_[k].set_xticks([])
-             ax_[k].set_yticks([])
-         elif mode == "rose":
-             ax_[0].set_xticks([])
-             ax_[0].set_yticks([])
-
-    if mode == "rose":
-        img_ = np.array(img_)
-        for k, target in enumerate(target_indices):
-            img_[k,:,:] = img_[k,:,:] / np.max(img_[k,:,:].flat)
-        for i in range(0, m_neurons):
-            for j in range(0, n_neurons):
-                data = img_[:, i, j]
-                plot_rose(data, i, j, m_neurons, n_neurons, ax_[0])
-        for k, name in enumerate(target_names):
-            plt.plot(0, 0, color = cm.jet(k / len(target_names)), label = name)
-        plt.legend()
-
+def distortion_plot(data):
+    data_ = whiten(data)
+    dist_ = []
+    for i in range(0, 20):
+        centers, dist = kmeans(data_, i + 1)
+        dist_.append(dist)
+    plt.plot(range(0, 20), dist_)
+    plt.ylabel("distortion")
+    plt.xlabel("number of clusters")
     plt.show()
+
+
+def try_cluster(data, k):
+    data_ = whiten(data)
+    res = kmeans(data_, k)
+    print(res)
 
 
 """ """
@@ -162,6 +87,7 @@ got.merge_results(folder_path, all)
 
 target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 data = got.fetch_features(target_names, all)
+
 print("\ndata")
 got.print_info(data, target_names)  # RAW
 print(data.shape)
@@ -176,20 +102,78 @@ data = got.scale_data(data)
 print()
 print("target_names", target_names)
 
-m_neurons = 4  # 10
+distortion_plot(data2)  # to determine m and n
+m_neurons = 2  # 10
 n_neurons = 4  # 10
 
-# som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
-#               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
-som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
-              topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
-som.pca_weights_init(data)
-som.train(data, 1000, verbose = False)  # random training
+# # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
+# #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+# som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
+#               topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
+# som.pca_weights_init(data)
+# som.train(data, 1000, verbose = False)  # random training
+# node2sample, sample2node = make_som_maps(som, data)
 
-node2sample, sample2node = make_maps(som, data)
+centers, dist = kmeans(data, m_neurons * n_neurons, rng = 1)
+node2sample, sample2node, _ = make_kmeans_maps(data, centers, n_neurons)
 
 ind_ = list(range(0, len(target_names)))
-plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "rose")
+got.plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
+# plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
+
+pbounds = {
+    'src_a': (3, 11),
+    'src_first_a': (3, 14),
+    'src_delay_a': (3, 14),
+    # 'a145_a': (0.025, 0.25),
+    'lmax145_a': (50, 150),
+    'ln145_a': (0.5, 10.),
+    'r145_a': (0.2, 7.),
+    # 'tropismN145_a': (0., 7.),
+    # 'tropismS145_a': (0., 1.),
+    # 'hairsLength145_a': (0.1, 2.),
+    # 'hairsZone145_a': (1., 10.),
+    # 'hairsElongation145_a': (0.1, 2.),
+    # 'a2_a': (0.01, 0.1),
+    'lmax2_a': (5., 50.),
+    'ln2_a': (0.5, 10.),
+    'r2_a': (0.2, 7.),
+    # 'tropismN2_a': (0., 7.),
+    # 'tropismS2_a': (0., 1.),
+    # 'hairsLength2_a': (0.1, 2.),
+    # 'hairsZone2_a': (1., 10.),
+    # 'hairsElongation2_a': (0.1, 2.),
+    # 'a3_a': (0.01, 0.1),
+    'lmax3_a': (5., 50.),
+    # 'ln3_a': (0.5, 10.),
+    'r3_a': (0.2, 7.),
+    # 'tropismN3_a': (0., 7.),
+    # 'tropismS3_a': (0., 1.),
+    # 'hairsLength3_a': (0.1, 2.),
+    # 'hairsZone3_a': (1., 10.),
+    # 'hairsElongation3_a': (0.1, 2.),
+    }
+param_names = pbounds.keys()
+data_params = got.fetch_features(param_names, all)
+
+print("Parameter space", data_params.shape)
+got.print_info(data_params, param_names)
+
+node01 = (1, 0)
+ind01 = np.array(node2sample[node01], dtype = np.int64)
+print("\nParameter space node", node01, data_params[ind01].shape)
+got.print_info(data_params[ind01], param_names)
+
+distortion_plot(data_params[ind01])
+k = 20
+
+centers, dist = kmeans(data_params[ind01], k, rng = 1)
+node2sample, sample2node, node2sample_ = make_kmeans_maps(data_params[ind01], centers, n_neurons)
+
+for i in range(0, k):
+    ind = np.array(node2sample_[i], dtype = np.int64)
+    print("\nParameter space node", ind, data_params[ind].shape)
+    got.print_info(data_params[ind], param_names)
 
 #
 # plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "rose")

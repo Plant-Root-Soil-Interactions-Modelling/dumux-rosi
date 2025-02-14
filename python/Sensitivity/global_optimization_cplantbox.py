@@ -65,7 +65,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 100
+    iterations = 1000
     points_per_iteration = 10
 
     for i in range(0, iterations):
@@ -93,8 +93,8 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
         for p in points:
             results.append(get_objective(type_str, enviro_type, sim_time, p))
 
-        for r, p in zip(results, points):
-            optimizer.register(params = p, target = r)
+        # for r, p in zip(results, points):
+        #     optimizer.register(params = p, target = r)
 
 
 def cplantbox_tests():
@@ -140,7 +140,7 @@ def cplantbox_tests():
 
 def cplantbox_all14():  # 30 parameters
 
-    type_str = "soybean_all14"
+    type_str = "soybean_lmax14"
     enviro_type = 0
     sim_time = 87.5
 
@@ -152,39 +152,40 @@ def cplantbox_all14():  # 30 parameters
     # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
     pbounds = {
         'src_a': (3, 11),
-        'src_first_a': (3, 14),
+        # 'src_first_a': (3, 14),
         'src_delay_a': (3, 14),
 
-        'a145_a': (0.025, 0.25),
+        # 'a145_a': (0.025, 0.25),
         'lmax145_a': (50, 150),
         'ln145_a': (0.5, 10.),
-        'r145_a': (0.2, 7.),
-        # TODO theta !!!
+        # 'r145_a': (0.2, 7.),
+        'theta145_a': (0., np.pi / 2.),
         'tropismN145_a': (0., 7.),
-        'tropismS145_a': (0., 1.),
-        'hairsLength145_a': (0.1, 2.),
-        'hairsZone145_a': (1., 10.),
-        'hairsElongation145_a': (0.1, 2.),
+        # 'tropismS145_a': (0., 1.),
+        # 'hairsLength145_a': (0.1, 2.),
+        # 'hairsZone145_a': (1., 10.),
+        # 'hairsElongation145_a': (0.1, 2.),
 
-        'a2_a': (0.01, 0.1),
-        'lmax2_a': (5., 50.),
-        'ln2_a': (0.5, 10.),
-        'r2_a': (0.2, 7.),
-        'tropismN2_a': (0., 7.),
-        'tropismS2_a': (0., 1.),
-        'hairsLength2_a': (0.1, 2.),
-        'hairsZone2_a': (1., 10.),
-        'hairsElongation2_a': (0.1, 2.),
+        # # 'a2_a': (0.01, 0.1), # will be (a, kr, kx) fixed
+        # 'lmax2_a': (5., 50.),
+        # 'ln2_a': (0.5, 10.),
+        # 'r2_a': (0.2, 7.),
+        # 'theta2_a': (0., np.pi / 2.),
+        # 'tropismN2_a': (0., 7.),
+        # # 'tropismS2_a': (0., 1.),
+        # 'hairsLength2_a': (0.1, 2.),
+        # 'hairsZone2_a': (1., 10.),
+        # # 'hairsElongation2_a': (0.1, 2.),
 
-        'a3_a': (0.01, 0.1),
-        'lmax3_a': (5., 50.),
-        # 'ln3_a': (0.5, 10.),
-        'r3_a': (0.2, 7.),
-        'tropismN3_a': (0., 7.),
-        'tropismS3_a': (0., 1.),
-        'hairsLength3_a': (0.1, 2.),
-        'hairsZone3_a': (1., 10.),
-        'hairsElongation3_a': (0.1, 2.),
+        # # 'a3_a': (0.01, 0.1),
+        # 'lmax3_a': (5., 50.),
+        # 'r3_a': (0.2, 7.),
+        # 'theta3_a': (0., np.pi / 2.),
+        # 'tropismN3_a': (0., 7.),
+        # # 'tropismS3_a': (0., 1.),
+        # 'hairsLength3_a': (0.1, 2.),
+        # 'hairsZone3_a': (1., 10.),
+        # # 'hairsElongation3_a': (0.1, 2.),
 
         }
 
@@ -210,12 +211,54 @@ def cplantbox_all14():  # 30 parameters
 
     p = optimizer.max["params"]
 
+def cplantbox_length14():  
+    
+    type_str = "soybean_length14"
+    enviro_type = 0
+    sim_time = 87.5
+
+    initial = {
+        "output_times": [45, 50, 60],
+        "conductivity_mode": "scale",
+        "scale_kr": 0.1,
+        "scale_kx": 0.1 
+        }
+
+    pbounds = {
+        'src_a': (3, 11),
+        'src_delay_a': (3, 14),
+
+        'lmax145_a': (50, 150),
+        'ln145_a': (0.5, 10.),
+        'r145_a': (0.2, 7.),
+
+        'lmax2_a': (5., 50.),
+        'ln2_a': (0.5, 10.),
+        'r2_a': (0.2, 7.),
+
+        'lmax3_a': (5., 50.),
+        'r3_a': (0.2, 7.),
+        }
+
+    optimizer = BayesianOptimization(
+        f = None,  # dummy (never called)
+        pbounds = pbounds,
+        verbose = 2,  # verbose = 1 prints only when a maximum is observed, verbose = 0 is silent
+        random_state = 1,
+    )
+
+    logger = JSONLogger(path = "results_cplantbox/" + type_str + ".log")
+    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
+    run_optimizer(optimizer, type_str, enviro_type, sim_time, initial)
+
+
 
 if __name__ == "__main__":
 
     start_time = timeit.default_timer()
 
     # cplantbox_tests()
-    cplantbox_all14()
+    # cplantbox_all14()
+    cplantbox_length14()
 
     print ("\nThat took", timeit.default_timer() - start_time, " s")
