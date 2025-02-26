@@ -9,16 +9,16 @@ sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src"
 import os
 import json
 import numpy as np
+from scipy.cluster.vq import vq, whiten, kmeans
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon, RegularPolygon, Ellipse
 from matplotlib import cm, colorbar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
-from scipy.cluster.vq import whiten
 
 
 def load_json_files(exp_name, folder_path):
     """ opens all json files starting with exp_name in a folder and returns a list of Python dictionaries 
-        (one dictionary by file)"""
+        (one dictionary by file) containing the input parameter sets """
     json_data_list = []
     for filename in os.listdir(folder_path):
         if filename.startswith(exp_name) and filename.endswith(".json"):
@@ -35,7 +35,8 @@ def load_json_files(exp_name, folder_path):
 
 
 def merge_results(folder_path, json_data_list, i = -1):
-    """ Merges the json_data (list of dict) with simulation targets given within .npz with corresponding name """
+    """ Merges the json_data (list of dict of input parameters) 
+        with simulation results given within .npz with corresponding name """
     for data in json_data_list:
 
         filename = data["exp_name"]
@@ -56,8 +57,39 @@ def merge_results(folder_path, json_data_list, i = -1):
             print(f"Error loading {filename}: {e}")
 
 
+def make_som_maps(som, data):
+    """ makes two maps from som clustering: node2sample (dict), and sample2node """
+    node2sample = {}
+    sample2node = []
+    for i, xx in enumerate(data):
+        node = som.winner(xx)  # (j,i)
+        sample2node.append(node)
+        if node in node2sample:
+            node2sample[node].append(i)
+        else:
+            node2sample[node] = [i]
+
+    return node2sample, sample2node
+
+
+def make_kmeans_maps(obs, code_block, n):
+    """ makes two maps from kmeans clustering: node2sample (dict), and sample2node """
+    sample2node, dist = vq(obs, code_block)
+    node2sample_ = {}
+    node2sample = {}
+    for i, node in enumerate(sample2node):
+        if node in node2sample_:
+            node2sample_[node].append(i)
+            node2sample[(node % n, node // n)].append(i)  # (j,i)
+        else:
+            node2sample_[node] = [i]
+            node2sample[(node % n, node // n)] = [i]  # (j,i)
+
+    return node2sample, sample2node, node2sample_
+
+
 def get_(name, all):
-    """ returns the key @param name from a list of dicts as np.array """
+    """ returns the key @param name from a @param all which is a list of dicts as np.array """
     l = np.array([a[name] for a in all])
     return l
 
@@ -92,18 +124,55 @@ def rstd_(data, feature_names):
 
 
 def filter_data(data, feature_ind, min_, max_):
-    """ crops data to where feature_ind stays within (min_, max_) """
+    """ crops data (np.array) to values where feature_ind stays within (min_, max_) """
     ind_ = np.bitwise_and(data[:, feature_ind] > min_, data[:, feature_ind] < max_)
     data = data[ind_,:]
     return data
 
+
 def filter_list(data, feature_str, min_, max_):
-    """ crops data to values where feature_ind stays within (min_, max_) """
+    """ crops data (list of dict) to values where feature_ind stays within (min_, max_) """
     ind_ = []
-    for d in data: 
+    for d in data:
         if d[feature_str] > min_ and d[feature_str] < max_:
             ind_.append(d)
     return ind_
+
+
+def is_pareto_efficient(costs, return_mask = True):
+    """
+    Find the pareto-efficient points
+    :param costs: An (n_points, n_costs) array
+    :param return_mask: True to return a mask
+    :return: An array of indices of pareto-efficient points.
+        If return_mask is True, this will be an (n_points, ) boolean array
+        Otherwise it will be a (n_efficient_points, ) integer array of indices.
+    
+    # from https://stackoverflow.com/questions/32791911/fast-calculation-of-pareto-front-in-python
+    """
+    is_efficient = np.arange(costs.shape[0])
+    n_points = costs.shape[0]
+    next_point_index = 0  # Next index in the is_efficient array to search for
+    while next_point_index < len(costs):
+        nondominated_point_mask = np.any(costs < costs[next_point_index], axis = 1)
+        nondominated_point_mask[next_point_index] = True
+        is_efficient = is_efficient[nondominated_point_mask]  # Remove dominated points
+        costs = costs[nondominated_point_mask]
+        next_point_index = np.sum(nondominated_point_mask[:next_point_index]) + 1
+    if return_mask:
+        is_efficient_mask = np.zeros(n_points, dtype = bool)
+        is_efficient_mask[is_efficient] = True
+        return is_efficient_mask
+    else:
+        return is_efficient
+
+
+def pareto(data, feature_ind,):
+    """ crops data to its pareto set, using is_pareto_efficient """
+    cost = data[:, feature_ind]
+    mask = is_pareto_efficient(cost)
+    return data[mask,:]
+
 
 def scale_data(data):
     """ scales data to have a mean of 0 and a std of 1 """
@@ -137,7 +206,7 @@ def scatter_1D(nameX, nameY, all, nameC = None):
 
     n = np.ceil(np.sqrt(len(nameX)))
     print(n, np.sqrt(len(nameX)))
-    fig, ax = plt.subplots(int(len(nameX)//n)+1, int(n), figsize = (16, 16))
+    fig, ax = plt.subplots(int(len(nameX) // n) + 1, int(n), figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
@@ -152,14 +221,15 @@ def scatter_1D(nameX, nameY, all, nameC = None):
             ax_[i].scatter(x[I], y[I], c = c[I], alpha = 0.5)
         else:
             ax_[i].scatter(x[I], y[I])
-        
+
         res = stats.linregress(x[I], y[I])
-        ax_[i].plot(x[I], res.intercept + res.slope*x[I], 'k:', label='fitted')
+        ax_[i].plot(x[I], res.intercept + res.slope * x[I], 'k:', label = 'fitted')
 
         ax_[i].set_xlabel(nameX[i])
         ax_[i].set_ylabel(nameY[i])
     plt.tight_layout()
     plt.show()
+
 
 def scatter_1D_cross(names, all):
     """Generates pairs of names for 1D scatter plots and calls the scatter_1D function."""
@@ -167,9 +237,9 @@ def scatter_1D_cross(names, all):
     nameY = []
     for i, nx in enumerate(names):
         for j, ny in enumerate(names):
-            if i<j:
+            if i < j:
                 nameX.append(nx)
-                nameY.append(ny)    
+                nameY.append(ny)
     scatter_1D(nameX, nameY, all)
 
 

@@ -104,6 +104,8 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
 
     print("finished " + exp_name)
 
+    return r
+
 
 def run_(r, sim_time, initial_age, area, out_times):
     """ starts a cplantbox simulation without dynamic soil """
@@ -131,7 +133,7 @@ def run_(r, sim_time, initial_age, area, out_times):
         z = np.linspace(0., -200, 200)
         sa = pb.SegmentAnalyser(r.ms.mappedSegments())
         sa.addData("suf", suf)
-        rld = np.array(sa.distribution("length", 0., -200., 200, False)) / (area*1) # divide through layer volume 
+        rld = np.array(sa.distribution("length", 0., -200., 200, False)) / (area * 1)  # divide through layer volume
         RLD.append(rld)
         rld_ = rld / np.sum(rld)  # normalize
         RLDz.append(rld_.dot(z))

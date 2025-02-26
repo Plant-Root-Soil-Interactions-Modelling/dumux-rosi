@@ -27,39 +27,10 @@ plt.rc('legend', fontsize = BIGGER_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 
-def make_som_maps(som, data):
-    """ makes two maps: node2sample (dict), and sample2node """
-    node2sample = {}
-    sample2node = []
-    for i, xx in enumerate(data):
-        node = som.winner(xx)  # (j,i)
-        sample2node.append(node)
-        if node in node2sample:
-            node2sample[node].append(i)
-        else:
-            node2sample[node] = [i]
-
-    return node2sample, sample2node
-
-
-def make_kmeans_maps(obs, code_block, n):
-    """ makes two maps: node2sample (dict), and sample2node """
-    sample2node, dist = vq(obs, code_block)
-    node2sample_ = {}
-    node2sample = {}
-    for i, node in enumerate(sample2node):
-        if node in node2sample_:
-            node2sample_[node].append(i)
-            node2sample[(node % n, node // n)].append(i)  # (j,i)
-        else:
-            node2sample_[node] = [i]
-            node2sample[(node % n, node // n)] = [i]  # (j,i)
-
-    return node2sample, sample2node, node2sample_
-
-
 def distortion_plot(data):
-    data_ = whiten(data)
+    """ distortion versus number of clusters (for kmeans) """
+    plt.title("N = {:g}".format(data.shape[0]))
+    data_ = whiten(data)  # normalize data
     dist_ = []
     for i in range(0, 20):
         centers, dist = kmeans(data_, i + 1)
@@ -71,59 +42,69 @@ def distortion_plot(data):
 
 
 def try_cluster(data, k):
-    data_ = whiten(data)
+    data_ = whiten(data)  # normalize data
     res = kmeans(data_, k)
     print(res)
 
 
-""" """
+""" 1 load everything & merge npz results into input parameter json"""
+
 folder_path = "results_cplantbox/"
-exp_name = "soybean_all14"
-
-""" load everything & merge npz results into input parameter json"""
-
-all = got.load_json_files(exp_name, folder_path)
-got.merge_results(folder_path, all)
-
+exp_name = "soybean_length14"
 target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+
+all = got.load_json_files(exp_name, folder_path)  # open parameter files
+got.merge_results(folder_path, all)  # add results
+
+# print(all[0].keys())
+# print(all[0]["exp_name"])
+# dd
+
+print("\nraw data")
+d = got.fetch_features(target_names, all)
+got.print_info(d, target_names)
+print(d.shape)
+
+""" 2 filter """
+all = got.filter_list(all, "length", 200., 20000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+# data = got.filter_data(data, 0, 200., 14000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+print("\nfiltered data")
 data = got.fetch_features(target_names, all)
-
-print("\ndata")
-got.print_info(data, target_names)  # RAW
-print(data.shape)
-
-data = got.filter_data(data, 0, 200., 14000)  # 76 * 3  *100 * 0.6 = 13680 cm;
-print("\nfiltered")
 got.print_info(data, target_names)  # filtered
 print(data.shape)
 data2 = data.copy()
-data = got.scale_data(data)
+# data = got.scale_data(data)  # for som
+data = whiten(data)  # for kmeans
 
-print()
-print("target_names", target_names)
-
-distortion_plot(data2)  # to determine m and n
+print(data.shape)
+data2 = got.pareto(data, range(0, 3))
+print(data2.shape)
+dd
+""" 3 cluster the targets """
+# distortion_plot(data2)  # to determine m and n
 m_neurons = 2  # 10
 n_neurons = 4  # 10
 
-# # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
-# #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+# som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
+#               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
 # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
 #               topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
 # som.pca_weights_init(data)
 # som.train(data, 1000, verbose = False)  # random training
-# node2sample, sample2node = make_som_maps(som, data)
+# node2sample, sample2node = got.make_som_maps(som, data)
 
 centers, dist = kmeans(data, m_neurons * n_neurons, rng = 1)
-node2sample, sample2node, _ = make_kmeans_maps(data, centers, n_neurons)
+node2sample, sample2node, _ = got.make_kmeans_maps(data, centers, n_neurons)
 
+""" 4 plot target clusters """
 ind_ = list(range(0, len(target_names)))
 got.plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 # plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
 
+""" 5 parameter space regarding nodes """
 pbounds = {
     'src_a': (3, 11),
-    'src_first_a': (3, 14),
+    # 'src_first_a': (3, 14),
     'src_delay_a': (3, 14),
     # 'a145_a': (0.025, 0.25),
     'lmax145_a': (50, 150),
@@ -155,25 +136,28 @@ pbounds = {
     }
 param_names = pbounds.keys()
 data_params = got.fetch_features(param_names, all)
-
-print("Parameter space", data_params.shape)
+print("\nParameter space", data_params.shape)
 got.print_info(data_params, param_names)
+print(data_params.shape)
 
 node01 = (1, 0)
 ind01 = np.array(node2sample[node01], dtype = np.int64)
+
 print("\nParameter space node", node01, data_params[ind01].shape)
+print(ind01)
+
 got.print_info(data_params[ind01], param_names)
 
 distortion_plot(data_params[ind01])
-k = 20
+k = 10
 
 centers, dist = kmeans(data_params[ind01], k, rng = 1)
-node2sample, sample2node, node2sample_ = make_kmeans_maps(data_params[ind01], centers, n_neurons)
+node2sample, sample2node, node2sample_ = got.make_kmeans_maps(data_params[ind01], centers, n_neurons)
 
 for i in range(0, k):
     ind = np.array(node2sample_[i], dtype = np.int64)
-    print("\nParameter space node", ind, data_params[ind].shape)
-    got.print_info(data_params[ind], param_names)
+    print("\nParameter space node", i, ind01[ind], data_params[ind01[ind]].shape)
+    got.print_info(data_params[ind01[ind]], param_names)
 
 #
 # plot_targets(ind_, target_names, data2, m_neurons, n_neurons, node2sample, sample2node, "rose")

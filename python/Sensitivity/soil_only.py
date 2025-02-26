@@ -135,7 +135,7 @@ if __name__ == '__main__':
 
         top_.append(s.getNeumann(top_ind))  # the neumann BC that is described
 
-        velocities = s.getVelocities_()
+        velocities = s.getVelocities_()  # cm3 / cm2 / day
         top_new.append(velocities[top_ind])
         bot_new.append(velocities[bot_ind])
 
@@ -153,8 +153,8 @@ if __name__ == '__main__':
     botflux = np.sum(bot_new[:, 2] * dt)  # positive value means influx
 
     print()
-    print("top", topflux, topflux_, "cm", "g/cm2", topflux * area, "cm3", "with area", area, "cm2")
-    print("bot", botflux, "cm", "g/cm2", botflux * area, "cm3", "with area", area, "cm2")
+    print("top", topflux, topflux_, "cm", topflux * area, "cm3", "with area", area, "cm2")
+    print("bot", botflux, "cm", botflux * area, "cm3", "with area", area, "cm2")
     print("Change in water balance", water - water0, "cm3")
     print("top", topflux * area)
     print("bot", botflux * area)
