@@ -62,6 +62,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
         self.debugMode = False
+        self.beforeAtNight = False
         
         
         # constants

@@ -354,7 +354,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
             #soilK[np.where(seg_fluxes< 0. ) ] = soilKIn[np.where(seg_fluxes < 0. ) ]
 
         if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
-            fpit_Helper.soilK[perirhizalModel.airSegs] = np.Inf
+            fpit_Helper.soilK[perirhizalModel.airSegs] = np.inf
 
 
 

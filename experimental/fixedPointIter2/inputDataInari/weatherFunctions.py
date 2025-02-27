@@ -12,6 +12,7 @@ import timeit
     
 from functional.xylem_flux import sinusoidal
 from helpfull import sinusoidal3
+from air_modelsPlant import AirSegment
 
     
 def weather(simDuration, dt, spellData, hp:float=1):
@@ -105,13 +106,13 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
         pheadinit_cm_all = pheadinit_cm - (cellsZ - meanZ) # get wat. pot. for each soil layer
         pheadinit_Pa = s.to_pa(pheadinit_cm_all)
 
-        perirhizalModel.checkMassOMoleBalance2() # get error before changing data (for troubleshooting)
+        perirhizalModel.check1d3dDiff() # get error before changing data (for troubleshooting)
         if rank ==0:
             print('weather::weatherChange(): error before change',perirhizalModel.sumDiff1d3dCW_rel ,
                   perirhizalModel.sumDiff1d3dCW_abs,'pheadinit_cm',pheadinit_cm)
             
         #  save dissolved solute content (no need to change anything for solutes in soil phase)
-        nc_content = np.array([comm.bcast(s.getContent(nc+1, nc < perirhizalModel.numDissolvedSoluteComp), root=0)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])
+        nc_content = np.array([comm.bcast(s.getContent(nc+1), root=0)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])
         # send new wat. pot to dumux
         s.base.setSolution(pheadinit_Pa,0 )
         # new water content. [cm3 wat/cm3 scv] * [cm3 scv] * [m3/cm3] * [mol/m3 wat] = mol wat
@@ -122,7 +123,7 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
         for nc in range(perirhizalModel.numDissolvedSoluteComp):
             s.base.setSolution(nc_molFr[nc],nc+1 )
         # get new content (check if same as old content)
-        nc_content_new = np.array([comm.bcast(s.getContent(nc+1, nc < perirhizalModel.numDissolvedSoluteComp), root=0)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
+        nc_content_new = np.array([comm.bcast(s.getContent(nc+1), root=0)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
         
         if not perirhizalModel.doMinimumPrint:
             write_file_array('pheadinit_cm',pheadinit_cm_all, directory_ =results_dir, fileType = '.csv')
@@ -138,7 +139,7 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
                 cyl_cell_volumes = cyl.getCellVolumesCyl()  #cm3 scv                            
                 pheadinit_PaCyl = np.full(len(cyl_cell_volumes),pheadinit_Pa[cellId])
                 
-                nc_content = np.array([cyl.getContentCyl(nc+1, nc < perirhizalModel.numDissolvedSoluteComp)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
+                nc_content = np.array([cyl.getContent(nc+1)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
                 cyl.base.setSolution(pheadinit_PaCyl,0 )
 
                 newTheta = cyl.getWaterContent()
@@ -148,7 +149,7 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
                 for nc in range(perirhizalModel.numDissolvedSoluteComp):
                     cyl.base.setSolution(nc_molFr[nc],nc+1 )
                 # new content (for check)
-                nc_content_new = np.array([cyl.getContentCyl(nc+1, nc < perirhizalModel.numDissolvedSoluteComp)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
+                nc_content_new = np.array([cyl.getContent(nc+1)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])# mol
 
                 try:
                     # allow for a small change
@@ -162,16 +163,16 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
                                                  nc_content, nc_content_new, nc_molFr)
                     raise Exception
                     
-            s.save()# <= so that stay in the current weather state
-            perirhizalModel.save() 
-            s.buWSoilInit = sum(np.multiply(comm.bcast(np.array(s.getWaterContent()), root=0), cell_volumes)) # to evaluate cumulative water balance error
-            # reset the inter-cell water fluxes to 0
-            outer_R_bc_wat = np.full(cell_volumes.shape, 0.)
+        s.save()# <= so that stay in the current weather state
+        perirhizalModel.save() 
+        s.buWSoilInit = sum(np.multiply(comm.bcast(np.array(s.getWaterContent()), root=0), cell_volumes)) # to evaluate cumulative water balance error
+        # reset the inter-cell water fluxes to 0
+        outer_R_bc_wat = np.full(cell_volumes.shape, 0.)
             
         # store old error rate and compare with the new one. 
         # allow for small increase
         beforeChange_sumDiff1d3dCW_abs = perirhizalModel.sumDiff1d3dCW_abs
-        perirhizalModel.checkMassOMoleBalance2() 
+        perirhizalModel.check1d3dDiff() 
         if rank ==0:
             print('weather::weatherChange(): error after change',
                   perirhizalModel.sumDiff1d3dCW_rel, perirhizalModel.sumDiff1d3dCW_abs )
