@@ -68,7 +68,7 @@ if __name__ == '__main__':
     s.setCriticalPressure(wilting_point)
 
     """ Initialize xylem model """
-    rs = pb.MappedRootSystem()
+    rs = pb.MappedPlant()
     rs.readParameters(path + name + ".xml")
     if not periodic:
         sdf = pb.SDF_PlantBox(0.99 * (max_b[0] - min_b[0]), 0.99 * (max_b[1] - min_b[1]), max_b[2] - min_b[2])
