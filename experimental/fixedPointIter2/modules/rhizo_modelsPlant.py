@@ -113,8 +113,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.nsAirOld = 0 # total number of 1d air segs at the last time step
         self.toAddAir = np.array([]) # number of 1d air segs  to add for each threads
         self.repartitionAirOld = np.array([0 for i in range( max_rank)])  # old division of the 1d air models between the threads
-        self.cellIdleftover = np.array([]) # ids of cels with cyl that have decreased (for
-        # the leftover functions)
+        self.cellIdleftover = np.array([]) # ids of cels with cyl that have decreased (for the leftover functions)
+        self.finishedUpdate = True
         
         # error rates and fails
         self.limErr1d3dAbs = limErr1d3dAbs

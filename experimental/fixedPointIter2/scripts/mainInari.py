@@ -38,7 +38,7 @@ import FPItHelper
 
 def XcGrowth(initsim, simMax):     
     paramIndx_ = 0 # not used
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
+    xml_name = "Triticum_aestivum_test_2021_1cm.xml" #"wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
     # file
     dx = 0.2 # todo implement
     dxMin = 0.25
@@ -58,7 +58,7 @@ def XcGrowth(initsim, simMax):
     doSoluteUptake = False # active uptake?
     noAds = True # stop adsorption?
     doPhloemFlow = False
-    doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
+    doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
     do1d1dFlow = False
@@ -90,7 +90,7 @@ def XcGrowth(initsim, simMax):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed 
-    results_dir=("./results/INARI/")
+    results_dir=("./results/INARImyparams/")
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -115,7 +115,7 @@ def XcGrowth(initsim, simMax):
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_plant(initsim, s, xml_name,
                                             path, 
-                                            doPhloemFlow = doPhloemFlow,
+                                            doPhloemFlow = doPhloemFlow,doPhotosynthesis=doPhotosynthesis,
                                             static_plant = static_plant,
                                             usemoles = usemoles,
                                             limErr1d3d = 5e-12, spellData = spellData)  

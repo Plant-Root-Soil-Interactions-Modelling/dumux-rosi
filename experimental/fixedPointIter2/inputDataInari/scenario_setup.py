@@ -361,7 +361,7 @@ def create_soil_model( usemoles, results_dir ,
     getBiochemParam(s,paramIndx)
     setBiochemParam(s)
     setIC3D(s, paramIndx, ICcc)
-    s.isPeriodic = False
+    s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, p_mean_)
     
@@ -452,7 +452,7 @@ def setupOther(s, p_mean_):
     
 def create_mapped_plant(initSim, soil_model, fname, path, 
                 stochastic = False, 
-                        doPhloemFlow = True, static_plant = False,
+                        doPhloemFlow = True, static_plant = False,doPhotosynthesis=False,
                         usemoles = True, limErr1d3d = 1e-11, spellData =None):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
@@ -483,7 +483,7 @@ def create_mapped_plant(initSim, soil_model, fname, path,
             perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
         perirhizalModel.ms.initialize(verbose = False)
         perirhizalModel.ms.simulate(initSim,verbose= False)
-        if doPhloemFlow:
+        if doPhloemFlow or doPhotosynthesis:
             plantModel = PhloemFluxPython(perirhizalModel.ms,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
         else:
             plantModel = XylemFluxPython(perirhizalModel.ms)
@@ -503,8 +503,8 @@ def create_mapped_plant(initSim, soil_model, fname, path,
     plantModel.wilting_point = -15000.
     # set kr and kx for root system or plant
     #pdef_conductivities.init_conductivities(r = plantModel)
-    #plantParameters.init_conductivities(r = plantModel)
-    wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
+    plantParameters.init_conductivities(r = plantModel)
+    #wheat1997_conductivities.init_conductivities(r = plantModel, age_dependent = not static_plant)
     if doPhloemFlow:   
         plantModel = plantParameters.phloemParam(plantModel, weatherInit)
     perirhizalModel.set_plantModel(plantModel)

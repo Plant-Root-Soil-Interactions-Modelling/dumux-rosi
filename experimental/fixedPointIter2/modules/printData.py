@@ -13,6 +13,8 @@ import plantbox as pb
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
 import vtk_plot_adapted as vp
+import functional.van_genuchten as vg
+import helpfull
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """
@@ -279,7 +281,7 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
                                             s.bulkMassErrorWaterCumul_abs,s.bulkMassErrorWaterCumul_rel]),
                          directory_ =results_dir, fileType = '.csv')#cumulative
 
-        
+
 
 def doVTPplots(vtpindx, perirhizalModel, plantModel, s, 
                 soilTextureAndShape,datas = [], datasName=[], 
@@ -293,7 +295,9 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                             vals =datas, 
                             filename =results_dir+"vtpvti/plantAt"+ str(vtpindx), 
                       range_ = [0,5000])
-    if not initPrint:
+                  
+    
+    if  not initPrint:
         cell_volumes = s.getCellVolumes()
         # otherwise the shoot looks weird
         periodic = False
@@ -310,9 +314,26 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                                soilTextureAndShape['min_b'],
                                soilTextureAndShape['max_b'],
                                soilTextureAndShape['cell_number'], 
-                filename="vtpvti/soil_rx"+ str(vtpindx),sol_ind =-1,
+                filename="vtpvti/soil_theta"+ str(vtpindx),sol_ind =-1,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
+                
+        
+        extraArray_ = helpfull.theta2H(s.soil,extraArray_) + s.cellCenters[:,2]
+        extraArrayName_ = "total water potential"
+        
+        getConcentration = True # True: get concentration, False: get content
+        zcoord = np.array([s.cellCenters[:,2][perirhizalModel.seg2cell[gId]] for gId in range(len(rsi_Conce))])
+        rsi_Conce = helpfull.theta2H(s.soil,rsi_Conce)+zcoord
+        
+        # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
+        vp.plot_roots_and_soil(perirhizalModel.ms.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
+                               soilTextureAndShape['min_b'],
+                               soilTextureAndShape['max_b'],
+                               soilTextureAndShape['cell_number'], 
+                filename="vtpvti/soil_rx"+ str(vtpindx),sol_ind =-1,
+                               extraArray = extraArray_, extraArrayName = extraArrayName_,
+                interactiveImage=False) 
         
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):
