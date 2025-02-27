@@ -90,7 +90,7 @@ def testSolver(solverType, name, SLURM_NTASKS,NODELIST,MEM ):
         init_conductivities(r, False)
     else:
 
-        rs = pb.MappedRootSystem()
+        rs = pb.MappedPlant()
         rs.setSeed(1)
         rs.readParameters(path + fname + ".xml")
         if not periodic:

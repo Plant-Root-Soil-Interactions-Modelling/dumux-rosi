@@ -154,7 +154,7 @@ def set_scenario(plant, dim, initial, soil, outer_method):
     sys.stdout.flush()
 
     """ root hydraulic model"""
-    rs = pb.MappedRootSystem()
+    rs = pb.MappedPlant()
     rs.setSeed(random_seed)
     rs.readParameters("data/" + param_name)  #
 
