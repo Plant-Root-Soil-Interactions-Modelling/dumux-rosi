@@ -80,7 +80,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def getWaterVolumesCyl(self ):
         return np.array([0])
     def getKrw(self):# could return here the air resistance instead of having it in the photosynthesis class
-        return np.array([np.Inf])
+        return np.array([np.inf])
         
     #set
     def setInnerFluxCyl(self,val) :#flux computed by the plant (transpiration for leaf, 0 else)

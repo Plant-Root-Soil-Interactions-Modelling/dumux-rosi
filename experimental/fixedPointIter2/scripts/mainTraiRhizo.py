@@ -368,9 +368,9 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
     if scenario == "none":
         spellStart = 0 #not used
         condition = "wet"
-        spellDuration =  np.Inf
+        spellDuration =  np.inf
     elif scenario == "baseline":
-        spellStart = np.Inf
+        spellStart = np.inf
         condition = "wet"
         spellDuration =   7
     elif scenario == "earlyDry":
