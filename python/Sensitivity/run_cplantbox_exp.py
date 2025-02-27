@@ -13,7 +13,7 @@ import visualisation.vtk_plot as vp
 import run_cplantbox
 
 
-def show_me(exp_name, folder_path):
+def show_me(exp_name, folder_path, mode = "interactive"):
     """ open parameter modifications """
     file_path = os.path.join(folder_path, exp_name + "_mods.json")
     with open(file_path, 'r', encoding = 'utf-8') as file:
@@ -46,7 +46,16 @@ def show_me(exp_name, folder_path):
     params.pop("sim_time")
     rs = run_cplantbox.run_soybean("dummy", enviro_type, sim_time, params, False)
 
-    vp.plot_plant(rs.ms, "age")
+    if mode == "interactive":
+        vp.plot_plant(rs.ms, "age")
+    elif mode == "png":
+        actors, color_bar = vp.plot_plant(rs.ms, "age", render = False)
+        tube_plot_actor = actors[0]
+        actor = actors[1]
+        ren = vp.render_window([tube_plot_actor, actor], "plot_plant", color_bar, tube_plot_actor.GetBounds(), True)
+        vp.write_png(ren.GetRenderWindow(), exp_name)
+    else:
+        raise "show_me(): unknown mode"
 
 
 if __name__ == "__main__":

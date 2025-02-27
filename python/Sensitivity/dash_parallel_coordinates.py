@@ -17,22 +17,28 @@ def create_df(all, dims):
     return pd.DataFrame(d, columns = dims)
 
 
-""" 1 load everything & merge npz results into input parameter json"""
-
 folder_path = "results_cplantbox/"
 exp_name = "soybean_length14"
-target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 
+""" 1 load everything & merge npz results into input parameter json"""
 all = got.load_json_files(exp_name, folder_path)  # open parameter files
 got.merge_results(folder_path, all)  # add results
 
-print("\nraw data")
-d = got.fetch_features(target_names, all)
-got.print_info(d, target_names)
-print(d.shape)
-
-""" 2 filter """
+""" 2 filter and add cluster index"""
 all = got.filter_list(all, "length", 200., 20000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+m_neurons = 3  # 10
+n_neurons = 4  # 10
+node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
+
+# # Plot Pareto solutions
+# ind = got.pareto_list(all, target_names)
+# all_new = []
+# for i, a in enumerate(all):
+#     if ind[i] == True:
+#         all_new.append(a)
+# all = all_new
+# print("number of pareto solutions: ", np.sum(ind))
 
 """ 3 parameter space regarding nodes """
 pbounds = {
@@ -46,14 +52,17 @@ pbounds = {
     'r2_a': (0.2, 7.),
     'lmax3_a': (5., 50.),
     'r3_a': (0.2, 7.),
+    'node': 0
     }
 
 dims = list(pbounds.keys())  # for the parallel coordinates
 
+dims.extend(target_names)
+
 more_dims = dims.copy()
 more_dims.extend(["exp_name"])
 
-color_ = 'lmax145_a'
+color_ = 'node'
 df = create_df(all, more_dims)
 
 app = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
@@ -62,7 +71,7 @@ fig = px.parallel_coordinates(
     df,
     color = color_ ,
     dimensions = dims,
-    color_continuous_scale = px.colors.diverging.Tealrose,
+    color_continuous_scale = px.colors.diverging.Spectral,  # Tealrose
     color_continuous_midpoint = 2,
 )
 

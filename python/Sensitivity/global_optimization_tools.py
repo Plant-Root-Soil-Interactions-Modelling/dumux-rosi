@@ -15,6 +15,23 @@ from matplotlib.patches import Polygon, RegularPolygon, Ellipse
 from matplotlib import cm, colorbar
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
+from minisom import MiniSom
+
+"""
+file io                load_json_files, merge_results                
+clustering             make_som_maps, make_kmeans_maps, scale_data, label_clusters
+data management        fetch_features, print_info, filter_data, filter_list, pareto_data, pareto_list
+plotting               plot_1D, scatter_1D, scatter_1D_cross, plot_targets, prepare_img
+
+Naming:
+
+the objectives of the multiple objectives optimization are also called targets 
+parameters and objectives are called features
+
+either data is represented by a list of dictionaries (all), and features are represented as list of keys (target_names)
+or data is represented as numpy array (data), and features are represented as list of indices (target_ind)
+"""
+
 
 def load_json_files(exp_name, folder_path):
     """ opens all json files starting with exp_name in a folder and returns a list of Python dictionaries 
@@ -47,6 +64,7 @@ def merge_results(folder_path, json_data_list, i = -1):
             data["length"] = results["length"][i]
             data["surface"] = results["surface"][i]
             data["volume"] = results["volume"][i]
+            data["-volume"] = -results["volume"][i]  # MINUS because we want to minimize
             data["depth"] = np.abs(results["depth"][i])  # they are stored with a (wrong) sign
             data["RLDmean"] = results["RLDmean"][i]
             data["RLDz"] = np.abs(results["RLDz"][i])  # they are stored with a (wrong) sign
@@ -88,6 +106,34 @@ def make_kmeans_maps(obs, code_block, n):
     return node2sample, sample2node, node2sample_
 
 
+def label_clusters(all, n_neurons, m_neurons, target_names, mode):
+    """ creates a som or kmeans clustering regarding the target_ind and adds "node" to each point in all"""
+    som = None
+    data = fetch_features(target_names, all)
+    if mode == "som":
+        data = scale_data(data)  # mean = 0, std = 1
+        # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
+        #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+        som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
+                      topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
+        som.pca_weights_init(data)
+        som.train(data, 1000, verbose = False)  # random training
+        node2sample, sample2node = make_som_maps(som, data)
+    elif mode == "kmeans":
+        data = whiten(data)  # mean 0
+        centers, dist = kmeans(data, m_neurons * n_neurons, rng = 1)
+        node2sample, sample2node, _ = make_kmeans_maps(data, centers, n_neurons)
+    else:
+        raise "label_clusters(): unknown clustering method" + mode
+
+    for k, point in enumerate(all):  # add results to all
+        j, i = sample2node[k]
+        # print(j, i, n_neurons, m_neurons)
+        point["node"] = i * n_neurons + j
+
+    return node2sample, sample2node, som
+
+
 def get_(name, all):
     """ returns the key @param name from a @param all which is a list of dicts as np.array """
     l = np.array([a[name] for a in all])
@@ -104,6 +150,12 @@ def fetch_features(feature_names, all):
     return data
 
 
+def rstd_(data, feature_names):
+    """ mean of the relative standard deviations, i.e. standard deviations in percent of mean value """
+    rstd_ = [rstd_.append(100.* np.std(data[:, i]) / np.mean(data[:, i])) for i in range(0, data.shape[1])]
+    return np.mean(rstd_)
+
+
 def print_info(data, feature_names):
     """ prints features min, max, mean, and sd (parameter names labels the data columns) """
     print("name".ljust(20) + "\tmin\t\tmax\t\tmean\t\tstd\t\trstd")
@@ -117,12 +169,6 @@ def print_info(data, feature_names):
     print("\tmean rstd", np.mean(rstd_))
 
 
-def rstd_(data, feature_names):
-    """ mean of the relative standard deviations, i.e. standard deviations in percent of mean value """
-    rstd_ = [rstd_.append(100.* np.std(data[:, i]) / np.mean(data[:, i])) for i in range(0, data.shape[1])]
-    return np.mean(rstd_)
-
-
 def filter_data(data, feature_ind, min_, max_):
     """ crops data (np.array) to values where feature_ind stays within (min_, max_) """
     ind_ = np.bitwise_and(data[:, feature_ind] > min_, data[:, feature_ind] < max_)
@@ -131,7 +177,7 @@ def filter_data(data, feature_ind, min_, max_):
 
 
 def filter_list(data, feature_str, min_, max_):
-    """ crops data (list of dict) to values where feature_ind stays within (min_, max_) """
+    """ crops data (list of dict) to values where feature_str stays within (min_, max_) """
     ind_ = []
     for d in data:
         if d[feature_str] > min_ and d[feature_str] < max_:
@@ -139,7 +185,7 @@ def filter_list(data, feature_str, min_, max_):
     return ind_
 
 
-def is_pareto_efficient(costs, return_mask = True):
+def is_pareto_efficient_(costs, return_mask = True):
     """
     Find the pareto-efficient points
     :param costs: An (n_points, n_costs) array
@@ -167,11 +213,18 @@ def is_pareto_efficient(costs, return_mask = True):
         return is_efficient
 
 
-def pareto(data, feature_ind,):
+def pareto_data(data, feature_ind):
     """ crops data to its pareto set, using is_pareto_efficient """
     cost = data[:, feature_ind]
-    mask = is_pareto_efficient(cost)
-    return data[mask,:]
+    mask = is_pareto_efficient_(-cost)
+    return mask
+
+
+def pareto_list(all, feature_str):
+    """ crops data to its pareto set, using is_pareto_efficient """
+    cost = fetch_features(feature_str, all)
+    mask = is_pareto_efficient_(-cost)
+    return mask
 
 
 def scale_data(data):
@@ -245,7 +298,6 @@ def scatter_1D_cross(names, all):
 
 def plot_hexagons(img, ax, f = cm.viridis):
     """ adds the img data as hexagons """
-    img = scale01(img)
     xx = list(range(0, img.shape[1]))
     yy = list(range(0, img.shape[0]))
     for i in range(img.shape[0]):
@@ -263,43 +315,50 @@ def plot_hexagons(img, ax, f = cm.viridis):
 
 
 def plot_rose(data, i, j, m_neurons, n_neurons, ax, f = cm.jet):
-    """ """
+    """ single rose plot """
     margin = 2. / 180. * np.pi
     theta_ = np.linspace(0, 2 * np.pi, len(data) + 1)
 
     for k, d in enumerate(data):
         x0 = j + 0.5 * (i % 2)
         y0 = i * np.sqrt(3) / 2
-        x1 = 0.5 * d * np.cos(theta_[k] + margin) + x0
-        y1 = 0.5 * d * np.sin(theta_[k] + margin) + y0
-        x2 = 0.5 * d * np.cos(theta_[k + 1] - margin) + x0
-        y2 = 0.5 * d * np.sin(theta_[k + 1] - margin) + y0
+        x1 = 0.5 * np.abs(d) * np.cos(theta_[k] + margin) + x0
+        y1 = 0.5 * np.abs(d) * np.sin(theta_[k] + margin) + y0
+        x2 = 0.5 * np.abs(d) * np.cos(theta_[k + 1] - margin) + x0
+        y2 = 0.5 * np.abs(d) * np.sin(theta_[k + 1] - margin) + y0
         tri = Polygon([[x0, y0], [x1, y1], [x2, y2], [x0, y0]],
                         facecolor = f(k / len(data)),
                         alpha = 1.,
                         edgecolor = 'gray')
 
         ax.add_patch(tri)
-        ax.text(x0, y0 + 0.5, "({:g},{:g})".format(j, i), size = 24)  # why j, i? (som did it)
+        ax.text(x0, y0 + 0.5, "({:g},{:g})={:g}".format(j, i, i * n_neurons + j), size = 24)  # why j, i? (som did it)
 
     # ax.set_xlim((-1, n_neurons + 0.5))
     # ax.set_ylim((-1, m_neurons - 0.5))
 
 
-def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2sample, sample2node, mode = "quad"):
-    """ plots multiple objectives using prepare_img """
+def plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, mode = "quad"):
+    """ plots multiple objectives using prepare_img
+    mode is "quad", "hexagon", "rose" 
+    """
+    data = fetch_features(target_names, all)
+
     if mode == "quad" or mode == "hexagon":
-        n = np.ceil(np.sqrt(len(target_indices)))
+        n = np.ceil(np.sqrt(len(target_names)))
+        fig, ax = plt.subplots(int(len(target_names) // n + 1 * (len(target_names) % n > 0)), int(n), figsize = (16, 16))
     else:
         n = 1
-    fig, ax = plt.subplots(int(n), int(n), figsize = (16, 16))
+        fig, ax = plt.subplots(n, n, figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
-    img_ = []
-    for k, target in enumerate(target_indices):
 
-         img = prepare_img(target, data, m_neurons, n_neurons, node2sample, sample2node)
+    img_ = []
+    for k, _ in enumerate(target_names):
+
+         img = prepare_img(k, data, m_neurons, n_neurons, node2sample, sample2node)
+         img = scale01_(img)
 
          if mode == "quad":
              ax_[k].pcolor(img, cmap = "viridis")  # pcolor
@@ -319,7 +378,7 @@ def plot_targets(target_indices, target_names, data, m_neurons, n_neurons, node2
 
     if mode == "rose":
         img_ = np.array(img_)
-        for k, target in enumerate(target_indices):
+        for k, _ in enumerate(target_names):
             img_[k,:,:] = img_[k,:,:] / np.max(img_[k,:,:].flat)
         for i in range(0, m_neurons):
             for j in range(0, n_neurons):
@@ -345,8 +404,9 @@ def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node
     return img
 
 
-def scale01(img):
+def scale01_(img):
     """ scales the img from 0 to 1 (e.g. for color mapping) """
+    img = np.abs(img)
     return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat)))
 
 
