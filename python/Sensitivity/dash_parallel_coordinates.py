@@ -27,8 +27,8 @@ got.merge_results(folder_path, all)  # add results
 
 """ 2 filter and add cluster index"""
 all = got.filter_list(all, "length", 200., 20000)  # 76 * 3  *100 * 0.6 = 13680 cm;
-m_neurons = 3  # 10
-n_neurons = 4  # 10
+m_neurons = 2  # 10
+n_neurons = 2  # 10
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
 
 # # Plot Pareto solutions
@@ -130,4 +130,4 @@ def updateFilters(data):
 
 
 if __name__ == "__main__":
-    app.run_server(debug = True)
+    app.run_server(debug = True, dev_tools_hot_reload = False)

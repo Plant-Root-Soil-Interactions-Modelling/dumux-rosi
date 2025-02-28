@@ -15,6 +15,16 @@ import scenario_setup as scenario
 import hydraulic_model
 
 
+class NpEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.bool):
+            return bool(obj)
+        return super(NpEncoder, self).default(obj)
+
+
 def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     """
         exp_name                experiment name (name for output files)
@@ -98,7 +108,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, write_all = save_all)
     # parameters
     with open("results_cplantbox/" + exp_name + "_mods.json", "w+") as f:
-        json.dump(mods_copy, f)
+        json.dump(mods_copy, f, cls = NpEncoder)
     # resulting cplantbox parameters
     # r.ms.writeParameters("results_cplantbox/" + exp_name + ".xml")  # corresponding xml parameter set
 

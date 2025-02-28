@@ -13,8 +13,10 @@ import visualisation.vtk_plot as vp
 import run_cplantbox
 
 
-def show_me(exp_name, folder_path, mode = "interactive"):
-    """ open parameter modifications """
+def show_me_file(exp_name, folder_path, mode = "interactive", png_name = None):
+    """ todo """
+
+    """ open parameters """
     file_path = os.path.join(folder_path, exp_name + "_mods.json")
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
@@ -38,14 +40,20 @@ def show_me(exp_name, folder_path, mode = "interactive"):
     results["SUFz"] = np.abs(results_["SUFz"][i])  # they are stored with a (wrong) sign
     print(results)
 
+    show_me(params, folder_path, mode, png_name)
+
+
+def show_me(params, folder_path, mode = "interactive", png_name = None):
+    """ todo """
+
     """ rerun simulations (do not overwrite results) """
     enviro_type = params["enviro_type"]
     sim_time = params["sim_time"]
     params.pop("exp_name")
     params.pop("enviro_type")
     params.pop("sim_time")
-    rs = run_cplantbox.run_soybean("dummy", enviro_type, sim_time, params, False)
 
+    rs = run_cplantbox.run_soybean("dummy", enviro_type, sim_time, params, False)
     if mode == "interactive":
         vp.plot_plant(rs.ms, "age")
     elif mode == "png":
@@ -53,7 +61,9 @@ def show_me(exp_name, folder_path, mode = "interactive"):
         tube_plot_actor = actors[0]
         actor = actors[1]
         ren = vp.render_window([tube_plot_actor, actor], "plot_plant", color_bar, tube_plot_actor.GetBounds(), True)
-        vp.write_png(ren.GetRenderWindow(), exp_name)
+        if png_name == None:
+            png_name = exp_name
+        vp.write_png(ren.GetRenderWindow(), png_name)
     else:
         raise "show_me(): unknown mode"
 

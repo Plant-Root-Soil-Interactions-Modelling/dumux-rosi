@@ -359,6 +359,7 @@ def plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2no
 
          img = prepare_img(k, data, m_neurons, n_neurons, node2sample, sample2node)
          img = scale01_(img)
+         # print("target name", target_names[k], k, img.shape, img[2, 0])
 
          if mode == "quad":
              ax_[k].pcolor(img, cmap = "viridis")  # pcolor
@@ -394,20 +395,26 @@ def plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2no
 def prepare_img(target_ind, data, m_neurons, n_neurons, node2sample, sample2node):
     """ prepares an image representing the mean target value on the nodes """
     img = np.zeros((m_neurons, n_neurons))
-    for i in range(0, m_neurons):
+    for i in range(0, m_neurons):  # A(mxn)
         for j in range(0, n_neurons):
             node = (j, i)
-            if node in node2sample:
-                ind_ = node2sample[node]
-                img[i, j] = np.mean(data[ind_, target_ind])
+            ind_ = node2sample[node]
+            img[i, j] = np.mean(data[ind_, target_ind])
+            # if node == (0, 2):
+            #     print("\ntarget index", target_ind, "len", len(ind_))
+            #     # print(data[ind_, target_ind])
+            #     print("mean", np.mean(data[ind_, target_ind]))
+            #     print("min", np.min(data[ind_, target_ind]))
+            #     print("max", np.max(data[ind_, target_ind]))
 
     return img
 
 
 def scale01_(img):
     """ scales the img from 0 to 1 (e.g. for color mapping) """
-    img = np.abs(img)
-    return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat)))
+    base = 0.1
+    return np.divide(img - np.ones(img.shape) * np.min(img.flat), np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat))) + np.ones(img.shape) * base
+    # return np.abs(np.divide(img, np.ones(img.shape) * (np.max(img.flat) - np.min(img.flat))))
 
 
 if __name__ == "__main__":

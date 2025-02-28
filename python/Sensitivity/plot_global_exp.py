@@ -14,6 +14,7 @@ from matplotlib import cm, colorbar
 from minisom import MiniSom
 
 import global_optimization_tools as got
+import run_cplantbox_exp
 
 """ font sizes """
 SMALL_SIZE = 12
@@ -51,6 +52,48 @@ def distortion_plot(all, target_names):
     plt.show()
 
 
+def mean_of_dict(all, keys):
+    """ """
+    data = got.fetch_features(keys, all)
+    mean_data = np.mean(data, axis = 0)
+    # print(keys)
+    # print(mean_data)
+    # print(mean_data.shape)
+    new_dict = all[0].copy()
+    for j, k in enumerate(keys):
+        new_dict[k] = mean_data[j]
+    return new_dict
+
+
+def exemplify(all, node2sample, m_neurons, n_neurons):
+
+    for i in range(0, m_neurons):
+        for j in range(0, n_neurons):
+            node = (j, i)
+
+            c = 0
+            ind = node2sample[node][c]
+            pareto = all[ind]["pareto"]
+            while pareto == False:
+                c += 1
+                ind = node2sample[node][c]
+                pareto = all[ind]["pareto"]
+
+            print(i, j, "example ind", ind, "which is choice", c)
+            run_cplantbox_exp.show_me_file(all[ind]["exp_name"], "results_cplantbox/", mode = "png", png_name = "test({:g}, {:g})".format(j, i))
+
+
+def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
+       for i in range(0, m_neurons):
+        for j in range(0, n_neurons):
+            node = (j, i)
+            ind = node2sample[node]
+            winner = mean_of_dict([all[i] for i in ind], keys)
+            print(winner)
+            print(type(winner))
+            run_cplantbox_exp.show_me(winner, "results_cplantbox/", mode = "png", png_name = "test({:g}, {:g})".format(j, i))
+
+
 """ 1 load everything & merge npz results into input parameter json"""
 folder_path = "results_cplantbox/"
 exp_name = "soybean_length14"
@@ -76,11 +119,12 @@ print(d.shape)
 
 """ 3 cluster the targets """
 target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
-distortion_plot(all, target_names)  # to determine m and n
-m_neurons = 3  # 10
-n_neurons = 4  # 10
+# distortion_plot(all, target_names)  # to determine m and n
+m_neurons = 2  # 10
+n_neurons = 3  # 10
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
 
+print()
 for i in range(0, m_neurons * n_neurons):
     node = (i % n_neurons, i // n_neurons)
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), len(node2sample[node]), "samples")
@@ -107,8 +151,10 @@ target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
 ind = got.pareto_list(all, target_names)
 pareto = []
 for i, a in enumerate(all):
+    all[i]["pareto"] = ind[i]
     if ind[i] == True:
         pareto.append(a)
+
 print("\nNumber of pareto solutions: ", np.sum(ind), len(pareto))
 
 pareto_nodes = []
@@ -118,6 +164,8 @@ print("Pareto solutions are located in nodes", set(pareto_nodes))
 pareto_nodes = np.array(pareto_nodes, dtype = np.int64)
 for i in range(0, m_neurons * n_neurons):
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), "has", len(pareto_nodes[pareto_nodes == i]), "solutions")
+
+# exemplify(all, node2sample, m_neurons, n_neurons)
 
 """ 5 parameter space regarding nodes """
 pbounds = {
@@ -138,16 +186,22 @@ print("\nAll parameter space", data_params.shape)
 got.print_info(data_params, param_names)
 print(data_params.shape)
 
-""" 6 analyze single node """
-node = (3, 1)  # (0,1), (1,1)
-ind = np.array(node2sample[node], dtype = np.int64)
-print("\nParameter space node", node, data_params[ind].shape)
-# print(ind)
-got.print_info(data_params[ind], param_names)
+exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, param_names)
 
-node_listdata = [all[i] for i in ind]
-distortion_plot(node_listdata, param_names)
-
+# """ 6 analyze single node """
+# node = (1, 0)  # (0,1), (1,1)
+# ind = np.array(node2sample[node], dtype = np.int64)
+# print("\nParameter space node", node, data_params[ind].shape)
+# # print(ind)
+# got.print_info(data_params[ind], param_names)
+#
+# # data_target = got.fetch_features(target_names, all)
+# # print("\nTargets node", node, data_target[ind].shape)
+# # got.print_info(data_target[ind], target_names)
+#
+# node_listdata = [all[i] for i in ind]
+# distortion_plot(node_listdata, param_names)
+#
 # k = 10
 # node_data = got.fetch_features(param_names, node_listdata)
 # centers, dist = kmeans(node_data, k, rng = 1)
