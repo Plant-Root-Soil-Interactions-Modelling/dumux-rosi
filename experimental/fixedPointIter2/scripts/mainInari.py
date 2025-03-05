@@ -39,17 +39,13 @@ import FPItHelper
 def XcGrowth(initsim, simMax):     
     paramIndx_ = 0 # not used
     xml_name = "Triticum_aestivum_test_2021_1cm.xml" #"wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
-    # file
-    dx = 0.2 # todo implement
-    dxMin = 0.25
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 20/60/24 # dt
-    dt_inner2_init =  dt
+    dt_inner_init = 20/60/24 # inner time step
+    dt_inner2_init =  dt # in case of nested time iteration loop (turned off for now)
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
-    k_iter_2initVal = 131 # max num of iteration for loops
     k_iter = 100 # max num of iteration for loops
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
@@ -129,7 +125,7 @@ def XcGrowth(initsim, simMax):
     perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
-    perirhizalModel.k_iter_2initVal = k_iter_2initVal
+    #perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
     perirhizalModel.doPhloemFlow = doPhloemFlow
@@ -329,19 +325,15 @@ def XcGrowth(initsim, simMax):
     
     
     
-    print("finished simulation :D", rank,"(parting is such sweet sorrow)")
-    # for some reason, we get an error when the program stops
+    print("finished simulation", rank)
+    # for some reason, we get an error on agrocluster when the program stops
     # memory leak?
     return results_dir
 
         
 
-if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the solving object.
-    # python3 XcGrowth.py 9 10 0 customDry 9.02 0.02
-    # python3 XcGrowth.py 9 10 20 lateDry
-    # python3 XcGrowth.py 12 25 98 baseline
-    # python3 XcGrowth.py 9 10 0 none 
-    
+if __name__ == '__main__': 
+    # python3 mainInari.py 9 10 
     if rank == 0:
         print('sys.argv',sys.argv)
         

@@ -318,13 +318,13 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
                 
-        
-        extraArray_ = helpfull.theta2H(s.soil,extraArray_) + s.cellCenters[:,2]
-        extraArrayName_ = "total water potential"
-        
-        getConcentration = True # True: get concentration, False: get content
-        zcoord = np.array([s.cellCenters[:,2][perirhizalModel.seg2cell[gId]] for gId in range(len(rsi_Conce))])
-        rsi_Conce = helpfull.theta2H(s.soil,rsi_Conce)+zcoord
+        if rank == 0:
+            extraArray_ = helpfull.theta2H(s.soil,extraArray_) + s.cellCenters[:,2]
+            extraArrayName_ = "total water potential"
+            
+            getConcentration = True # True: get concentration, False: get content
+            zcoord = np.array([s.cellCenters[:,2][perirhizalModel.seg2cell[gId]] for gId in range(len(rsi_Conce))])
+            rsi_Conce = helpfull.theta2H(s.soil,rsi_Conce)+zcoord
         
         # TODO: adapt to have plot_plants_and_soil (i.e., with leaf surface)
         vp.plot_roots_and_soil(perirhizalModel.ms.mappedSegments(),extraArrayName_,rsi_Conce, s, periodic, 
