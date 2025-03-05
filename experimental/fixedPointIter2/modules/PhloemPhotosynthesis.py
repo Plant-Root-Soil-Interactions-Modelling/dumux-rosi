@@ -312,7 +312,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     # at the beginning of the time step (rsx_init). Otherwise does not converge
     
     if rank == 0:
-        if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ) or (fpit_Helper.n_iter > perirhizalModel.k_iter_2initVal) :
+        if (perirhizalModel.beforeAtNight and noTranspiration(perirhizalModel, rs_age_i_dt, dt) ):# or (fpit_Helper.n_iter > perirhizalModel.k_iter_2initVal) :
             fpit_Helper.rsx_input = fpit_Helper.rsx_init
 
 

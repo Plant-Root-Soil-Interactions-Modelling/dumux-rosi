@@ -1065,9 +1065,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                           )  and (cellId in self.cellIdleftover)) and (not shapeOnly)
 
 
-            changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
-                                          ) and (cellId not in self.cellIdleftover))
-
+            changeShape = (shapeOnly and ( # only update if shape changes but no total solutes or water concentration change needed
+                                    ((deltaVol != 0.) and (cellId not in self.cellIdleftover)) # volume changed but it does not receive/loose solutes/water (so no total concentration change)
+                                    or (self.changedLen(cyl) and (deltaVol == 0.)) # length changed but not the volume (so no total concentration change)
+                                          )) 
+  
 
             if changeShapeAndConc or changeShape:
 
@@ -1206,7 +1208,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                                             x = newHead,# cm
                                                             cAll = molFrNew, # mol/mol water or mol/mol scv
                                                             Cells = centersNew) # cm
-                                                            
+            
                 
                 
             
