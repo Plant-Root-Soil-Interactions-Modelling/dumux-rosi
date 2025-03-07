@@ -102,6 +102,7 @@ all = got.load_json_files(exp_name, folder_path)  # open parameter files
 got.merge_results(folder_path, all)  # add results
 
 # print(all[0].keys())
+# dd
 # print(all[0]["exp_name"])
 
 # print("\nraw data")
@@ -119,8 +120,8 @@ print(d.shape)
 
 """ 3 cluster the targets """
 target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
-# distortion_plot(all, target_names)  # to determine m and n
-m_neurons = 2  # 10
+distortion_plot(all, target_names)  # to determine m and n
+m_neurons = 3  # 10
 n_neurons = 3  # 10
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
 
@@ -142,9 +143,9 @@ for i in range(0, m_neurons * n_neurons):
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]
-got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
-# got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
+target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
+# got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
+got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
 
 """ 5 pareto set """
 target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
@@ -186,32 +187,32 @@ print("\nAll parameter space", data_params.shape)
 got.print_info(data_params, param_names)
 print(data_params.shape)
 
-exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, param_names)
+exemplify(all, node2sample, m_neurons, n_neurons)
 
-# """ 6 analyze single node """
-# node = (1, 0)  # (0,1), (1,1)
-# ind = np.array(node2sample[node], dtype = np.int64)
-# print("\nParameter space node", node, data_params[ind].shape)
-# # print(ind)
-# got.print_info(data_params[ind], param_names)
-#
-# # data_target = got.fetch_features(target_names, all)
-# # print("\nTargets node", node, data_target[ind].shape)
-# # got.print_info(data_target[ind], target_names)
-#
-# node_listdata = [all[i] for i in ind]
-# distortion_plot(node_listdata, param_names)
-#
-# k = 10
-# node_data = got.fetch_features(param_names, node_listdata)
-# centers, dist = kmeans(node_data, k, rng = 1)
-# node2sample, sample2node, node2sample_ = got.make_kmeans_maps(node_data, centers, k)
-#
-# for i in range(0, k):
-#     ind = np.array(node2sample_[i], dtype = np.int64)
-#     node_data_k = [node_listdata[i] for i in ind]
-#     print("\nParameter space node", i, len(node_data_k), ind)
-#     got.print_info(got.fetch_features(param_names, node_data_k), param_names)
+""" 6 analyze single node """
+node = (1, 0)  # (0,1), (1,1)
+ind = np.array(node2sample[node], dtype = np.int64)
+print("\nParameter space node", node, data_params[ind].shape)
+# print(ind)
+got.print_info(data_params[ind], param_names)
+
+# data_target = got.fetch_features(target_names, all)
+# print("\nTargets node", node, data_target[ind].shape)
+# got.print_info(data_target[ind], target_names)
+
+node_listdata = [all[i] for i in ind]
+distortion_plot(node_listdata, param_names)
+
+k = 10
+node_data = got.fetch_features(param_names, node_listdata)
+centers, dist = kmeans(node_data, k, rng = 1)
+node2sample, sample2node, node2sample_ = got.make_kmeans_maps(node_data, centers, k)
+
+for i in range(0, k):
+    ind = np.array(node2sample_[i], dtype = np.int64)
+    node_data_k = [node_listdata[i] for i in ind]
+    print("\nParameter space node", i, len(node_data_k), ind)
+    got.print_info(got.fetch_features(param_names, node_data_k), param_names)
 
 """ fin """
 

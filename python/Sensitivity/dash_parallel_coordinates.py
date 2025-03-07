@@ -19,7 +19,7 @@ def create_df(all, dims):
 
 folder_path = "results_cplantbox/"
 exp_name = "soybean_length14"
-target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 
 """ 1 load everything & merge npz results into input parameter json"""
 all = got.load_json_files(exp_name, folder_path)  # open parameter files
@@ -56,6 +56,7 @@ pbounds = {
     }
 
 dims = list(pbounds.keys())  # for the parallel coordinates
+dims = ['r145_a', 'r2_a', 'r3_a', 'lmax145_a', 'lmax2_a', 'lmax3_a', 'node' ]
 
 dims.extend(target_names)
 
