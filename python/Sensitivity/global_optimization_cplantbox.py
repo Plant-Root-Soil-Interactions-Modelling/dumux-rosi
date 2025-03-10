@@ -140,7 +140,7 @@ def cplantbox_tests():
 
 def cplantbox_all14():  # 30 parameters
 
-    type_str = "soybean_lmax14"
+    type_str = "soybean_all14"
     enviro_type = 0
     sim_time = 87.5
 
