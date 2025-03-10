@@ -121,8 +121,8 @@ print(d.shape)
 """ 3 cluster the targets """
 target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
 distortion_plot(all, target_names)  # to determine m and n
-m_neurons = 3  # 10
-n_neurons = 3  # 10
+m_neurons = 3
+n_neurons = 4
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
 
 print()
@@ -133,19 +133,25 @@ for i in range(0, m_neurons * n_neurons):
 # # DISTANCE MAP
 # plt.figure(figsize = (9, 9))
 # plt.title("Distance map")
-# got.plot_hexagons(som.distance_map().T, plt.gca(), cm.jet)
-# plt.show()d
+# got.plot_hexagons(som.distance_map().T, plt.gca(), cm.viridis)
+# plt.show()
 # # FREQUENCY MAP (not working?!)
 # plt.figure(figsize = (9, 9))
 # plt.title("Frequency map")
-# frequencies = som.activation_response(got.fetch_features(target_names, all))
-# got.plot_hexagons(frequencies.T, plt.gca(), cm.jet)
+# # frequencies = som.activation_response(got.fetch_features(target_names, all))
+#
+# T = np.zeros((m_neurons, n_neurons))
+# for i in range(0, m_neurons):
+#     for j in range(0, n_neurons):
+#         T[i, j] = len(node2sample[(j, i)])
+# print(T.shape, np.min(T), np.max(T))
+# got.plot_hexagons(got.scale01_(T), plt.gca(), cm.viridis)
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
-# got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
-got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
+target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]
+got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
+# got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
 
 """ 5 pareto set """
 target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
