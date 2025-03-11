@@ -4,6 +4,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
+import os
 import copy
 import json
 import timeit
@@ -67,6 +68,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
 
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, None, xml_name, stochastic = False, mods = mods, model = "Meunier")
 
+    """ TODO -> move somewhere; must be identical to run_sra.run_soybean """
     cm = mods["conductivity_mode"]
     if cm == "age_dependent":
         scenario.init_lupine_conductivities_sa(r.params, mods["kr_young1"], mods["kr_old1"], mods["kr_young2"], mods["kr_old2"], mods["kr3"],
@@ -82,11 +84,33 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         mods.pop("kx_young2")
         mods.pop("kx_old2")
         mods.pop("kx3")
+
+    elif cm == "from_mecha":
+        ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
+        files = []
+        for file in os.listdir(mods["mecha_path"]):
+            if file.endswith(".npy"):  # Check if the file is a .npy file
+                files.append(file)
+        data = []
+        for i in ind_:
+            file = files[int(i)]
+            # ind = file.split("shiny")[1].split(".")[0]
+            file_path = os.path.join(mods["mecha_path"], file)
+            data.append(np.load(file_path))
+        print(data)
+        dd
+        mods.pop("conductivity_mode")
+        mods.pop("mecha_path")
+        mods.pop("conductivity_index1")
+        mods.pop("conductivity_index2")
+        mods.pop("conductivity_index3")
+
     elif cm == "scale":
         scenario.init_lupine_conductivities(r.params, mods["scale_kr"], mods["scale_kx"])
         mods.pop("conductivity_mode")
         mods.pop("scale_kr")
         mods.pop("scale_kx")
+
     else:
         raise "run_cplantbox.run_soybean() conductivity_mode unknown"
 
@@ -169,9 +193,15 @@ if __name__ == "__main__":
     kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
     kr_old = [5e-4, 0.0015]
 
-    mods = {"output_times": [40], "conductivity_mode": "age_dependent",
-            "kr_young1": kr[0], "kr_old1": kr_old[0], "kr_young2": kr[1], "kr_old2": kr_old[1], "kr3": kr[2],
-            "kx_young1": kx[0], "kx_old1": kx_old[0], "kx_young2": kx[1], "kx_old2": kx_old[1], "kx3": kx[2]}
+    mods = {"output_times": [40],
+            "conductivity_mode": "from_mecha",
+            "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
+            'conductivity_index1': 1,
+            'conductivity_index2': 20,
+            'conductivity_index3': 100,
+            # "kr_young1": kr[0], "kr_old1": kr_old[0], "kr_young2": kr[1], "kr_old2": kr_old[1], "kr3": kr[2],
+            # "kx_young1": kx[0], "kx_old1": kx_old[0], "kx_young2": kx[1], "kx_old2": kx_old[1], "kx3": kx[2]
+            }
     run_soybean("test", enviro_type, sim_time, mods, save_all = True)
 
     # type = sys.argv[1]

@@ -145,12 +145,18 @@ def cplantbox_all14():  # 30 parameters
     sim_time = 87.5
 
     initial = {"output_times": [45, 50, 60],
-              "conductivity_mode": "scale",
-              "scale_kr": 0.1,
-              "scale_kx": 0.1 }
+              "conductivity_mode": "from_mecha",
+              "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
+               }
 
     # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
+    max_ind = 100
     pbounds = {
+
+        'conductivity_index1': (0, max_ind),
+        'conductivity_index2': (0, max_ind),
+        'conductivity_index3': (0, max_ind),
+
         'src_a': (3, 11),
         'src_first_a': (3, 14),
         'src_delay_a': (3, 14),
