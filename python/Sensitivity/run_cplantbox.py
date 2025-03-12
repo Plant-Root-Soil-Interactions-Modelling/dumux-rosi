@@ -25,7 +25,6 @@ class NpEncoder(json.JSONEncoder):
             return bool(obj)
         return super(NpEncoder, self).default(obj)
 
-
 def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     """
         exp_name                experiment name (name for output files)
@@ -66,53 +65,10 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         # print("Changed domain size to", min_b, max_b, area)
         mods.pop("domain_size")
 
+    
+    cdata = scenario.prepare_conductivities(mods)
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, None, xml_name, stochastic = False, mods = mods, model = "Meunier")
-
-    """ TODO -> move somewhere; must be identical to run_sra.run_soybean """
-    cm = mods["conductivity_mode"]
-    if cm == "age_dependent":
-        scenario.init_lupine_conductivities_sa(r.params, mods["kr_young1"], mods["kr_old1"], mods["kr_young2"], mods["kr_old2"], mods["kr3"],
-                                               mods["kx_young1"], mods["kx_old1"], mods["kx_young2"], mods["kx_old2"], mods["kx3"])
-        mods.pop("conductivity_mode")
-        mods.pop("kr_young1")
-        mods.pop("kr_old1")
-        mods.pop("kr_young2")
-        mods.pop("kr_old2")
-        mods.pop("kr3")
-        mods.pop("kx_young1")
-        mods.pop("kx_old1")
-        mods.pop("kx_young2")
-        mods.pop("kx_old2")
-        mods.pop("kx3")
-
-    elif cm == "from_mecha":
-        ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
-        files = []
-        for file in os.listdir(mods["mecha_path"]):
-            if file.endswith(".npy"):  # Check if the file is a .npy file
-                files.append(file)
-        data = []
-        for i in ind_:
-            file = files[int(i)]
-            # ind = file.split("shiny")[1].split(".")[0]
-            file_path = os.path.join(mods["mecha_path"], file)
-            data.append(np.load(file_path))
-        print(data)
-        dd
-        mods.pop("conductivity_mode")
-        mods.pop("mecha_path")
-        mods.pop("conductivity_index1")
-        mods.pop("conductivity_index2")
-        mods.pop("conductivity_index3")
-
-    elif cm == "scale":
-        scenario.init_lupine_conductivities(r.params, mods["scale_kr"], mods["scale_kx"])
-        mods.pop("conductivity_mode")
-        mods.pop("scale_kr")
-        mods.pop("scale_kx")
-
-    else:
-        raise "run_cplantbox.run_soybean() conductivity_mode unknown"
+    scenario.set_conductivities(params, mods, cdata)
 
     output_times = mods["output_times"]
     mods.pop("output_times")
@@ -125,11 +81,11 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         print("********************************************************************************\n")
         # raise
 
-    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF = run_(r, sim_time, initial_age, area, output_times)
+    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_ = run_(r, sim_time, initial_age, area, output_times)
 
     print("writing", exp_name)
     # results
-    scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, write_all = save_all)
+    scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, write_all = save_all)
     # parameters
     with open("results_cplantbox/" + exp_name + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
@@ -150,7 +106,7 @@ def run_(r, sim_time, initial_age, area, out_times):
     out.insert(0, 0.)
     out.append(sim_time)  # always export final simulation time
     dt_ = np.diff(out)
-    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF = [], [], [], [], [], [], [], [], [], []
+    length, surface, volume, depth, area_, RLDmean, RLDz, krs, SUFz, RLD, SUF = [], [], [], [], [], [], [], [], [], [], []
 
     print("dt_", dt_)
     t = initial_age
@@ -176,10 +132,12 @@ def run_(r, sim_time, initial_age, area, out_times):
         SUF.append(suf)
         SUFz.append(suf.dot(z))
         depth.append(sa.getMinBounds().z)
+        domain = sa.getMaxBounds().minus(sa.getMinBounds())
+        area_.append(domain.x*domain.y)
 
     print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
 
-    return np.array(length), np.array(surface), np.array(volume), np.array(depth), np.array(RLDmean), np.array(RLDz), np.array(krs), np.array(SUFz), np.array(RLD), np.array(SUF)
+    return np.array(length), np.array(surface), np.array(volume), np.array(depth), np.array(RLDmean), np.array(RLDz), np.array(krs), np.array(SUFz), np.array(RLD), np.array(SUF), np.array(area_)
 
 
 if __name__ == "__main__":
@@ -197,10 +155,11 @@ if __name__ == "__main__":
             "conductivity_mode": "from_mecha",
             "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
             'conductivity_index1': 1,
-            'conductivity_index2': 20,
+            'conductivity_index2': 30,
             'conductivity_index3': 100,
-            # "kr_young1": kr[0], "kr_old1": kr_old[0], "kr_young2": kr[1], "kr_old2": kr_old[1], "kr3": kr[2],
-            # "kx_young1": kx[0], "kx_old1": kx_old[0], "kx_young2": kx[1], "kx_old2": kx_old[1], "kx3": kx[2]
+            "conductivity_age1": 14,
+            "conductivity_age2": 7,
+            "conductivity_age3": 7,
             }
     run_soybean("test", enviro_type, sim_time, mods, save_all = True)
 

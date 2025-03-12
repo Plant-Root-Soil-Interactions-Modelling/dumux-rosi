@@ -150,18 +150,20 @@ def cplantbox_all14():  # 30 parameters
                }
 
     # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
-    max_ind = 100
+    max_ind = 151
     pbounds = {
 
         'conductivity_index1': (0, max_ind),
         'conductivity_index2': (0, max_ind),
         'conductivity_index3': (0, max_ind),
-
+        "conductivity_age1": (1,21),
+        "conductivity_age2": (1,21),
+        "conductivity_age3": (1,21),
+            
         'src_a': (3, 11),
         'src_first_a': (3, 14),
         'src_delay_a': (3, 14),
 
-        # 'a145_a': (0.025, 0.25),
         'lmax145_a': (50, 150),
         'ln145_a': (0.5, 10.),
         'r145_a': (0.2, 7.),
@@ -172,7 +174,6 @@ def cplantbox_all14():  # 30 parameters
         'hairsZone145_a': (1., 10.),
         # 'hairsElongation145_a': (0.1, 2.),
 
-        # 'a2_a': (0.01, 0.1), # will be (a, kr, kx) fixed
         'lmax2_a': (5., 50.),
         'ln2_a': (0.5, 10.),
         'r2_a': (0.2, 7.),
@@ -183,7 +184,6 @@ def cplantbox_all14():  # 30 parameters
         'hairsZone2_a': (1., 10.),
         # 'hairsElongation2_a': (0.1, 2.),
 
-        # 'a3_a': (0.01, 0.1),
         'lmax3_a': (5., 50.),
         'r3_a': (0.2, 7.),
         'theta3_a': (np.pi / 8., np.pi / 2.),

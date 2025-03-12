@@ -4,12 +4,13 @@ Functions to simplify setup of the scenarios for the INARI project
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
-import numpy as np
+import os
 import timeit
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
 from mpl_toolkits.axes_grid1 import make_axes_locatable
+from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
 
 import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
@@ -83,12 +84,29 @@ def soybean(i:int):
 
 def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
     """ Sets constant hydraulic conductivities kr [1/day] and kx [cm3/day] """
-    # r.setKr([0, kr_const, kr_const, kr_const, kr_const, kr_const])
-    # r.setKx([1.e3, kx_const, kx_const, kx_const, kx_const, kx_const])
     r.set_kr_const(0., 0)  # artificial shoot
     r.set_kx_const(1.e3, 0)
     r.set_kr_const(kr_const, [1, 2, 3, 4, 5])  # subTypes = 1-5
     r.set_kx_const(kx_const, [1, 2, 3, 4, 5])
+
+def init_lupine_conductivities3(r, ykr1, okr1, ykr2, okr2, ykr3, okr3, ykx1, okx1, ykx2, okx2, ykx3, okx3, 
+                                yt1, yt2, yt3, delta1 = 1, delta2 = 2, delta3 =3):
+    """ 15+(3) variables set up: young and old kr and kx (4) for 3 root types (145, 2, 3), 
+        and 3 transition times (from young to old) and optional slopes """
+    r.set_kr_age_dependent([0.], [0.], 0)  # artificial shoot
+    r.set_kx_age_dependent([0.], [1.e3], 0)
+    kx1 = np.array([[0., ykx1], [yt1, ykx1], [yt1+delta1, okx1], [yt1+delta1, okx1]])  # increasing with age
+    kr1 = np.array([[0., ykr1], [yt1, ykr1], [yt1+delta1, okr1], [yt1+delta1, okr1]])  # decreasing with age
+    kx2 = np.array([[0., ykx2], [yt2, ykx2], [yt2+delta2, okx2], [yt2+delta2, okx2]])  # increasing with age
+    kr2 = np.array([[0., ykr2], [yt2, ykr2], [yt2+delta2, okr2], [yt2+delta2, okr2]])  # decreasing with age
+    kx3 = np.array([[0., ykx3], [yt3, ykx3], [yt3+delta3, okx3], [yt3+delta3, okx3]])  # increasing with age
+    kr3 = np.array([[0., ykr3], [yt3, ykr3], [yt3+delta3, okr3], [yt3+delta3, okr3]])  # decreasing with age
+    r.set_kr_age_dependent(kr1[:, 0], kr1[:, 1], [1, 4, 5]),  # age, value, subType
+    r.set_kx_age_dependent(kx1[:, 0], kx1[:, 1], [1, 4, 5])
+    r.set_kr_age_dependent(kr2[:, 0], kr2[:, 1], 2)
+    r.set_kx_age_dependent(kx2[:, 0], kx2[:, 1], 2)
+    r.set_kr_age_dependent(kr3[:, 0], kr3[:, 1], 3)
+    r.set_kx_age_dependent(kx3[:, 0], kx3[:, 1], 3)
 
 
 # scenario.init_lupine_conductivities_sa(r, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
@@ -96,16 +114,12 @@ def init_lupine_conductivities_sa(r, ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, y
     """ 10 variable set up for sensitivity analysis"""
     r.set_kr_age_dependent([0.], [0.], 0)  # artificial shoot
     r.set_kx_age_dependent([0.], [1.e3], 0)
-
     kx1 = np.array([[0., ykx1], [14., ykx1], [28., okx1], [28., okx1]])  # increasing with age
     kr1 = np.array([[0., ykr1], [7., ykr1], [28., okr1], [28., okr1]])  # decreasing with age
-
     kx2 = np.array([[0., ykx2], [7., ykx2], [14., okx2], [14., okx2]])  # increasing with age
     kr2 = np.array([[0., ykr2], [7., ykr2], [14., okr2], [14., okr2]])  # decreasing with age
-
     kr3 = np.array([[0., kr3_], [100., kr3_]])  # constant
     kx3 = np.array([[0., kx3_], [100., kx3_]])  # constant
-
     r.set_kr_age_dependent(kr1[:, 0], kr1[:, 1], [1, 4, 5]),  # age, value, subType
     r.set_kx_age_dependent(kx1[:, 0], kx1[:, 1], [1, 4, 5])
     r.set_kr_age_dependent(kr2[:, 0], kr2[:, 1], 2)
@@ -115,10 +129,9 @@ def init_lupine_conductivities_sa(r, ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, y
 
 
 def init_lupine_conductivities(r, skr = 1., skx = 1.):
-    """ Hydraulic conductivities for lupine following Zarebanadkouki et al. (2016) """
+    """ 2 variables set up: Hydraulic conductivities for lupine following Zarebanadkouki et al. (2016), two variables to scale the inputs """
     r.set_kr_age_dependent([0.], [0.], 0)  # artificial shoot
     r.set_kx_age_dependent([0.], [1.e3], 0)
-
     kr0 = np.array([[-1.e4, 0.], [-0.1, 0.], [0., 1.14e-03], [2, 1.09e-03], [4, 1.03e-03], [6, 9.83e-04], [8, 9.35e-04], [10, 8.90e-04],
                     [12, 8.47e-04], [14, 8.06e-04], [16, 7.67e-04], [18, 7.30e-04], [20, 6.95e-04], [22, 6.62e-04], [24, 6.30e-04], [26, 5.99e-04],
                     [28, 5.70e-04], [30, 5.43e-04], [32, 5.17e-04]])
@@ -131,17 +144,97 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
     kx1 = np.array([[0., 4.07e-04], [1, 5.00e-04], [2, 6.15e-04], [3, 7.56e-04], [4, 9.30e-04], [5, 1.14e-03],
                     [6, 1.41e-03], [7, 1.73e-03], [8, 2.12e-03], [9, 2.61e-03], [10, 3.21e-03], [11, 3.95e-03], [12, 4.86e-03],
                     [13, 5.97e-03], [14, 7.34e-03], [15, 9.03e-03], [16, 1.11e-02], [17, 1.36e-02]])
-
     kr01 = np.minimum(skr * kr0[:, 1], 1.)
     kr11 = np.minimum(skr * kr1[:, 1], 1.)
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
-
     r.set_kr_age_dependent(kr0[:, 0], kr01, [1, 4, 5]),  # age, value, subType
     r.set_kx_age_dependent(kx0[:, 0], kx01, [1, 4, 5])
     r.set_kr_age_dependent(kr1[:, 0], kr11, [2, 3])
     r.set_kx_age_dependent(kx1[:, 0], kx11, [2, 3])
 
+
+def prepare_conductivities(mods):
+    """ for conductivities from mecha, radii must be adjusted in a first step"""
+    data = []
+    cm = mods["conductivity_mode"]
+    if cm == "from_mecha":
+        ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
+        files = []
+        for file in os.listdir(mods["mecha_path"]):
+            if file.endswith(".npy"):  # Check if the file is a .npy file
+                files.append(file)
+        data = []
+        for i in ind_:
+            file = files[int(i)]
+            # ind = file.split("shiny")[1].split(".")[0]
+            file_path = os.path.join(mods["mecha_path"], file)
+            data.append(np.load(file_path))
+        data = np.array(data)
+        a_ = data[:, 2, 2]        
+        a = np.array([float(x) for x in a_])
+        I = np.argsort(-a) # descending regarding radius a 
+        a_ = a_[I]
+        mods["a145_a"] = a[0]
+        mods["a2_a"] = a[1]
+        mods["a3_a"] = a[2]  
+    return data
+
+def set_conductivities(params, mods, data):
+    """ set the hydraulic conductivities @params given in the model parameters in @param mods """
+    
+    cm = mods["conductivity_mode"]
+    if cm == "age_dependent":
+        
+        init_lupine_conductivities_sa(params, mods["kr_young1"], mods["kr_old1"], mods["kr_young2"], mods["kr_old2"], mods["kr3"],
+                                               mods["kx_young1"], mods["kx_old1"], mods["kx_young2"], mods["kx_old2"], mods["kx3"])
+        mods.pop("kr_young1")
+        mods.pop("kr_old1")
+        mods.pop("kr_young2")
+        mods.pop("kr_old2")
+        mods.pop("kr3")
+        mods.pop("kx_young1")
+        mods.pop("kx_old1")
+        mods.pop("kx_young2")
+        mods.pop("kx_old2")
+        mods.pop("kx3")
+
+    elif cm == "from_mecha":
+        
+        yt1, yt2, yt3 = mods["conductivity_age1"], mods["conductivity_age2"], mods["conductivity_age3"]
+        ykx_ = data[:, 0, 0] # maturity level 0
+        ykr_ = data[:, 0, 1]
+        ya_ = data[:, 0, 2]
+        kx_ = data[:, 2, 0] # maturity level 2
+        kr_ = data[:, 2, 1]
+        a_ = data[:, 2, 2]
+        kx = np.array([float(x) for x in kx_])
+        kr = np.array([float(x) for x in kr_])
+        a = np.array([float(x) for x in a_])
+        ykx = np.array([float(x) for x in ykx_])
+        ykr = np.array([float(x) for x in ykr_])
+        ya = np.array([float(x) for x in ya_])
+        I = np.argsort(-a) # descending regarding radius a 
+        init_lupine_conductivities3(params, ykr[0], kr[0], ykr[1], kr[1], ykr[2], kr[2], 
+                                            ykx[0], kx[0], ykx[1], kx[1], ykx[2], kx[2], 
+                                            yt1, yt2, yt3)        
+        mods.pop("mecha_path")
+        mods.pop("conductivity_index1")
+        mods.pop("conductivity_index2")
+        mods.pop("conductivity_index3")
+        mods.pop("conductivity_age1") 
+        mods.pop("conductivity_age2") 
+        mods.pop("conductivity_age3")        
+
+    elif cm == "scale":
+        
+        init_lupine_conductivities(r.params, mods["scale_kr"], mods["scale_kx"])
+        mods.pop("scale_kr")
+        mods.pop("scale_kx")
+
+    else:
+        raise "run_cplantbox.run_soybean() conductivity_mode unknown"
+    mods.pop("conductivity_mode")
 
 def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_):
     """  saves results from run_sra numpy arrays in a npz file 
@@ -160,10 +253,10 @@ def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_tran
              collar_pot = collar_pot_)
 
 
-def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, write_all = True):
+def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, write_all = True):
     """  saves results from run_cplantbox in a npz file """
     if write_all:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, RLD = RLD, SUF = SUF)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_, RLD = RLD, SUF = SUF)
     else:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_)
 

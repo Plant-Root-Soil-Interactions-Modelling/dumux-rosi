@@ -54,6 +54,7 @@ def show_me(params, folder_path, mode = "interactive", png_name = None):
     params.pop("sim_time")
 
     rs = run_cplantbox.run_soybean("dummy", enviro_type, sim_time, params, False)
+    
     if mode == "interactive":
         vp.plot_plant(rs.ms, "age")
     elif mode == "png":
@@ -73,4 +74,4 @@ if __name__ == "__main__":
     folder_path = "results_cplantbox/"
     exp_name = "soybean_length14_6a8fba2616c035a3091f02f27a172cfdda8f89861027dcf177edc55776e81028"
 
-    show_me(exp_name, folder_path)
+    show_me_file(exp_name, folder_path)

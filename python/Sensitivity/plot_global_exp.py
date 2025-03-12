@@ -97,6 +97,7 @@ def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
 """ 1 load everything & merge npz results into input parameter json"""
 folder_path = "results_cplantbox/"
 exp_name = "soybean_length14"
+exp_name = "soybean_all14"
 
 all = got.load_json_files(exp_name, folder_path)  # open parameter files
 got.merge_results(folder_path, all)  # add results

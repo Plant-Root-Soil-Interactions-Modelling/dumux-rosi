@@ -84,7 +84,8 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
         rs = pb.MappedPlant()
         rs.setSeed(seed)
-        rs.readParameters(fname)
+        rs.readParameters(fname)  
+        print(fname)     
 
         if not stochastic:
             set_all_sd(rs, 0.)
@@ -283,6 +284,8 @@ def apply_mods(mods, plant):
             mods.pop(key)
 
         if key_ == "dx":
+            print("!!!!!!") # TODO remove debug clutter
+            raise
             for i in ind_:
                 rrp[i].dx = mods[key]
             mods.pop(key)
