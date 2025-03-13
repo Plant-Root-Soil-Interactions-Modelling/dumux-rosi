@@ -42,7 +42,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init =  dt #1/60/24 #
+    dt_inner_init =  1/60/24 #
     dt_inner2_init = dt_inner_init
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error

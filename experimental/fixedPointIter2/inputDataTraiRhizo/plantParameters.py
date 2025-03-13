@@ -132,9 +132,9 @@ def setKrKx_phloem(r): #inC
     kr_l  = 0.
     kr_s  = 0.
     kr_r0 = 5e-2
-    kr_r1 = 5e-2
-    kr_r2 = 5e-2
-    kr_r3 = 5e-2
+    kr_r1 = 5e-4
+    kr_r2 = 5e-4
+    kr_r3 = 5e-4
     l_kr =  100 #cm
        
     

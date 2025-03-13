@@ -343,7 +343,7 @@ def create_soil_model( usemoles, results_dir ,
     s.MaxRelativeShift_1DS = 1e-12
 
     s.noAds = noAds # no adsorption?
-    s.doSoluteFlow = doSoluteFlow
+    s.doSoluteFlow = doSoluteFlow 
     s.doBioChemicalReaction = doBioChemicalReaction
     s.doSoluteUptake = doSoluteUptake
 
@@ -362,12 +362,12 @@ def create_soil_model( usemoles, results_dir ,
     getBiochemParam(s,paramIndx)
     setBiochemParam(s)
     setIC3D(s, paramIndx, ICcc)
-    s.isPeriodic = False
+    s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, p_mean_)
     
-    if rank == 0:
-        s.base.printParams()
+    #if rank == 0:
+    #    s.base.printParams()
     
     # just print once as will not change during simulation
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =s.results_dir) # cm3 

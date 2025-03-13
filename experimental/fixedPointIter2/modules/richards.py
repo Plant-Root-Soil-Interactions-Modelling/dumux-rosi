@@ -4,6 +4,7 @@ import numpy as np
 from mpi4py import MPI; 
 comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 max_rank = comm.Get_size()
+import time
 
 class RichardsWrapper(SolverWrapper):
     """ 
@@ -315,10 +316,19 @@ class RichardsWrapper(SolverWrapper):
 
     def setSoluteTopBC(self, type_top, value_top):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        try:
+            assert len(type_top) == len(value_top) == self.numSoluteComp
+        except:
+            raise ValueError(f'richards::setSoluteTopBC: Length of the solute boundary condition arrays for types and values ({len(type_top)}, {len(value_top)}) different from number of non-water elements {self.numSoluteComp}.')
         self.base.setSTopBC(type_top, value_top)
         
     def setSoluteBotBC(self, type_bot, value_bot):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        try:
+            assert len(type_bot) == len(value_bot) == self.numSoluteComp
+        except:
+            raise ValueError(f'richards::setSoluteBotBC: Length of the solute boundary condition arrays for types and values ({len(type_bot)} and {len(value_bot)}) different from number of non-water elements {self.numSoluteComp}.')
+            
         self.base.setSBotBC(type_bot, value_bot)
 
     def getInnerHead(self):
@@ -354,7 +364,8 @@ class RichardsWrapper(SolverWrapper):
                 unitConversion = 1/ 24. / 3600. ; # [mol/day] -> [mol/s] 
 
         for cellId, value in source_map.items(): 
-            source_map[cellId] = value * unitConversion     
+            source_map[cellId] = value * unitConversion    
+            
         self.base.setSource(source_map, eq_idx) # 
 
     # def applySource(self, dt, source_map, crit_p):
@@ -390,6 +401,11 @@ class RichardsWrapper(SolverWrapper):
         return self._map(self._flat0(self.gather(self.base.getKrw())), 0)
         
         
+    def getSaturation_(self):
+        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
+        self.checkGridInitialized()
+        return self.base.getSaturation()
+    
     def getSaturation(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
@@ -521,7 +537,7 @@ class RichardsWrapper(SolverWrapper):
                 np.array(f2cidx_gAll, dtype=int) == idx_)[0])
                 ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
             
-            flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
+            flux10cCell = ff10c_All_unique.T # [comp][cell]
             assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
             import sys
             np.set_printoptions(threshold=sys.maxsize)
@@ -549,11 +565,26 @@ class RichardsWrapper(SolverWrapper):
         """
         assert self.dimWorld == 3
         ff10c_ = self.getFlux_10c_() # get the flux of the local thread for each cell
-        f2cidx_ = self.getFace2CellIds_() # see to which cell correspond each face
-        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6]) # sum values per cell
-        # only keep the value is all 6 faces of the cell belong to this thread. Otherwise the sum value is incorrect
-        f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])
-        # get global index
+        f2cidx_ = self.getFace2CellIds_() # see to which cell correspond each face        
+        
+        
+        # Count occurrences efficiently
+        unique, counts = np.unique(f2cidx_, return_counts=True)
+        f2cidx = unique[counts == 6]  # Only keep indices occurring exactly 6 times
+        
+        # Initialize the result array
+        ff10c = np.zeros((len(f2cidx), ff10c_.shape[1]))  # Preserve second dimension
+
+        # Map f2cidx_ to the new reduced index array f2cidx
+        index_map = {idx: i for i, idx in enumerate(f2cidx)}
+        valid_mask = np.isin(f2cidx_, f2cidx)  # Mask to select only relevant indices
+
+        # Convert f2cidx_ values to the new index space
+        mapped_indices = np.vectorize(index_map.get)(f2cidx_[valid_mask])
+
+        # Use np.add.at for efficient accumulation
+        np.add.at(ff10c, mapped_indices, ff10c_[valid_mask])
+
         dofind = np.array(self.base.getDofIndices())
         f2cidx_g = [] # give correct inner shape 
         if len(f2cidx) > 0:
@@ -561,18 +592,70 @@ class RichardsWrapper(SolverWrapper):
         # gather
         f2cidx_gAll = self.gather(f2cidx_g) # 
         ff10c_All = self.gather(ff10c) #  
+        
         if rank == 0:
-            # get arrays 
             ff10c_All = np.vstack([i for i in ff10c_All if len(i) >0]) # 'if len(i) >0' in case some threads have no cells
             f2cidx_gAll = list( np.concatenate([i for i in f2cidx_gAll],dtype=object)) # empty lists ([], for threads with no cells) are automatically taken out
             # some cells are computed on several threads, so take out duplicates
-            f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)),dtype=int)
-            ff10c_All_unique = np.array([ff10c_All[
-              max(np.where(
-                np.array(f2cidx_gAll, dtype=int) == idx_)[0])
-                ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
+            sort_indices = np.argsort(f2cidx_gAll)  # Get sorted indices
+            ff10c_All_unique = ff10c_All[sort_indices]
             
             flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
+            assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
+            
+            # mol to cm3 for water
+            molarMassWat = 18. # [g/mol]
+            densityWat = 1. #[g/cm3]
+            # [mol/cm3] = [g/cm3] /  [g/mol] 
+            molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
+            flux10cCell[0] /=  molarDensityWat          
+        else:
+            flux10cCell = None               
+        
+        return flux10cCell   
+    
+    def getFlux_10cBUNEW(self): 
+        """ returns the total inter-cell flux of water [cm3] per cell
+            and solutes [mol] during the last @see solve() call
+            for one thread 
+        """
+        assert self.dimWorld == 3
+        ff10c_ = self.getFlux_10c_() # get the flux of the local thread for each cell
+        f2cidx_ = self.getFace2CellIds_() # see to which cell correspond each face
+        f2cidx_toUse = np.array([idx_ for idx_ in np.unique(f2cidx_) if list(f2cidx_).count(idx_) == 6])
+        #print('getFlux_10c',f2cidx_.shape,f2cidx_toUse.shape ) needed
+        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in f2cidx_toUse]) # sum values per cell
+        # only keep the value is all 6 faces of the cell belong to this thread. Otherwise the sum value is incorrect
+        f2cidx = np.array([idx_ for idx_ in f2cidx_toUse])
+        # get global index
+        #dofind = np.array(self.base.getDofIndices())
+        #f2cidx_g = [] # give correct inner shape 
+        #if len(f2cidx) > 0:
+        #    f2cidx_g = dofind[f2cidx] 
+        # gather
+        #f2cidx_gAll = self.gather(f2cidx_g) # 
+        ff10c_All = self.gather(ff10c) #  
+        if rank == 0:
+            # get arrays 
+            ff10c_All = np.vstack([i for i in ff10c_All if len(i) >0]) # 'if len(i) >0' in case some threads have no cells
+            #f2cidx_gAll = np.concatenate([i for i in f2cidx_gAll],dtype=object) # empty lists ([], for threads with no cells) are automatically taken out
+            # some cells are computed on several threads, so take out duplicates
+            #f2cidx_gAll_unique = np.unique(f2cidx_gAll)
+            #print('getFlux_10cbis',f2cidx_gAll_unique.shape,f2cidx_gAll.shape )
+            #start = time.time()
+            #ff10c_All_unique = np.array([ff10c_All[
+            #ff10c_All_unique = np.array([ff10c_All[
+            #  max(np.where(
+            #    np.array(f2cidx_gAll, dtype=int) == idx_)[0])
+            #    ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
+            
+
+            #print('getFlux_10c transpose',time.time() - start)
+            start = time.time()
+            flux10cCell = ff10c_All.T #ff10c_All_unique.T # [comp][cell]
+            
+            end = time.time()
+            print('getFlux_10c transpose finished',end - start)
             assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
             
             # mol to cm3 for water
@@ -592,20 +675,22 @@ class RichardsWrapper(SolverWrapper):
         """ returns the total inter-cell flux of water [cm3] per cell
             and solutes [mol] during the last @see solve() call
             for one thread 
+            somehow very slow. maybe because of the set() function (and count?)
         """
         assert self.dimWorld == 3
         ff10c_ = self.getFlux_10c_() # get the flux computed on local thread for cells , [face][comp]
         f2cidx_ = self.getFace2CellIds_() # see to which cell correspond each face (local index) , [face]
-        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6]) # sum values per cell, [cell][comp]
+        f2cidx_toUse = np.array([idx_ for idx_ in np.unique(f2cidx_) if list(f2cidx_).count(idx_) == 6])
+        ff10c = np.array([sum(ff10c_[np.where(f2cidx_ == idx_)[0]]) for idx_ in f2cidx_toUse]) # sum values per cell, [cell][comp]
         # only keep the value is all 6 faces of the cell belong to this thread. Otherwise the sum value is incorrect
-        f2cidx = np.array([idx_ for idx_ in set(f2cidx_) if list(f2cidx_).count(idx_) == 6])#, [cell]
+        f2cidx = np.array([idx_ for idx_ in f2cidx_toUse])#, [cell]
         # get global index
         dofind = np.array(self.base.getDofIndices())
         f2cidx_g = [] 
         if len(f2cidx) > 0:
             f2cidx_g = dofind[f2cidx] # local to global index , [cell]
             
-        flux10cCell_ = np.transpose(ff10c) # [comp][cell]
+        flux10cCell_ = ff10c.T # [comp][cell]
         
         # gather
         f2cidx_gAll = self._flat0(self.gather(f2cidx_g) ,dtype_=object)# 
@@ -691,13 +776,13 @@ class RichardsWrapper(SolverWrapper):
             # ff10c_All = np.vstack([i for i in ff10c_All if len(i) >0]) # 'if len(i) >0' in case some threads have no cells
             # f2cidx_gAll = list( np.concatenate([i for i in f2cidx_gAll],dtype=object)) # empty lists ([], for threads with no cells) are automatically taken out
             # some cells are computed on several threads, so take out duplicates
-            f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)),dtype=int)
-            ff10c_All_unique = np.array([ff10c_All[
-              max(np.where(
-                np.array(f2cidx_gAll, dtype=int) == idx_)[0])
-                ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
+            #f2cidx_gAll_unique = np.array(list(set(f2cidx_gAll)),dtype=int)
+            #ff10c_All_unique = np.array([ff10c_All[
+            #  max(np.where(
+            #    np.array(f2cidx_gAll, dtype=int) == idx_)[0])
+            #    ] for idx_ in f2cidx_gAll_unique ]) # select value from one of the threads which simulate all the faces of the dumux cell
             
-            flux10cCell = np.transpose(ff10c_All_unique) # [comp][cell]
+            flux10cCell = np.transpose(ff10c_All)#ff10c_All_unique) # [comp][cell]
             assert flux10cCell.shape == (self.numComp ,self.numberOfCellsTot)
             
             # mol to cm3 for water
@@ -744,8 +829,8 @@ class RichardsWrapper(SolverWrapper):
         if rank == 0:
             # from mol/m^3 to mol
             src10c = np.array([src10_ * vols[cellidx] for cellidx, src10_ in enumerate(src10c)])
-            src10c = np.transpose(src10c) # [comp][cell]
-
+            src10c = src10c.T # [comp][cell]
+            
             molarMassWat = 18. # [g/mol]
             densityWat = 1. #[g/cm3]
             # [mol/cm3] = [g/cm3] /  [g/mol] 

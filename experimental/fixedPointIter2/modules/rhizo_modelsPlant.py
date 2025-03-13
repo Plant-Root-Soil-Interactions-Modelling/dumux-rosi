@@ -62,6 +62,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
         self.debugMode = False
+        self.eps = 1e-14 # allow for small errors (limit of accuracy) 
+        self.diff1d3dCurrant_rel_lim = 0.01
+        self.maxdiff1d3dCurrant_rel_lim = 0.01
         
         
         # constants
@@ -680,7 +683,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                             ((-theta_leftOver[lowTheta] + self.vg_soil.theta_R)*volLeftOver[lowTheta]<=self.maxDiff1d3dCW_abs[0] *10)
                     )
                     ).all()
-                    theta_leftOver[lowTheta] = self.vg_soil.theta_R + 1e-14
+                    theta_leftOver[lowTheta] = self.vg_soil.theta_R + self.eps
                 except:
                     print('min((theta_leftOver - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 < -1.', volLeftOver,theta_leftOver )
                     print(volLeftOver[lowTheta],
@@ -836,16 +839,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self.getXcyl(data2share=theta, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
     
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
-        localIdCyls =   self.getLocalIdCyls(idCyls)           
-        wat_rhizo_ = np.array([self.cyls[i].getWaterVolumesCyl() for i in localIdCyls ],dtype=object) 
-        wat_rhizo = np.array([xxx.sum() for xxx in wat_rhizo_ ]) 
-        #wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
-        if verbose:
-            comm.barrier()
-            for i in localIdCyls:
-                print("getWaterVolumesCyl_",self.cyls[i].gId, self.cyls[i].getWaterVolumesCyl())
-            print('getWaterVolumesCyl',idCyls,wat_rhizo,wat_rhizo_)
-            comm.barrier()
+        localIdCyls =   self.getLocalIdCyls(idCyls)  
+        wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
         return self.getXcyl(data2share=wat_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
         
     def getVolumesCyl(self,idCyls=None,idCylsAll=None,  doSum = True, reOrder = True):#cm3
@@ -969,8 +964,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             maxVal = np.inf
             minVal = 0.
         # check that the mean concentration respects the boundary 
-        assert ( (minVal - totContent/sum(volumes)) < 1e-14) 
-        assert ( (totContent/sum(volumes) - maxVal) < 1e-14) 
+        assert ( (minVal - totContent/sum(volumes)) < self.eps) 
+        assert ( (totContent/sum(volumes) - maxVal) < self.eps) 
             
 
         # Verbose before changes
@@ -995,7 +990,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # check that concentration in each cell respects the boundary and totcontent is still correct
         assert (val_new >= minVal).all()
         assert (val_new <= maxVal).all()
-        assert abs(sum(val_new * volumes) - totContent) < 1e-14
+        assert abs(sum(val_new * volumes) - totContent) < self.eps
 
         return val_new
 
@@ -1064,8 +1059,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                           )  and (cellId in self.cellIdleftover)) and (not shapeOnly)
 
 
-            changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
-                                          ) and (cellId not in self.cellIdleftover))
+            #changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
+            #                              ) and (cellId not in self.cellIdleftover))
+            changeShape = (shapeOnly and ( # only update if shape changes but no total solutes or water concentration change needed
+                                    ((deltaVol != 0.) and (cellId not in self.cellIdleftover)) # volume changed but it does not receive/loose solutes/water (so no total concentration change)
+                                    or (self.changedLen(cyl) and (deltaVol == 0.)) # length changed but not the volume (so no total concentration change)
+                                          )) 
 
 
             if changeShapeAndConc or changeShape:
@@ -1074,9 +1073,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 changeRatio = 1.
                 if changeShapeAndConc:
                     assert (thetaLeftOver > -self.maxDiff1d3dCW_abs[0]) or (deltaVol <= 0.)
-
-                             
-                                   
                                                                
                     ## change ratio
                     changeRatio = min(sum(volNew)/sum(volOld), 1.)# we migth have volNew > volOld if the gain by L increase is higher than loss via r_out decrease
@@ -1095,17 +1091,24 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
                 else:
                     changeRatioW = changeRatio
-                try:
-                    assert min(theta_old)>=minVal
-                    assert max(theta_old)<=maxVal
+                    
+                
+                    
+                try:     
+                    assert min(theta_old) + self.eps >=minVal 
+                    assert max(theta_old) - self.eps <=maxVal
+                    theta_old = np.clip(theta_old, minVal, maxVal) # mannually fix if error <= self.eps
                     assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
                     assert wOld > 0.
-                    assert max(thetaLeftOver*deltaVol,0.) >= 0.
+                    #assert max(thetaLeftOver*deltaVol,0.) >= 0. # makes no sense? (was testing precision of python?)
                 except:
                     print('changeRatioW error', changeRatioW, wOld, thetaLeftOver,deltaVol, maxVal, minVal)
                     print('sum(maxVal*volNew)/wOld)',sum(maxVal*volNew)/wOld, sum(minVal*volNew)/wOld)
-                    print('theta_old',repr(theta_old),repr(changeRatio), repr(volNew),repr(volOld) )
+                    print('theta_old',min(theta_old), max(theta_old), 
+                          repr(theta_old),repr(changeRatio), repr(volNew),repr(volOld) )
                     print('points',repr(points),repr(oldPoints))
+                    print("cause of error",min(theta_old) + self.eps >=minVal, max(theta_old) - self.eps <=maxVal,
+                          ((changeRatioW <= 1.) and (changeRatioW > 0.)),wOld > 0.,max(thetaLeftOver*deltaVol,0.) >= 0.)
                     raise Exception
                 if verbose :
                     print('changeRatioW ', changeRatioW, wOld, thetaLeftOver,deltaVol, maxVal, minVal)
@@ -1622,8 +1625,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             return concentration # mol/cm3
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        concentration = self.gather(rsx,root=0)#self._flat0() #self._map( )
-        return concentration
+        #concentration = self.gather(rsx,root=0)#self._flat0() #self._map( )
+        #return concentration
 
 
 
@@ -2027,7 +2030,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('solute old')
                     for ncomp in range(self.numSoluteComp):
                         print(repr(np.array(cyl.getSolution(ncomp + 1))), ',')
-                    cyl.base.printParams()
+                    #cyl.base.printParams()
                     didReset = True
                     
                 if n_iter_solve == 1: # try with small init ddt
