@@ -89,7 +89,7 @@ class SolverWrapper():
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
         self.base.setInitialConditionHead(ic)
 
-    def solve(self, dt:float, doMPIsolve_ = True, saveInnerFluxes_ = True):
+    def solve(self, dt:float, doMPIsolve_ = True, saveInnerFluxes_ = False):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         """
