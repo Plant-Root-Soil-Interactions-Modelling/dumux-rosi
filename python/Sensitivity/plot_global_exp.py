@@ -1,11 +1,16 @@
 """
-(experimental) plots data from global optimization 
+    plots results from global root structure optimization (see global_optimization_cpantbox.py)
+
+    Clustering with SOM or Kmeans (see global_optimization_tools) 
+    to experiment on data analysis, plots, etc. 
 """
+
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import os
 import json
+import zipfile
 import numpy as np
 from scipy.cluster.vq import vq, whiten, kmeans
 import matplotlib.pyplot as plt
@@ -65,22 +70,22 @@ def mean_of_dict(all, keys):
     return new_dict
 
 
-def exemplify(all, node2sample, m_neurons, n_neurons):
-
+def exemplify(all, node2sample, m_neurons, n_neurons, N = 1):
     for i in range(0, m_neurons):
         for j in range(0, n_neurons):
             node = (j, i)
-
             c = 0
-            ind = node2sample[node][c]
-            pareto = all[ind]["pareto"]
-            while pareto == False:
-                c += 1
+            for k in range(0, N):
                 ind = node2sample[node][c]
-                pareto = all[ind]["pareto"]
-
-            print(i, j, "example ind", ind, "which is choice", c)
-            run_cplantbox_exp.show_me_file(all[ind]["exp_name"], "results_cplantbox/", mode = "png", png_name = "test({:g}, {:g})".format(j, i))
+                pareto = all[ind]["pareto"]  # find next pareto solution in cluster node (j,i)
+                while pareto == False and c + 1 < len(node2sample[node]):
+                    c += 1
+                    ind = node2sample[node][c]
+                    pareto = all[ind]["pareto"]
+                if pareto:
+                    print(i, j, "example ind", ind, "which is choice", c)
+                    run_cplantbox_exp.show_me_file(all[ind]["exp_name"], "results_cplantbox/", vis_hairs = True, mode = "png", png_name = "test({:g}, {:g})_{:g}".format(j, i, k))
+                    c += 1
 
 
 def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
@@ -91,7 +96,7 @@ def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
             winner = mean_of_dict([all[i] for i in ind], keys)
             print(winner)
             print(type(winner))
-            run_cplantbox_exp.show_me(winner, "results_cplantbox/", mode = "png", png_name = "test({:g}, {:g})".format(j, i))
+            run_cplantbox_exp.show_me(winner, "results_cplantbox/", vis_hairs = True, mode = "png", png_name = "test({:g}, {:g})".format(j, i))
 
 
 """ 1 load everything & merge npz results into input parameter json"""
@@ -102,25 +107,26 @@ exp_name = "soybean_all14"
 all = got.load_json_files(exp_name, folder_path)  # open parameter files
 got.merge_results(folder_path, all)  # add results
 
-# print(all[0].keys())
-# dd
-# print(all[0]["exp_name"])
+# Write all JSON data to a zip file
+with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+    with zipf.open(exp_name + ".json", "w") as json_file:
+        json_file.write(json.dumps(all, indent = 4).encode("utf-8"))
 
-# print("\nraw data")
-# d = got.fetch_features(target_names, all)
-# got.print_info(d, target_names)
-# print(d.shape)
+# # Read JSON data from the ZIP file
+# with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
+#     with zipf.open(exp_name + ".json", "r") as json_file:
+#         all = json.load(json_file)  # Deserialize JSON data
 
 """ 2 filter """
-all = got.filter_list(all, "length", 200., 20000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 print("\nfiltered data")
-target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 d = got.fetch_features(target_names, all)
 got.print_info(d, target_names)  # filtered
 print(d.shape)
 
 """ 3 cluster the targets """
-target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz"]
 distortion_plot(all, target_names)  # to determine m and n
 m_neurons = 3
 n_neurons = 4
@@ -150,12 +156,12 @@ for i in range(0, m_neurons * n_neurons):
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz", "area"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 # got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
 
 """ 5 pareto set """
-target_names = ["length", "-volume", "depth", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz", "area"]
 ind = got.pareto_list(all, target_names)
 pareto = []
 for i, a in enumerate(all):
@@ -164,7 +170,6 @@ for i, a in enumerate(all):
         pareto.append(a)
 
 print("\nNumber of pareto solutions: ", np.sum(ind), len(pareto))
-
 pareto_nodes = []
 for p in pareto:
     pareto_nodes.append(p["node"])
@@ -174,6 +179,7 @@ for i in range(0, m_neurons * n_neurons):
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), "has", len(pareto_nodes[pareto_nodes == i]), "solutions")
 
 # exemplify(all, node2sample, m_neurons, n_neurons)
+exemplify(all, node2sample, m_neurons, n_neurons, N = 10)
 
 """ 5 parameter space regarding nodes """
 pbounds = {
@@ -193,8 +199,6 @@ data_params = got.fetch_features(param_names, all)
 print("\nAll parameter space", data_params.shape)
 got.print_info(data_params, param_names)
 print(data_params.shape)
-
-exemplify(all, node2sample, m_neurons, n_neurons)
 
 """ 6 analyze single node """
 node = (1, 0)  # (0,1), (1,1)

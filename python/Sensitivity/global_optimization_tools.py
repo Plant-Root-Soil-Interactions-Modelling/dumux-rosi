@@ -1,5 +1,5 @@
 """
-(experimental) plots data from global optimization 
+    Auxiliary functions for data analysis of high dimensional data, e.g. from global mutli-objective optimization
 """
 import sys
 
@@ -70,7 +70,7 @@ def merge_results(folder_path, json_data_list, i = -1):
             data["RLDz"] = np.abs(results["RLDz"][i])  # they are stored with a (wrong) sign
             data["krs"] = results["krs"][i]
             data["SUFz"] = np.abs(results["SUFz"][i])  # they are stored with a (wrong) sign
-
+            data["area"] = np.abs(results["area"][i])
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading {filename}: {e}")
 
@@ -322,10 +322,10 @@ def plot_rose(data, i, j, m_neurons, n_neurons, ax, f = cm.jet):
     for k, d in enumerate(data):
         x0 = j + 0.5 * (i % 2)
         y0 = i * np.sqrt(3) / 2
-        x1 = 0.5 * np.abs(d) * np.cos(theta_[k] + margin) + x0
-        y1 = 0.5 * np.abs(d) * np.sin(theta_[k] + margin) + y0
-        x2 = 0.5 * np.abs(d) * np.cos(theta_[k + 1] - margin) + x0
-        y2 = 0.5 * np.abs(d) * np.sin(theta_[k + 1] - margin) + y0
+        x1 = 0.4 * np.abs(d) * np.cos(theta_[k] + margin) + x0
+        y1 = 0.4 * np.abs(d) * np.sin(theta_[k] + margin) + y0
+        x2 = 0.4 * np.abs(d) * np.cos(theta_[k + 1] - margin) + x0
+        y2 = 0.4 * np.abs(d) * np.sin(theta_[k + 1] - margin) + y0
         tri = Polygon([[x0, y0], [x1, y1], [x2, y2], [x0, y0]],
                         facecolor = f(k / len(data)),
                         alpha = 1.,

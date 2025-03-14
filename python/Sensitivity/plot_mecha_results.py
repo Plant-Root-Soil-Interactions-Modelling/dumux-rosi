@@ -1,3 +1,8 @@
+"""
+    shows the mecha and granar results 
+    see granar/ folder, see run_table_mecha.py (in granar folder)
+"""
+
 import os
 import shutil
 

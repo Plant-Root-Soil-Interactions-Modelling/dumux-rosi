@@ -1,6 +1,9 @@
 """
-    starts a single sra simulation of soybean or maize freezing fixed parameters, 
-    and passing parameters for steady state analysis
+    Starts a single sra simulation (dynamic water movement with nonlinear conductivities in the perirhizal zone), by calling run_soybean() 
+        
+    __main__ takes arguments produced by run_SA.py (to run multiple simulations on the cluster)  
+        
+    see also run_cplantbox.py
 """
 
 import sys
@@ -11,29 +14,43 @@ import json
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
-
 import evapotranspiration as evap
 import soil_model
 import hydraulic_model
-
 import sra_new
 
 
-def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx_old = None, save_all = False):
+class NpEncoder(json.JSONEncoder):
+
+    def default(self, obj):
+        if isinstance(obj, np.integer):
+            return int(obj)
+        if isinstance(obj, np.bool):
+            return bool(obj)
+        return super(NpEncoder, self).default(obj)
+
+
+def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     """
         exp_name                experiment name (name for output files)
         enviro_type             envirotype (number)
         sim_time                simulation time [days]
+        mods                    parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
+        save_all                ---
     """
+
+    if not (("conductivity_mode" in mods) and ("output_times" in mods)):
+            print("run_sra.run_soybean() conductivity_mode and output_times must be defined in mods dictionary")
+            raise()
 
     sim_params = {"exp_name": exp_name, "enviro_type": enviro_type, "sim_time":sim_time}
 
     print("***********************")
     print("run_sra.run_soybean", exp_name, enviro_type, sim_time)
     print(mods)
-    print(kr, kx)
     print("***********************", flush = True)
     mods_copy = copy.deepcopy(mods)
+    mods_copy.update(sim_params)  # all input arguments, to make reproducable
 
     if "filename" in mods:
         xml_name = mods["filename"]
@@ -58,9 +75,10 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
     else:
         water_table = 120.  # cm at -200cm
 
-    dt = 360 / (24 * 3600)  # time step [day]
+    dt = 360 / (24 * 3600)  # time step [day] ####################################### currently hard coded
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
+
     if "domain_size" in mods:
         domain_size = np.array(mods["domain_size"])
         min_b = -np.array([domain_size[0] / 2., domain_size[1] / 2., domain_size[2]])
@@ -79,12 +97,12 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
     else:
         trans_ = trans_soybean
 
-    # initialize soil
     if "bot_bc" in mods:
         bot_bc = mods["bot_bc"]
         mods.pop("bot_bc")
     else:
         bot_bc = "potential"
+
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number, times = x_, net_inf = y_,
                                    bot_bc = bot_bc, bot_value = 200. - water_table, initial_totalpotential = initial_totalpotential)
     water0 = s.getWaterVolume()
@@ -92,17 +110,30 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
 
     # initialize root system
     # print("starting hydraulic model", flush = True)
+    cdata = scenario.prepare_conductivities(mods)
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
+    scenario.set_conductivities(params, mods, cdata)
     # print("***********************", "hydraulic model set\n", flush = True)
 
-    if kr_old is not None:
-        print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
-        # print(kr)
-        # print(kr_old)
-        # print(kr[0], kr[1])
-        scenario.init_lupine_conductivities_sa(r.params, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
-    else:
-        scenario.init_lupine_conductivities(r.params, kr, kx)
+    output_times = mods["output_times"]  # TODO what to do with it in a dynamic context
+    mods.pop("output_times")
+
+    if mods:  # something unused in mods
+        print("\n********************************************************************************")
+        print("scenario_setup.create_mapped_rootsystem() WARNING unused parameters:")
+        for k, v in mods.items():
+            print("key:", k)
+        print("********************************************************************************\n")
+        # raise
+
+    # if kr_old is not None:
+    #     print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
+    #     # print(kr)
+    #     # print(kr_old)
+    #     # print(kr[0], kr[1])
+    #     scenario.init_lupine_conductivities_sa(r.params, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
+    # else:
+    #     scenario.init_lupine_conductivities(r.params, kr, kx)
 
     # params.plot_conductivities(False, lateral_ind = [2, 3])  #
     # dd
@@ -118,20 +149,18 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
         print("***********************")
         print("EXCEPTION run_soybean", exp_name, enviro_type, sim_time)
         print(mods)
-        print(kr, kx)
         print("***********************", flush = True)
         raise
 
+    print("writing", exp_name)
     if save_all:
         scenario.write_results(exp_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
     else:
         pass
         # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
-
-    # print("writing parameters", exp_name)
-    r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
     with open("results/" + exp_name + "_mods.json", "w+") as f:
-        json.dump(mods_copy, f)
+        json.dump(mods_copy, f, cls = NpEncoder)
+    r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
 
     print("finished " + exp_name)
 
@@ -148,15 +177,22 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old = None, kx
 
 if __name__ == "__main__":
 
-    # enviro_type = 0
-    # sim_time = 1
-    # theta1 = None
-    # src = None
+    enviro_type = 0
+    sim_time = 1
+    theta1 = None
+    src = None
     # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
     # kx_old = [0.35, 0.015]
     # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
     # kr_old = [5e-4, 0.0015]
-    # run_soybean("test", enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
+    mods = {
+        "output_times": [40],
+        "conductivity_mode": "scale",
+        "scale_kr":1.,
+        "scale_kx":1.,
+        }
+
+    run_soybean("test", enviro_type, sim_time, mods, save_all = True)
 
     type = sys.argv[1]
     exp_name = sys.argv[2]
