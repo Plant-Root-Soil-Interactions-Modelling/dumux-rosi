@@ -1,5 +1,5 @@
 """ 
-Sets up the soil model 
+    Sets up the soil model 
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -9,7 +9,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards import RichardsSP  # C++ part (Dumux binding), macroscopic soil model
 # from rosi_richards import RichardsSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 
@@ -46,6 +46,7 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
     s.setHomogeneousIC(initial_totalpotential, equilibrium = True)  # cm
 
     s.initializeProblem()
+    s.setBotBC(bot_bc, bot_value)
 
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric

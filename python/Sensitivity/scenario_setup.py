@@ -1,5 +1,5 @@
 """ 
-Functions to simplify setup of the scenarios for the INARI project
+    Functions to simplify setup of the scenarios for the INARI project
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -65,7 +65,7 @@ def maize(i:int):
 
 
 def soybean(i:int):
-    """ parameters for soybean simulation for envirotye number i 
+    """ parameters for soybean simulation for envirotype number i 
     
     soil                 list of VG parameters
     table_name           look up table for root-soil interface matric potentials 
@@ -89,18 +89,19 @@ def init_conductivities_const(r, kr_const = 1.8e-4, kx_const = 0.1):
     r.set_kr_const(kr_const, [1, 2, 3, 4, 5])  # subTypes = 1-5
     r.set_kx_const(kx_const, [1, 2, 3, 4, 5])
 
-def init_lupine_conductivities3(r, ykr1, okr1, ykr2, okr2, ykr3, okr3, ykx1, okx1, ykx2, okx2, ykx3, okx3, 
-                                yt1, yt2, yt3, delta1 = 1, delta2 = 2, delta3 =3):
+
+def init_lupine_conductivities3(r, ykr1, okr1, ykr2, okr2, ykr3, okr3, ykx1, okx1, ykx2, okx2, ykx3, okx3,
+                                yt1, yt2, yt3, delta1 = 1, delta2 = 2, delta3 = 3):
     """ 15+(3) variables set up: young and old kr and kx (4) for 3 root types (145, 2, 3), 
         and 3 transition times (from young to old) and optional slopes """
     r.set_kr_age_dependent([0.], [0.], 0)  # artificial shoot
     r.set_kx_age_dependent([0.], [1.e3], 0)
-    kx1 = np.array([[0., ykx1], [yt1, ykx1], [yt1+delta1, okx1], [yt1+delta1, okx1]])  # increasing with age
-    kr1 = np.array([[0., ykr1], [yt1, ykr1], [yt1+delta1, okr1], [yt1+delta1, okr1]])  # decreasing with age
-    kx2 = np.array([[0., ykx2], [yt2, ykx2], [yt2+delta2, okx2], [yt2+delta2, okx2]])  # increasing with age
-    kr2 = np.array([[0., ykr2], [yt2, ykr2], [yt2+delta2, okr2], [yt2+delta2, okr2]])  # decreasing with age
-    kx3 = np.array([[0., ykx3], [yt3, ykx3], [yt3+delta3, okx3], [yt3+delta3, okx3]])  # increasing with age
-    kr3 = np.array([[0., ykr3], [yt3, ykr3], [yt3+delta3, okr3], [yt3+delta3, okr3]])  # decreasing with age
+    kx1 = np.array([[0., ykx1], [yt1, ykx1], [yt1 + delta1, okx1], [yt1 + delta1, okx1]])  # increasing with age
+    kr1 = np.array([[0., ykr1], [yt1, ykr1], [yt1 + delta1, okr1], [yt1 + delta1, okr1]])  # decreasing with age
+    kx2 = np.array([[0., ykx2], [yt2, ykx2], [yt2 + delta2, okx2], [yt2 + delta2, okx2]])  # increasing with age
+    kr2 = np.array([[0., ykr2], [yt2, ykr2], [yt2 + delta2, okr2], [yt2 + delta2, okr2]])  # decreasing with age
+    kx3 = np.array([[0., ykx3], [yt3, ykx3], [yt3 + delta3, okx3], [yt3 + delta3, okx3]])  # increasing with age
+    kr3 = np.array([[0., ykr3], [yt3, ykr3], [yt3 + delta3, okr3], [yt3 + delta3, okr3]])  # decreasing with age
     r.set_kr_age_dependent(kr1[:, 0], kr1[:, 1], [1, 4, 5]),  # age, value, subType
     r.set_kx_age_dependent(kx1[:, 0], kx1[:, 1], [1, 4, 5])
     r.set_kr_age_dependent(kr2[:, 0], kr2[:, 1], 2)
@@ -171,21 +172,22 @@ def prepare_conductivities(mods):
             file_path = os.path.join(mods["mecha_path"], file)
             data.append(np.load(file_path))
         data = np.array(data)
-        a_ = data[:, 2, 2]        
+        a_ = data[:, 2, 2]  # [cm] (see granar/functions.py)
         a = np.array([float(x) for x in a_])
-        I = np.argsort(-a) # descending regarding radius a 
-        a_ = a_[I]
+        I = np.argsort(-a)  # descending regarding radius a
+        a = a[I]
         mods["a145_a"] = a[0]
         mods["a2_a"] = a[1]
-        mods["a3_a"] = a[2]  
+        mods["a3_a"] = a[2]
     return data
+
 
 def set_conductivities(params, mods, data):
     """ set the hydraulic conductivities @params given in the model parameters in @param mods """
-    
+
     cm = mods["conductivity_mode"]
     if cm == "age_dependent":
-        
+
         init_lupine_conductivities_sa(params, mods["kr_young1"], mods["kr_old1"], mods["kr_young2"], mods["kr_old2"], mods["kr3"],
                                                mods["kx_young1"], mods["kx_old1"], mods["kx_young2"], mods["kx_old2"], mods["kx3"])
         mods.pop("kr_young1")
@@ -200,41 +202,42 @@ def set_conductivities(params, mods, data):
         mods.pop("kx3")
 
     elif cm == "from_mecha":
-        
+
         yt1, yt2, yt3 = mods["conductivity_age1"], mods["conductivity_age2"], mods["conductivity_age3"]
-        ykx_ = data[:, 0, 0] # maturity level 0
+        ykx_ = data[:, 0, 0]  # maturity level 0
         ykr_ = data[:, 0, 1]
         ya_ = data[:, 0, 2]
-        kx_ = data[:, 2, 0] # maturity level 2
+        kx_ = data[:, 2, 0]  # maturity level 2
         kr_ = data[:, 2, 1]
         a_ = data[:, 2, 2]
-        kx = np.array([float(x) for x in kx_])
-        kr = np.array([float(x) for x in kr_])
+        kx = np.array([float(x) for x in kx_])  #  [cm^4/hPa/d] ~ cm3 /day (see granar/functions.py)
+        kr = np.array([float(x) for x in kr_])  # [cm/hPa/d] ~ 1 /day (see granar/functions.py)
         a = np.array([float(x) for x in a_])
         ykx = np.array([float(x) for x in ykx_])
         ykr = np.array([float(x) for x in ykr_])
         ya = np.array([float(x) for x in ya_])
-        I = np.argsort(-a) # descending regarding radius a 
-        init_lupine_conductivities3(params, ykr[0], kr[0], ykr[1], kr[1], ykr[2], kr[2], 
-                                            ykx[0], kx[0], ykx[1], kx[1], ykx[2], kx[2], 
-                                            yt1, yt2, yt3)        
+        I = np.argsort(-a)  # descending regarding radius a
+        init_lupine_conductivities3(params, ykr[0], kr[0], ykr[1], kr[1], ykr[2], kr[2],
+                                            ykx[0], kx[0], ykx[1], kx[1], ykx[2], kx[2],
+                                            yt1, yt2, yt3)
         mods.pop("mecha_path")
         mods.pop("conductivity_index1")
         mods.pop("conductivity_index2")
         mods.pop("conductivity_index3")
-        mods.pop("conductivity_age1") 
-        mods.pop("conductivity_age2") 
-        mods.pop("conductivity_age3")        
+        mods.pop("conductivity_age1")
+        mods.pop("conductivity_age2")
+        mods.pop("conductivity_age3")
 
     elif cm == "scale":
-        
-        init_lupine_conductivities(r.params, mods["scale_kr"], mods["scale_kx"])
+
+        init_lupine_conductivities(params, mods["scale_kr"], mods["scale_kx"])
         mods.pop("scale_kr")
         mods.pop("scale_kx")
 
     else:
         raise "run_cplantbox.run_soybean() conductivity_mode unknown"
     mods.pop("conductivity_mode")
+
 
 def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_):
     """  saves results from run_sra numpy arrays in a npz file 

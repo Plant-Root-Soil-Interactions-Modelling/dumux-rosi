@@ -1,3 +1,10 @@
+"""
+    Bayesian optimization of the full SRA model
+    
+    works with IBG-3 cluster
+    this approach is computational to heavy weight in the moment (need to increase model performance)
+"""
+
 import sys; sys.path.append("../../../BayesianOptimization")
 
 import scipy

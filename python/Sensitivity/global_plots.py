@@ -1,3 +1,6 @@
+"""
+    todo (delete?) 
+"""
 import sys; sys.path.append("../../../BayesianOptimization")
 
 import scipy

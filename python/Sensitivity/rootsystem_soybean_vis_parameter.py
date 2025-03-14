@@ -1,5 +1,8 @@
 """ 
-Show how tap root length and branching density shapes the root system 
+Shows how tap root length and branching density shapes the root system RLD  
+
+3x3 plots first row unaltered; second row reduced lmax1, and r1; third row increased 50% increased ln
+
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -9,6 +12,8 @@ import plantbox as pb
 import visualisation.vtk_plot as vp
 
 import scenario_setup as scenario
+import soil_model
+import hydraulic_model
 
 import numpy as np
 import matplotlib.pyplot as plt
@@ -36,9 +41,9 @@ def plot_(i, j, simtime, mods):  # i row, j column
     # Open plant and root parameter from a file
     path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
     name = "Glycine_max_Moraes2020_opt2"
-    s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 1)  # , times = x_, net_inf = y_
+    s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_, net_inf = y_
     xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
-    r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+    r, _ = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
     kr = 1.e-4
     kx = 1.e-3
     scenario.init_conductivities_const(r.params, kr, kx)
@@ -93,7 +98,6 @@ def plot_(i, j, simtime, mods):  # i row, j column
     rs.setGeometry(pb.SDF_PlantBox(w[0], w[1], w[2]))
     rs.write("results/soybean_box.py")
 
-# mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "r145":1., "r2":1., "a":1.}
     return r.get_krs(simtime)[0]
 
 

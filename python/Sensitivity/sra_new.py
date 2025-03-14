@@ -1,5 +1,6 @@
 """
-    Water uptake simulation taking nonlinear rhizosphere resistance into account
+    Dynamic water uptake simulation taking nonlinear rhizosphere resistance into account (takes long)
+    (called by run_sra.py)    
 """
 import numpy as np
 import timeit

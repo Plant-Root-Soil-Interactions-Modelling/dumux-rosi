@@ -1,9 +1,11 @@
+"""
+   (depricated?)
+   TODO recreates the root system using the xml files and visualizes simulation results on that
+"""
+
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-"""
-   TODO recreates the root system using the xml files and visualizes simulation results on that
-"""
 import matplotlib.pyplot as plt
 import numpy as np
 
