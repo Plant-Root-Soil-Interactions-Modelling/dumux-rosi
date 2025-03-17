@@ -15,26 +15,16 @@ from helpfull import sinusoidal3, write_file_array
 from air_modelsPlant import AirSegment
 
     
-def weather(simDuration, dt, spellData, hp:float=1):
+def weather(simDuration, dt,  spellData = None,  hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 
         
-        if  ((spellData['condition'] == "wet") or (simDuration <= spellData['spellStart']) or (simDuration > spellData['spellEnd'])):
-            Tnigh = 15.8; Tday = 22
-            RHday = 0.6; RHnigh = 0.88
-            Pair = 1010.00 #hPa
-            pmean = -100.
-            cs = 350e-6
-        elif spellData['condition'] == "dry":
-            Tnigh = 20.7; Tday = 30.27
-            RHday = 0.44; RHnigh = 0.78
-            Pair = 1070.00 #hPa
-            pmean = -450.
-            cs = 350e-6
-        else:
-            print('spellData',spellData)
-            raise Exception
+        Tnigh = 15.8; Tday = 22
+        RHday = 0.6; RHnigh = 0.88
+        Pair = 1010.00 #hPa
+        pmean = -100.
+        cs = 350e-6
             
         coefhours = sinusoidal3(simDuration + 0.5, dt)
         RH_ = RHnigh + (RHday - RHnigh) * coefhours

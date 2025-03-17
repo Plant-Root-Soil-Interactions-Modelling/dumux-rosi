@@ -140,10 +140,10 @@ def setIC(s, soil_type, ICcc = None):
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
                            C_L*unitConversion*addedVar,
-                            9.16666666666667e-07* unitConversion*addedVar,
-                            8.33333333333333e-06* unitConversion*addedVar,
-                            8.33333333333333e-07* unitConversion*addedVar,
-                            8.33333333333333e-06* unitConversion*addedVar,
+                            0.,
+                            0.,
+                            0.,
+                            0.,
                             s.CSS_init*unitConversion*addedVar,
                            0.])# in mol/m3 water or mol/m3 scv
         if rank == 0:
@@ -451,6 +451,7 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     
     plantModel.wilting_point = -15000.
     plantModel.exudf = plantParameters.prescribed_exudation(soil_type)
+    plantModel.exudation_rates = plantParameters.exudation_rates
     plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
     # set kr and kx for root system or plant
     
