@@ -1,3 +1,7 @@
+"""
+    Bayesian optimization of the static root hydraulic model
+"""
+
 import sys; sys.path.append("../../../BayesianOptimization")
 
 import scipy
@@ -19,18 +23,18 @@ from bayes_opt import acquisition
 import run_cplantbox
 
 
+def hash_(name):
+    hash_obj = hashlib.sha256(name.encode('utf-8'))
+    r = hash_obj.hexdigest()
+    return r
+
+
 def background(f):
 
     def wrapped(*args, **kwargs):
         return asyncio.get_event_loop().run_in_executor(None, f, *args, **kwargs)
 
     return wrapped
-
-
-def hash_(name):
-    hash_obj = hashlib.sha256(name.encode('utf-8'))
-    r = hash_obj.hexdigest()
-    return r
 
 
 @background
@@ -65,7 +69,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 1000
+    iterations = 5000
     points_per_iteration = 10
 
     for i in range(0, iterations):
@@ -147,6 +151,9 @@ def cplantbox_all14():  # 30 parameters
     initial = {"output_times": [45, 50, 60],
               "conductivity_mode": "from_mecha",
               "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
+              'hairsElongation1_a': 1.,
+              'hairsElongation2_a': 1.,
+              'hairsElongation3_a': 1.,
                }
 
     # acquisition_function = acquisition.UpperConfidenceBound(kappa = 1.)
@@ -156,10 +163,10 @@ def cplantbox_all14():  # 30 parameters
         'conductivity_index1': (0, max_ind),
         'conductivity_index2': (0, max_ind),
         'conductivity_index3': (0, max_ind),
-        "conductivity_age1": (1,21),
-        "conductivity_age2": (1,21),
-        "conductivity_age3": (1,21),
-            
+        "conductivity_age1": (1, 21),
+        "conductivity_age2": (1, 21),
+        "conductivity_age3": (1, 21),
+
         'src_a': (3, 11),
         'src_first_a': (3, 14),
         'src_delay_a': (3, 14),
@@ -169,29 +176,23 @@ def cplantbox_all14():  # 30 parameters
         'r145_a': (0.2, 7.),
         'theta145_a': (np.pi / 8., np.pi / 2.),
         'tropismN145_a': (0., 3.5),
-        # 'tropismS145_a': (0., 1.),
-        'hairsLength145_a': (0.1, 2.),
+        'hairsLength145_a': (0.1, 1.),
         'hairsZone145_a': (1., 10.),
-        # 'hairsElongation145_a': (0.1, 2.),
 
         'lmax2_a': (5., 50.),
         'ln2_a': (0.5, 10.),
         'r2_a': (0.2, 7.),
         'theta2_a': (np.pi / 8., np.pi / 2.),
         'tropismN2_a': (0., 3.5),
-        # 'tropismS2_a': (0., 1.),
-        'hairsLength2_a': (0.1, 2.),
+        'hairsLength2_a': (0.1, 1.),
         'hairsZone2_a': (1., 10.),
-        # 'hairsElongation2_a': (0.1, 2.),
 
         'lmax3_a': (5., 50.),
         'r3_a': (0.2, 7.),
         'theta3_a': (np.pi / 8., np.pi / 2.),
         'tropismN3_a': (0., 3.5),
-        # 'tropismS3_a': (0., 1.),
-        'hairsLength3_a': (0.1, 2.),
+        'hairsLength3_a': (0.1, 1.),
         'hairsZone3_a': (1., 10.),
-        # 'hairsElongation3_a': (0.1, 2.),
 
         }
 

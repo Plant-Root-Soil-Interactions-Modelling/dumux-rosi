@@ -1,5 +1,5 @@
 """
-transpiration plot (one column, number of rows as number of filenames)
+    transpiration plot (one column, number of rows as number of filenames)
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

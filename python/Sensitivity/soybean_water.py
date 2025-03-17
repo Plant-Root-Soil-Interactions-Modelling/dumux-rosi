@@ -1,5 +1,5 @@
 """ 
-    Simulates water movement for a single fixed soybean scenario
+    Simulates dynamic water movement for a single fixed soybean scenario
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -49,13 +49,25 @@ hairsElongation = 0.3
 #         }
 #
 
-# 3
-mods = {"a145": 0.2, "a2": 0.04, "a3": 0.04,
+# # 3
+mods = {
+        "output_times": [40],
+
+        "conductivity_mode": "scale",
+        "scale_kr":1.,
+        "scale_kx":1.,
+
+        "a145": 0.2, "a2": 0.04, "a3": 0.04,
         "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
         "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
-        "hairsElongation": 0.3, "dx": 0.1 }
+        "hairsElongation": 0.3,
 
-run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, 1., 1., save_all = True)
+        "dx": 0.1,
+
+        # "bot_bc": "noFlux",
+        }
+
+run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, save_all = True)
 
 # kr = np.zeros((3,))
 # kr_old = np.zeros((2,))

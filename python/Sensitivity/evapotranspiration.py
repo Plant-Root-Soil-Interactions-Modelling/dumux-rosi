@@ -1,15 +1,15 @@
+"""
+this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
+
+using Beer's law, (assuming a predefined dynamic LAI)
+"""
+
 import pickle
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from datetime import *
 from functional.xylem_flux import sinusoidal2
-
-"""
-this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
-
-using Beer's law, (assuming a predefined dynamic LAI)
-"""
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16

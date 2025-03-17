@@ -9,40 +9,7 @@ import json
 import numpy as np
 import matplotlib.pyplot as plt
 
-
-def load_json_files(exp_name, folder_path):
-    json_data_list = []
-    for filename in os.listdir(folder_path):
-        if filename.startswith(exp_name) and filename.endswith(".json"):
-            file_path = os.path.join(folder_path, filename)
-            try:
-                with open(file_path, 'r', encoding = 'utf-8') as file:
-                    data = json.load(file)
-                    json_data_list.append(data)
-            except (json.JSONDecodeError, IOError) as e:
-                print(f"Error loading {filename}: {e}")
-
-    print("opened", len(json_data_list), "files")
-    return json_data_list
-
-
-def merge_results(folder_path, json_data_list, i = -1):
-    for data in json_data_list:
-
-        filename = data["exp_name"]
-        filename += ".npz"
-        file_path = os.path.join(folder_path, filename)
-        try:
-            results = np.load(file_path)
-            data["krs"] = results["krs"][i]
-            data["length"] = results["length"][i]
-            data["surface"] = results["surface"][i]
-            data["volume"] = results["volume"][i]
-            data["RLDz"] = results["RLDz"][i]
-            data["SUFz"] = results["SUFz"][i]
-
-        except (json.JSONDecodeError, IOError) as e:
-            print(f"Error loading {filename}: {e}")
+import global_optimization_tools as got
 
 
 def get_(name, all):
@@ -61,7 +28,6 @@ def plot_1D(nameX, nameY, all):
 
 
 def scatter_1D(nameX, nameY, all, nameC = None):
-
     if isinstance(nameX, str):
         nameX = [nameX]
     if isinstance(nameY, str):
@@ -106,16 +72,16 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ """
 folder_path = "results_cplantbox/"
-exp_name = "soybean_test"
+exp_name = "soybean_all14"
 
 """ load everything & merge npz results into input parameter json"""
 
-all = load_json_files(exp_name, folder_path)
-merge_results(folder_path, all)
+all = got.load_json_files(exp_name, folder_path)
+got.merge_results(folder_path, all)
 
 # scatter_1D("lmax1_a", "length", all)
 # scatter_1D(["r1_a"], ["length"], all)
-scatter_1D(["r1_a", "ln1_a"], ["length", "volume"], all)
+scatter_1D(["r145_a", "ln145_a"], ["length", "volume"], all)
 
 # scatter_1D("hairsLength_a", "krs", all,  "lmax1_a")
 # scatter_1D("hairsZone_a", "krs", all,  "lmax1_a")

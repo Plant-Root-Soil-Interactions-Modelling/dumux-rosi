@@ -1,7 +1,7 @@
 """
-    starts a multiple sra simulations of soybean or maize and distribute over MPI ranks, 
-    freezing fixed parameters, 
-    and passing parameters for steady state analysis
+    Sensitivity Analysis by
+    starting multiple sra simulations of soybean or maize and distribute over MPI ranks, 
+    freezing fixed parameters, and passing parameters for steady state analysis
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

@@ -1,9 +1,13 @@
+"""
+    Dash App - parallel coordinates plot (copy exp names to rerun simulations, or do full dynamic simulations)
+"""
+
 import numpy as np
 import pandas as pd
 
 from dash import Dash, dcc, Input, Output, Patch, html
 import dash_ag_grid as dag
-# import dash_bootstrap_components as dbc
+import dash_bootstrap_components as dbc
 import plotly.express as px
 
 import global_optimization_tools as got
@@ -18,7 +22,8 @@ def create_df(all, dims):
 
 
 folder_path = "results_cplantbox/"
-exp_name = "soybean_length14"
+# exp_name = "soybean_length14"
+exp_name = "soybean_all14"
 target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 
 """ 1 load everything & merge npz results into input parameter json"""

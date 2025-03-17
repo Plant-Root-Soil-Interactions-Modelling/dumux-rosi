@@ -1,5 +1,7 @@
 """
-    starts a single root architecture simulation of soybean (indlucing Krs, SUF), 
+    Starts a single root architecture simulation of soybean (indlucing Krs, SUF)
+    
+    see also run_sra.py (for the full dynamic simulation)
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -25,11 +27,14 @@ class NpEncoder(json.JSONEncoder):
             return bool(obj)
         return super(NpEncoder, self).default(obj)
 
+
 def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     """
         exp_name                experiment name (name for output files)
         enviro_type             envirotype (number)
         sim_time                simulation time [days]
+        mods                    parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
+        save_all                ---
     """
 
     if not (("conductivity_mode" in mods) and ("output_times" in mods)):
@@ -43,7 +48,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     print(mods)
     print("***********************\n", flush = True)
     mods_copy = copy.deepcopy(mods)  # for json dump
-    mods_copy.update(sim_params)
+    mods_copy.update(sim_params)  # all input arguments, to make reproducable
 
     if "filename" in mods:
         xml_name = mods["filename"]
@@ -57,6 +62,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         initial_age = 1.  # day
 
     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(int(enviro_type))
+
     if "domain_size" in mods:
         domain_size = np.array(mods["domain_size"])
         min_b = -np.array([domain_size[0] / 2., domain_size[1] / 2., domain_size[2]])
@@ -65,7 +71,6 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         # print("Changed domain size to", min_b, max_b, area)
         mods.pop("domain_size")
 
-    
     cdata = scenario.prepare_conductivities(mods)
     r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, None, xml_name, stochastic = False, mods = mods, model = "Meunier")
     scenario.set_conductivities(params, mods, cdata)
@@ -83,13 +88,11 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
 
     length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_ = run_(r, sim_time, initial_age, area, output_times)
 
-    print("writing", exp_name)
     # results
+    print("writing", exp_name)
     scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, write_all = save_all)
-    # parameters
     with open("results_cplantbox/" + exp_name + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
-    # resulting cplantbox parameters
     # r.ms.writeParameters("results_cplantbox/" + exp_name + ".xml")  # corresponding xml parameter set
 
     print("finished " + exp_name)
@@ -116,7 +119,6 @@ def run_(r, sim_time, initial_age, area, out_times):
         t += dt  # current simulation time
         length.append(np.sum(r.ms.getParameter("length")))
         volume.append(np.sum(r.ms.getParameter("volume")))  # we ignore root hairs
-        surface.append(np.sum(r.ms.getParameter("surface")))  # TODO: include root hairs
         suf = r.get_suf(t)
         krs_, _ = r.get_krs(t)
         krs.append(krs_)
@@ -133,7 +135,13 @@ def run_(r, sim_time, initial_age, area, out_times):
         SUFz.append(suf.dot(z))
         depth.append(sa.getMinBounds().z)
         domain = sa.getMaxBounds().minus(sa.getMinBounds())
-        area_.append(domain.x*domain.y)
+        area_.append(domain.x * domain.y)
+        n = len(r.ms.radii)
+        radii = np.array([r.ms.getEffectiveRadius(i) for i in range(0, n)])
+        lengths = np.array(r.ms.segLength())
+        # print(radii.shape)
+        # print(lengths.shape)
+        surface.append(np.sum(2.*np.pi * np.multiply(radii, lengths)))  # TODO: include root hairs
 
     print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
 

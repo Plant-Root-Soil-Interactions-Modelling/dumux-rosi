@@ -1,13 +1,13 @@
+"""
+    Creates a 4d look up table for root-soil interface potentials for specific van Genucthen parameters 
+    of the envirotypes 
+"""
+
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import functional.van_genuchten as vg
 from functional.Perirhizal import *
-
-"""
-    Creates a 4d look up table for root-soil interface potentials for specific van Genucthen parameters 
-    of the envirotypes 
-"""
 
 if __name__ == "__main__":
 
@@ -29,19 +29,19 @@ if __name__ == "__main__":
     vg.create_mfp_lookup(sp)
     peri = PerirhizalPython()
     peri.create_lookup_mpi(filename, sp)  # takes some hours
-    
+
     filename = "data/envirotype36"
     sp = vg.Parameters(soil[36])
     vg.create_mfp_lookup(sp)
     peri = PerirhizalPython()
     peri.create_lookup_mpi(filename, sp)  # takes some hours
-    
+
     filename = "data/envirotype5"
     sp = vg.Parameters(soil[5])
     vg.create_mfp_lookup(sp)
     peri = PerirhizalPython()
     peri.create_lookup_mpi(filename, sp)  # takes some hours
-    
+
     filename = "data/envirotype59"
     sp = vg.Parameters(soil[59])
     vg.create_mfp_lookup(sp)

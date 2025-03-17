@@ -1,5 +1,6 @@
 """
-plots results of local sensitivity analysis
+    (depricated: kr and kx should not be considered indepently) 
+    plots results of local sensitivity analysis
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -25,7 +26,6 @@ path = "results/"
 not_xlog = []
 
 analysis_time = 87.5  # days
-
 
 names, ranges = sa.read_ranges(path + file_name)
 

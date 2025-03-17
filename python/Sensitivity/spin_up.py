@@ -1,7 +1,6 @@
 """ 
-Functions for the spin up simulation to obtain realistic initial conditions
-
-(only implemented for maize)
+    Functions for the spin up simulation to obtain realistic initial conditions    
+    (only implemented for maize)
 """
 
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
