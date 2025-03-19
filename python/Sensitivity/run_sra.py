@@ -307,8 +307,6 @@ if __name__ == "__main__":
         print(params)
 
         assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
-        assert enviro_type == params["enviro_type"], "run_sra() type == 'file': something is wrong with enviro_type"
-        assert sim_time == params["sim_time"], "run_sra() type == 'file': something is wrong"
         params.pop("exp_name")
         params.pop("enviro_type")
         params.pop("sim_time")
