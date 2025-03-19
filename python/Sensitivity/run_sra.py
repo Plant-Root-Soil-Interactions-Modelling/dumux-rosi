@@ -10,6 +10,7 @@ import sys
 import os
 import scipy
 import copy
+import zipfile
 import json
 import numpy as np
 import matplotlib.pyplot as plt
@@ -292,10 +293,19 @@ if __name__ == "__main__":
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
     elif type == "file":
-        folder_path = "results_cplantbox/"
-        file_path = os.path.join(folder_path, exp_name + "_mods.json")
-        with open(file_path, 'r', encoding = 'utf-8') as file:
-            params = json.load(file)
+
+        with zipfile.ZipFile("soybean_all14.zip", "r") as zipf:  # hard coded if zip files are used
+            with zipf.open("soybean_all14.json", "r") as json_file:
+                all = json.load(json_file)  # Deserialize JSON data
+
+        # folder_path = "results_cplantbox/"
+        # file_path = os.path.join(folder_path, exp_name + "_mods.json")
+        # with open(file_path, 'r', encoding = 'utf-8') as file:
+        #     params = json.load(file)
+
+        params = all[exp_name]
+        print(params)
+
         assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
         assert enviro_type == params["enviro_type"], "run_sra() type == 'file': something is wrong with enviro_type"
         assert sim_time == params["sim_time"], "run_sra() type == 'file': something is wrong"
@@ -303,6 +313,7 @@ if __name__ == "__main__":
         params.pop("enviro_type")
         params.pop("sim_time")
         run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
+
     else:
 
         print("Unknown run sa type")

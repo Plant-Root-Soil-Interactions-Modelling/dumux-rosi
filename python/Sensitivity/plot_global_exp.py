@@ -107,15 +107,20 @@ exp_name = "soybean_all14"
 # all = got.load_json_files(exp_name, folder_path)  # open parameter files
 # got.merge_results(folder_path, all)  # add results
 #
+# all_json = {}
+# for a in all:
+#     all_json[a["exp_name"]] = a
+#
 # # Write all JSON data to a zip file
 # with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
 #     with zipf.open(exp_name + ".json", "w") as json_file:
-#         json_file.write(json.dumps(all, indent = 4).encode("utf-8"))
+#         json_file.write(json.dumps(all_json, indent = 4).encode("utf-8"))
 
 # Read JSON data from the ZIP file
 with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
     with zipf.open(exp_name + ".json", "r") as json_file:
         all = json.load(json_file)  # Deserialize JSON data
+all = list(all.values())
 
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
