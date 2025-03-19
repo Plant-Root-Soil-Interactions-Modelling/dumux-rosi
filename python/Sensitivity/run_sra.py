@@ -7,10 +7,11 @@
 """
 
 import sys
-import numpy as np
+import os
 import scipy
 import copy
 import json
+import numpy as np
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
@@ -295,8 +296,13 @@ if __name__ == "__main__":
         file_path = os.path.join(folder_path, exp_name + "_mods.json")
         with open(file_path, 'r', encoding = 'utf-8') as file:
             params = json.load(file)
-
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
+        assert enviro_type == params["enviro_type"], "run_sra() type == 'file': something is wrong with enviro_type"
+        assert sim_time == params["sim_time"], "run_sra() type == 'file': something is wrong"
+        params.pop("exp_name")
+        params.pop("enviro_type")
+        params.pop("sim_time")
+        run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
     else:
 
         print("Unknown run sa type")
