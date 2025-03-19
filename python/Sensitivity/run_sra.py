@@ -290,13 +290,8 @@ if __name__ == "__main__":
 
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
-    elif type == "file_list":
-        # type = sys.argv[1]
-        # exp_name = sys.argv[2]
-        # enviro_type = int(float(sys.argv[3]))
-        # sim_time = float(sys.argv[4])
-        file_name = sys.argv[5]
-
+    elif type == "file":
+        folder_path = "results_cplantbox/"
         file_path = os.path.join(folder_path, exp_name + "_mods.json")
         with open(file_path, 'r', encoding = 'utf-8') as file:
             params = json.load(file)

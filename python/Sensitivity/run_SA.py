@@ -62,7 +62,7 @@ def make_local(*args, ref = "mid"):
                 mids_copy[i] = v
                 jobs.append([c, *mids_copy])
 
-    return jobs
+    return np.array(jobs)
 
 
 def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
@@ -72,24 +72,25 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     root_type                currently unused TODO to switch between soybean and maize
     enviro_type              choose parametrisation  
     sim_time                 simulation time
-    jobs                     parameters for each simulation run (see make_local)    
+    jobs                     parameters for each simulation run (see make_local), 11 dimensions? 
     run_local                if True calls pyhton3, else for cluster calls sbatch
     """
     job_directory = os.path.join(os.getcwd(), file_name)
     if not run_local:
         mkdir_p(job_directory)
 
-    jobs = np.array(jobs)
-
     for job in jobs:
 
-        job_name = file_name + str(int(job[0]))
-        print("starting job", int(job[0]), ":", job_name, enviro_type, sim_time, *job[1:])
+        try:
+            job_name = file_name + str(int(job[0]))
+        except:  # in case of "file" the filename is passed in job[0]
+            job_name = file_name + str(job[0])
+
+        print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
 
         if run_local:
+            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}& \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
-            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}& \n".
-                              format(type_str, job_name, enviro_type, sim_time, *job[1:]))
         else:
             job_file = os.path.join(job_directory, job_name + ".job")
             with open(job_file, 'w') as fh:
@@ -104,7 +105,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#SBATCH --partition=cpu256\n")
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-                              format(type_str, job_name, enviro_type, sim_time, *job[1:]))
+                              format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
             os.system("sbatch {:s}".format(job_file))
 
@@ -260,19 +261,40 @@ def local_soybean_radii():
                  ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength3"],
                  [a145, a2, a3, hz, hz, hz, hl, hl, hl])
     jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0., ref = "left")  # currently we always pass 10 values to run_sra
-
     jobs = np.array(jobs)
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def simulate_list():
-    pass
+    print("simulate_list")
+    type_str = "file"
+    root_type = "soybean"  # unused
+    list_filename = "data/my_pick.txt"
+
+    with open(list_filename, "r", encoding = "utf-8") as file:
+        lines = file.readlines()
+    lines = [line.strip() for line in lines]
+
+    jobs = []
+    for line in lines:
+        jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
+    enviro_type = 0
+    sim_time = 87.5  # 87.5  # days
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 1
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 5
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 36
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 59
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 if __name__ == "__main__":
 
-    i = 7
+    i = 6
 
     if i == 1:
         local_soybean()

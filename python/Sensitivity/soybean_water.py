@@ -41,6 +41,9 @@ params.pop("exp_name")
 params.pop("enviro_type")
 params.pop("sim_time")
 
+print(exp_name, enviro_type, sim_time)
+# sim_time = 1.
+
 run_sra.run_soybean("dummy{:g}".format(envirotype), envirotype, sim_time, params, save_all = True)
 
 print("fin.")
