@@ -114,9 +114,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
-            if type_str == "file":
-                os.system("sbatch {:s}".format(job_file + "_" + str(enviro_type)))
-            else:
+
                 os.system("sbatch {:s}".format(job_file))
 
 
