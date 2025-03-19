@@ -154,10 +154,6 @@ if __name__ == "__main__":
     sim_time = 87.5
     theta1 = None
     src = None
-    kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
-    kx_old = [0.35, 0.015]
-    kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
-    kr_old = [5e-4, 0.0015]
 
     mods = {"output_times": [40],
             "conductivity_mode": "from_mecha",

@@ -266,9 +266,13 @@ def local_soybean_radii():
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
+def simulate_list():
+    pass
+
+
 if __name__ == "__main__":
 
-    i = 1
+    i = 7
 
     if i == 1:
         local_soybean()
@@ -281,6 +285,8 @@ if __name__ == "__main__":
     if i == 5:
         local_singleroot_conductivities()
     if i == 6:
+        simulate_list()
+    if i == 7:
         pass
 
 # def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):

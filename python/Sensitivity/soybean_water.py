@@ -4,6 +4,9 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
+import os
+import json
+
 import plantbox as pb
 import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
@@ -22,6 +25,26 @@ sim_time = 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
+
+# rerun experiment from json
+folder_path = "results_cplantbox/"
+exp_name = "soybean_all14_e6ff06381be42906c846e6a7749fbaf2da9f29d01b8a6e04a85fa32e1b1cffd1"
+
+file_path = os.path.join(folder_path, exp_name + "_mods.json")
+with open(file_path, 'r', encoding = 'utf-8') as file:
+    params = json.load(file)
+print(params)
+enviro_type = params["enviro_type"]
+sim_time = params["sim_time"]
+assert exp_name == params["exp_name"], "wrong file name"
+params.pop("exp_name")
+params.pop("enviro_type")
+params.pop("sim_time")
+
+run_sra.run_soybean("dummy{:g}".format(envirotype), envirotype, sim_time, params, save_all = True)
+
+print("fin.")
+ddd
 
 # 1
 hairsZone = 1.7

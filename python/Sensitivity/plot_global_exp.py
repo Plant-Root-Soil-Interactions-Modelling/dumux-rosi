@@ -70,7 +70,7 @@ def mean_of_dict(all, keys):
     return new_dict
 
 
-def exemplify(all, node2sample, m_neurons, n_neurons, N = 1):
+def exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 1):
     for i in range(0, m_neurons):
         for j in range(0, n_neurons):
             node = (j, i)
@@ -104,18 +104,18 @@ folder_path = "results_cplantbox/"
 exp_name = "soybean_length14"
 exp_name = "soybean_all14"
 
-all = got.load_json_files(exp_name, folder_path)  # open parameter files
-got.merge_results(folder_path, all)  # add results
+# all = got.load_json_files(exp_name, folder_path)  # open parameter files
+# got.merge_results(folder_path, all)  # add results
+#
+# # Write all JSON data to a zip file
+# with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
+#     with zipf.open(exp_name + ".json", "w") as json_file:
+#         json_file.write(json.dumps(all, indent = 4).encode("utf-8"))
 
-# Write all JSON data to a zip file
-with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
-    with zipf.open(exp_name + ".json", "w") as json_file:
-        json_file.write(json.dumps(all, indent = 4).encode("utf-8"))
-
-# # Read JSON data from the ZIP file
-# with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
-#     with zipf.open(exp_name + ".json", "r") as json_file:
-#         all = json.load(json_file)  # Deserialize JSON data
+# Read JSON data from the ZIP file
+with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
+    with zipf.open(exp_name + ".json", "r") as json_file:
+        all = json.load(json_file)  # Deserialize JSON data
 
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
@@ -146,7 +146,6 @@ for i in range(0, m_neurons * n_neurons):
 # plt.figure(figsize = (9, 9))
 # plt.title("Frequency map")
 # # frequencies = som.activation_response(got.fetch_features(target_names, all))
-#
 # T = np.zeros((m_neurons, n_neurons))
 # for i in range(0, m_neurons):
 #     for j in range(0, n_neurons):
@@ -158,7 +157,8 @@ for i in range(0, m_neurons * n_neurons):
 """ 4 plot target clusters """
 target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz", "area"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
-# got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
+target_names = ["surface", "volume", "area", "RLDz", "krs", "SUFz"]
+got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
 
 """ 5 pareto set """
 target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz", "area"]
@@ -179,7 +179,7 @@ for i in range(0, m_neurons * n_neurons):
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), "has", len(pareto_nodes[pareto_nodes == i]), "solutions")
 
 # exemplify(all, node2sample, m_neurons, n_neurons)
-exemplify(all, node2sample, m_neurons, n_neurons, N = 10)
+exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 3)
 
 """ 5 parameter space regarding nodes """
 pbounds = {

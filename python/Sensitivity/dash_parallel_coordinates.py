@@ -24,14 +24,14 @@ def create_df(all, dims):
 folder_path = "results_cplantbox/"
 # exp_name = "soybean_length14"
 exp_name = "soybean_all14"
-target_names = ["length", "volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
 
 """ 1 load everything & merge npz results into input parameter json"""
 all = got.load_json_files(exp_name, folder_path)  # open parameter files
 got.merge_results(folder_path, all)  # add results
 
 """ 2 filter and add cluster index"""
-all = got.filter_list(all, "length", 200., 20000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 m_neurons = 3
 n_neurons = 4
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
@@ -62,7 +62,7 @@ pbounds = {
 
 dims = list(pbounds.keys())  # for the parallel coordinates
 dims = ['r145_a', 'r2_a', 'r3_a', 'lmax145_a', 'lmax2_a', 'lmax3_a', 'node' ]
-
+target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 dims.extend(target_names)
 
 more_dims = dims.copy()

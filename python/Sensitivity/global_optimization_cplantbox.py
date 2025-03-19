@@ -176,23 +176,23 @@ def cplantbox_all14():  # 30 parameters
         'r145_a': (0.2, 7.),
         'theta145_a': (np.pi / 8., np.pi / 2.),
         'tropismN145_a': (0., 3.5),
-        'hairsLength145_a': (0.1, 1.),
-        'hairsZone145_a': (1., 10.),
+        'hairsLength145_a': (0., 0.1),
+        'hairsZone145_a': (0., 5.),
 
         'lmax2_a': (5., 50.),
         'ln2_a': (0.5, 10.),
         'r2_a': (0.2, 7.),
         'theta2_a': (np.pi / 8., np.pi / 2.),
         'tropismN2_a': (0., 3.5),
-        'hairsLength2_a': (0.1, 1.),
-        'hairsZone2_a': (1., 10.),
+        'hairsLength2_a': (0., 0.1),
+        'hairsZone2_a': (0., 10.),
 
-        'lmax3_a': (5., 50.),
+        'lmax3_a': (0.5, 50.),
         'r3_a': (0.2, 7.),
         'theta3_a': (np.pi / 8., np.pi / 2.),
         'tropismN3_a': (0., 3.5),
-        'hairsLength3_a': (0.1, 1.),
-        'hairsZone3_a': (1., 10.),
+        'hairsLength3_a': (0., 0.1),
+        'hairsZone3_a': (0., 10.),
 
         }
 
