@@ -106,7 +106,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
-                fh.writelines("#SBATCH --cpus-per-task=1")
+                fh.writelines("#SBATCH --cpus-per-task=1\n")
                 fh.writelines("#SBATCH --nodes=1\n")
                 fh.writelines("#SBATCH --time=24:00:00\n")
                 fh.writelines("#SBATCH --mem=8G\n")
@@ -115,7 +115,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
-                os.system("sbatch {:s}".format(job_file))
+            os.system("sbatch {:s}".format(job_file))
 
 
 def write_ranges(file_name, names, ranges):
@@ -283,7 +283,7 @@ def simulate_list():
     with open(list_filename, "r", encoding = "utf-8") as file:
         lines = file.readlines()
     lines = [line.strip() for line in lines]
-
+    print("number of lines in my_pick.txt:", len(lines))
     jobs = []
     for line in lines:
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
