@@ -304,7 +304,7 @@ if __name__ == "__main__":
         #     params = json.load(file)
 
         params = all[exp_name]
-        print(params)
+        params["mecha_path"] = "mecha_results"  # HACK for cluster
 
         assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
         params.pop("exp_name")
