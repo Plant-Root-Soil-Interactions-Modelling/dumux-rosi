@@ -75,11 +75,16 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     jobs                     parameters for each simulation run (see make_local), 11 dimensions? 
     run_local                if True calls pyhton3, else for cluster calls sbatch
     """
-    job_directory = os.path.join(os.getcwd(), file_name)
+
+    if type_str == "file":
+        job_directory = "file"
+    else:
+        job_directory = os.path.join(os.getcwd(), file_name)
+
     if not run_local:
         mkdir_p(job_directory)
 
-    for job in jobs:
+    for i, job in enumerate(jobs):
 
         try:
             job_name = file_name + str(int(job[0]))
@@ -92,9 +97,12 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
             os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}& \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         else:
-            job_file = os.path.join(job_directory, job_name + ".job")
-            with open(job_file, 'w') as fh:
+            if type_str == "file":  # for "file" add an index to the file name, for all others job id is stored in job[0] and added in L89
+                job_file = os.path.join(job_directory, job_name + "_" + str(enviro_type) + ".job")
+            else:
+                job_file = os.path.join(job_directory, job_name + ".job")
 
+            with open(job_file, 'w') as fh:
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
@@ -106,8 +114,10 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
-
-            os.system("sbatch {:s}".format(job_file))
+            if type_str == "file":
+                os.system("sbatch {:s}".format(job_file + "_" + str(enviro_type)))
+            else:
+                os.system("sbatch {:s}".format(job_file))
 
 
 def write_ranges(file_name, names, ranges):
