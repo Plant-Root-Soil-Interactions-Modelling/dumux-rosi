@@ -289,15 +289,15 @@ def simulate_list():
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
     sim_time = 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = True)
-    # enviro_type = 1
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 5
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 36
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 59
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 1
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 5
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 36
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    enviro_type = 59
+    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 if __name__ == "__main__":
