@@ -1,7 +1,9 @@
 """
     Dash App - parallel coordinates plot (copy exp names to rerun simulations, or do full dynamic simulations)
 """
-
+import os
+import json
+import zipfile
 import numpy as np
 import pandas as pd
 
@@ -24,11 +26,17 @@ def create_df(all, dims):
 folder_path = "results_cplantbox/"
 # exp_name = "soybean_length14"
 exp_name = "soybean_all14"
-target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz"]  # ["length", "surface",
+target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["length", "surface",
 
 """ 1 load everything & merge npz results into input parameter json"""
-all = got.load_json_files(exp_name, folder_path)  # open parameter files
-got.merge_results(folder_path, all)  # add results
+# all = got.load_json_files(exp_name, folder_path)  # open parameter files
+# got.merge_results(folder_path, all)  # add results
+
+# Read JSON data from the ZIP file
+with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
+    with zipf.open(exp_name + ".json", "r") as json_file:
+        all = json.load(json_file)  # Deserialize JSON data
+all = list(all.values())
 
 """ 2 filter and add cluster index"""
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
@@ -50,19 +58,46 @@ pbounds = {
     'src_a': (3, 11),
     'src_delay_a': (3, 14),
     'lmax145_a': (50, 150),
-    'ln145_a': (0.5, 10.),
-    'r145_a': (0.2, 7.),
     'lmax2_a': (5., 50.),
-    'ln2_a': (0.5, 10.),
-    'r2_a': (0.2, 7.),
     'lmax3_a': (5., 50.),
+    'ln145_a': (0.5, 10.),
+    'ln2_a': (0.5, 10.),
+    'r145_a': (0.2, 7.),
+    'r2_a': (0.2, 7.),
     'r3_a': (0.2, 7.),
-    'node': 0
     }
+# pbounds = {
+#     "conductivity_age1": (1, 21),
+#     "conductivity_age2": (1, 21),
+#     "conductivity_age3": (1, 21),
+#     # 'src_a': (3, 11),
+#     # 'src_first_a': (3, 14),
+#     # 'src_delay_a': (3, 14),
+#     # 'lmax145_a': (50, 150),
+#     # 'ln145_a': (0.5, 10.),
+#     # 'r145_a': (0.2, 7.),
+#     # 'theta145_a': (np.pi / 8., np.pi / 2.),
+#     # 'tropismN145_a': (0., 3.5),
+#     'hairsLength145_a': (0., 0.1),
+#     'hairsZone145_a': (0., 5.),
+#     # 'lmax2_a': (5., 50.),
+#     # 'ln2_a': (0.5, 10.),
+#     # 'r2_a': (0.2, 7.),
+#     # 'theta2_a': (np.pi / 8., np.pi / 2.),
+#     # 'tropismN2_a': (0., 3.5),
+#     'hairsLength2_a': (0., 0.1),
+#     'hairsZone2_a': (0., 10.),
+#     # 'lmax3_a': (0.5, 50.),
+#     # 'r3_a': (0.2, 7.),
+#     # 'theta3_a': (np.pi / 8., np.pi / 2.),
+#     # 'tropismN3_a': (0., 3.5),
+#     'hairsLength3_a': (0., 0.1),
+#     'hairsZone3_a': (0., 10.)
+# }
 
 dims = list(pbounds.keys())  # for the parallel coordinates
-dims = ['r145_a', 'r2_a', 'r3_a', 'lmax145_a', 'lmax2_a', 'lmax3_a', 'node' ]
-target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
+# dims = ['r145_a', 'r2_a', 'r3_a', 'lmax145_a', 'lmax2_a', 'lmax3_a', 'node' ]
+target_names = ["node", "surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 dims.extend(target_names)
 
 more_dims = dims.copy()

@@ -131,11 +131,11 @@ got.print_info(d, target_names)  # filtered
 print(d.shape)
 
 """ 3 cluster the targets """
-target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz"]
-distortion_plot(all, target_names)  # to determine m and n
+cluster_targets = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
+# distortion_plot(all, target_names)  # to determine m and n
 m_neurons = 3
 n_neurons = 4
-node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
+node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, cluster_targets, "som")
 
 print()
 for i in range(0, m_neurons * n_neurons):
@@ -160,13 +160,13 @@ for i in range(0, m_neurons * n_neurons):
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz", "area"]
-got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
-target_names = ["surface", "volume", "area", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
+target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz", "area"]
+got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 
 """ 5 pareto set """
-target_names = ["surface", "-volume", "depth", "RLDz", "krs", "SUFz", "area"]
+target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]
 ind = got.pareto_list(all, target_names)
 pareto = []
 for i, a in enumerate(all):
@@ -184,7 +184,7 @@ for i in range(0, m_neurons * n_neurons):
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), "has", len(pareto_nodes[pareto_nodes == i]), "solutions")
 
 # exemplify(all, node2sample, m_neurons, n_neurons)
-exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 3)
+# exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 3)
 
 """ 5 parameter space regarding nodes """
 pbounds = {
@@ -199,6 +199,7 @@ pbounds = {
     'lmax3_a': (5., 50.),
     'r3_a': (0.2, 7.),
     }
+
 param_names = pbounds.keys()
 data_params = got.fetch_features(param_names, all)
 print("\nAll parameter space", data_params.shape)

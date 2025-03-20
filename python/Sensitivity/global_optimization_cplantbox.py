@@ -69,8 +69,8 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 5000
-    points_per_iteration = 10
+    iterations = 10000
+    points_per_iteration = 15
 
     for i in range(0, iterations):
 
@@ -252,7 +252,8 @@ def cplantbox_length14():
         f = None,  # dummy (never called)
         pbounds = pbounds,
         verbose = 2,  # verbose = 1 prints only when a maximum is observed, verbose = 0 is silent
-        random_state = 1,
+        randomstate = 2,
+        random_state = 1000,
     )
 
     logger = JSONLogger(path = "results_cplantbox/" + type_str + ".log")

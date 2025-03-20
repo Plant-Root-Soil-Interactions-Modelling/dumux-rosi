@@ -154,9 +154,9 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         print("***********************", flush = True)
         raise
 
-    print("writing", exp_name)
+    print("writing", exp_name + "_" + str(enviro_type))
     if save_all:
-        scenario.write_results(exp_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
+        scenario.write_results(exp_name + "_" + str(enviro_type), pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
     else:
         pass
         # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
