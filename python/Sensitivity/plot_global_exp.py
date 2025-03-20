@@ -4,7 +4,6 @@
     Clustering with SOM or Kmeans (see global_optimization_tools) 
     to experiment on data analysis, plots, etc. 
 """
-
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
@@ -58,7 +57,7 @@ def distortion_plot(all, target_names):
 
 
 def mean_of_dict(all, keys):
-    """ """
+    """ puts the mean values of certain keys in a new dict (all is a list of dict) """
     data = got.fetch_features(keys, all)
     mean_data = np.mean(data, axis = 0)
     # print(keys)
@@ -71,6 +70,7 @@ def mean_of_dict(all, keys):
 
 
 def exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 1):
+    """ saves N png images of pareto solutions for each node"""
     for i in range(0, m_neurons):
         for j in range(0, n_neurons):
             node = (j, i)
@@ -86,6 +86,55 @@ def exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 1):
                     print(i, j, "example ind", ind, "which is choice", c)
                     run_cplantbox_exp.show_me_file(all[ind]["exp_name"], "results_cplantbox/", vis_hairs = True, mode = "png", png_name = "test({:g}, {:g})_{:g}".format(j, i, k))
                     c += 1
+
+
+def dist_dict_(d1, d2, keys):
+    if not d2["pareto"]:
+        return 1.e6
+    sum = 0.
+    for k in keys:
+        sum += np.square(d1[k] - d2[k])
+    return np.sqrt(sum)
+
+
+def exemplify_closest(all, node2sample, m_neurons, n_neurons, keys, vis_hairs = True):
+    """ saves a single png image the closest pareto solution to the mean value """
+    for i in range(0, m_neurons):
+        for j in range(0, n_neurons):
+            node = (j, i)
+            ind = node2sample[node]
+            data_ = got.fetch_features(keys, [all[k] for k in ind])
+            data = whiten(data_)
+            node_mean = np.mean(data, axis = 0)
+            dists = np.sqrt(np.sum(np.square(data - node_mean), axis = 1))
+            for k_, k in enumerate(ind):
+                if not all[k]["pareto"]:
+                    dists[k_] = 1.e6
+            print("\nnode_mean", node_mean, node_mean.shape)
+            print("dists", dists.shape, dists)
+            min_i = np.argmin(dists)
+            print(i, j, "example ind", ind[min_i], "distance", dists[min_i], "\n")
+            run_cplantbox_exp.show_me_file(all[ind[min_i]]["exp_name"], "results_cplantbox/", vis_hairs = True, mode = "png", png_name = "test({:g}, {:g})_mid".format(j, i))
+
+
+def write_closest(all, node2sample, m_neurons, n_neurons, keys, vis_hairs = True):
+    lines = []
+    for i in range(0, m_neurons):
+        for j in range(0, n_neurons):
+            node = (j, i)
+            ind = node2sample[node]
+            data_ = got.fetch_features(keys, [all[k] for k in ind])
+            data = whiten(data_)
+            node_mean = np.mean(data, axis = 0)
+            dists = np.sqrt(np.sum(np.square(data - node_mean), axis = 1))
+            for k_, k in enumerate(ind):
+                if not all[k]["pareto"]:
+                    dists[k_] = 1.e6
+            min_i = np.argmin(dists)
+            lines.append(all[ind[min_i]]["exp_name"])
+    with open("my_pick.txt", 'w', encoding = 'utf-8') as file:
+        for line in lines:
+            file.write(line + '\n')
 
 
 def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
@@ -185,6 +234,9 @@ for i in range(0, m_neurons * n_neurons):
 
 # exemplify(all, node2sample, m_neurons, n_neurons)
 # exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 3)
+
+# exemplify_closest(all, node2sample, m_neurons, n_neurons, cluster_targets, vis_hairs = True)
+write_closest(all, node2sample, m_neurons, n_neurons, cluster_targets, vis_hairs = True)
 
 """ 5 parameter space regarding nodes """
 pbounds = {

@@ -145,7 +145,6 @@ def fetch_features(feature_names, all):
     data = []
     for name in feature_names:
         data.append(get_(name, all))
-
     data = np.array(data).transpose()
     return data
 

@@ -70,7 +70,7 @@ def show_me(params, mode = "interactive", vis_hairs = True, png_name = None):
     if mode == "interactive":
         vp.plot_plant(ana, "subType")
     elif mode == "png":
-        actors, color_bar = vp.plot_plant(ana, "radius", render = False)
+        actors, color_bar = vp.plot_plant(ana, "age", render = False)
         tube_plot_actor = actors[0]
         actor = actors[1]
         ren = vp.render_window([tube_plot_actor, actor], "plot_plant", color_bar, tube_plot_actor.GetBounds(), True)
