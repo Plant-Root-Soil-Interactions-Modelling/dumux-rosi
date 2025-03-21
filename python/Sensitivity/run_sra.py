@@ -160,7 +160,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     else:
         pass
         # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
-    with open("results/" + exp_name + "_mods.json", "w+") as f:
+    with open("results/" + exp_name + "_" + str(enviro_type) + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
     r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
 

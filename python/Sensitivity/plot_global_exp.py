@@ -50,7 +50,7 @@ def distortion_plot(all, target_names):
     for i in range(0, 20):
         centers, dist = kmeans(data_, i + 1)
         dist_.append(dist)
-    plt.plot(range(0, 20), dist_)
+    plt.plot(range(1, 21), dist_)
     plt.ylabel("distortion")
     plt.xlabel("number of clusters")
     plt.show()
@@ -173,11 +173,14 @@ all = list(all.values())
 
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+
 print("\nfiltered data")
 target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 d = got.fetch_features(target_names, all)
 got.print_info(d, target_names)  # filtered
 print(d.shape)
+
+# distortion_plot(all, target_names)  # to determine m and n
 
 """ 3 cluster the targets """
 cluster_targets = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
@@ -199,7 +202,7 @@ for i in range(0, m_neurons * n_neurons):
 # # FREQUENCY MAP (not working?!)
 # plt.figure(figsize = (9, 9))
 # plt.title("Frequency map")
-# # frequencies = som.activation_response(got.fetch_features(target_names, all))
+# frequencies = som.activation_response(got.fetch_features(target_names, all))
 # T = np.zeros((m_neurons, n_neurons))
 # for i in range(0, m_neurons):
 #     for j in range(0, n_neurons):
@@ -234,54 +237,60 @@ for i in range(0, m_neurons * n_neurons):
 
 # exemplify(all, node2sample, m_neurons, n_neurons)
 # exemplify(all, node2sample, m_neurons, n_neurons, vis_hairs = True, N = 3)
-
 # exemplify_closest(all, node2sample, m_neurons, n_neurons, cluster_targets, vis_hairs = True)
-write_closest(all, node2sample, m_neurons, n_neurons, cluster_targets, vis_hairs = True)
+# write_closest(all, node2sample, m_neurons, n_neurons, cluster_targets, vis_hairs = True)
 
-""" 5 parameter space regarding nodes """
-pbounds = {
-    'src_a': (3, 11),
-    'src_delay_a': (3, 14),
-    'lmax145_a': (50, 150),
-    'ln145_a': (0.5, 10.),
-    'r145_a': (0.2, 7.),
-    'lmax2_a': (5., 50.),
-    'ln2_a': (0.5, 10.),
-    'r2_a': (0.2, 7.),
-    'lmax3_a': (5., 50.),
-    'r3_a': (0.2, 7.),
-    }
-
-param_names = pbounds.keys()
-data_params = got.fetch_features(param_names, all)
-print("\nAll parameter space", data_params.shape)
-got.print_info(data_params, param_names)
-print(data_params.shape)
-
+# """ 5 parameter space regarding nodes """
+# pbounds = {
+#     'src_a': (3, 11),
+#     'src_delay_a': (3, 14),
+#     'lmax145_a': (50, 150),
+#     'ln145_a': (0.5, 10.),
+#     'r145_a': (0.2, 7.),
+#     'lmax2_a': (5., 50.),
+#     'ln2_a': (0.5, 10.),
+#     'r2_a': (0.2, 7.),
+#     'lmax3_a': (5., 50.),
+#     'r3_a': (0.2, 7.),
+#     }
+#
+# param_names = pbounds.keys()
+# data_params = got.fetch_features(param_names, all)
+# print("\nAll parameter space", data_params.shape)
+# got.print_info(data_params, param_names)
+# print(data_params.shape)
+#
 """ 6 analyze single node """
+print("\nAnalyze (1,0)")
 node = (1, 0)  # (0,1), (1,1)
 ind = np.array(node2sample[node], dtype = np.int64)
-print("\nParameter space node", node, data_params[ind].shape)
-# print(ind)
-got.print_info(data_params[ind], param_names)
 
-# data_target = got.fetch_features(target_names, all)
-# print("\nTargets node", node, data_target[ind].shape)
-# got.print_info(data_target[ind], target_names)
+pareto = []
+for i in ind:
+    if all[i]["pareto"]:
+        pareto.append(all[i])
+print("Node", node, "has", len(pareto), "Pareto optimal solutions")
+with open("my_pick.txt", 'w', encoding = 'utf-8') as file:
+    for line in pareto:
+        file.write(line["exp_name"] + '\n')
 
-node_listdata = [all[i] for i in ind]
-distortion_plot(node_listdata, param_names)
-
-k = 10
-node_data = got.fetch_features(param_names, node_listdata)
-centers, dist = kmeans(node_data, k, rng = 1)
-node2sample, sample2node, node2sample_ = got.make_kmeans_maps(node_data, centers, k)
-
-for i in range(0, k):
-    ind = np.array(node2sample_[i], dtype = np.int64)
-    node_data_k = [node_listdata[i] for i in ind]
-    print("\nParameter space node", i, len(node_data_k), ind)
-    got.print_info(got.fetch_features(param_names, node_data_k), param_names)
-
-""" fin """
+# # data_target = got.fetch_features(target_names, all)
+# # print("\nTargets node", node, data_target[ind].shape)
+# # got.print_info(data_target[ind], target_names)
+#
+# node_listdata = [all[i] for i in ind]
+# distortion_plot(node_listdata, param_names)
+#
+# k = 10
+# node_data = got.fetch_features(param_names, node_listdata)
+# centers, dist = kmeans(node_data, k, rng = 1)
+# node2sample, sample2node, node2sample_ = got.make_kmeans_maps(node_data, centers, k)
+#
+# for i in range(0, k):
+#     ind = np.array(node2sample_[i], dtype = np.int64)
+#     node_data_k = [node_listdata[i] for i in ind]
+#     print("\nParameter space node", i, len(node_data_k), ind)
+#     got.print_info(got.fetch_features(param_names, node_data_k), param_names)
+#
+# """ fin """
 
