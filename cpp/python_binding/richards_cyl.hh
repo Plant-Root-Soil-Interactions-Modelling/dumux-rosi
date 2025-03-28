@@ -92,18 +92,19 @@ public:
 			
 			int c = 0; double t = 0.;
 			GlobalPosition ePos = e.geometry().center();
-				
-			double kc = this->problem->spatialParams().hydraulicConductivity(e); //  [m/s]
-			auto materialLaw_ = this->problem->materialLaw(e);
+			
+			//double kc = this->problem->spatialParams().hydraulicConductivity(e); //  [m/s]
+			//auto materialLaw_ = this->problem->materialLaw(e);
 			int h2OIdx = 0;
             for (const auto& scvf : scvfs(fvGeometry)) {
 				GlobalPosition pos = scvf.center();
 				if ( this->onUpperBoundary_(pos) || this->onLowerBoundary_(pos) ) {
 					c++;
 					double dz = std::fabs(ePos[this->dimWorld - 1] - pos[this->dimWorld - 1]); // m	
-					//auto& volVars = elemVolVars[scvf.insideScvIdx()];
-					double s =  elemVolVars[scvf.insideScvIdx()].saturation(h2OIdx);
-					double krw = materialLaw_.krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
+					auto& volVars = elemVolVars[scvf.insideScvIdx()];
+					double kc = volVars.permeability() * volVars.density(h2OIdx) * this->g_/volVars.viscosity(h2OIdx);
+					//double s =  volVars.saturation(h2OIdx);
+					double krw = volVars.relativePermeability();//	The relative permeability for the wetting phase [between 0 and 1]
 					
 					t += krw * kc/dz; // 1/s
 				}
@@ -225,6 +226,12 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
 
    .def("numComp",&RichardsFoam::numComp)
+   .def("getMobility", &RichardsFoam::getMobility)
+   .def("getConductivity",&RichardsFoam::getConductivity)   
+   .def("getViscosity", &RichardsFoam::getViscosity)
+   .def("getPressureHead", &RichardsFoam::getPressureHead)
+   .def("getPressure", &RichardsFoam::getPressure)
+   .def("getConductivity",&RichardsFoam::getConductivity)   
 
     .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
     .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 

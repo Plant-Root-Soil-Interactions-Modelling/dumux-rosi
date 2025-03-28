@@ -347,7 +347,10 @@ public:
      * \brief The dynamic liquid viscosity \f$\mathrm{[N/m^3*s]}\f$ of the pure component.
      */
     static Scalar viscosity(Scalar temperature, Scalar pressure)
-    {  return MainComponent::liquidViscosity(temperature, pressure); }
+    {  
+		//Scalar Cgravimetric = ThirdComponent::molarMass()*fluidState.moleFraction(phase0Idx, thirdCompIdx) / MainComponent::molarMass() ; // g/g
+		return MainComponent::liquidViscosity(temperature, pressure);// * (1+ Nu * Cgravimetric^d); 
+	}
 
     using Base<Scalar, ThisType>::viscosity;
     /*!

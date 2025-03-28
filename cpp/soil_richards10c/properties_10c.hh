@@ -51,7 +51,7 @@ template<class TypeTag>
 struct SpatialParams<TypeTag, TTag::RichardsNCTT> {
     using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
+    using type = RichardsParams10C<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>;
 };
 
 //// Set the physical problem to be solved

@@ -8,8 +8,6 @@ sys.path.append("../../../build-cmake/cpp/python_binding/");
 import numpy as np
 import pandas as pd
 import timeit
-import matplotlib
-import matplotlib.pyplot as plt
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()

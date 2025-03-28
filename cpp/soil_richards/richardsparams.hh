@@ -92,9 +92,80 @@ public:
         }
         layerIdx_ = getParam<int>("Soil.Grid.layerIdx", 1);
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
-
+		
+		mucilCAffectsW = getParam<bool>("Soil.mucilCAffectsW", mucilCAffectsW);
+		mucilCMolarMass = getParam<Scalar>("Soil.mucilCMolarMass", mucilCMolarMass); // only used if interactions hydraulic conductivity <=> [mucilage] implemented
+		idx_mucil = getParam<int>("Soil.idx_mucil", idx_mucil);
+		
         // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
     }
+
+    template<class ElementSolution>
+	Scalar SwPcMucilage_h(//const Element& element,
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const
+	{
+		Scalar omega0 = std::pow(10.,10.);
+		Scalar beta = 4.1;
+		Scalar cw = gravimetricMucilageConcentration(scv, elemSol);
+		return omega0 * std::pow(cw , beta); // cm
+	}
+	
+    template<class ElementSolution>
+	Scalar SwPcMucilage_pc(//const Element& element,
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const
+	{
+        Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
+		// m * [m / s^2] * [kg/m³] = kg/(m*s^2) = Pa
+		Scalar output;
+		if(mucilCAffectsW)
+		{
+			output = SwPcMucilage_h(scv, elemSol)/ 100. *(rho*g_); //Pa
+		}else{ output = 0.;
+		}
+		return output;
+	}
+    /*
+     * decreases the soil hydraulic conductivity caused by mucilage
+	 * from Landl (2021, doi:10.3389/fagro.2021.622367)
+     */
+    template<class ElementSolution>
+	Scalar relativePermeabilityMucilage(const Element& element,
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const {
+		Scalar d = 1.4;
+		Scalar Nu = 566;
+		Scalar cw = gravimetricMucilageConcentration(scv, elemSol); // g/g
+		return 1/(1+ Nu * std::pow(cw,d));
+	}
+
+    /*
+     * decreases the soil hydraulic conductivity caused by mucilage
+	 * from Landl (2021, doi:10.3389/fagro.2021.622367)
+     */
+    template<class ElementSolution>
+	Scalar viscosityMucilage(
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const {
+		Scalar d = 1.4;
+		Scalar Nu = 566;
+		Scalar cw = gravimetricMucilageConcentration(scv, elemSol); // g/g
+		return(1+ Nu * std::pow(cw,d));// 1/(1+ Nu * std::pow(cw,d));
+	}
+	
+    /*
+     * gravimetric mucilage concentration in water [g/g]
+     */
+    template<class ElementSolution>
+	Scalar gravimetricMucilageConcentration(
+                    const SubControlVolume& scv,
+                    const ElementSolution& elemSol) const {
+        const auto& priVars = elemSol[scv.localDofIndex()];
+		Scalar Cmolar = priVars[idx_mucil]; // molar concentration [mol mucil-C/mol water]
+		Scalar Cgravimetric = Cmolar / (Water::molarMass() * 1000) * mucilCMolarMass; // gravimetric concentration [mol mucil-C/mol water] * [mol water/g water] * [g mucil / mol mucil-C]
+		return Cgravimetric;
+	}
 
     /*!
      * \brief \copydoc GridGeometry::porosity
@@ -105,6 +176,7 @@ public:
                     const ElementSolution& elemSol) const {
         return phi_.at(index_(element));
     }
+	
 
     /*!
      * \brief \copydoc GridGeometry::porosity
@@ -242,8 +314,11 @@ private:
     std::vector<RegularizationParams> regularizationParams_;
     std::vector<PcKrSwCurve> materialLaw_;
 
-    static constexpr Scalar g_ = 9.81; // cm / s^2
+    static constexpr Scalar g_ = 9.81; // m / s^2
 
+	Scalar mucilCMolarMass = 30; // g mucil/ mol mucilage-C
+	bool mucilCAffectsW = false; // does the mucilage-C concentration affect the water flow?
+	int idx_mucil = 2;
 };
 
 } // end namespace Dumux

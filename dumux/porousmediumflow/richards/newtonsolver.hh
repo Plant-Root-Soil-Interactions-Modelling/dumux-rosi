@@ -66,15 +66,19 @@ private:
         // do not clamp anything after 5 iterations
         if (this->numSteps_ <= 4)
         {
+			auto& gridVariables = this->assembler().gridVariables();
+			auto elemVolVars = localView(gridVariables.curGridVolVars());
             // clamp saturation change to at most 20% per iteration
             const auto& gridGeometry = this->assembler().gridGeometry();
             auto fvGeometry = localView(gridGeometry);
             for (const auto& element : elements(gridGeometry.gridView()))
             {
                 fvGeometry.bindElement(element);
-
+				
+				
                 for (auto&& scv : scvs(fvGeometry))
                 {
+					const auto& volVars = elemVolVars[scv];
                     auto dofIdxGlobal = scv.dofIndex();
 
                     // calculate the old wetting phase saturation
@@ -86,8 +90,9 @@ private:
                     const Scalar pw = uLastIter[dofIdxGlobal][pressureIdx];
                     using std::max;
                     const Scalar pn = max(this->assembler().problem().nonwettingReferencePressure(), pw + pcMin);
+					//Scalar SwPcMucilage = volVars.getSwPcMucilage();
                     const Scalar pcOld = pn - pw;
-                    const Scalar SwOld = max(0.0, fluidMatrixInteraction.sw(pcOld));
+                    const Scalar SwOld = max(0.0, volVars.saturation(0));//fluidMatrixInteraction.sw(pcOld + SwPcMucilage));
 
                     // convert into minimum and maximum wetting phase pressures
                     const Scalar pwMin = pn - fluidMatrixInteraction.pc(SwOld - 0.2);

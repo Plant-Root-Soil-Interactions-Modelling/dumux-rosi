@@ -84,6 +84,7 @@ public:
 
         const auto fluidMatrixInteraction = problem.spatialParams().fluidMatrixInteraction(element, scv, elemSol);
         relativePermeabilityWetting_ = fluidMatrixInteraction.krw(fluidState_.saturation(0));
+		//relativePermeabilityMucilage_ = problem.spatialParams().relativePermeabilityMucilage(element, scv, elemSol, problem.mucilIdx);
 
         // precompute the minimum capillary pressure (entry pressure)
         // needed to make sure we don't compute unphysical capillary pressures and thus saturations
@@ -91,6 +92,7 @@ public:
         pn_ = problem.nonwettingReferencePressure();
         //porosity
         updateNCSolidstate(elemSol, problem, element, scv, solidState_, ParentType::numFluidComponents());
+		porosity_ = problem.spatialParams().porosity(element);
         EnergyVolVars::updateSolidEnergyParams(elemSol, problem, element, scv, solidState_);
         permeability_ = problem.spatialParams().permeability(element, scv, elemSol);
         EnergyVolVars::updateEffectiveThermalConductivity();
@@ -143,7 +145,10 @@ public:
         const auto& priVars = elemSol[scv.localDofIndex()];
 
         // set the wetting pressure
-        fluidState.setPressure(0, priVars[Indices::pressureIdx]);
+		Scalar SwPcMucilage = problem.spatialParams().SwPcMucilage_pc( scv, elemSol);
+		SwPcMucilage = std::min(SwPcMucilage, problem.nonwettingReferencePressure() - priVars[Indices::pressureIdx]);
+		setSwPcMucilage(SwPcMucilage);
+        fluidState.setPressure(0, priVars[Indices::pressureIdx] + SwPcMucilage);
 
         // compute the capillary pressure to compute the saturation
         // make sure that we the capillary pressure is not smaller than the minimum pc
@@ -151,7 +156,7 @@ public:
         using std::max;
         const Scalar pc = max(fluidMatrixInteraction.endPointPc(),
                               problem.nonwettingReferencePressure() - fluidState.pressure(0));
-        const Scalar sw = fluidMatrixInteraction.sw(pc);
+        const Scalar sw = fluidMatrixInteraction.sw(pc+ SwPcMucilage);// );
         fluidState.setSaturation(0, sw);
 
         // set the mole/mass fractions
@@ -183,11 +188,18 @@ public:
         paramCache.updateAll(fluidState);
         fluidState.setDensity(0, FluidSystem::density(fluidState, paramCache, 0));
         fluidState.setMolarDensity(0, FluidSystem::molarDensity(fluidState, paramCache, 0));
-        fluidState.setViscosity(0, FluidSystem::viscosity(fluidState, paramCache, 0));
+        fluidState.setViscosity(0, FluidSystem::viscosity(fluidState, paramCache, 0
+					) * problem.spatialParams().viscosityMucilage(scv, elemSol));
 
         // compute and set the enthalpy
         fluidState.setEnthalpy(0, EnergyVolVars::enthalpy(fluidState, paramCache, 0));
     }
+	
+	Scalar setSwPcMucilage(Scalar SwPcMucilage)
+	{return SwPcMucilage_ = SwPcMucilage;}
+	
+	Scalar getSwPcMucilage()
+	{return SwPcMucilage_;}
 
     /*!
      * \brief Returns the fluid configuration at the given primary
@@ -223,7 +235,8 @@ public:
      * total volume, i.e. \f[ \Phi := \frac{V_{pore}}{V_{pore} + V_{rock}} \f]
      */
     Scalar porosity() const
-    { return solidState_.porosity(); }
+    { return porosity_; //solidState_.porosity(); 
+	}
 
     /*!
      * \brief Returns the permeability within the control volume in \f$[m^2]\f$.
@@ -301,7 +314,7 @@ public:
      * \param phaseIdx The index of the fluid phase
      */
     Scalar relativePermeability(const int phaseIdx = 0) const
-    { return phaseIdx == 0 ? relativePermeabilityWetting_ : 1.0; }
+    { return phaseIdx == 0 ? relativePermeabilityWetting_ : 1.0; } // * relativePermeabilityMucilage_
 
     /*!
      * \brief Returns the effective capillary pressure \f$\mathrm{[Pa]}\f$ within the
@@ -465,10 +478,13 @@ private:
     DiffusionCoefficients effectiveDiffCoeff_;
 
     Scalar relativePermeabilityWetting_; // the relative permeability of the wetting phase
+	//Scalar relativePermeabilityMucilage_; //the relative permeability of the mucilage
     SolidState solidState_;
     PermeabilityType permeability_; // the intrinsic permeability
     Scalar pn_; // the reference nonwetting pressure
     Scalar minPc_; // the minimum capillary pressure (entry pressure)
+	Scalar porosity_;
+	Scalar SwPcMucilage_; // effect of mucilage on pressure head
 };
 
 } // end namespace Dumux
