@@ -26,6 +26,7 @@ def timeout_handler(signum, frame):
 # Set the timeout handler
 signal.signal(signal.SIGALRM, timeout_handler)
 
+R_ph = 83.143 #perfect gas constant, hPa cm3K−1mmol−1
 
 def check_os():
     if os.name == 'nt':
@@ -242,7 +243,7 @@ def sinusoidal3(t, dt):
 
 def getPsiAir(RH, TairC):#constants are within photosynthesys.h
     Mh2o = 18 #molar weight, g mol-1, mg mmol-1
-    R_ph = 83.143 #perfect gas constant, hPa cm3K−1mmol−1
+    
     rho_h2o = 1000 #water density mg cm-3
     return np.log(RH) * rho_h2o * R_ph * (TairC + 237.3)/Mh2o * (1/0.9806806)  ; #in cm
  
@@ -416,4 +417,12 @@ def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
             
             plantModel.An = plantModel.AnCumul_inner/(dt*24*3600)
         
-        
+
+def theta2H(vg,theta):#(-) to cm
+    thetar =vg[0]# 0.059
+    thetas = vg[1]#0.445
+    alpha = vg[2]#0.00644
+    n = vg[3]#1.503
+    nrev = 1/(1-1/n)
+    H =-(((( (thetas - thetar)/(theta - thetar))**nrev) - 1)**(1/n))/alpha
+    return(H)       

@@ -9,7 +9,7 @@ from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank 
 import timeit
 import numpy as np
 
-path = "../inputDataTillage/"
+path = "../inputDataInari/"
 sys.path.append(path);
 sys.path.append("../modules/");
 
@@ -21,40 +21,43 @@ import vtk_plot_adapted as vp
 import scenario_setup
 import rhizo_modelsPlant  # Helper class for cylindrical rhizosphere models
 from rhizo_modelsPlant import *
-import cyl3plant as cyl3
+
+
+doNestedFixedPointIter = False
+import nestedFixedPointIter as fixedPointIter
+
 import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f, suggestNumStepsChange
 from helpfull import continueLoop
 import weatherFunctions 
 from PhloemPhotosynthesis import *
 import printData
+import FPItHelper
 
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData):
-
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
-    # file
-    dx = 0.2 # todo implement
-    dxMin = 0.25
+def XcGrowth(initsim, simMax):     
+    paramIndx_ = 0 # not used
+    xml_name = "Triticum_aestivum_test_2021_1cm.xml" #"wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init = 1/60/24 # dt
+    dt_inner_init = 20/60/24 # inner time step
+    dt_inner2_init =  dt # in case of nested time iteration loop (turned off for now)
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
-    k_iter_2initVal = 131 # max num of iteration for loops
     k_iter = 100 # max num of iteration for loops
     targetIter= 90# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = False # only water (False) or with solutes (True)
+    doBioChemicalReaction = False # do microbial reactions and other soil biochemistry
+    doSoluteUptake = False # active uptake?
     noAds = True # stop adsorption?
     doPhloemFlow = False
-    doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
+    doPhotosynthesis = True # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
     # at the beginning of the time step. Otherwise does not converge
     do1d1dFlow = False
-    beforeAtNight = False #True  
     # static or growing organism
     static_plant = False
     # print debug messages in cyl3plant faile
@@ -63,37 +66,27 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     mpiVerboseInner = False
     # how many files are printed. use 'False' in debug mode
     # ATT: for short ismulations only
-    doMinimumPrint =  False
+    doMinimumPrint =  True
     # use moles (mol) and not mass (g) in dumux
     usemoles = True
     
-    rsiCompMethod =4# 0.5 = mixed, 0 = init, 1 = end, -1: use mean of the last 2 iterations
-    # 2 : last two mean method
-    # 3 : mean(oldmean, lastval)
-    # 4 : mean(allvals)
-    # 5: mean + weighing factor to see where min(abs(, for each seg, not just the whole setinput - real). f
-    # for eahc seg, not just the whole set
-    # 6: keep min obtained ksoil
-    # 7 : get mean/integrated krsoil from dumux. likewise, use mean/integrated psi gotten in dumux.
-    # or run plant model
-    # 8 call cpb 
+    rsiCompMethod = 0
+    # 0 : mean(allvals) after 4 iteration
+    # 1: use steady rate
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
-    # TODO: make weather dependent?
-    maxTranspiration = 12#6. # cm3/day, used if not doPhotosynthesis 
-    maxTranspirationAge = 8. # day, age at which trans = maxTRans
+    # TODO: make weather dependent for RS
+    maxTranspiration = 12 # cm3/day, used if not doPhotosynthesis 
+    maxTranspirationAge = 25. # day, age at which trans = maxTRans
+    # dynamic soil for the whole simulation and 'wet' climatic conditions
+    spellData = {'scenario':"none",'spellStart':0,'spellEnd':np.inf, 'condition':"wet"}
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
-    # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/ylim/"+str(rsiCompMethod*10)+str(spellData['scenario'])
-                 +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
-                    +"_"+str(int(initsim))+"to"+str(int(simMax))
-                    +"_"+str(int(dt_inner_init*24*60))+"mn_"
-                    +str(int((dt_inner_init*24*60 - int(dt_inner_init*24*60))*60))+"s_"
-                    +str(max_rank)+"/")
+    # directory where the results will be printed 
+    results_dir=("./results/INARI/")
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -109,6 +102,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                p_mean_ = weatherInit['p_mean'], 
                                         paramIndx=paramIndx_,
                                         noAds = noAds, doSoluteFlow = doSoluteFlow,
+                                         doBioChemicalReaction = doBioChemicalReaction,
                                         MaxRelativeShift = MaxRelativeShift)
 
     
@@ -117,7 +111,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_plant(initsim, s, xml_name,
                                             path, 
-                                            doPhloemFlow = doPhloemFlow,
+                                            doPhloemFlow = doPhloemFlow,doPhotosynthesis=doPhotosynthesis,
                                             static_plant = static_plant,
                                             usemoles = usemoles,
                                             limErr1d3d = 5e-12, spellData = spellData)  
@@ -126,19 +120,22 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
     
+    perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
+    perirhizalModel.doBioChemicalReaction = doBioChemicalReaction  
+    perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
-    perirhizalModel.k_iter_2initVal = k_iter_2initVal
+    #perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
     perirhizalModel.doPhloemFlow = doPhloemFlow
     perirhizalModel.doSoluteFlow = doSoluteFlow
     perirhizalModel.doMinimumPrint = doMinimumPrint
-    perirhizalModel.dt_inner = dt_inner_init#float(dt) # [d]
+    perirhizalModel.dt_inner = dt_inner_init  # for outer fixed point iteration [d]
+    perirhizalModel.dt_inner2 = dt_inner2_init # for inner fixed point iteration [d]
     perirhizalModel.minIter=minIter
     perirhizalModel.k_iter=k_iter
     perirhizalModel.targetIter=targetIter
-    perirhizalModel.beforeAtNight = beforeAtNight
     rs_age = initsim # age before implementation of the funcional modules
     s.mpiVerbose = mpiVerbose
     s.mpiVerboseInner = mpiVerboseInner
@@ -147,7 +144,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     perirhizalModel.results_dir = results_dir
     
     # used to define dry spells
-    perirhizalModel.spellData = spellData
+    perirhizalModel.spellData = spellData 
     perirhizalModel.enteredSpell = (perirhizalModel.spellData['scenario'] == 'none') or (perirhizalModel.spellData['scenario'] == 'baseline')
     perirhizalModel.leftSpell = (perirhizalModel.spellData['scenario'] == 'baseline')
     
@@ -183,19 +180,22 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         
         if (rank == 0) and (not static_plant) :
             
-            seg2cell_old = perirhizalModel.seg2cell
-            perirhizalModel.simulate(dt, verbose = False)
-            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel)
+            seg2cell_old = perirhizalModel.ms.seg2cell
+            perirhizalModel.ms.simulate(dt, verbose = False)
+            helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
             
                 
         if (rank == 0):
             # print plant shape data for post-processing
-            printData.printPlantShape(perirhizalModel,plantModel)
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             
 
         perirhizalModel.update() # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
+            #fpit_Helper
+            FPItHelper.storeNewMassData1d(perirhizalModel)
+            FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False
@@ -208,11 +208,11 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             phloemData.Q_Exud_cumul += sum(phloemData.Q_Exud_i_seg); 
             phloemData.Q_Mucil_cumul += sum(phloemData.Q_Mucil_i_seg)
 
-        perirhizalModel.n_iter, failedLoop, keepGoing = helpfull.resetAndSaveData1(perirhizalModel)
+        perirhizalModel.n_iter, keepGoing = helpfull.resetAndSaveData(perirhizalModel)
         
-        while keepGoing or failedLoop:
+        while keepGoing:
             
-            helpfull.resetAndSaveData2(plantModel, perirhizalModel, s)
+            helpfull.saveData(plantModel, perirhizalModel, s)
             
             if perirhizalModel.doPhloemFlow:
                 Q_plant_=[phloemData.Q_Exud_i_seg, 
@@ -220,7 +220,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             else:
                 Q_plant_=[[],[]]
             
-            net_sol_flux, net_flux, seg_Wfluxes, real_dtinner,failedLoop, n_iter_inner_max = cyl3.simulate_const(s, 
+            net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
                                                     plantModel, 
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
                                                     rs_age=rs_age, 
@@ -231,47 +231,38 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
             
-            keepGoing = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=perirhizalModel.n_iter, 
-                                     dt_inner=perirhizalModel.dt_inner,
-                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="Outer_data",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
+            keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
             perirhizalModel.n_iter += 1
             
             # we leave the loop either becuse dumux threw an error or because
             # we reached dt
             try:
-                assert (abs(real_dtinner - dt) < perirhizalModel.dt_inner ) or failedLoop                
+                assert (abs(real_dt - dt) < perirhizalModel.dt_inner ) or failedLoop
             except:
-                print('real_dtinner',real_dtinner ,dt, perirhizalModel.dt_inner , failedLoop)
-                write_file_array("real_dtinner_error", np.array([real_dtinner ,dt,
-                                                                 perirhizalModel.dt_inner , failedLoop,abs((real_dtinner - dt)/dt*100.),rs_age]), 
+                print('real_dt',real_dt ,dt, perirhizalModel.dt_inner , failedLoop)
+                write_file_array("real_dt_error", np.array([real_dt ,dt,
+                                                                 perirhizalModel.dt_inner , failedLoop,abs((real_dt - dt)/dt*100.),rs_age]),
                                  directory_ =results_dir, fileType = '.csv') 
                 raise Exception
                 
                 
-            perirhizalModel.dt_inner = suggestNumStepsChange(dt,  failedLoop, perirhizalModel, n_iter_inner_max)
+            perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, 
+                                                             failedLoop, perirhizalModel, n_iter_inner_max)
             
-            if keepGoing or failedLoop:
+            if keepGoing:
                 
                 if rank==0:
                     print("error too high, decrease dt to",perirhizalModel.dt_inner)
                 # reset data to the beginning of the iteration loops
                 
-                helpfull.resetAndSaveData3(plantModel, perirhizalModel, s)
+                helpfull.resetData(plantModel, perirhizalModel, s)
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
         
-        keepGoing_ = continueLoop(perirhizalModel=perirhizalModel,s=s,n_iter=0, 
-                                     dt_inner=perirhizalModel.dt_inner,
-                                     failedLoop=failedLoop,real_dtinner=real_dtinner,name="TestOuter_data",
-                                     isInner = False,doPrint = True, 
-                         fileType = '.csv' ,
-                             plant = plantModel)
-        if keepGoing_:
-            print("None convergence error: only left the loop because reached the max number of iteration.")
+        
+        if failedLoop:
+            print("convergence error: only left the loop because reached the max number of iteration.")
             raise Exception  
         
         printData.printTimeAndError(perirhizalModel, rs_age)
@@ -334,19 +325,15 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     
     
-    print("finished simulation :D", rank,"(parting is such sweet sorrow)")
-    # for some reason, we get an error when the program stops
+    print("finished simulation", rank)
+    # for some reason, we get an error on agrocluster when the program stops
     # memory leak?
     return results_dir
 
         
 
-if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the solving object.
-    # python3 XcGrowth.py 9 10 0 customDry 9.02 0.02
-    # python3 XcGrowth.py 9 10 20 lateDry
-    # python3 XcGrowth.py 12 25 98 baseline
-    # python3 XcGrowth.py 9 10 0 none 
-    
+if __name__ == '__main__': 
+    # python3 mainInari.py 9 10 
     if rank == 0:
         print('sys.argv',sys.argv)
         
@@ -355,54 +342,17 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
     simMax = initsim + 3.
     if len(sys.argv)>2:
         simMax = float(sys.argv[2])
-    paramIndx_base = 0
-    if len(sys.argv)>3:
-        paramIndx_base = int(sys.argv[3])
         
     
     doProfile = False
     
-    scenario = "none"
-    if len(sys.argv)>4:
-        scenario = sys.argv[4]
-    
-    if scenario == "none":
-        spellStart = 0 #not used
-        condition = "wet"
-        spellDuration =  np.Inf
-    elif scenario == "baseline":
-        spellStart = np.Inf
-        condition = "wet"
-        spellDuration =   7
-    elif scenario == "earlyDry":
-        spellStart = 11 
-        condition = "dry"
-        spellDuration =   7
-    elif scenario == "lateDry":
-        spellStart = 18
-        condition = "dry"
-        spellDuration =   7
-    elif scenario == "customDry":
-        spellStart = float(sys.argv[5])
-        condition = "dry"
-        spellDuration =   float(sys.argv[6])
-    elif scenario == "customWet":
-        spellStart = float(sys.argv[5])
-        condition = "wet"
-        spellDuration =   float(sys.argv[6])
-    else :
-        print("scenario", scenario,"not recognised")
-        raise Exception
-        
-    spellEnd = spellStart + spellDuration
-    spellData = {'scenario':scenario,'spellStart':spellStart,'spellEnd':spellEnd, 'condition':condition}
     
     if doProfile:
         import cProfile
         import pstats, io
         pr = cProfile.Profile()
         pr.enable()
-    results_dir = XcGrowth(initsim, simMax,paramIndx_base,spellData )
+    results_dir = XcGrowth(initsim, simMax )
     if doProfile:
         pr.disable()
         filename = results_dir+'profile'+str(rank)+'.prof' 

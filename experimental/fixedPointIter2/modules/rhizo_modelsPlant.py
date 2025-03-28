@@ -62,9 +62,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
         self.debugMode = False
+
         self.eps = 1e-14 # allow for small errors (limit of accuracy) 
         self.diff1d3dCurrant_rel_lim = 0.01
         self.maxdiff1d3dCurrant_rel_lim = 0.01
+
         
         
         # constants
@@ -115,8 +117,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.nsAirOld = 0 # total number of 1d air segs at the last time step
         self.toAddAir = np.array([]) # number of 1d air segs  to add for each threads
         self.repartitionAirOld = np.array([0 for i in range( max_rank)])  # old division of the 1d air models between the threads
-        self.cellIdleftover = np.array([]) # ids of cels with cyl that have decreased (for
-        # the leftover functions)
+        self.cellIdleftover = np.array([]) # ids of cels with cyl that have decreased (for the leftover functions)
+        self.finishedUpdate = True
         
         # error rates and fails
         self.limErr1d3dAbs = limErr1d3dAbs
@@ -1059,8 +1061,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                           )  and (cellId in self.cellIdleftover)) and (not shapeOnly)
 
 
-            #changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
-            #                              ) and (cellId not in self.cellIdleftover))
             changeShape = (shapeOnly and ( # only update if shape changes but no total solutes or water concentration change needed
                                     ((deltaVol != 0.) and (cellId not in self.cellIdleftover)) # volume changed but it does not receive/loose solutes/water (so no total concentration change)
                                     or (self.changedLen(cyl) and (deltaVol == 0.)) # length changed but not the volume (so no total concentration change)
@@ -1208,7 +1208,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                                             x = newHead,# cm
                                                             cAll = molFrNew, # mol/mol water or mol/mol scv
                                                             Cells = centersNew) # cm
-                                                            
+            
                 
                 
             

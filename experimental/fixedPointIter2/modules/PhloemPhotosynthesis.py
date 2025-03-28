@@ -8,6 +8,7 @@ import sys;
 import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
+import helpfull
 from helpfull import write_file_array, write_file_float, div0, div0f
 from functional.xylem_flux import sinusoidal2
 
@@ -256,7 +257,7 @@ def computePhotosynthesis(plantModel, perirhizalModel,fpit_Helper, rs_age_i_dt, 
 
 def resistance2conductance(resistance,r, weatherX):
     resistance = resistance* (1/100) #[s/m] * [m/cm] = [s/cm]
-    resistance = resistance * r.R_ph * weatherX["TairK"] / r.Patm # [s/cm] * [K] * [hPa cm3 K−1 mmol−1] * [hPa] = [s] * [cm2 mmol−1]
+    resistance = resistance * helpfull.R_ph * weatherX["TairK"] / r.Patm # [s/cm] * [K] * [hPa cm3 K−1 mmol−1] * [hPa] = [s] * [cm2 mmol−1]
     resistance = resistance * (1000) * (1/10000)# [s cm2 mmol−1] * [mmol/mol] * [m2/cm2] = [s m2 mol−1]
     return 1/resistance
 
@@ -354,7 +355,7 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
             #soilK[np.where(seg_fluxes< 0. ) ] = soilKIn[np.where(seg_fluxes < 0. ) ]
 
         if len(perirhizalModel.airSegs) > 0:   # infinit resistance for shoot segments and roots aboveground
-            fpit_Helper.soilK[perirhizalModel.airSegs] = np.Inf
+            fpit_Helper.soilK[perirhizalModel.airSegs] = np.inf
 
 
 

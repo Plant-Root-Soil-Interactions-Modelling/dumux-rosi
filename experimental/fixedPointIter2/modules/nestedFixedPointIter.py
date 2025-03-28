@@ -259,9 +259,13 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                                            hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
                                            spellData= perirhizalModel.spellData)
         if rank==0:
-            # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
-            # , transpiration: {transpiration:.2e} cm3/d
-            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
+            
+            
+            if perirhizalModel.doPhotosynthesis:
+                print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e}")
+            else:
+                transpiration = plantModel.maxTranspiration *  min(rs_age_i_dt/plantModel.maxTranspirationAge,1.)  *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+                print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, transpiration: {transpiration:.2e} cm3/d")
         
         
         
