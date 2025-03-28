@@ -45,7 +45,7 @@ def initialPrint(plant):
     write_file_array("inner_error", columnNames, directory_ =plant.results_dir, fileType = '.csv')
     
         
-def printPlantShape(rs,r, results_dir):
+def printPlantShape(rs,r, results_dir,dt):
     """ store plant shape data after doing growth simulation"""
     write_file_array('seg2cell_keys',rs.seg2cell,directory_ =results_dir, 
                              fileType = '.csv')
@@ -80,7 +80,10 @@ def printPlantShape(rs,r, results_dir):
     write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
     write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
     volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
-    write_file_array("volOrg", volOrg, directory_ =results_dir)
+    write_file_array("volOrg", volOrg, directory_ =results_dir) 
+    # export a RSML
+    #r.rs.write(results_dir + "plant" + str(int(dt*100)) + ".rsml")
+    write_file_array("segments_nodeX",np.array([tempsegs[0] for tempsegs in r.get_segments()]), directory_ =results_dir) 
     
 def printDiff1d3d(perirhizalModel, s):
     """print differences between 1d and 3d soil models"""
@@ -337,17 +340,17 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
         
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):
+                # mol/cm3 = mol/mol * mol/m3 * cm3/m3
                 extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6
 
                 if not getConcentration:
                     extraArrayName_ = "C"+str(i)+" mol"
+                    if i <= perirhizalModel.numDissolvedSoluteComp:
+                        extraArray_ *= (perirhizalModel.soilModel.getWaterContent() *cell_volumes) #cm3 water
+                    else: 
+                        extraArray_ *= cell_volumes #cm3
                 else:
                     extraArrayName_ = "[C"+str(i)+"] (mol/cm3)"
-                    if i <= perirhizalModel.numDissolvedSoluteComp:
-                        extraArray_ /= (perirhizalModel.soilModel.getWaterContent() *cell_volumes) #cm3 water
-                    else: 
-                        extraArray_ /= cell_volumes #cm3
-
 
                 vp.plot_roots_and_soil(perirhizalModel.ms.mappedSegments(),
                                        extraArrayName_ ,

@@ -408,6 +408,7 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
+		sourceSlope_ = getParam<double>("Soil.SourceSlope", -1.); // cm, negative value disables regularisation
 		
 		double m3_2_cm3 = 1e6;// cm3/m3
 		 v_maxL = getParam<double>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
@@ -992,7 +993,16 @@ public:
 		double unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
 		for(int i_s = 0; i_s < bcSBotType_.size(); i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
 		{
+        
 			int i = i_s + 1;//int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
+            
+		if(verbose>1)
+		{
+			std::cout << "neumann_solutes() ";
+			std::cout<<i_s <<" "<<i<<" "<<bcSBotType_.size()<<" "<<(i_s < bcSBotType_.size());
+            std::cout<<" bc? "<<onUpperBoundary_(pos)<<" "<<onLowerBoundary_(pos)<<" ";
+            std::cout<<" type "<<bcSTopType_.at(i_s)<<" "<<bcSTopValue_.at(i_s)<<std::endl;
+		}
 			Scalar massOrMolFraction = useMoles? volVars.moleFraction(0, i) : volVars.massFraction(0, i);
 			if (onUpperBoundary_(pos)) { // top bc Solute
 				//std::cout<<"neumann solute, upper BC "<<bcSTopType_.at(i_s)<<" ";
@@ -1061,6 +1071,11 @@ public:
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
 					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+						if (verbose)
+						{
+							std::cout<<"onUpperBoundary_michaelisMenten, vMax_: "<<vMax_<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km_ "<<km_<<" pos0 "<<pos0<<std::endl;
+						}
 					break;
 				}
 				default:
@@ -1125,6 +1140,11 @@ public:
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
 					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+						if (verbose)
+						{
+							std::cout<<"onLowerBoundary_michaelisMenten, vMax_: "<<vMax_<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km_ "<<km_<<" pos0 "<<pos0<<std::endl;
+						}
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -1170,8 +1190,23 @@ public:
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-            
 				source[i] = source_[i]->at(eIdx)/svc_volume * pos0;// [ mol / (m^3 \cdot s)]
+                if(i == h2OIdx)
+                {
+                
+                    if (sourceSlope_>=0.) {
+                        Scalar s = elemVolVars[scv].saturation();
+                        Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
+                        Scalar h = -toHead_(p); // cm
+                        if (h<criticalPressure_) {
+                            source[i] = 0.;
+                        } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
+                            double ratio = (h - criticalPressure_)/sourceSlope_;
+                            // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
+                            source[i] = ratio * source_[i]->at(eIdx)/svc_volume * pos0;
+                        } 
+                    }
+                }
 				if(dobioChemicalReaction&&(i> h2OIdx)&&(source[i]> 0)&&reactionExclusive)
 				{//if we have a reaction in the cell via source and source-biochemreaction mutually exclusive, 
 					//biochem is disabled
@@ -1213,7 +1248,7 @@ public:
 		
 		setSource(source/pos0, dofIndex);// [ mol / (m^3 \cdot s)]
 	
-		if(verbose)
+		if(verbose>1)
 		{
 			std::cout << "source() ";
 			for(int i = 0;i < numComponents_;i++)
@@ -1725,6 +1760,7 @@ private:
 	double alpha_ = 0.1; //[d-1]
     double kads_ = 23265;//[cm3/mol/d] or [1/d]
     double kdes_=4;//[d-1]
+	Scalar sourceSlope_ = -1.; // slope for regularization, negative values disables regularisation
 	
 	// active root solute uptake
 	Scalar vMax_; // Michaelis Menten Parameter [mol m-2 s-1]

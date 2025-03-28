@@ -10,7 +10,6 @@ from air_modelsPlant import AirSegment
 import visualisation.vtk_plot as vtk
 import plantbox as pb
 #import evapotranspiration as evap
-import timeit
 import visualisation.vtk_plot as vp
 import functional.van_genuchten as vg
 from decimal import *
@@ -88,8 +87,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             plantModel.time_start_rhizo = timeit.default_timer()
 
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("\t\tsolve all 1d soils ")
+            if rank == 0:
+                    print("solve all 1d soils ")
                     
             perirhizalModel.solve(dt, 
                                   fpit_Helper.seg_fluxes , # inner BC water
@@ -102,8 +101,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                                   # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
-                    print("\t\tsolve all 1d soils finished")
+            if rank == 0:
+                    print("solve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
             
@@ -288,6 +287,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
         # looping 1
         keepGoing = True
+        seeWherestuck = False
         while keepGoing:
 
             # looping 2
@@ -397,9 +397,13 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             
             FPItHelper.storeNewMassData3d(s,perirhizalModel)
-            
+
+            if seeWherestuck and rank==0:
+                print("check1d3dDiff")
             perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
-            
+
+            if seeWherestuck and rank==0:
+                print("check1d3dDiff finished")
             
             
 
@@ -409,9 +413,19 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source
-            bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
-            
+            if seeWherestuck and rank==0:
+                print("getFlux_10cgetSource_10cA")
+                start = timeit.default_timer()
+            outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source           
+            if seeWherestuck and rank==0: 
+                end = timeit.default_timer()
+                print("getFlux_10cgetSource_10cA finished",end - start)
+                start = timeit.default_timer()
+            bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source            
+            if seeWherestuck and rank==0: 
+                end = timeit.default_timer()
+                print("getFlux_10cgetSource_10cB finished",end - start)
+                
             if rank == 0:
                 fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
                 fpit_Helper.sources_wat_from3d =  bulkSoil_sources[0]# cm3
@@ -423,8 +437,12 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             ##
             # 3.6 mass or content balance error 3d 
             ##
+            if seeWherestuck and rank==0:
+                print("massBalanceError3d")
             fpit_Helper.massBalanceError3d(dt)
                     
+            if seeWherestuck and rank==0:
+                print("massBalanceError3d finished")
             
             
             
@@ -432,8 +450,12 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             #perirhizalModel.check1d3dDiff() # just to get error value, will not throw an error
             
+            if seeWherestuck and rank==0:
+                print("computeConvergence")
             fpit_Helper.computeConvergence() # evaluate convergence and get other error metrics
             
+            if seeWherestuck and rank==0:
+                print("computeConvergence finished")
             # print extra data for troubleshooting
             # TODO: finish adapting the name of the objects to print
             printData.printFPitData(perirhizalModel, s, plantModel, fpit_Helper, rs_age_i_dt)

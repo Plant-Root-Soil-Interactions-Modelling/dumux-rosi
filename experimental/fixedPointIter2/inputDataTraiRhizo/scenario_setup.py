@@ -364,6 +364,19 @@ def create_soil_model( usemoles, results_dir ,
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =s.results_dir) # cm3 
     write_file_array("cellIds", np.array(s.cellIndices), directory_ =s.results_dir) # cm3
     
+    cellcenters = s.getCellCenters()
+    cellcentersX = []
+    cellcentersY = []
+    cellcentersZ = []
+    for sub_array in cellcenters:
+        cellcentersX.append(sub_array[0])
+        cellcentersY.append(sub_array[1])
+        cellcentersZ.append(sub_array[2])
+
+    write_file_array("cellcentersX", np.array(cellcentersX), directory_ =results_dir) # cm3
+    write_file_array("cellcentersY", np.array(cellcentersY), directory_ =results_dir) # cm3
+    write_file_array("cellcentersZ", np.array(cellcentersZ), directory_ =results_dir) # cm3
+    
     return s
     
 

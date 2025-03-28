@@ -51,7 +51,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
-    k_iter_2initVal = 131 # max num of iteration for loops
+    #k_iter_2initVal = 131 # max num of iteration for loops
     k_iter = 100 # max num of iteration for loops
     targetIter= 40# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
@@ -80,7 +80,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     rsiCompMethod = 0
     # 0 : mean(allvals) after 4 iteration
-    # 1: use steady rate
+    # 1: use steady rate/lookup tables (todo: implement)
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
@@ -92,7 +92,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     weatherInit = weatherFunctions.weather(1.,dt, spellData)
        
     # directory where the results will be printed
-    results_dir="./results/TraiRhizo/paperSc/NewSetup/1cm"+str(rsiCompMethod)+str(spellData['scenario'])\
+    #results_dir="./results/testVTP/"
+    #results_dir="./results/TraiRhizo/paperSc/NewSetup/soilshape"+str(int(np.prod(soilTextureAndShape['cell_number'])))+"/"
+    results_dir="./results/TraiRhizo/paperSc/speedUp/s"+str(spellData['scenario'])\
     +"_"+str(int(np.prod(soilTextureAndShape['cell_number'])))\
                     +"_"+str(paramIndx_)\
                     +"_"+str(int(initsim))+"to"+str(int(simMax))\
@@ -120,7 +122,6 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
 
     
 
-
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_plant(initsim, s, xml_name,
                                             path, 
@@ -140,7 +141,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     
     perirhizalModel.do1d1dFlow = do1d1dFlow
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
-    perirhizalModel.k_iter_2initVal = k_iter_2initVal
+    #perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
     perirhizalModel.doPhloemFlow = doPhloemFlow
@@ -187,7 +188,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                             datas=[], datasName=[],initPrint=True)
     
     
-    while rs_age < simMax:
+    while rs_age <= simMax:
 
         rs_age += dt
         
@@ -203,7 +204,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                 
         if (rank == 0):
             # print plant shape data for post-processing
-            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
+            printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir,rs_age)
             
 
         perirhizalModel.update()#fpit_Helper) # update shape data in the rhizosphere model
@@ -214,10 +215,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
-            start = False
-        # print differences between 1d and 3d soil models
-        # and content in 1d and 3d
-        printData.printDiff1d3d(perirhizalModel, s)             
+            start = False  
 
         if perirhizalModel.doPhloemFlow:
             # go from current to cumulative exudation and mucilage release
@@ -289,6 +287,10 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
         printData.printCylData(perirhizalModel,rs_age )
         
                     
+        # print differences between 1d and 3d soil models
+        # and content in 1d and 3d
+        printData.printDiff1d3d(perirhizalModel, s)           
+        
         plantModel.time_start_plant = timeit.default_timer()
         if ((not static_plant) or (rs_age == initsim+dt)) and doPhloemFlow:
             phloemData.computePhloemFlow(rs_age, dt)        
@@ -307,6 +309,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
                          plantModel.psiXyl, 
                          phloemData.C_ST, phloemData.C_S_ST, 
                          phloemData.C_meso, phloemData.C_S_meso, 
+                         phloemData.Q_Exud, phloemData.Q_Mucil, 
+                         phloemData.Q_Gr, phloemData.Q_Rm, 
                          phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
                          phloemData.Q_Gr_i,phloemData.Q_Rm_i
                         ]

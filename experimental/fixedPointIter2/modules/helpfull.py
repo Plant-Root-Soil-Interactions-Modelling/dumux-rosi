@@ -66,6 +66,8 @@ def run_with_timeout(timeout, func, *args, **kwargs):
     signal.alarm(int(timeout))
     try:
         result = func(*args, **kwargs)
+    except Exception as e:
+        raise e # halpe passe the error ?
     finally:
         # Disable the alarm
         signal.alarm(0)
@@ -196,21 +198,23 @@ def write_file_float(name, data, directory_, allranks = False):
         if  False:#'fpit' in name:
             modeOp = 'w'
         with open(name2, modeOp) as log:
-            log.write(repr( data)  +'\n')
+            #log.write(repr( data)  +'\n')
+            np.savetxt(log, [data], delimiter=',')
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt',
                      allranks = False ):
     if (rank == 0) or allranks:
         try:
-
-            np.array(data).reshape(-1)
-            modeOp = 'a'
-            if False:#'fpit' in name:
-                modeOp = 'w'
-            name2 = directory_+ name+ fileType
+            data = np.array(data, dtype=str).ravel()  # .reshape(-1)
+            #modeOp = 'a'
+            #if False:#'fpit' in name:
+            #    modeOp = 'w'
+            file_path = directory_+ name+ fileType
             #print('write_file_array',name2)
-            with open(name2, modeOp) as log:
-                log.write(space.join([num for num in map(str, data)])  +'\n')
+            with open(file_path, "a") as log:
+                #log.write(space.join(map(str, data)) + "\n")  # No need for list comprehension
+                np.savetxt(log, [data], delimiter=space, fmt="%s")
+
         except:
             print('write_file_array',name, data,data.shape)
             raise Exception
@@ -268,8 +272,8 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
         if FPIT_id ==2:
             cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or
                    perirhizalModel.solve_gave_up or failedLoop
-                    or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
-                    or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
+                    or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>perirhizalModel.diff1d3dCurrant_rel_lim)#0.01)
+                    or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>perirhizalModel.maxdiff1d3dCurrant_rel_lim)#0.01)
                     or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)
                     or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
         else:

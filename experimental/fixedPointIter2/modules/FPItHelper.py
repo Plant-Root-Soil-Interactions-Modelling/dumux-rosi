@@ -590,9 +590,9 @@ class fixedPointIterationHelper():
                     SSL = np.maximum(SSL, -maxPotentialAvailable/dt)
                     
                     # how much of the uptake do we need to redistribute?
-                    toAdd= np.maximum(0., -(maxPotentialAvailable/dt + SSL))
+                    #toAdd= np.maximum(0., -(maxPotentialAvailable/dt + SSL))
                     # redistribute what is missing to 1d segments who have maxPotentialAvailable remaining
-                    SSL[np.where(toAdd>0.)] += toAdd[np.where(toAdd>0.)] 
+                    #SSL[np.where(toAdd>0.)] += toAdd[np.where(toAdd>0.)] 
                     
                     # do loop until all the sink has been redistributed
                     k_limit_source3d = 0
@@ -626,20 +626,23 @@ class fixedPointIterationHelper():
         SSL = comm.bcast(SSL, root=0)
         
         # convert array to dictionnary
-        test_values = list(SSL)
-        test_keys = np.array([i for i in range(len(test_values))])
-        res = {}
-        for key in test_keys:
-            for value in test_values:
-                res[key] = value
-                test_values.remove(value)
-                break                        
+        res = {i: SSL[i] for i in range(len(SSL))}
+        if False:
+            test_values = list(SSL)
+            test_keys = np.array([i for i in range(len(test_values))])
+            res = {}
+            for key in test_keys:
+                for value in test_values:
+                    res[key] = value
+                    test_values.remove(value)
+                    break                        
 
         if not self.perirhizalModel.doMinimumPrint: 
             write_file_array("setsourceLim2_"+str(idComp), SSL, directory_ =results_dir, fileType =".csv") 
             
             
         # send to dumux
+        #print('setsource',res,idComp)
         s.setSource(res.copy(), eq_idx = idComp)  # [mol/day], in modules/richards.py
         
     def solve3DS(self, dt):
