@@ -211,6 +211,11 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getReac_CSS2",&RichardsFoam::getReac_CSS2)
    .def("getAvgDensity",&RichardsFoam::getAvgDensity)
    .def("numComp",&RichardsFoam::numComp)
+   .def("getMobility", &RichardsFoam::getMobility)
+   .def("getViscosity", &RichardsFoam::getViscosity)
+   .def("getPressureHead", &RichardsFoam::getPressureHead)
+   .def("getPressure", &RichardsFoam::getPressure)
+   .def("getConductivity",&RichardsFoam::getConductivity)   
 
     .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
     .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 

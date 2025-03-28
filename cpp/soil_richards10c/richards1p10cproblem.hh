@@ -703,7 +703,14 @@ public:
 		auto eIdx = this->gridGeometry().elementMapper().index(entity);
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
-		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
+		//Scalar h_init = initialSoil_[h2OIdx].f(z,eIdx)
+		//Scalar h_mucil = std::max(h_init, 0.);
+		//if()
+		//{
+			
+		//}else{
+			v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
+		//}
 		if(verbose>1)
 		{
 			 std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
@@ -843,18 +850,20 @@ public:
 		}
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
-			Scalar s = volVars.saturation(h2OIdx);
-			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-			PcKrSwCurve materialLaw_ = materialLaw(element);
-			Scalar p = materialLaw_.pc(s) + pRef_;//water pressure?
-			Scalar h = -toHead_(p); // in cm todo why minus -pc?
+			//Scalar s = volVars.saturation(h2OIdx);
+			// m2 * [kg/m^3] * [m/s^2]/[Pa*s] = m/s
+			Scalar kc = volVars.permeability() * volVars.density(h2OIdx) * g_/volVars.viscosity(h2OIdx);//this->spatialParams().hydraulicConductivity(element); //  [m/s], already includes viscosity
+			//PcKrSwCurve materialLaw_ = materialLaw(element);
+			//SwPcMucilage = this->spatialParams().SwPcMucilage(element, scv, elemSol);
+			//Scalar p = volVars. ;//materialLaw_.pc(s) + pRef_;//water pressure?
+			Scalar h = volVars.pressureHead(0);//-toHead_(p); // in cm todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
 			// multiply distance by 2 to better limit the flow (because we can have sharp decrease of wat. pot. 
             //between cell center and cell face) which cannot be taken into account because of the discretisation.
 			Scalar dz = 100 *  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); //2 *// m->cm
             if (dzScaling == dx){dz = dz * 2;}
             
-			Scalar krw = materialLaw_.krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
+			Scalar krw = volVars.relativePermeability();//materialLaw_ .krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
 			
 			//useMole fraction or mass fraction? 
 			//[kg/m3] or [mol/m3]
@@ -1327,9 +1336,9 @@ public:
         double sat = volVars.saturation(h2OIdx);//m3 water / m3 pores
 		double theta = sat * volVars.porosity(); //m3 water / m3 scv
         
-		PcKrSwCurve materialLaw_ = materialLaw(element);
-		Scalar p = materialLaw_.pc(sat) + pRef_;//water pressure?
-        Scalar psicm = std::min(-toHead_(p),0.); // to cm
+		//PcKrSwCurve materialLaw_ = materialLaw(element);
+		//Scalar p = materialLaw_.pc(sat) + pRef_;//water pressure?
+        Scalar psicm =  std::min(volVars.pressureHead(0),0.);//std::min(-toHead_(p),0.); // to cm
         double psihPa = psicm*0.980665;// hPa
         double psikPa = psihPa / 10.;// kPa 
         double psiMPa = psihPa * 1e-4;// MPa
@@ -1736,7 +1745,7 @@ private:
 	
 	static constexpr Scalar eps_ = 1.e-7;
 	double temperatureK;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr Scalar g_ = 9.81; // m / s^2 (for type conversions)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
 	static constexpr Scalar pRef_ = 1.e5; // Pa
 

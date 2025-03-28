@@ -52,6 +52,7 @@ public:
         pcKrSwCurve_ = std::make_unique<PcKrSwCurve>(params);
     }
 
+
     /*!
      * \brief Returns the intrinsic permeability tensor [m^2] at a given location
      * \param globalPos The global position where we evaluate

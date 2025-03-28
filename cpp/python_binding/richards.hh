@@ -107,7 +107,46 @@ public:
         std::transform(sol.begin(), sol.end(), sol.begin(), std::bind1st(std::multiplies<double>(), 100. / rho_ / g_));
         return sol;
     }
-
+	
+    virtual std::vector<double> getPressureHead() {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> pw;
+        pw.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+                t += elemVolVars[scv].pressureHead();
+            }
+            pw.push_back(t/c); // mean value
+        }
+        return pw;
+    }
+	
+	virtual std::vector<double> getPressure() {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> pw;
+        pw.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+                t += elemVolVars[scv].pressure();
+            }
+            pw.push_back(t/c); // mean value
+        }
+        return pw;
+    }
     /*
      * TODO setLayers(std::map<int, int> l)
      */
@@ -190,6 +229,35 @@ public:
     /**
      * Returns the total water volume [m3] within the domain, TODO wrong because of overlapping cells!
      */
+    virtual std::vector<double> getConductivity()
+    {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> s;
+        s.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+                auto& volVars = elemVolVars[scv];
+				double kc = volVars.permeability() * volVars.density(0) * this->g_/volVars.viscosity(0);
+				double krw = volVars.relativePermeability();//	The relative permeability for the wetting phase [between 0 and 1]
+				
+				t += krw * kc;
+            }
+            s.push_back(t/c); // mean value
+        }
+        return s;// m/s
+    }
+
+
+    /**
+     * Returns the total water volume [m3] within the domain, TODO wrong because of overlapping cells!
+     */
     virtual double getWaterVolume()
     {
         this->checkGridInitialized();
@@ -206,6 +274,49 @@ public:
         return this->gridGeometry->gridView().comm().sum(cVol);
     }
 
+    virtual std::vector<double> getViscosity()
+    {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> s;
+        s.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+				t += elemVolVars[scv].viscosity();
+            }
+            s.push_back(t/c); // mean value
+        }
+        return s;// m/s
+    }
+	
+    virtual std::vector<double> getMobility(const int phaseIdx = 0)
+    {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> s;
+        s.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+				t += elemVolVars[scv].mobility(phaseIdx);
+            }
+            s.push_back(t/c); // mean value
+        }
+        return s;// m/s
+    }
+	
+	
 	/**
 	 * Return the darcy (?) velocity in a 1D model TODO not working even in 1D TODO (for nD we would need to multiply with the outer normals)
 	 *
@@ -365,6 +476,10 @@ void init_richards(py::module &m, std::string name) {
    .def("getSaturation",&Richards_::getSaturation)
    .def("getWaterVolume",&Richards_::getWaterVolume)
    .def("getVelocity1D", &Richards_::getVelocity1D)
+   .def("getPressureHead", &Richards_::getPressureHead)
+   .def("getPressure", &Richards_::getPressure)
+   .def("getMobility", &Richards_::getMobility)
+   .def("getViscosity", &Richards_::getViscosity)
    .def("writeDumuxVTK",&Richards_::writeDumuxVTK)
    .def("setRegularisation",&Richards_::setRegularisation)
    .def("addVanGenuchtenDomain",&Richards_::addVanGenuchtenDomain)
@@ -374,6 +489,7 @@ void init_richards(py::module &m, std::string name) {
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC)
    .def("getAvgDensity",&Richards_::getAvgDensity)
+   .def("getConductivity",&Richards_::getConductivity)   
    .def("setSBotBC",&Richards_::setSBotBC);
 }
 
