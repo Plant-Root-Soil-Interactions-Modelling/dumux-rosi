@@ -7,10 +7,12 @@
 """
 
 import sys
-import numpy as np
+import os
 import scipy
 import copy
+import zipfile
 import json
+import numpy as np
 import matplotlib.pyplot as plt
 
 import scenario_setup as scenario
@@ -152,13 +154,13 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         print("***********************", flush = True)
         raise
 
-    print("writing", exp_name)
+    print("writing", exp_name + "_" + str(enviro_type))
     if save_all:
-        scenario.write_results(exp_name, pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
+        scenario.write_results(exp_name + "_" + str(enviro_type), pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
     else:
         pass
         # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
-    with open("results/" + exp_name + "_mods.json", "w+") as f:
+    with open("results/" + exp_name + "_" + str(enviro_type) + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
     r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
 
@@ -177,32 +179,29 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
 
 if __name__ == "__main__":
 
-    enviro_type = 0
-    sim_time = 1
-    theta1 = None
-    src = None
-    # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
-    # kx_old = [0.35, 0.015]
-    # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
-    # kr_old = [5e-4, 0.0015]
-    mods = {
-        "output_times": [40],
-        "conductivity_mode": "scale",
-        "scale_kr":1.,
-        "scale_kx":1.,
-        }
-
-    run_soybean("test", enviro_type, sim_time, mods, save_all = True)
+    # enviro_type = 0
+    # sim_time = 1
+    # theta1 = None
+    # src = None
+    # # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
+    # # kx_old = [0.35, 0.015]
+    # # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
+    # # kr_old = [5e-4, 0.0015]
+    # mods = {
+    #     "output_times": [40],
+    #     "conductivity_mode": "scale",
+    #     "scale_kr":1.,
+    #     "scale_kx":1.,
+    #     }
+    # run_soybean("test", enviro_type, sim_time, mods, save_all = True)
 
     type = sys.argv[1]
     exp_name = sys.argv[2]
     enviro_type = int(float(sys.argv[3]))
     sim_time = float(sys.argv[4])
 
-    if type == "original":
-
+    if type == "original":  # relevant parameters
         print("running original sa", flush = True)
-
         kr = float(sys.argv[5])
         kx = float(sys.argv[6])
         lmax1 = float(sys.argv[7])
@@ -213,83 +212,105 @@ if __name__ == "__main__":
         r2 = float(sys.argv[12])
         a = float(sys.argv[13])
         src = int(float(sys.argv[14]))
-
-        mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "r145":r1, "r2":r2, "r3":r2, "a":a}
-        mods["theta45"] = theta1
-        mods["src"] = src
-
-        run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, save_all = True)
-
-    elif type == "conductivities10":
-
-        print("running conductivities10", flush = True)
-        kr = np.zeros((3,))
-        kr_old = np.zeros((2,))
-        kx = np.zeros((3,))
-        kx_old = np.zeros((2,))
-
-        kr[0] = float(sys.argv[5])
-        kr_old[0] = float(sys.argv[6])
-        kr[1] = float(sys.argv[7])
-        kr_old[1] = float(sys.argv[8])
-        kr[2] = float(sys.argv[9])
-
-        kx[0] = float(sys.argv[10])
-        kx_old[0] = float(sys.argv[11])
-        kx[1] = float(sys.argv[12])
-        kx_old[1] = float(sys.argv[13])
-        kx[2] = float(sys.argv[14])
-
-        run_soybean(exp_name, enviro_type, sim_time, {}, kr, kx, kr_old, kx_old, save_all = True)
-
-    elif type == "singleroot_conductivities10":
-
-        print("singleroot_conductivities10", flush = True)
-        kr = np.zeros((3,))
-        kr_old = np.zeros((2,))
-        kx = np.zeros((3,))
-        kx_old = np.zeros((2,))
-
-        kr[0] = float(sys.argv[5])
-        kr_old[0] = float(sys.argv[6])
-        kx[0] = float(sys.argv[7])
-        kx_old[0] = float(sys.argv[8])
-
         mods = {
-        "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-        "initial_age": 1.,
-        "initial_totalpotential":-1000,
-        "domain_size": [1., 1., 200.],
-        "bot_bc": "noFlux"
-        }
+            "conductivity_mode": "scale",
+            "scale_kr": kr,
+            "scale_kx": kx,
+            "lmax145": lmax1, "lmax2": lmax2, "lmax3": lmax3,
+            "r145": r1, "r2": r2, "r3": r2,
+            "a":a,
+            "theta45": theta1,
+            "src": src
+            }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
-        run_soybean(exp_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
+    elif type == "conductivities10":  # makes little sense to treat kr, kx independently
+        print("running conductivities10", flush = True)
+        mods = {
+            "conductivity_mode": "age_dependent",
+            "kr_young1": float(sys.argv[5]),
+            "kr_old1": float(sys.argv[6]),
+            "kr_young2": float(sys.argv[7]),
+            "kr_old2": float(sys.argv[8]),
+            "kr3": float(sys.argv[9]),
+            "kx_young1": float(sys.argv[10]),
+            "kx_old1": float(sys.argv[11]),
+            "kx_young2": float(sys.argv[12]),
+            "kx_old2": float(sys.argv[13]),
+            "kx3": float(sys.argv[14])
+        }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+
+    elif type == "singleroot_conductivities10":  # a single root example
+        print("singleroot_conductivities10", flush = True)
+        mods = {
+            "conductivity_mode": "age_dependent",
+            "kr_young1": float(sys.argv[5]),
+            "kr_old1": float(sys.argv[6]),
+            "kr_young2": float(sys.argv[5]),
+            "kr_old2": float(sys.argv[6]),
+            "kr3": float(sys.argv[5]),
+            "kx_young1": float(sys.argv[7]),
+            "kx_old1": float(sys.argv[8]),
+            "kx_young2": float(sys.argv[7]),
+            "kx_old2": float(sys.argv[8]),
+            "kx3": float(sys.argv[7]),
+            "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+            "initial_age": 1.,
+            "initial_totalpotential":-1000,
+            "domain_size": [1., 1., 200.],
+            "bot_bc": "noFlux",
+        }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
     elif type == "tropisms":
-
         print("running tropisms", flush = True)
-
         n145, n2, n3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
         s145, s2, s3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
-
-        mods = {"tropismN145":n145, "tropismN2":n2, "tropismN3":n3,
-                "tropismS145":s145, "tropismS2":s2, "tropismS3":s3 }
-
-        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1, save_all = True)
+        mods = {
+                "conductivity_mode": "scale",
+                "scale_kr":1.,
+                "scale_kx":1.,
+                "tropismN145":n145, "tropismN2":n2, "tropismN3":n3,
+                "tropismS145":s145, "tropismS2":s2, "tropismS3":s3
+                }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
     elif type == "radii":
-
         print("running radii", flush = True)
-
         a145, a2, a3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
         hairsZone145, hairsZone2, hairsZone3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
         hairsLength145, hairsLength2, hairsLength3 = float(sys.argv[11]), float(sys.argv[12]), float(sys.argv[13])
+        mods = {
+            "conductivity_mode": "scale",
+            "scale_kr":1.,
+            "scale_kx":1.,
+            "a145":a145, "a":a2, "a3":a3,
+            "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
+            "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3
+            }
 
-        mods = {"a145":a145, "a":a2, "a3":a3,
-                "hairsZone145":hairsZone145, "hairsZone2":hairsZone145, "hairsZone3":hairsZone145,
-                "hairsLength145":hairsLength145, "hairsLength2":hairsLength2, "hairsLength3":hairsLength3 }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
-        run_soybean(exp_name, enviro_type, sim_time, mods, 1., 1., save_all = True)
+    elif type == "file":
+
+        with zipfile.ZipFile("soybean_all14.zip", "r") as zipf:  # hard coded if zip files are used
+            with zipf.open("soybean_all14.json", "r") as json_file:
+                all = json.load(json_file)  # Deserialize JSON data
+
+        # folder_path = "results_cplantbox/"
+        # file_path = os.path.join(folder_path, exp_name + "_mods.json")
+        # with open(file_path, 'r', encoding = 'utf-8') as file:
+        #     params = json.load(file)
+
+        params = all[exp_name]
+        params["mecha_path"] = "mecha_results"  # HACK for cluster
+
+        assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
+        params.pop("exp_name")
+        params.pop("enviro_type")
+        params.pop("sim_time")
+        run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
 
     else:
 

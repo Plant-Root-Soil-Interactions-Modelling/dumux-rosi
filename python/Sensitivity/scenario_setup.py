@@ -165,7 +165,6 @@ def prepare_conductivities(mods):
         for file in os.listdir(mods["mecha_path"]):
             if file.endswith(".npy"):  # Check if the file is a .npy file
                 files.append(file)
-        data = []
         for i in ind_:
             file = files[int(i)]
             # ind = file.split("shiny")[1].split(".")[0]
@@ -179,6 +178,51 @@ def prepare_conductivities(mods):
         mods["a145_a"] = a[0]
         mods["a2_a"] = a[1]
         mods["a3_a"] = a[2]
+    return data
+
+
+def attach_conductivitis(params):
+    """ for conductivities from mecha, radii must be adjusted in a first step"""
+    assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
+    ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
+    files = []
+    for file in os.listdir(mods["mecha_path"]):
+        if file.endswith(".npy"):  # Check if the file is a .npy file
+            files.append(file)
+    data = []
+    for i in ind_:
+        file = files[int(i)]
+        # ind = file.split("shiny")[1].split(".")[0]
+        file_path = os.path.join(mods["mecha_path"], file)
+        data.append(np.load(file_path))
+    data = np.array(data)
+    a_ = data[:, 2, 2]  # [cm] (see granar/functions.py)
+    a = np.array([float(x) for x in a_])
+    I = np.argsort(-a)  # descending regarding radius a
+    a = a[I]
+    mods["a145_a"] = a[0]
+    mods["a2_a"] = a[1]
+    mods["a3_a"] = a[2]
+    ykx_ = data[:, 0, 0]  # maturity level 0
+    ykr_ = data[:, 0, 1]
+    okx_ = data[:, 2, 0]  # maturity level 2
+    okr_ = data[:, 2, 1]
+    okx = np.array([float(x) for x in okx_])  #  [cm^4/hPa/d] ~ cm3 /day (see granar/functions.py)
+    okr = np.array([float(x) for x in okr_])  # [cm/hPa/d] ~ 1 /day (see granar/functions.py)
+    ykx = np.array([float(x) for x in ykx_])
+    ykr = np.array([float(x) for x in ykr_])
+    mods["kr_young145"] = ykr[0]
+    mods["kr_young2"] = ykr[1]
+    mods["kr_young3"] = ykr[2]
+    mods["kr_old145"] = okr[0]
+    mods["kr_old2"] = okr[1]
+    mods["kr_old3"] = okr[2]
+    mods["kx_young145"] = ykx[0]
+    mods["kx_young2"] = ykx[1]
+    mods["kx_young3"] = ykx[2]
+    mods["kx_old145"] = okx[0]
+    mods["kx_old2"] = okx[1]
+    mods["kx_old3"] = okx[2]
     return data
 
 

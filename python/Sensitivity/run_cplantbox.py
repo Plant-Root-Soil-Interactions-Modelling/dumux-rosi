@@ -137,11 +137,9 @@ def run_(r, sim_time, initial_age, area, out_times):
         domain = sa.getMaxBounds().minus(sa.getMinBounds())
         area_.append(domain.x * domain.y)
         n = len(r.ms.radii)
-        radii = np.array([r.ms.getEffectiveRadius(i) for i in range(0, n)])
+        radii = np.array([r.ms.getEffectiveRadius(i) for i in range(0, n)])  # length including root hairs
         lengths = np.array(r.ms.segLength())
-        # print(radii.shape)
-        # print(lengths.shape)
-        surface.append(np.sum(2.*np.pi * np.multiply(radii, lengths)))  # TODO: include root hairs
+        surface.append(np.sum(2.*np.pi * np.multiply(radii, lengths)))
 
     print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
 
@@ -154,10 +152,6 @@ if __name__ == "__main__":
     sim_time = 87.5
     theta1 = None
     src = None
-    kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
-    kx_old = [0.35, 0.015]
-    kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
-    kr_old = [5e-4, 0.0015]
 
     mods = {"output_times": [40],
             "conductivity_mode": "from_mecha",

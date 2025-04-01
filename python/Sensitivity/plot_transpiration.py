@@ -21,6 +21,7 @@ name = "local_soybean_1"
 name = "singleroot_test"
 name = "soybean_test_1"
 name = "local_soybean_new_1"
+name = "soybean_all14_8583e300050dcde7b7745e83d952833faac5258877ab5607822a1f0e4c639b85_59"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
