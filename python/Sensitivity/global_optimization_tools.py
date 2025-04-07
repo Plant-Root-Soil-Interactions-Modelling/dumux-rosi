@@ -248,7 +248,7 @@ def plot_1D(nameX, nameY, all):
     plt.show()
 
 
-def scatter_1D(nameX, nameY, all, nameC = None):
+def scatter_1D(nameX, nameY, all, nameC = None, scale = False):
     """ scatter plots one or multiple pairs of nameX vs nameY """
     if isinstance(nameX, str):
         nameX = [nameX]
@@ -258,17 +258,21 @@ def scatter_1D(nameX, nameY, all, nameC = None):
 
     n = np.ceil(np.sqrt(len(nameX)))
     print(n, np.sqrt(len(nameX)))
-    fig, ax = plt.subplots(int(len(nameX) // n) + 1, int(n), figsize = (16, 16))
+    # fig, ax = plt.subplots(int(len(nameX) // n) + 1, int(n), figsize = (16, 16))
+    fig, ax = plt.subplots(int(len(nameX) // n + 1 * (len(nameX) % n > 0)), int(n), figsize = (16, 16))
     if n == 1:
         ax = np.array([ax])
     ax_ = ax.flat
 
+    slopes = []
     for i, _ in enumerate(nameX):
         x = get_(nameX[i], all)
         y = get_(nameY[i], all)
         if nameC is not None:
             c = get_(nameC, all)
-        I = np.argsort(x)
+        if scale:
+            x = (np.array(x) - np.min(x)) / (np.max(x) - np.min(x))  # scale
+        I = np.argsort(x)  # for regression
         if nameC is not None:
             ax_[i].scatter(x[I], y[I], c = c[I], alpha = 0.5)
         else:
@@ -277,10 +281,15 @@ def scatter_1D(nameX, nameY, all, nameC = None):
         res = stats.linregress(x[I], y[I])
         ax_[i].plot(x[I], res.intercept + res.slope * x[I], 'k:', label = 'fitted')
 
+        print(nameX[i], "slope", res.slope)
+        slopes.append(res.slope)
+
         ax_[i].set_xlabel(nameX[i])
         ax_[i].set_ylabel(nameY[i])
+
     plt.tight_layout()
     plt.show()
+    return slopes
 
 
 def scatter_1D_cross(names, all):

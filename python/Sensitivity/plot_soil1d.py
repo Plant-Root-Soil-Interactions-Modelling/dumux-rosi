@@ -17,6 +17,22 @@ Kc_maize = 1.2  # book "crop evapotranspiration" Allen, et al (1998)
 Kc_soybean = 1.15  # book "crop evapotranspiration" Allen, et al (1998)
 
 """ pick... """  # name = "maize"
+pick12 = [
+"soybean_all14_e5288952625e69534d1987146abf0263c78dea24a4f8ebbcfd54b3ec02b33752",
+"soybean_all14_8583e300050dcde7b7745e83d952833faac5258877ab5607822a1f0e4c639b85",
+"soybean_all14_2d85b66aacdc462dee8c271e13c52d281aa78b54c32225c310526a7f9e0ec247",
+"soybean_all14_fb6876837510555b1f91d490edd2707e5024bccd8b0cc89b8156e299648513f6",
+"soybean_all14_6dcaf82cca09f5c136ca0b9da5c6f539197a85f733211ece6665d9afb69ec4e2",
+"soybean_all14_6f0184db286042bf501cf953d9f82cbf2c6801c1ada76b8a0ae2911a57cfc189",
+"soybean_all14_b95151025ffa954589fb8d863d5be5a9110ecd4538f23b5cc77750cbee997ee9",
+"soybean_all14_a656e46e3de66c57292b1abc890a27cc0712984db218111d14d3ec513319ea70",
+"soybean_all14_6d244e8c11a6a20ad6d4985c337944e9a074b7ce204cbf27c423cf9abed7973b",
+"soybean_all14_a817d2cd48002b337996bd68fff0e653b5c9e677fae41fca4bab8f3d84f1205b",
+"soybean_all14_b4d63e89a73c45e0ef4f338b53b5b1ea82434d1bd9b7de5b71e774f9ef9d5fd2",
+"soybean_all14_3a7d79c45a73e419323d343f07ee3bec6c631bac462622ac21a73c3823c740d0"
+]
+envirotypes = ["0", "1", "5", "36", "59"]
+
 # str_ = "_sra0"
 # Kc = Kc_maize
 # lai = evap.lai_maize2
@@ -28,11 +44,14 @@ name = "local_singleroot_conductivities64_27"
 name = "singleroot_test"
 name = "local_soybean_radii_1"
 name = "soybean_test_0"
-name = "soybean_all14_00a2abee6b6cfa553025f0951f46e11582d6f912edb1a6229e3707d28930736a"
+
+name = pick12[6] + "_36"  # node + envirotype
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
 ylim_ = None
+
+soil_min = -6000
 
 # name = "local_soybean"
 # str_ = "1"
@@ -112,7 +131,7 @@ divider = make_axes_locatable(ax[1])
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 cmap_reversed = matplotlib.cm.get_cmap('jet_r')
 print("data", data.shape)
-im = ax[1].imshow(data, cmap = cmap_reversed, vmin = -10000, aspect = 'auto', extent = [times[0] , times[-1], -yy, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+im = ax[1].imshow(data, cmap = cmap_reversed, vmin = soil_min, aspect = 'auto', extent = [times[0] , times[-1], -yy, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
 ax[1].plot(times[::10], depths, 'k:')
 x = np.linspace(0, times[-1], data.shape[1])
 y = np.linspace(0, -yy, data.shape[0])

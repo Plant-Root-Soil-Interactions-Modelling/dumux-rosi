@@ -173,13 +173,11 @@ all = list(all.values())
 
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
-
 print("\nfiltered data")
 target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 d = got.fetch_features(target_names, all)
 got.print_info(d, target_names)  # filtered
 print(d.shape)
-
 # distortion_plot(all, target_names)  # to determine m and n
 
 """ 3 cluster the targets """
@@ -217,7 +215,7 @@ got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2no
 target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz", "area"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 
-""" 5 pareto set """
+""" 5 pareto set - adds a pareto solution key to all dicts """
 target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]
 ind = got.pareto_list(all, target_names)
 pareto = []
@@ -262,22 +260,29 @@ for i in range(0, m_neurons * n_neurons):
 #
 """ 6 analyze single node """
 print("\nAnalyze (1,0)")
-node = (1, 0)  # (0,1), (1,1)
-ind = np.array(node2sample[node], dtype = np.int64)
+node = (1, 0)  # interesting nodes:  (1, 0) = 1 (0,1) = 4, (0,0) = 0
 
-pareto = []
-for i in ind:
-    if all[i]["pareto"]:
-        pareto.append(all[i])
-print("Node", node, "has", len(pareto), "Pareto optimal solutions")
-with open("my_pick.txt", 'w', encoding = 'utf-8') as file:
-    for line in pareto:
-        file.write(line["exp_name"] + '\n')
+for node in [(0, 1)]:  # [(1, 0), (0, 1), (0, 0)]:
 
-# # data_target = got.fetch_features(target_names, all)
-# # print("\nTargets node", node, data_target[ind].shape)
-# # got.print_info(data_target[ind], target_names)
-#
+    ind = np.array(node2sample[node], dtype = np.int64)
+
+    all_node, pareto = [], []
+    for i in ind:
+        all_node.append(all[i])
+        if all[i]["pareto"]:
+            pareto.append(all[i])
+
+    target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz"]
+    data_target = got.fetch_features(target_names, all)
+    print("\nTargets node", node, data_target[ind].shape)
+    got.print_info(data_target[ind], target_names)
+
+    # write out pareto solution of node
+    print("Node", node, "has", len(pareto), "Pareto optimal solutions")
+    with open("my_pick.txt", 'w', encoding = 'utf-8') as file:
+        for line in pareto:
+            file.write(line["exp_name"] + '\n')
+
 # node_listdata = [all[i] for i in ind]
 # distortion_plot(node_listdata, param_names)
 #

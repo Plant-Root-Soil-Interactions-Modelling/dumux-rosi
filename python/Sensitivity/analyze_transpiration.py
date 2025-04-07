@@ -11,6 +11,19 @@ from functional.xylem_flux import sinusoidal2
 
 import evapotranspiration as evap
 
+SMALL_SIZE = 16
+MEDIUM_SIZE = 16
+BIGGER_SIZE = 32
+plt.rc('font', size = BIGGER_SIZE)  # controls default text sizes
+plt.rc('axes', titlesize = BIGGER_SIZE)  # fontsize of the axes title
+plt.rc('axes', labelsize = BIGGER_SIZE)  # fontsize of the x and y labels
+plt.rc('xtick', labelsize = BIGGER_SIZE)  # fontsize of the tick labels
+plt.rc('ytick', labelsize = BIGGER_SIZE)  # fontsize of the tick labels
+plt.rc('legend', fontsize = BIGGER_SIZE)  # legend fontsize
+plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
+prop_cycle = plt.rcParams['axes.prop_cycle']
+colors = prop_cycle.by_key()['color']
+
 Kc_maize = 1.2
 Kc_soybean = 1.15
 
@@ -41,9 +54,20 @@ for i, name in enumerate(lines):
         act_[i, j] = cup[-1]
         pot_[i, j] = cum_pot[-1]
 
+per_ = np.divide(act_, pot_)
 print("\nactual")
 print(act_)
 print("\npotential")
 print(pot_)
 print("\npercent")
-print(np.divide(act_, pot_))
+print(per_)
+
+print("\nbest performer")
+for j, envirotype in enumerate(["0", "1", "5", "36", "59"]):
+    print(envirotype, ":", np.argmax(per_[:, j]))
+
+# for i in range(0, 12):
+#     plt.clf()
+#     plt.bar(["0", "1", "5", "36", "59"], per_[i,:])
+#     plt.ylim((0.4, 1))
+#     plt.savefig('plot{:g}.png'.format(i))
