@@ -32,8 +32,8 @@ def solve(soil, simtimes, q_r, N):
 
     s.initialize()
     s.setHomogeneousIC(-100)  # cm pressure head
-    s.setOuterBC("fluxCyl")
-    s.setInnerBC("fluxCyl", -qj)
+    s.setOuterBC("constantPressure",-100)
+    s.setInnerBC("constantPressure",-10000)
     s.setVGParameters([soil[0:5]])
     s.createGrid1d(np.linspace(r_root, r_out, N))  # [cm]
     # s.createGrid([0.02], [0.6], [N])  # [cm]

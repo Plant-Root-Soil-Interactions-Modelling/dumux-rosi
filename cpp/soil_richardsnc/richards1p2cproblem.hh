@@ -65,6 +65,7 @@ public:
 	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
 	using EffectiveDiffusivityModel = GetPropType<TypeTag, Properties::EffectiveDiffusivityModel>;
 	static constexpr bool isBox = GridGeometry::discMethod == DiscretizationMethods::box;
+	static constexpr bool useMoles = false;
 
     static constexpr int numFluidComps = FluidSystem::numComponents;
     

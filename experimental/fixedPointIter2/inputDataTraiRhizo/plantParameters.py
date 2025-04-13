@@ -156,6 +156,9 @@ def setKrKx_phloem(r): #inC
     Perimeter_s_r12 = numr1*VascBundle_root * (a_ST[0][1])* 2 * np.pi
     Perimeter_s_r3  =  numr3 *VascBundle_root *(a_ST[0][2])* 2 * np.pi
     r.setAcross_st([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]], False)
+    
+    
+    r.setAcross_xyl([[Across_s_r0,Across_s_r12,Across_s_r12,Across_s_r0],[Across_s_s,Across_s_s],[Across_s_l]], False)
     return r
     
 

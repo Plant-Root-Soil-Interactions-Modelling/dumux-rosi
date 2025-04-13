@@ -1,5 +1,5 @@
-#ifndef PYTHON_RICHARDS_10CYL_SOLVER_H_
-#define PYTHON_RICHARDS_10CYL_SOLVER_H_
+#ifndef PYTHON_RICHARDS_22CYL_SOLVER_H_
+#define PYTHON_RICHARDS_22CYL_SOLVER_H_
 
 #include "richards_cyl.hh" // most includes are in solverbase
 // writeDumuxVTK
@@ -10,12 +10,12 @@
  * Adds solver functionality, that specifically makes sense for Richards equation
  */
 template<class Problem, class Assembler, class LinearSolver, int dim = 1>
-class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim> 
+class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim> 
 {
 	public:
 
     using NumEqVector = typename Problem::NumEqVector;
-    virtual ~Richards10Cyl() { }
+    virtual ~Richards22Cyl() { }
 	 /**
      * The volume [m3] of each element (vtk cell)
      *
@@ -53,41 +53,7 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 		return this->problem->segLength;// m
 	}
 	
-    std::vector<double> getCSS1_out() {
-    	return this->problem->getCSS1_(); // 
-    }
-    std::vector<double> getRF_out() {
-    	return this->problem->getRF_(); // 
-	}
-    
-    std::vector<double> getSorp() {
-    	return this->problem->getSorp_(); // 
-    }
-    std::vector<double> getReac_CSS2() {
-    	return this->problem->getReac_CSS2_(); // 
-    }
 	
-	void resetSetFaceFlux(){this->problem->resetSetFaceFlux();}
-	
-	std::vector<NumEqVector> getProblemFlux()
-	{	
-		return this->problem->getFluxScvf10c_();
-	}
-	std::vector<NumEqVector> getProblemSource()
-	{	
-		return this->problem->getSource10c_();
-	}
-	
-    std::vector<int> getFluxScvf_idx() {
-    	return this->problem->idxScv4FluxScv_10c_(); // 
-    }
-	
-	//other values to reset?
-    virtual void resetInnerVals() {this->problem->setCSS1_(CSS1_saved);}
-    virtual void saveInnerVals() { CSS1_saved = this->problem->getCSS1_();}
-    virtual void resetInnerValsManual() {this->problem->setCSS1_(CSS1_savedManually);}
-    virtual void saveInnerValsManual() { CSS1_savedManually = this->problem->getCSS1_();}
-    
 
 	double computeRF(double C_S_W, double theta, double svc_volume)
 	{	
@@ -127,8 +93,6 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 		}
 		return CSS1s;
 	}
-	std::vector<double> CSS1_saved;
-	std::vector<double> CSS1_savedManually;
 	/**
      * set verbose
      */
@@ -162,8 +126,8 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
  * pybind11
  */
 template<class Problem, class Assembler, class LinearSolver, int dim = 1>
-void init_richards_10cyl(py::module &m, std::string name) {
-    using RichardsFoam = Richards10Cyl<Problem, Assembler, LinearSolver>;
+void init_richards_22cyl(py::module &m, std::string name) {
+    using RichardsFoam = Richards22Cyl<Problem, Assembler, LinearSolver>;
 	py::class_<RichardsFoam, SolverBase<Problem, Assembler, LinearSolver, dim>>(m, name.c_str())
    .def(py::init<>())
    .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0), 
@@ -199,16 +163,10 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
    .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 1)
    .def("segLength", &RichardsFoam::segLength)
-   .def("getFluxScvf_idx",&RichardsFoam::getFluxScvf_idx)
-   .def("getProblemFlux",&RichardsFoam::getProblemFlux)
    .def("computeRF",&RichardsFoam::computeRF)
    .def("computeCSS1",&RichardsFoam::computeCSS1)
    .def("computeRFs",&RichardsFoam::computeRFs)
    .def("computeCSS1s",&RichardsFoam::computeCSS1s)
-   .def("getCSS1_out",&RichardsFoam::getCSS1_out)
-   .def("getRF_out",&RichardsFoam::getRF_out)
-   .def("getSorp",&RichardsFoam::getSorp)
-   .def("getReac_CSS2",&RichardsFoam::getReac_CSS2)
    .def("getAvgDensity",&RichardsFoam::getAvgDensity)
    .def("numComp",&RichardsFoam::numComp)
    .def("getMobility", &RichardsFoam::getMobility)

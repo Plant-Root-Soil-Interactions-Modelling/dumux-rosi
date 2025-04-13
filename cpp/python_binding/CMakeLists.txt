@@ -46,6 +46,10 @@ pybind11_add_module(rosi_richards10c SHARED py_richards10c.cc)
 target_link_dune_default_libraries(rosi_richards10c)  
 target_link_libraries(rosi_richards10c PUBLIC duneuggrid ${DUNE_LIBS}) 
 
+pybind11_add_module(rosi_richards22c SHARED py_richards22c.cc)
+target_link_dune_default_libraries(rosi_richards22c)  
+target_link_libraries(rosi_richards22c PUBLIC duneuggrid ${DUNE_LIBS}) 
+
 pybind11_add_module(rosi_richards_cyl SHARED py_richards_cyl.cc)
 target_link_dune_default_libraries(rosi_richards_cyl)  
 target_link_libraries(rosi_richards_cyl PUBLIC ${DUNE_LIBS}) 
@@ -56,6 +60,9 @@ target_link_libraries(rosi_richardsnc_cyl PUBLIC ${DUNE_LIBS})
 
 pybind11_add_module(rosi_richards10c_cyl SHARED py_richards10c_cyl.cc)
 target_link_dune_default_libraries(rosi_richards10c_cyl)  
+
+pybind11_add_module(rosi_richards22c_cyl SHARED py_richards22c_cyl.cc)
+target_link_dune_default_libraries(rosi_richards22c_cyl)  
 
 # target_link_libraries(rosi_richards PUBLIC CPlantBox) # /usr/bin/ld: -lCPlantBox kann nicht gefunden werden: Datei oder Verzeichnis nicht gefunden
 

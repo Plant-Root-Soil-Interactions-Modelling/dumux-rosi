@@ -18,5 +18,5 @@ target_compile_definitions(richards_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
 
 #add_executable(test_richards_benchmark_tpfa main.cc)
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)
  
