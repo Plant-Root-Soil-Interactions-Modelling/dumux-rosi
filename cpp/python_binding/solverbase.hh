@@ -909,7 +909,10 @@ public:
 				NumEqVector scvfFlux_(0.0);
 				if(scvf.boundary())
 				{
-					scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);					
+					const auto& bcTypes = problem->boundaryTypes(e, scvf);
+					if (bcTypes.hasNeumann()){
+						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);	
+					}						
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
 						scvfBoundaryFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;

@@ -14,9 +14,9 @@ import hydraulic_model
 import numpy as np
 import matplotlib.pyplot as plt
 
-SMALL_SIZE = 16
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 16
+SMALL_SIZE = 24
+MEDIUM_SIZE = 24
+BIGGER_SIZE = 24
 plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
 plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
 plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
@@ -30,7 +30,7 @@ colors = prop_cycle.by_key()['color']
 """ 1. Modify parameter xml file  ******************************************************** """
 # typical domain for soybean
 soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.soybean(0)
-simtime = 45  # 87.5  # between 75-100 days
+simtime = 87.5  # between 75-100 days
 
 # Open plant and root parameter from a file
 rs = pb.Plant()
@@ -52,13 +52,13 @@ for p in rrp:
     print("theta", p.theta, "cm")
     print("lmax", p.lmax, "cm")
     print("changed to 0.5 cm to be faster...")
-    p.dx = 0.1  # probably enough
-    print(p.hairsElongation)
-    print(p.hairsZone)
-    print(p.hairsLength)
-    p.hairsZone = 1.7
-    p.hairsLength = 0.1
-    p.hairsElongation = 0.3
+    p.dx = 0.5  # probably enough
+    # print(p.hairsElongation)
+    # print(p.hairsZone)
+    # print(p.hairsLength)
+    # p.hairsZone = 1.7
+    # p.hairsLength = 0.1
+    # p.hairsElongation = 0.3
 
 rrp[1].theta = 0.8 * rrp[1].theta  # otherwise the initial peak in RLD is a bit too high
 rrp[1].thetas = 0.1 * rrp[1].theta  # 10% std
@@ -71,12 +71,16 @@ s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_
 
 xml_name = "data/" + name + "_modified3" + ".xml"  # root growth model parameter file
 mods = {"lmax145":1., "lmax2":1., "lmax3":1., "theta45":1.5708, "src":src}
-r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
-rs = r.ms
+mods = {}
 
-kr = 1.e-4
-kx = 1.e-3
-scenario.init_conductivities_const(r.params, kr, kx)
+r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
+# scenario.set_conductivities(params, mods, cdata)
+
+rs = r.ms
+# kr = 1.e-4
+# kx = 1.e-3
+# scenario.init_conductivities_const(r.params, kr, kx)
+scenario.init_lupine_conductivities(params, 0.05, 1.)
 
 # Simulate
 rs.simulate(simtime, True)
@@ -111,8 +115,10 @@ print("radii max", n, np.max(radii))
 rs.radii = radii
 ana = pb.SegmentAnalyser(rs.mappedSegments())
 ana.addData("distanceTip", rs.distanceTip)
+# vp.plot_roots(ana, "distanceTip")
 
-vp.plot_roots(ana, "distanceTip")
+suf = r.get_suf(simtime)
+ana.addData("suf", suf)
 
 dz = 0.5
 exact = False
@@ -121,12 +127,15 @@ slice_volume = domain_size[0] * domain_size[1] * 1  # cm3
 z_ = np.linspace(max_b[2] - dz, min_b[2] + dz, cell_number[2])
 rld = np.array(ana.distribution("length", 0., min_b[2], cell_number[2], exact)) / slice_volume
 rsd = np.array(ana.distribution("surface", 0., min_b[2], cell_number[2], exact)) / slice_volume
-
-fig, ax = plt.subplots(1, 1, figsize = (10, 10))
+suf = np.array(ana.distribution("suf", 0., min_b[2], cell_number[2], exact))
+fig, ax = plt.subplots(1, 1, figsize = (8, 10))
 ax = [ax]
-ax[0].plot(rld, z_)
-ax[0].set_xlabel("root length density [cm / cm3]")
-ax[0].set_ylabel("depth [cm]")
+ax[0].plot(rld, z_, "r", label = "RLD")
+ax2 = ax[0].twiny()
+ax2.plot(suf, z_, "g", label = "SUF")
+ax2.set_xlabel("Standard uptake fraction SUF [1]")
+ax[0].set_xlabel("Root length density RLD [cm/cm3]")
+ax[0].set_ylabel("Depth [cm]")
 # ax[1].plot(rsd, z_)
 # ax[1].set_xlabel("root surface density [cm2 / cm3]")
 # ax[1].set_ylabel("depth [cm]")
