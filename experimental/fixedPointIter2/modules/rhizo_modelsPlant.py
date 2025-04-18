@@ -633,17 +633,17 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         cswFr3d = self.soilModel.getSolution(1) # mol/mol water
         css2Fr3d = self.soilModel.getSolution(2) # mol/mol soil
         # mol wat = cm3 W * [mol wat/m3 wat] * m3/cm3
-        watMol = self.soil_W1d_perVoxelAfter*(self.soilModel.molarDensityWat_m3*1e-6)
-        cswFr1d = self.soil_solute1d_perVoxelAfter[0]/watMol
-        css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
-        #print('water', self.soilModel.getWaterVolumes(), self.soil_W1d_perVoxelAfter)
-        #print('watdensity', self.soilModel.molarDensityWat_m3,watMol)
-        #print('self.soilModel.getContent',self.soilModel.getContent(1), self.soilModel.getContent(2))
-        #print('self.soil_solute1d_perVoxelAfter',self.soil_solute1d_perVoxelAfter)
-        #print('updateCSS1AfterRSGrowth\ncswFr3d[cellsWithRoot] , cswFr1d',cswFr3d[cellsWithRoot] , cswFr1d)
-        #print('css2Fr3d[cellsWithRoot] ,css1Fr1d',css2Fr3d[cellsWithRoot] ,css1Fr1d)
-        cswFr3d[cellsWithRoot] = cswFr1d#[cellsWithRoot]
-        css2Fr3d[cellsWithRoot] = css1Fr1d#[cellsWithRoot]
+        if rank == 0:
+            watMol = self.soil_W1d_perVoxelAfter*(self.soilModel.molarDensityWat_m3*1e-6)
+            cswFr1d = self.soil_solute1d_perVoxelAfter[0]/watMol
+            css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
+            cswFr3d[cellsWithRoot] = cswFr1d#[cellsWithRoot]
+            css2Fr3d[cellsWithRoot] = css1Fr1d#[cellsWithRoot]
+        else:
+            cswFr3d = None
+            css2Fr3d = None
+        cswFr3d = comm.bcast(cswFr3d, root = 0)
+        css2Fr3d = comm.bcast(css2Fr3d, root = 0)
         self.soilModel.base.setSolution(cswFr3d,1)
         self.soilModel.base.setSolution(css2Fr3d,2)
         #print('self.soilModel.getSolution(1)',self.soilModel.getSolution(1))

@@ -144,10 +144,9 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
         # store transpiration and assimilation data    
         if (rank == 0):
             # root -soil exchange per root segment for water and solute 1 and 2
-
-            plantModel.seg_fluxesCumul_inner[0] += perirhizalModel.seg_fluxes_limited * dt
+            plantModel.seg_fluxesCumul_inner[0] += fpit_Helper.seg_fluxes_limited * dt
             for jj in range(1,perirhizalModel.soilModel.numFluidComp):
-                plantModel.seg_fluxesCumul_inner[jj] += perirhizalModel.seg_fluxes_limited_sol_In[jj-1] * dt
+                plantModel.seg_fluxesCumul_inner[jj] += fpit_Helper.seg_fluxes_limited_sol_In[jj-1] * dt
 
 
             if perirhizalModel.doPhotosynthesis:
@@ -417,7 +416,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
                 fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
                 fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
-
                 assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)
             ##
             # 3.6 mass or content balance error 3d 
