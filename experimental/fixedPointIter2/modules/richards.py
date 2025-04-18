@@ -522,8 +522,7 @@ class RichardsWrapper(SolverWrapper):
             return self.bulkDensity_m3
         
     def getFace2CellIds_(self):
-        return np.array(self.base.face2CellIds).max(axis = 0)
-    
+        return np.array(self.base.face2CellIds).max(axis = 0)    
 
     def getSource(self, eqIdx = 0):
         """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
