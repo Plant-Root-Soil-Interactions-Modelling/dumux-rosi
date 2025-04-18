@@ -475,21 +475,27 @@ class RichardsWrapper(SolverWrapper):
         return flux[pos == max(pos)]
     
     
-    def getCss1(self): # mol/cm3 scv
+    def getCss1_(self): # mol/cm3 scv
         ''' att: only valid for the 4c problem
             todo: update
         '''
-        C_S_W = self.getConcentration(1)
-        C_S_S2 = self.getSolution(2)
-        css1 = np.array([self.base.computeCSS1(self.bulkDensity_m3,C_S_W[i]*1e6, i) for i in range(len(C_S_W))])*1e-6
+        C_S_W = self.getConcentration_(1)
+        C_S_S2 = self.getSolution_(2)
+        css1 = np.array([self.base.computeCSS1(self.bulkDensity_m3,C_S_W[i]*1e6, i) for i, idx in enumerate(self.getCellIndices_())])*1e-6
         css1[C_S_S2>0] = 0.
         return css1
+    
+    def getCss1(self): # mol/cm3 scv
+        ''' att: only valid for the 4c problem
+            todo: update
+        '''        
+        return self._map(self._flat0(self.gather(self.getCss1_())), 2)
             
     def getTotCContent_each(self):
         """ copmute the total content per solute class in each cell of the domain """
         #vols = self.getCellVolumes()#.flatten() #cm3 scv   
         totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
-        vols = self.getCellVolumes_() 
+        vols = self.getCellVolumes() 
         css1 = self.getCss1() * vols
         idTemps = css1 != 0
         totC[1][idTemps] = css1[idTemps]
@@ -542,14 +548,8 @@ class RichardsWrapper(SolverWrapper):
         
     def getFluxesPerCell(self, eqIdx = 0, length = None):
         """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
-        scvfFluxes = self._flat0(comm.gather(self.getFluxesPerFace_(eqIdx, length), root = 0))
-        face2CellIdx = self._flat0(comm.gather(self.getFace2CellIdx_(), root = 0)) # cannotuse map, as we took out the ghost cells 
-        scvFluxes = np.array([
-             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
-            ])
-        if rank == 0:
-            scvFluxes = scvFluxes[np.unique(face2CellIdx)]
-        return scvFluxes 
+        self.checkGridInitialized()
+        return self._flat0(comm.gather(self.getFluxesPerCell_(eqIdx, length), root = 0))#self._map(, 2)
  
     def getFluxesPerCell_(self, eqIdx = 0, length = None):
         """nompi version of """
@@ -558,7 +558,7 @@ class RichardsWrapper(SolverWrapper):
         face2CellIdx = np.array(self.getFace2CellIdx_())
         scvFluxes = np.array([
              sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
-            ])
+            ]) 
         return scvFluxes
             
     def getFluxesPerFace_(self, eqIdx = 0, length = None):
@@ -567,7 +567,7 @@ class RichardsWrapper(SolverWrapper):
         """
         self.checkGridInitialized() 
         scvfFluxes = self.getBoundaryFluxesPerFace_(eqIdx, length)      
-        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)   
+        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)  
         return scvfFluxes 
         
     def getBoundaryFluxesPerFace_(self, eqIdx = 0, length = None):
@@ -583,9 +583,6 @@ class RichardsWrapper(SolverWrapper):
         notGhost = surfaces > 0
         return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]) * surfaces)[notGhost] * unitChange
         
-        
-        
-    
     def getCell2CellFluxesPerFace_(self, eqIdx = 0, length = None):
         """  [cm3/day] """
         self.checkGridInitialized()
@@ -613,6 +610,20 @@ class RichardsWrapper(SolverWrapper):
         notGhost = surfaces > 0
         return face2CellIdx[notGhost]
             
+    def getConcentration_(self,idComp):      
+        """ returns the concentraiton of a component (solute)
+            @param idcomp: index of the component (> 0) [int]
+        """
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
+        C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity_m3 #mol/m3 scv
+            return C_  /1e6  #mol/cm3 scv
+        if self.useMoles:
+            C_ *= self.molarDensityWat_m3 # mol/m3 wat            
+        return C_ /1e6 #mol/cm3 scv
+        
     def getConcentration(self,idComp):      
         """ returns the concentraiton of a component (solute)
             @param idcomp: index of the component (> 0) [int]

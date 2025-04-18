@@ -863,7 +863,7 @@ class fixedPointIterationHelper():
                            perirhizalModel.rhizoMassWError_rel, perirhizalModel.rhizoMassCError_rel,
                            # summary metric
                            perirhizalModel.err ])
-        perirhizalModel.errs = np.concatenate(([perirhizalModel.errs, perirhizalModel.InOutBC_Cdiff, errsTemp]))
+            perirhizalModel.errs = np.concatenate(([perirhizalModel.errs, perirhizalModel.InOutBC_Cdiff, errsTemp]))
 
 
     def massBalanceError1d(self,dt):
