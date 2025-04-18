@@ -359,9 +359,7 @@ def resetAndSaveData(perirhizalModel):
 
 def resetPlantWFlux(plantModel,perirhizalModel):
     perirhizalModel.err2 = 1.
-    plantModel.seg_fluxes0Cumul_inner = 0
-    plantModel.seg_fluxes1Cumul_inner = 0
-    plantModel.seg_fluxes2Cumul_inner = 0
+    plantModel.seg_fluxesCumul_inner = np.zeros((perirhizalModel.soilModel.numFluidComp, len(plantModel.plant.radii)))
     plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
     plantModel.AnCumul_inner = 0 # reset transpiration of inner time step to 0
 
@@ -391,19 +389,15 @@ def resetData(plantModel, perirhizalModel, s):
 
 def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
     if rank == 0:
-        deltalen = len(plantModel.seg_fluxes0Cumul_inner)-len(plantModel.seg_fluxes0Cumul)# plant grew?
-        if deltalen > 0:
-            plantModel.seg_fluxes0Cumul = np.concatenate((plantModel.seg_fluxes0Cumul, np.zeros(deltalen))) 
-            plantModel.seg_fluxes1Cumul = np.concatenate((plantModel.seg_fluxes1Cumul, np.zeros(deltalen))) 
-            plantModel.seg_fluxes2Cumul = np.concatenate((plantModel.seg_fluxes2Cumul, np.zeros(deltalen))) 
+        deltalen = len(plantModel.seg_fluxesCumul_inner[0])-len(plantModel.seg_fluxesCumul[0])# plant grew?
+        if deltalen > 0:  
+            plantModel.seg_fluxesCumul = np.array([
+                np.concatenate((plantModel.seg_fluxesCumul[jj], np.zeros(deltalen))
+                ) + plantModel.seg_fluxesCumul_inner[jj] for jj in range(perirhizalModel.soilModel.numFluidComp)])
+        
+        plantModel.seg_fluxes = np.array([plantModel.seg_fluxesCumul_inner[jj]/dt for jj in range(perirhizalModel.soilModel.numFluidComp)])
+        
 
-        plantModel.seg_fluxes0Cumul += plantModel.seg_fluxes0Cumul_inner 
-        plantModel.seg_fluxes1Cumul += plantModel.seg_fluxes1Cumul_inner
-        plantModel.seg_fluxes2Cumul += plantModel.seg_fluxes2Cumul_inner
-
-        plantModel.seg_fluxes0 = plantModel.seg_fluxes0Cumul_inner/dt
-        plantModel.seg_fluxes1 = plantModel.seg_fluxes1Cumul_inner/dt
-        plantModel.seg_fluxes2 = plantModel.seg_fluxes2Cumul_inner/dt
         
         plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
         if perirhizalModel.doPhotosynthesis:

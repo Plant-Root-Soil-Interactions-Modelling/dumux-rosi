@@ -94,8 +94,6 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                                   fpit_Helper.proposed_outer_fluxes, # outer BC water
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1
                                   fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
-                                  fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
-                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
                                   # solute 2
                                   # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
@@ -146,9 +144,11 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
         # store transpiration and assimilation data    
         if (rank == 0):
             # root -soil exchange per root segment for water and solute 1 and 2
-            plantModel.seg_fluxes0Cumul_inner += perirhizalModel.seg_fluxes_limited * dt
-            plantModel.seg_fluxes1Cumul_inner += perirhizalModel.seg_fluxes_limited_sol_In * dt
-            plantModel.seg_fluxes2Cumul_inner += perirhizalModel.seg_fluxes_limited_mucil_In * dt
+
+            plantModel.seg_fluxesCumul_inner[0] += perirhizalModel.seg_fluxes_limited * dt
+            for jj in range(1,perirhizalModel.soilModel.numFluidComp):
+                plantModel.seg_fluxesCumul_inner[jj] += perirhizalModel.seg_fluxes_limited_sol_In[jj-1] * dt
+
 
             if perirhizalModel.doPhotosynthesis:
                 plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
@@ -408,8 +408,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source
-            bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
+            outer_R_bc = -np.array([s.getFluxesPerCell(nc) * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
+            bulkSoil_sources = np.array([s.getSource(nc) * s.getCellVolumes() * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
             
             if rank == 0:
                 fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 

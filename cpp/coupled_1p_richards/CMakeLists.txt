@@ -17,4 +17,4 @@ target_compile_definitions(coupled_rb PUBLIC ROOTBOX)
 # target_compile_definitions(coupled_schroeder PUBLIC DGF)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

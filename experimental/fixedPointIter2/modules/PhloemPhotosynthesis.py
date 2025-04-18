@@ -204,16 +204,16 @@ class exudateDataStorage():
         self.mappedSegment = perirhizalModel.ms
         self.plantModel = plantModel
         self.soil_type = soilModel.pindx
-        self.Nt = len(perirhizalModel.ms.nodes)
+        self.Nc = len(perirhizalModel.ms.nodes)-1
         
-        self.Q_Exud    = np.zeros(self.Nt-1) 
-        self.Q_Exudbu    = np.zeros(self.Nt-1)
+        self.Q_Exud    = np.zeros(self.Nc) 
+        self.Q_Exudbu    = np.zeros(self.Nc)
         self.Q_Exud_cumul = 0.; 
         #self.Q_Exud_i =  np.zeros(self.Nt)
         self.Q_Exud_i_seg = np.array([]);  
         
-        self.Q_Mucil   = np.zeros(self.Nt-1)
-        self.Q_Mucilbu   = np.zeros(self.Nt-1)
+        self.Q_Mucil   = np.zeros(self.Nc)
+        self.Q_Mucilbu   = np.zeros(self.Nc)
         self.Q_Mucil_cumul = 0.
         #self.Q_Mucil_i =  np.zeros(self.Nt)
         self.Q_Mucil_i_seg = np.array([])  
@@ -221,16 +221,16 @@ class exudateDataStorage():
         self.error_st_abs = 0;
         self.error_st_rel=0
         
-    def setNtbu(self):
-        self.Ntbu = self.Nt
+    def setNcbu(self):
+        self.Ncbu = self.Nc
         
     def computeExudateFlow(self,rs_age, dt):
     
-        self.plantModel.Csoil_seg = self.perirhizalModel.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
-        
+        #self.plantModel.Csoil_seg = self.perirhizalModel.get_inner_solutes() * 1e3 # mol/cm3 to mmol/cm3 
+
         if rank == 0:
-            self.Nt = len( self.perirhizalModel.ms.nodes)
-            Nt = self.Nt
+            self.Nc = len( self.perirhizalModel.ms.nodes)-1
+            Nc = self.Nc
 
             if self.soil_type == 0 and rs_age > 98: #RS stops growing after DAS 98 in loam 
                 stopgr = True 
@@ -239,30 +239,16 @@ class exudateDataStorage():
                     
             kexu = self.plantModel.exudation_rates(self.plantModel.exudf, rs_age) #[kg/(m2 day)]
             exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr)
-            print('exud',exud)
-            self.Q_Exud_i_seg = np.array( exud[0] )  #per segment, mol/seg , np.zeros(self.Nt-1)#
-            #self.Q_Exud_i[1:] = exud[0] #mol/seg, not needed?
-            self.Q_Exudbu     =   np.concatenate((self.Q_Exudbu, np.full(self.Nt - self.Ntbu, 0.))) 
-            print('Q_Exudbu', self.Nt , self.Ntbu, len(exud))
-            self.Q_Exud  = self.Q_Exudbu + self.Q_Exud_i_seg
-
-
-
+            Nc_shoot = len(self.perirhizalModel.ms.getShootSegments())
+            Q_Exud_i_seg_shoot = np.zeros(Nc_shoot)
+            #exud_ = np.full(len(exud[0]),1.)
+            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud[0]) )   #per segment, mol/seg ,
             airSegsId = self.perirhizalModel.airSegs
-
-            write_file_array("Q_Exud_i_real",  self.Q_Exud_i_seg, 
-                             directory_ =self.perirhizalModel.results_dir)# to see if get val < 0
-
-            try:
-                if len(airSegsId)>0:
-                    assert (self.Q_Exud_i_seg[airSegsId] == 0).all()
-                    assert (self.Q_Mucil_i_seg[airSegsId] == 0).all()
-            except:
-                print("Q_Exud_i_seg", self.Q_Exud_i_seg[airSegsId] )
-                print("Csoil_seg", np.array(self.plantModel.Csoil_seg)[airSegsId])
-                print("airSegsId", airSegsId, np.where(airSegsId))
-                print(len(airSegsId), len(self.plantModel.k_mucil_))
-                raise Exception
+            if len(airSegsId)>0:
+                self.Q_Exud_i_seg[airSegsId] = 0.
+            self.Q_Exudbu     =   np.concatenate((self.Q_Exudbu, np.full(self.Nc - self.Ncbu, 0.))) 
+            self.Q_Exud  = self.Q_Exudbu + self.Q_Exud_i_seg
+            
 
             try: # currently, only have a release of carbon
                 
