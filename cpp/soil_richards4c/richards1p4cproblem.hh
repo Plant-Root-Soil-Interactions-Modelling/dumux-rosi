@@ -1,7 +1,7 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-#ifndef RICHARDS1P10C_PROBLEM_HH
-#define RICHARDS1P10C_PROBLEM_HH
+#ifndef RICHARDS1P4C_PROBLEM_HH
+#define RICHARDS1P4C_PROBLEM_HH
 #include <algorithm>
 #include <vector>
 #include <dumux/porousmediumflow/problem.hh> // base class
@@ -26,7 +26,7 @@ namespace Dumux {
  * where most parameters can be set dynamically
  */
 template <class TypeTag>
-class Richards1P10CProblem : public PorousMediumFlowProblem<TypeTag>
+class Richards1P4CProblem : public PorousMediumFlowProblem<TypeTag>
 {
 public:
     using ParentType = PorousMediumFlowProblem<TypeTag>;
@@ -83,33 +83,29 @@ public:
     static constexpr int numInertSolidComps =  SolidSystem::numInertComponents;
 
 	enum {
+		// W elements
 		pressureIdx = 0, // index of primary variables
 		h2OIdx = FluidSystem::liquidPhaseIdx, // fluid index
-		soluteIdx = 1, // 1st solute index
-		mucilIdx = 2, // mucil index
-		CoAIdx = 3, // active oligotrophes
-		CoDIdx = 4, // dormant oligo
-		CcAIdx = 5, // active copiotrophes
-		CcDIdx = 6, // dormant copio
-		CSS2Idx = 7,
-		co2Idx = 8, 
-		soilIdx = SolidSystem::mainCompIdx + numFluidComps,
 		
+		//in W phase
+		soluteIdx = 1, // 1st solute index
+		//in solid phase
+		CSS2Idx = 2,//adsorbed C
+		mucilIdx = 3,//not used for now. no advection for eqIdx == mucilIdx
+				
 		//don t think EqIndx != pvdIdx when we have just 1 phase
 		conti0EqIdx = pressureIdx, // indices of the equations
-		transportEqIdx = conti0EqIdx + soluteIdx,
-		//transportMucilEqIdx = conti0EqIdx + mucilIdx,//is this correct?
 
 		dimWorld = GridView::dimensionworld,
 		
 		
-		numFluidSolutes = numFluidComps -  soluteIdx,
-		numSolidSolutes = numSolidComps -  1,
+		numFluidSolutes = numFluidComps - 1,//all minus water
+		numSolidSolutes = numSolidComps -  1,// all minus sil
 		numSolutes = numFluidSolutes + numSolidSolutes,
 
 
 		//!!!!!!!!!!!!
-		numComponents_ = numFluidComps + numSolidSolutes//ignore the soil as component
+		numComponents_ = numFluidComps + numSolidComps - numInertSolidComps//ignore the soil as component as it is inert
 		//!!!!!!!!!!!!
 	};
 
@@ -137,203 +133,11 @@ public:
 	
 	
 	
-	std::vector<NumEqVector> source_10c ;
-	
-	NumEqVector getSource10c (int index)
-	{
-		if(source_10c.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getSource");			
-		}
-		return source_10c.at(index);
-	}
-	std::vector<NumEqVector> getSource10c_ ()
-	{
-		return source_10c;
-	}
-	void setSource(NumEqVector input, int index ) const 
-	{
-		if(source_10c.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setSource");			
-		}
-		const_cast<NumEqVector&>(source_10c.at(index) ) = input;
-	}
-	
-	// [faces][cell on each side][elements]
-	std::vector<NumEqVector> FluxScvf_10c ;
-	
-	std::vector<int> idxScv4FluxScv_10c ;
-	
-	std::vector<NumEqVector> getFluxScvf10c_ ()
-	{
-		return FluxScvf_10c;
-	}
-	std::vector<int> idxScv4FluxScv_10c_ ()
-	{
-		return idxScv4FluxScv_10c;
-	}
-	std::vector<NumEqVector> getFlux10c_ ()
-	{
-		NumEqVector nullVec(0.0);
-		std::vector<NumEqVector> FluxScv_10c(nCells_all, nullVec);// reset
-		for(int index_scvf = 0; index_scvf < FluxScvf_10c.size();index_scvf++)
-		{
-				int idxscv = idxScv4FluxScv_10c.at(index_scvf);//.at(local_index_scv);
-                if (idxscv >= 0)
-                {
-					NumEqVector value = FluxScvf_10c.at(index_scvf);//.at(local_index_scv);
-					FluxScv_10c.at(idxscv) += value;//check for the sign 
-                    }			
-		}
-		return FluxScv_10c;
-	}
-	void setFaceFlux(NumEqVector input, int index_scvf ) const //, int index_scv //int local_index_scv, 
-	{
-		if((FluxScvf_10c.size() <= index_scvf))//||(idxScv4FluxScv_10c.size() <= index_scvf))
-		{
-			
-			DUNE_THROW(Dune::InvalidStateException, "setFaceFlux");			
-		}
-		const_cast<NumEqVector&>(FluxScvf_10c.at(index_scvf) ) = input;//.at(local_index_scv)
-	}
-	
-	void resetSetFaceFlux()
-	{
-		NumEqVector nullVec(0.0);// nFaces
-		FluxScvf_10c = std::vector<NumEqVector>(nFaces,nullVec);
-	}
-	
-    
-	std::vector<double> Reac_CSS2 ;
-	
-	std::vector<double> getReac_CSS2_()
-	{
-		return Reac_CSS2;
-	}
-	double getReac_CSS2 (int index)
-	{
-		//std::cout<<index<<std::endl;
-		if(Reac_CSS2.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "Reac_CSS2");			
-		}
-		return Reac_CSS2.at(index);
-	}
-	void setReac_CSS2(double input, int index ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(Reac_CSS2.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setReac_CSS2");			
-		}
-		const_cast<double&>(Reac_CSS2.at(index) ) = input;
-	}
-    
-	std::vector<double> testSorp ;
-	
-	std::vector<double> getSorp_()
-	{
-		return testSorp;
-	}
-	double getSorp (int index)
-	{
-		//std::cout<<index<<std::endl;
-		if(testSorp.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getSorp");			
-		}
-		return testSorp.at(index);
-	}
-	void setSorp(double input, int index ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(testSorp.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setSorp");			
-		}
-		const_cast<double&>(testSorp.at(index) ) = input;
-	}
-	
-	std::vector<double> testCSS1;
-	
-	std::vector<double> getCSS1_()
-	{
-		return testCSS1;
-	}
-	double getCSS1(int index)
-	{
-		//std::cout<<index<<std::endl;
-		if(testCSS1.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getCSS1");			
-		}
-		return testCSS1.at(index);
-	}
-	void setCSS1(double input, int index  ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(testCSS1.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setCSS1");			
-		}
-		const_cast<double&>(testCSS1.at(index)) = input;
-	}
-	
-	void setCSS1_(std::vector<double>  input) const 
-	{
-		const_cast<std::vector<double> &>(testCSS1) = input;
-	}
-	
-	std::vector<double> theta_;
-	double getTheta(int index)
-	{
-		//std::cout<<index<<std::endl;
-		if(theta_.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getTheta");			
-		}
-		return theta_.at(index);
-	}
-	void setTheta(double input, int index  ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(theta_.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setTheta");			
-		}
-		const_cast<double&>(theta_.at(index)) = input;
-	}
-	
-    std::vector<double> RF;//( n , vector<int> (numComponents_, 0));
-	std::vector<double> getRF_()
-	{
-		return RF;
-	}
-	double getRF(int index)
-	{		
-		//std::cout<<index<<std::endl;
-		if(RF.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "getRF");			
-		}
-		return RF.at(index);
-	}
-	void setRF(double input, int index  ) const 
-	{
-		//std::cout<<index<<std::endl;
-		if(RF.size() <= index)
-		{
-			DUNE_THROW(Dune::InvalidStateException, "setRF");			
-		}
-		const_cast<double&>(RF.at(index)) = input;
-	}
 		
-
 	/*!
 	 * \brief Constructor: constructed in the main file
 	 */
-	Richards1P10CProblem(std::shared_ptr<const FVGridGeometry> gridGeometry)
+	Richards1P4CProblem(std::shared_ptr<const FVGridGeometry> gridGeometry)
 	: PorousMediumFlowProblem<TypeTag>(gridGeometry) {
 		
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", (dimWorld > 1));
@@ -351,8 +155,8 @@ public:
 		
 		
 		// Uptake params
-		vMax_ =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
-		km_ = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
+		vMax =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
+		km = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
 		
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
@@ -408,111 +212,33 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
+		sourceSlope = getParam<double>("Soil.SourceSlope", -1.); // cm, negative value disables regularisation
 		
 		double m3_2_cm3 = 1e6;// cm3/m3
-		 v_maxL = getParam<double>("Soil.v_maxL", v_maxL_)/(24.*60.*60.); //Maximum reaction rate of enzymes targeting large polymers s
-		 K_L = getParam<double>("Soil.K_L", K_L_ ) * m3_2_cm3; //[mol cm-3 soil] * [cm3/m3]=> [mol m-3 soil] 
-		 
-         C_aLim = std::vector<double>{getParam<double>("Soil.C_aOLim",0.)*m3_2_cm3, //mol C/cm3 scv => mol C/m3 scv
-									getParam<double>("Soil.C_aCLim", 0.)*m3_2_cm3};
-                                    
-		 m_max = std::vector<double>{getParam<double>("Soil.m_maxO", m_max_[0])/(24.*60.*60.),
-									getParam<double>("Soil.m_maxC", m_max_[1])/(24.*60.*60.)};	//Maximum reaction rate 
-		 //for troubleshooting , can have m_maxBis != m_max
-		 micro_max = std::vector<double>{getParam<double>("Soil.micro_maxO", micro_max_[0])/(24.*60.*60.),
-										getParam<double>("Soil.micro_maxC", micro_max_[1])/(24.*60.*60.)}; //Maximum reaction rate 
-		 k_S = std::vector<double>{getParam<double>("Soil.k_SO", k_S_[0])/m3_2_cm3/(24.*60.*60.),
-									getParam<double>("Soil.k_SC", k_S_[1])/m3_2_cm3/(24.*60.*60.)}; //[m3 soil / mol C  / s] 
-		 k_D = std::vector<double>{getParam<double>("Soil.k_DO",k_D_[0])/(24.*60.*60.),
-									getParam<double>("Soil.k_DC",k_D_[1])/(24.*60.*60.)}; // [s-1] 
-		 k_R = std::vector<double>{getParam<double>("Soil.k_RO",k_R_[0])/(24.*60.*60.),
-									getParam<double>("Soil.k_RC",k_R_[1])/(24.*60.*60.)}; // [s-1] 
-		 
-		 
-		 beta = std::vector<double>{getParam<double>("Soil.betaO", beta_[0]),
-									getParam<double>("Soil.betaC", beta_[1])}; //
-		 k_growth =std::vector<double>{getParam<double>("Soil.k_growthO", k_growth_[0]),
-									getParam<double>("Soil.k_growthC", k_growth_[1])}; //
+		f_sorp = getParam<double>("Soil.f_sorp", f_sorp);//[-]
+		k_sorp = getParam<double>("Soil.k_sorp", k_sorp) ;// mol/cm3 water or mol
+		css1Function = getParam<double>("Soil.css1Function", 0);// 0: no css1 , 1: linear css1
+		CSSmax = getParam<double>("Soil.CSSmax", CSSmax)*m3_2_cm3;//mol/cm3 => [mol/m3]	
+		//alpha = getParam<double>("Soil.alpha", alpha)/(24.*60.*60.);//[d-1] => [s-1]
+		kads = getParam<double>("Soil.kads", kads)  /m3_2_cm3;//[cm3/mol] => [m3/mol] 
+		kdes = getParam<double>("Soil.kdes", kdes);//[-] => [s-1]  
+		
+		// Buffer power
+		b_ = getParam<Scalar>("Component.BufferPower", 0.);
+		freundlichN_ = getParam<Scalar>("Component.FreundlichN", 0.);
+		freundlichK_ = getParam<Scalar>("Component.FreundlichK", 0.);
+		
+		// todo: check if need to re-implement the lines below
+		// if (css1Function != 8){
+			// CSSmax = CSSmax * m3_2_cm3; //mol/cm3 zone 1 to //mol/m3 zone 1
+			// k_sorp = k_sorp * m3_2_cm3;//mol/cm3 water to mol/m3 water 
+		// }
+		// if(css1Function == 9)
+		// {
+		 // kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 
+		// }       
 
-		 C_S_W_thres = std::vector<double>{getParam<double>("Soil.C_S_W_thresO", C_S_W_thres_[0]) * m3_2_cm3,
-										getParam<double>("Soil.C_S_W_thresC", C_S_W_thres_[1]) * m3_2_cm3}; //mol C/m3 soil water
-		 	 
 
-		 k_phi = getParam<double>("Soil.k_phi", k_phi_); //
-		 k_decay = getParam<double>("Soil.k_decay", k_decay_); // 
-		 k_decay2 = getParam<double>("Soil.k_decay2", k_decay2_);//
-		 f_sorp = getParam<double>("Soil.f_sorp", f_sorp);//[-]
-		 k_sorp = getParam<double>("Soil.k_sorp", k_sorp_) ;// mol/cm3 water or mol
-		 css1Function = getParam<double>("Soil.css1Function", 0);// 0: TraiRhizo, 1: linear css1, 2: no css1 
-		 CSSmax = getParam<double>("Soil.CSSmax", CSSmax_);//mol/cm3 zone 1 of mol
-         if (css1Function != 8){
-             CSSmax = CSSmax * m3_2_cm3; //mol/cm3 zone 1 to //mol/m3 zone 1
-             k_sorp = k_sorp * m3_2_cm3;//mol/cm3 water to mol/m3 water
-             
-             
-             }
-         // [1/d] * [d/s] = [1/s]
-		 alpha = getParam<double>("Soil.alpha", alpha_)/(24.*60.*60.);//[d-1] => [s-1]
-         
-		 kads = getParam<double>("Soil.kads", kads_)  /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s] or [1/d] => [1/s] 
-         if(css1Function == 9)
-         {
-             kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 
-         }
-		 kdes = getParam<double>("Soil.kdes", kdes_)/(24.*60.*60.);//[d-1] => [s-1]         
-		 
-		 m_maxBis = std::vector<double>{getParam<double>("Soil.m_maxOBis", m_max[0]*(24.*60.*60.))/(24.*60.*60.),
-							getParam<double>("Soil.m_maxCBis", m_max[1]*(24.*60.*60.))/(24.*60.*60.)};	//Maximum reaction rate 
-		 k_SBis = std::vector<double>{getParam<double>("Soil.k_SOBis", k_S[0]*(24.*60.*60.)*m3_2_cm3)/m3_2_cm3/(24.*60.*60.),
-							getParam<double>("Soil.k_SCBis", k_S[1]*(24.*60.*60.)*m3_2_cm3)/m3_2_cm3/(24.*60.*60.)};	//[mol soil / mol C soil / s] 
-		 k_growthBis = getParam<double>("Soil.k_growthBis", k_growthBis); //
-		 k_decay3 = getParam<double>("Soil.k_decay3", k_decay3);//
-		 extra = getParam<double>("Soil.extra", extra);//  
-		 extra2 = getParam<double>("Soil.extra2", extra2);// 
-		m_maxBisO = getParam<double>("Soil.m_maxBisO2", 0. );
-		m_maxBis_Cs = getParam<double>("Soil.m_maxBis_Cs", 0.  );
-		
-        psikPa_opt = getParam<double>("Soil.psikPa_opt",psikPa_opt);// [kPa]
-        psikPa_th = getParam<double>("Soil.psikPa_th",psikPa_th);// [kPa]
-        alpha_A = getParam<double>("Soil.alpha_A",alpha_A);//[-]
-        psiMPa_A2D = getParam<double>("Soil.psiMPa_A2D",psiMPa_A2D);// [MPa]
-        tau_DA =getParam<double>("Soil.tau_DA", tau_DA);//[-]
-        w_DA = getParam<double>("Soil.w_DA",w_DA);//[-]
-        
-		nCells_all = gridGeometry->numScv();
-		
-         const auto gridView = this->gridGeometry().gridView();
-        auto fvGeometry = localView(this->gridGeometry());
-
-		// see dumux/freeflow/rans/problem.hh
-		nFaces = gridGeometry->numScvf();//fvGeometry.scv(0).index();//gridGeometry->numScvf();// std::reduce(nCells_.begin(), nCells_.end(), 1, myMultiply );
-		
-		Reac_CSS2.resize(nCells_all);
-		
-		resetSetFaceFlux();
-		idxScv4FluxScv_10c = std::vector<int>(nFaces,-1);
-		
-		for (const auto& element : elements(gridView,Dune::Partitions::interior))
-        {
-            if(element.partitionType() == Dune::InteriorEntity) //redundant I think
-            {
-                fvGeometry.bindElement(element);
-                for (const auto& scvf : scvfs(fvGeometry))
-                {
-                    // check here that face belongs to the thread?
-                    idxScv4FluxScv_10c.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
-                }
-            }
-			
-        }
-		
-		source_10c.resize(nCells_all);
-		testCSS1.resize(nCells_all);
-		
-		testSorp.resize(nCells_all);
-		theta_.resize(nCells_all);
-		RF.resize(nFaces);
-		
 		///
 		computedCellVolumesCyl = false;
 		if(dimWorld == 1)
@@ -524,9 +250,6 @@ public:
 			segLength  = -1.;
 		}
 
-		// Output
-		// std::string filestr = this->name() + "_1p10cProblem.txt"; // output file
-		// myfile_.open(filestr.c_str());
 	}
 
 	double getCellVolumesCyl(int dofIndex) const
@@ -535,11 +258,6 @@ public:
 		if(!computedCellVolumesCyl) // if we want to change the segLEngth without recreating the object?
 		{
 			DUNE_THROW(Dune::InvalidStateException, "getCellVolumesCyl: cellVolumesCyl not set");
-			// only use Dumux::getParam in the initialization function: these are global parameter
-			// common for all 1d models and for all 3d models (but different between 1d and 3d models--don t know why)
-			// const_cast<double&>(segLength) = Dumux::getParam<double>("Problem.segLength")/100;//cm to m
-			// this->setVolumesCyl(computeCellVolumesCyl_());
-			// const_cast<bool&>(computedCellVolumesCyl )  = true;
 		}
 		return cellVolumesCyl.at(dofIndex);
 	}
@@ -590,7 +308,7 @@ public:
 	/**
 	 * \brief Eventually, closes output file
 	 */
-	~Richards1P10CProblem() {
+	~Richards1P4CProblem() {
 		//std::cout << "closing file \n";
 		//myfile_.close();
 	}
@@ -619,13 +337,25 @@ public:
 		return nonWettingReferencePressure();
 	}
 	
+	Scalar massOrMoleDensity(const auto& volVars, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+				(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
+	}
+
+	Scalar massOrMoleFraction(const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
+				(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
+	}
 
 	/**
 	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
 	 *
 	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
 	 */
-	Scalar bufferPower(int dofIndex, const VolumeVariables& volVars, int compIdx , const SubControlVolume& scv) const {
+	Scalar bufferPower(const VolumeVariables& volVars, int compIdx, int dofIndex) const {
+		
 		switch(compIdx)
 		{
 			case h2OIdx:{
@@ -633,63 +363,82 @@ public:
 				break;
 			}
 			case soluteIdx:{
-				const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
-				{
-					double mOMD = isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-							(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-					return mOMD;
-				};
+				
+					double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * std::max(massOrMoleFraction(volVars,h2OIdx, compIdx, true), 0.);//mol C/m3 soil water
 
-				const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
-				{
-					double mOMF = isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-							(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-					return mOMF;
-				};
-				
-				// m3 solid / m3 scv
-				//double solidVolFr = (1 - volVars.porosity());//
-				
-				double C_SfrW = std::max(massOrMoleFraction(volVars,h2OIdx, compIdx, true), 0.);					//mol C/mol soil water
-				double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
-				double theta =  volVars.saturation(h2OIdx) * volVars.porosity();
-				// [-] * [m3 solid / m3 scv] * [m3 scv /m3 wat] * [mol C/m3 solid] / [mol C/m3 wat] = [-]	//m3 water /m3 scv				
-				
-				// [m3 scv zone 1/m3 scv] * [m3 scv/m3 wat] * [mol C/m3 scv zone 1] / [mol C/m3 wat] = [-]	
-               
-                
-                
-				// (mol Soil / m3 soil)  
-				// double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
-				// m3 soil/m3 scv
-				// double solVolFr = (1 - volVars.porosity());
-				// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
-				// double bulkSoilDensity = solidDensity * solVolFr;
-				
-				double svc_volume;
-				if (dimWorld == 1)//1daxissymmetric model
-				{
-					svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
-									// for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
-				}else{ // dimWorld == 3
-					svc_volume = scv.volume();
-				}
-				
-				double RF_ = this->computeRF(C_S_W, theta, svc_volume);
-				
-				setRF(RF_, dofIndex);
-				
-				return RF_;
+					return this->computeB(volVars, C_S_W, dofIndex);
+				// if (getB_(volVars, dofIndex)>0.) {//b_
+					// return b_;
+				// } else {
+					// if (getFreundlichK_(volVars, dofIndex)==0.) {//freundlichK_
+						// return 0.;
+					// }
+					
+					
+				// }
 			}
-			case mucilIdx:
+			default:
 			{
-				return 1.;//return 1 instead of 0 because we have * instead of + (see localresidual.hh)
-			}
-			default: {
-				DUNE_THROW(Dune::InvalidStateException, "bufferPower used for compIdx"+ std::to_string(compIdx));
+				return 0.;
 			}
 		}
 		
+	}
+	
+	double getFreundlichK_(const VolumeVariables& volVars, int dofIndex) const 
+	{
+		double Css = massOrMoleFraction(volVars,0, 0, false);
+		if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))) { return 0.;}
+		else{return freundlichK_;}
+	}
+	
+	double getB_(const VolumeVariables& volVars, int dofIndex) const 
+	{
+		double Css = massOrMoleFraction(volVars,0, 0, false);
+		if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))) { return 0.;}
+		else{return b_;}
+	}
+
+	double computeB(const VolumeVariables& volVars, double C_S_W, int dofIndex) const
+	{
+		//double CSS1 = this->computeCSS1(C_S_W, theta); // [ mol / m^3 zone 1]
+		//return 1+(CSS1*f_sorp)/(C_S_W*theta);// = 1+f * (Cssmax*csw)/(csw+ksrop)^2
+		
+		//mol/m3
+			double solidDensity = massOrMoleDensity(volVars, SolidSystem::mainCompIdx , false);
+			double solVolFr = (1. - volVars.porosity());
+			double bulkSoilDensity = solidDensity * solVolFr;
+			double C_S_S2 = std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false) //mol C/mol solid soil
+							, 0.);
+			if((C_S_W <= 0)||(C_S_S2>0.)){return 0.;}
+			 
+		return computeCSS1(bulkSoilDensity, C_S_W, dofIndex)/C_S_W;//CSSmax*C_S_W/(k_sorp+C_S_W);//bulkDensity_*freundlichK_*std::pow(C_S_W, freundlichN_)/C_S_W;
+	}
+	
+	double computeCSS1(double bulkSoilDensity, double C_S_W, int dofIndex) const
+	{// mol		
+	
+		//double Css = massOrMoleFraction(volVars,0, 0, false);
+		//if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.)) { return 0.;}
+		if (((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))||(C_S_W <= 0)) { return 0.;}
+		switch(css1Function) {
+		  case 0:
+			return 0.;//none
+		  case 1:
+			return CSSmax*C_S_W/(k_sorp+C_S_W);//langumuir
+		  case 2:
+			// [mol/m3] = [mol/m3] * [cm^{3*n}/mol^n] * [mol^n/cm^{3*n}]
+			// see DeBauw et al. 2020 supplementary, Eq. 2
+			// to do: re-check
+			return bulkSoilDensity * freundlichK_*std::pow(C_S_W, freundlichN_);  // freundlich
+		  case 4:
+			return b_*C_S_W;
+		  case 5:
+			return (kads * C_S_W * CSSmax)/(kads * C_S_W + kdes);
+		  default:
+			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0 or 1)"+ std::to_string(css1Function));
+		}
+		return 1.;
 	}
 
 	/*!
@@ -702,10 +451,17 @@ public:
 		auto eIdx = this->gridGeometry().elementMapper().index(entity);
 		Scalar z = entity.geometry().center()[dimWorld - 1];
 		PrimaryVariables v(0.0);
-		v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
+		//Scalar h_init = initialSoil_[h2OIdx].f(z,eIdx)
+		//Scalar h_mucil = std::max(h_init, 0.);
+		//if()
+		//{
+			
+		//}else{
+			v[pressureIdx] = toPa_(initialSoil_[h2OIdx].f(z,eIdx));
+		//}
 		if(verbose>1)
 		{
-			 std::cout<<"PrimaryVariables initial(1p5cproblem) "<<z<<" "<<v[pressureIdx];
+			 std::cout<<"PrimaryVariables initial(1p4cproblem) "<<z<<" "<<v[pressureIdx];
 		}
 		for(int i = soluteIdx; i<numComponents_;i++)//solutes
 		{
@@ -806,13 +562,6 @@ public:
         return values;
     }
 
-
-	PcKrSwCurve materialLaw(const Element& element) const {
-	    const BasicParams& basicParams = this->spatialParams().basicParams(element);
-	    const EffToAbsParams& effToAbsParams = this->spatialParams().effToAbsParams(element);
-	    const RegularizationParams& regularizationParams = this->spatialParams().regularizationParams(element);
-	    return PcKrSwCurve(basicParams, effToAbsParams, regularizationParams);
-	}
 	
    /*!
 	 * \copydoc FVProblem::neumann // [kg/(m²*s)] or [mol/(m²*s)]
@@ -835,27 +584,24 @@ public:
 		 *  WATER
 		 */
 		double f = 0.; // return value [kg m-2 s-1)] or [mol m-2 s-1]
-		double pos0 = 1;
-		double scvf_area = scvf.area();
+		double pos0 = 1;		double scvf_area = scvf.area();
 		if(dimWorld == 1){
 			pos0 =pos[0]; 
 			scvf_area = 2 * M_PI * pos0 * segLength;//m2
 		}
-				
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
-			Scalar s = volVars.saturation(h2OIdx);
-			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
-			PcKrSwCurve materialLaw_ = materialLaw(element);
-			Scalar p = materialLaw_.pc(s) + pRef_;//water pressure?
-			Scalar h = -toHead_(p); // in cm todo why minus -pc?
+			//Scalar s = volVars.saturation(h2OIdx);
+			// m2 * [kg/m^3] * [m/s^2]/[Pa*s] = m/s
+			Scalar kc = volVars.permeability() * volVars.density(h2OIdx) * g_/volVars.viscosity(h2OIdx);//this->spatialParams().hydraulicConductivity(element); //  [m/s], 
+			Scalar h = volVars.pressureHead(0);//-toHead_(p); // in cm todo why minus -pc?
 			GlobalPosition ePos = element.geometry().center();
 			// multiply distance by 2 to better limit the flow (because we can have sharp decrease of wat. pot. 
             //between cell center and cell face) which cannot be taken into account because of the discretisation.
 			Scalar dz = 100 *  std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); //2 *// m->cm
             if (dzScaling == dx){dz = dz * 2;}
             
-			Scalar krw = materialLaw_.krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
+			Scalar krw = volVars.relativePermeability();//materialLaw_ .krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
 			
 			//useMole fraction or mass fraction? 
 			//[kg/m3] or [mol/m3]
@@ -982,7 +728,6 @@ public:
 		}
 		
 		flux[h2OIdx] = f;// [mol /(m^2 * s)] * pos0
-		
 
 		/*
 		 * SOLUTES
@@ -995,7 +740,16 @@ public:
 		double unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
 		for(int i_s = 0; i_s < bcSBotType_.size(); i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
 		{
+        
 			int i = i_s + 1;//int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
+            
+		if(verbose>1)
+		{
+			std::cout << "neumann_solutes() ";
+			std::cout<<i_s <<" "<<i<<" "<<bcSBotType_.size()<<" "<<(i_s < bcSBotType_.size());
+            std::cout<<" bc? "<<onUpperBoundary_(pos)<<" "<<onLowerBoundary_(pos)<<" ";
+            std::cout<<" type "<<bcSTopType_.at(i_s)<<" "<<bcSTopValue_.at(i_s)<<std::endl;
+		}
 			Scalar massOrMolFraction = useMoles? volVars.moleFraction(0, i) : volVars.massFraction(0, i);
 			if (onUpperBoundary_(pos)) { // top bc Solute
 				//std::cout<<"neumann solute, upper BC "<<bcSTopType_.at(i_s)<<" ";
@@ -1063,7 +817,12 @@ public:
 				}
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
-					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] = vMax * std::max(massOrMolFraction,0.)*rhoW/(km + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+						if (verbose)
+						{
+							std::cout<<"onUpperBoundary_michaelisMenten, vMax: "<<vMax<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km<<" pos0 "<<pos0<<std::endl;
+						}
 					break;
 				}
 				default:
@@ -1127,7 +886,12 @@ public:
 				}
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
-					flux[i] = vMax_ * std::max(massOrMolFraction,0.)*rhoW/(km_ + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] = vMax * std::max(massOrMolFraction,0.)*rhoW/(km + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+						if (verbose)
+						{
+							std::cout<<"onLowerBoundary_michaelisMenten, vMax: "<<vMax<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km<<" pos0 "<<pos0<<std::endl;
+						}
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -1139,8 +903,6 @@ public:
 							 
 		}
 
-		setFaceFlux(flux/pos0*scvf_area, scvf.index()); // kg or mol /s
-		
 		return flux;
 	}
 
@@ -1171,11 +933,25 @@ public:
   
 															  
 		auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
+        const auto& volVars = elemVolVars[scv];
 		for(int i = 0;i < numComponents_;i++)
 		{			
 			if (source_[i] != nullptr) {
-            
 				source[i] = source_[i]->at(eIdx)/svc_volume * pos0;// [ mol / (m^3 \cdot s)]
+                if(i == h2OIdx)
+                {
+                
+                    if (sourceSlope>=0.) {
+                        Scalar h = volVars.pressureHead(0);// cm
+                        if (h<criticalPressure_) {
+                            source[i] = 0.;
+                        } else if (h<=criticalPressure_+sourceSlope) { //  h in [crit, crit+slope]
+                            double ratio = (h - criticalPressure_)/sourceSlope;
+                            // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
+                            source[i] = ratio * source_[i]->at(eIdx)/svc_volume * pos0;
+                        } 
+                    }
+                }
 				if(dobioChemicalReaction&&(i> h2OIdx)&&(source[i]> 0)&&reactionExclusive)
 				{//if we have a reaction in the cell via source and source-biochemreaction mutually exclusive, 
 					//biochem is disabled
@@ -1190,34 +966,12 @@ public:
 			DUNE_THROW(Dune::InvalidStateException, "(((dimWorld == 1)&&(reactionExclusive))||((dimWorld > 1)&&(!reactionExclusive))) ");
 			
 		}
-        const auto& volVars = elemVolVars[scv];
 		if(dobioChemicalReaction)
 		{
 			bioChemicalReaction(element, source, volVars, pos0, scv);
-		}else{ 
-			const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
-			{
-				return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-						(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-			};
-
-			const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
-			{
-				return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-						(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-			};
-			double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
-			double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;	//mol C/m3 soil water
-			double theta = volVars.saturation(h2OIdx) * volVars.porosity(); //m3 water / m3 scv
-        							
-			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume);
-			// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
-			setCSS1(CSS1*f_sorp, scv.dofIndex());
 		}
-		
-		setSource(source/pos0, dofIndex);// [ mol / (m^3 \cdot s)]
 	
-		if(verbose)
+		if(verbose>1)
 		{
 			std::cout << "source() ";
 			for(int i = 0;i < numComponents_;i++)
@@ -1230,41 +984,6 @@ public:
 		return source;
 	}
 	
-	double computeRF(double C_S_W, double theta, double svc_volume) const
-	{
-		double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume); // [ mol / m^3 zone 1]
-		return 1+(CSS1*f_sorp)/(C_S_W*theta);
-	}
-	double computeCSS1(double C_S_W, double theta, double svc_volume) const
-	{// [ mol / m^3 zone 1]
-		
-		switch(css1Function) {
-		  case 0: // css1
-			return CSSmax*(C_S_W/(C_S_W+k_sorp));
-		  case 1: //css1 only if there are no sources
-			return 0.;//none
-		  case 2:
-		  // [mol C/m3 scv zone 1] = [m3 soil water/m3 scv zone 1] * [mol C/m3 soil water]
-			return CSSmax*C_S_W/k_sorp;//linear, with CSSmax in [m3 wat/m3 scv zone 1]
-		  case 3:
-			return 0.;//only pde
-		  case 4:
-			return CSSmax*(C_S_W/(C_S_W+k_sorp));
-		  case 5:
-			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp));
-		  case 6://CSSmax is content
-			return CSSmax*(svc_volume*C_S_W*theta/(svc_volume*C_S_W*theta+k_sorp))/svc_volume;
-		  case 7://linear with depends on content
-			return CSSmax*(svc_volume*C_S_W*theta/k_sorp);
-		  case 8://linear with CSSmax is content => [mol] * [mol C/m3 soil water] * [m3 soil water/m3 soil] * [m3 soil]/  [mol C] / [m3 soil] / [m3 soil zone 1/m3 soil]= [mol C/m3 soil zone 1] 
-			return CSSmax*C_S_W*theta/k_sorp /f_sorp;
-		  case 9:
-			return 0.;//only pde
-		  default:
-			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
-		}
-		return 1.;
-	}
 	
 		/*!
 	 *
@@ -1275,72 +994,13 @@ public:
 								const SubControlVolume &scv) const
 	{
 		
-		 const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
-        {
-			return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-					(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-		};
-
-        const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
-        {
-			return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-					(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-		};
 		// (mol Soil / m3 soil)  
-		double solidDensity = massOrMoleDensity(volVars, soilIdx -  numFluidComps , false);
+		double solidDensity = massOrMoleDensity(volVars, SolidSystem::mainCompIdx , false);//soilIdx -  numFluidComps
 		// m3 soil/m3 scv
-		double solVolFr = (1 - volVars.porosity());
+		double solVolFr = (1. - volVars.porosity());
 		// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
 		double bulkSoilDensity = solidDensity * solVolFr;
 
-        double sat = volVars.saturation(h2OIdx);//m3 water / m3 pores
-		double theta = sat * volVars.porosity(); //m3 water / m3 scv
-        
-		PcKrSwCurve materialLaw_ = materialLaw(element);
-		Scalar p = materialLaw_.pc(sat) + pRef_;//water pressure?
-        Scalar psicm = std::min(-toHead_(p),0.); // to cm
-        double psihPa = psicm*0.980665;// hPa
-        double psikPa = psihPa / 10.;// kPa 
-        double psiMPa = psihPa * 1e-4;// MPa
-        
-        // clamp to the rang [0,1] to make sure (might have rounding error for f_A2Dm f_D2A and f_A is not limited)
-        double psikPa_ = std::max(std::min(psikPa, psikPa_opt),psikPa_th);
-        double f_A = std::min(std::max(1-std::pow((
-                            (std::log10(std::abs(psikPa_))-std::log10(std::abs(psikPa_opt))
-                        )/(std::log10(std::abs(psikPa_th))-std::log10(std::abs(psikPa_opt)))
-						),alpha_A),
-                        0.),1.); // -
-        double f_A2D = std::min(std::max(1/(1+std::pow((psiMPa_A2D/psiMPa),w_DA)),0.),1.); // -
-        double f_D2A = std::min(std::max(1/(1+std::pow((psiMPa/(psiMPa_A2D*tau_DA)),w_DA)),0.),1.); // -
-        
-		double C_LfrW =  std::max( massOrMoleFraction(volVars,0, mucilIdx, true) , 0.);					//mol C/mol soil water 
-		//[mol solution / m3 solution] * [mol solute / mol solution] = [mol solute / m3 solution]
-		double C_L_W = massOrMoleDensity(volVars, h2OIdx, true) * C_LfrW;								//mol C/m3 soil water
-		//double C_L_S = C_L_W * theta;							//mol C/m3 scv
-		
-		double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
-		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
-		//double C_S_S = C_S_W * theta;							//mol C/m3 scv
-		
-		std::vector<double> C_afrSoil(2), C_a(2), C_aLimited(2), C_dfrSoil(2), C_d(2);
-		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
-		{
-			int CxAIdx = (i == 0) ? CoAIdx : CcAIdx;
-			int CxDIdx = (i == 0) ? CoDIdx : CcDIdx;
-			C_afrSoil[i] =  std::max(massOrMoleFraction(volVars,0, CxAIdx - numFluidComps, false), 0.);//mol C/mol solid soil
-			C_a[i]  = std::max(bulkSoilDensity * C_afrSoil[i],C_aLim[i])  ;													//mol C/m3 scv
-            C_aLimited[i]  = std::max(C_a[i]-C_aLim[i],0.);
-			C_dfrSoil[i]  =  std::max(massOrMoleFraction(volVars,0, CxDIdx - numFluidComps, false), 0.);//mol C/mol solid soil
-			C_d[i] = bulkSoilDensity * C_dfrSoil[i] ;	// mol C / m3 bulk soil							//mol C/m3 scv
-		}
-		//[mol C / m3 scv] = [mol scv/m3 scv] * [mol C/mol scv]
-		double CSS2;
-		if(f_sorp < 1.)
-		{
-			CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) / (1 - f_sorp) ; // mol C / m3 scv zone 2
-		}else{CSS2 = 0.;}
-		//double CSS1;// = CSSmax*(C_S_W/(C_S_W+k_sorp));// mol C / m3 scv zone 1	
-        
         double svc_volume;
         int dofIndex = scv.dofIndex();
 		if (dimWorld == 1)//1daxissymmetric model
@@ -1350,86 +1010,30 @@ public:
 		}else{ // dimWorld == 3
             svc_volume = scv.volume();
         }
+        
+		std::vector<double> WorCorN(numComponents_);
 		
-			double CSS1 = this->computeCSS1(C_S_W, theta, svc_volume); // mol C/scv zone 1
+        WorCorN[h2OIdx] = volVars.saturation(h2OIdx) * volVars.porosity(); //m3 water / m3 scv		
 		
-        //	depolymerisation large polymer to small polymers
-		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depoly = f_A * v_maxL * (C_L_W/(K_L+ C_L_W)) * C_aLimited[0];// mol C/(m^3 bulk soil *s)
-		
-		double F_uptake_S = 0.;
-		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
-		double F_growth_S = 0.;	
-		
-		std::vector<double> F_uptake_S_A(2), F_uptake_S_D(2), F_decay_A(2), F_decay_D(2) ;
-		std::vector<double> F_growth(2), F_deact(2), F_react(2), phi(2);
-		
-		for(int i = 0; i < 2; i++)// 0 = oligo, 1 = copio
-		{		
-			//				Uptake			
-			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
-			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 wat] = [mol C_oX / m3 wat /s]
-			F_uptake_S_A[i] = f_A * (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
-			F_uptake_S_D[i] = f_A * (m_max[i] * C_S_W * k_SBis[i])/(m_max[i] + C_S_W * k_SBis[i]) * beta[i] * C_d[i] ; //mol C/(m^3 bulk soil *s)
-			
-			//				Decay
-			// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
-			F_decay_A[i] = m_maxBis[i]  * C_aLimited[i]  - F_uptake_S_A[i] ;			//mol C/(m^3 bulk soil *s)
-			F_decay_D[i] = m_maxBis[i]  * beta[i]  * C_d[i]  - F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
-			
-			//				Other
-			
-			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
-			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_growth[i] = f_A * (micro_max[i] * C_S_W * k_S[i])/(micro_max[i] + C_S_W * k_S[i]) * C_a[i] ;		//mol C/(m^3 bulk soil *s)
-			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.))
-			{
-				std::cout<<"F_growth["<<i<<"] " << std::scientific<<std::setprecision(20)
-				<<micro_max[i] <<" "<< C_S_W <<" "<< k_S[i] <<" "<< C_a[i]<<" "<<F_growth[i]<<std::endl;
-				std::cout<<"F_decay_A["<<i<<"] " << std::scientific<<std::setprecision(20)
-				<<m_maxBis[i] <<" "<< C_aLimited[i]  <<" "<< F_uptake_S_A[i]  <<" "
-				<< F_decay_A[i] <<std::endl;
-			}
-			phi[i] = 1/(1 + std::exp((C_S_W_thres[i] - C_S_W)/(k_phi * C_S_W_thres[i])));								// - 
-			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[i]  = std::max(f_A2D , (1 - phi[i] )) * k_D[i]  * C_aLimited[i] ;			//mol C/(m^3 bulk soil *s)
-			F_react[i]  = std::min(f_D2A, phi[i]) * k_R[i]  * C_d[i] ;				//mol C/(m^3 bulk soil *s)
-			
-			F_uptake_S += F_uptake_S_A[i] + F_uptake_S_D[i] ;	//mol C/(m^3 bulk soil *s)
-			F_decay += F_decay_A[i] + F_decay_D[i];	
-			F_growth_S += (1/k_growth[i])*F_growth[i];
+		for(int Idx = 1; Idx <= numFluidSolutes; Idx++)
+		{
+			WorCorN[Idx] = massOrMoleDensity(volVars, h2OIdx, true) * 
+					std::max(massOrMoleFraction(volVars,0, Idx, true),					//mol C or N/mol soil water
+					0.);																//mol C or N/m3 soil water
 		}
 		
-		
-		//Att: using here absolute saturation. should we use the effective? should we multiply by pos?
-		//[mol solute / m3 scv /s] 
-        double dtCSS2 = computeDtCSS2(CSS1, C_S_W, CSS2);
-        setReac_CSS2(dtCSS2, dofIndex);
-
+		for(int Idx = numFluidSolutes +1 ; Idx <= numSolutes; Idx++)
+		{
+			//[mol C / m3 scv] = [mol scv/m3 scv] * [mol C/mol scv]
+			WorCorN[Idx]  = bulkSoilDensity * 
+						std::max(massOrMoleFraction(volVars,0, Idx - numFluidComps, false) //mol C/mol solid soil
+						, 0.); //mol C/m3 scv						
+		}
 		
 		//[mol solute / m3 scv/s] 
-		q[soluteIdx] += (  + F_depoly + (1 - k_decay2)*F_decay - F_uptake_S -  F_growth_S - dtCSS2)* pos0 ;
-		q[mucilIdx]  += (-F_depoly +  k_decay2 * F_decay) * pos0;
-		
-		q[CoAIdx] += (  - extra + F_growth[0] - F_deact[0] + F_react[0] - (1/k_decay)*F_decay_A[0]) * pos0;
-		q[CoDIdx] += ( - extra2 + F_deact[0] - F_react[0] - (1/k_decay)*F_decay_D[0]) * pos0;
-		
-		q[CcAIdx] += (   F_growth[1] - F_deact[1] + F_react[1] - (1/k_decay)*F_decay_A[1]) * pos0;
-		q[CcDIdx] += (F_deact[1] - F_react[1] - (1/k_decay)*F_decay_D[1]) * pos0;
-		
-		q[CSS2Idx] +=  dtCSS2 * pos0 ;
-		q[co2Idx] += (((1-k_growth[0])/k_growth[0])*F_growth[0] +((1-k_growth[1])/k_growth[1])*F_growth[1] +((1-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
+		q[soluteIdx] += 0* pos0 ;
+		q[CSS2Idx] +=  0 * pos0 ;
 			
-			if(verbose>1)
-			{
-                std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
-                <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
-            }
-		//for post-processing		
-			setSorp(Reac_CSS2[dofIndex], scv.dofIndex());
-			setTheta(theta, scv.dofIndex());
-			setCSS1(CSS1*f_sorp, scv.dofIndex());
-
 	}
 
 	/*!
@@ -1615,7 +1219,7 @@ public:
     
     
     std::function<double(double,double,double)> computeDtCSS2 =
-        std::bind(&Richards1P10CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
+        std::bind(&Richards1P4CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
     double computeInitCSS2_(double CSS1, double CSW) // mol/m3
     {
         if(css1Function == 1){return CSS1;}
@@ -1633,17 +1237,8 @@ public:
     }
     double computeDtCSS2_(double CSS1, double CSW, double CSS2) // mol/m3/s
     {
-        if(css1Function == 1){return alpha * (CSS1-CSS2);}
-        if(css1Function == 3)
-        {
-            if(verbose>1)
-            {
-                std::cout<<"computeDtCSS2_ "<<kads<<" "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<CSS2<<std::endl;
-            }
-            return kads * (CSSmax * CSW/(CSW+k_sorp )- CSS2);
-        }
         if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
-        if(css1Function == 10){return kads * (CSSmax - CSS2) - kdes * CSS2;}
+        //if(css1Function == 10){return kads * (CSSmax - CSS2) - kdes * CSS2;}
         
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
@@ -1701,77 +1296,55 @@ private:
 	std::ofstream myfile_;
 	bool toFile;
 	bool reactionExclusive;
+	bool doNeffect = true;
 	
 	
 	static constexpr Scalar eps_ = 1.e-7;
 	double temperatureK;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr Scalar g_ = 9.81; // m / s^2 (for type conversions)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
 	static constexpr Scalar pRef_ = 1.e5; // Pa
 
 	
 	// default value in CPB units
-	double  v_maxL_ = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]
-	double  K_L_ = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
-	std::vector<double>  m_max_{0.01,0.001}; //[d-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	std::vector<double>  micro_max_{1,10}; //[d-1] Maximum growth rate coefficient for the corresponding microbial group
-	std::vector<double>  beta_{0.1,0.3}; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
-	std::vector<double>  k_S_{ 50000, 30000}; // [mol soil / mol C soil / d] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  C_S_W_thres_{ 0.001/(12*1000), 0.01/(12*1000)}; //[mol C/cm3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
-	double  k_phi_= 0.1; //[-] Sharpness parameter for the switch function from active to dormancy
-	std::vector<double>  k_D_{ 1, 5}; //[d-1] Deactivation rate coefficient for the corresponding microbial group
-	std::vector<double>  k_R_{ 1, 5}; //[d-1] Reactivation rate coefficient for the corresponding microbial group
-	double  k_decay_= 0.75; //[-] Maintenance yield
-	double  k_decay2_= 0.5;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
-	std::vector<double>  k_growth_{ 0.8, 0.6};//[-] Growth yield on small polymers for the corresponding microbial groups
-	double k_sorp_ = 0.2;//mol/cm3 or mol
-	double CSSmax_ = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
-	double alpha_ = 0.1; //[d-1]
-    double kads_ = 23265;//[cm3/mol/d] or [1/d]
-    double kdes_=4;//[d-1]
+	double  v_maxL = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]
+	double  K_L = 10e-3 ; //Half-saturation coefficients of enzymes targeting large polymers [mol cm-3 soil]
+	std::vector<double>  m_max{0.01,0.001}; //[d-1] Maximum maintenance rate coefficient for the corresponding microbial groups
+	std::vector<double>  micro_max{1,10}; //[d-1] Maximum growth rate coefficient for the corresponding microbial group
+	std::vector<double>  beta{0.1,0.3}; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
+	std::vector<double>  k_S{ 50000, 30000}; // [mol soil / mol C soil / d] Specific substrate affinity to small polymers for the corresponding microbial group
+	std::vector<double>  C_S_W_thres{ 0.001/(12*1000), 0.01/(12*1000)}; //[mol C/cm3 soil water] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
+	double  k_phi= 0.1; //[-] Sharpness parameter for the switch function from active to dormancy
+	std::vector<double>  k_D{ 1, 5}; //[d-1] Deactivation rate coefficient for the corresponding microbial group
+	std::vector<double>  k_R{ 1, 5}; //[d-1] Reactivation rate coefficient for the corresponding microbial group
+	double  k_decay= 0.75; //[-] Maintenance yield
+	double  k_decay2= 0.5;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
+	std::vector<double>  k_growth{ 0.8, 0.6};//[-] Growth yield on small polymers for the corresponding microbial groups
+	double k_sorp = 0.2;//mol/cm3 or mol
+	double CSSmax = 1.75;// [mol/cm3 soil scv zone 1] or mol, max sorption capacity
+	double alpha = 0.1; //[d-1]
+    double kads = 23265;//[cm3/mol]
+    double kdes=4;//[-]
+	Scalar b_; // buffer power
+	double freundlichK_;// [mol^(1-n)*cm^{3*(n-1)}]
+	double freundlichN_;// [-]
+	Scalar sourceSlope = -1.; // slope for regularization, negative values disables regularisation
 	
 	// active root solute uptake
-	Scalar vMax_; // Michaelis Menten Parameter [mol m-2 s-1]
-	Scalar km_;  // Michaelis Menten Parameter  [mol m-3]
+	Scalar vMax; // Michaelis Menten Parameter [mol m-2 s-1]
+	Scalar km;  // Michaelis Menten Parameter  [mol m-3]
 	
-	double  v_maxL ; //Maximum reaction rate of enzymes targeting large polymers [s-1]
-	double  K_L  ; //Half-saturation coefficients of enzymes targeting large polymers [kg m-3 soil] or [mol m-3 soil] 
-	std::vector<double>  C_aLim ; //[mol C/m3] Minimum concentraiton of active organisme (to be able to restart from a solute concentration of 0)
-	std::vector<double>  m_max ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	std::vector<double>  micro_max ; //[s-1] Maximum growth rate coefficient for the corresponding microbial group
-	std::vector<double>  beta ; //[-] Reduction factor of maintenance requirements in dormant state for the corresponding microbial group
-	std::vector<double>  k_S ; // [m3 soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  C_S_W_thres ; //[mol C/m3 soil] Threshold concentration for reactivation and deactivation for the corresponding microbial groups
-	double  k_phi ; //[-] Sharpness parameter for the switch function from active to dormancy
-	std::vector<double>  k_D ; //[s-1] Deactivation rate coefficient for the corresponding microbial groups
-	std::vector<double>  k_R ; //[s-1] Reactivation rate coefficient for the corresponding microbial group
-	double  k_decay ; //[-] Maintenance yield
-	double  k_decay2;//[-] Proportion of large polymers formed from dead microbial biomass due to maintenance
-	std::vector<double>  k_growth;//[-] Growth yield on small polymers for the corresponding microbial groups
-	double k_sorp; //[mol/m3] or mol
-	double f_sorp = 0.5;//[-] fraction fo sorption zone 1
-	double CSSmax;// [mol/m3 soil scv zone 1] or mol Maximum sorption capacity
-	double alpha;//[s-1]	
-    double kads;//[m3/mol/s] or [1/s]
-    double kdes;//[s-1]
-    
+	std::vector<double>  C_aLim ; //[mol C/m3] Minimum concentraiton of activated organisme (to be able to restart from a solute concentration of 0)
+	
     double psikPa_opt = -3.;//[kPa]
     double psikPa_th = -15800.;//[kPa]
     double alpha_A = 1.47;//[s-1]
     double psiMPa_A2D = -0.46;//[MPa] psiMPa_A2D
     double tau_DA = 0.39;//[-]
     double w_DA = 3.38;//[-]
-    
-	std::vector<double>  k_SBis ; // [mol soil / mol C soil / s] Specific substrate affinity to small polymers for the corresponding microbial group
-	std::vector<double>  m_maxBis ; //[s-1] Maximum maintenance rate coefficient for the corresponding microbial groups
-	double  k_decay3 = 1;// for troubleshooting
-	double k_growthBis = 1; // dummy variable for troubleshooting
-	double extra = 0;
-	double extra2 = 0;
-	double m_maxBisO;
-	double m_maxBis_Cs;
-	double theta;
     int css1Function;
+	double f_sorp = 0;
+	
 
 };
 

@@ -13,9 +13,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
-from rosi_richards10c_cyl import RichardsNCCylFoam # C++ part (Dumux binding)
+from rosi_richards4c_cyl import Richards4CCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from rosi_richards10c import RichardsNCSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards4c import Richards4CSPILU as Richards4CSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
@@ -40,8 +40,6 @@ def getBiochemParam(s,soil_type):
     """
     s.doSimpleReaction = 1 #only diffusion, decay, sorption and not Mona's complete model 
     
-    # file containing the TraiRhizo parameter sets
-    paramSet = pd.read_csv('./output_random_rows.csv').iloc[soil_type].to_dict()
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
@@ -52,25 +50,17 @@ def getBiochemParam(s,soil_type):
         s.CSSmax = 0.
         s.alpha = 0.
     else:
+        
+        s.kads = 10**2 # cm3/mol # ATT: can create 1d-3d converging error if kads is too high
+        s.kdes = 1.# -
         s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
         
-    s.css1Function = 9 # current adsorption function implemented.
-    kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
-    yr_per_d = 1/365 # [yr/d]
-    m3_per_cm3 = 1e-6; # m3/cm3
-    cm3_per_m3 = 1e6; # cm3/m3
-    
-    # [kg/g] * [g/mol] = kg/mol
-    kgC_per_mol = (1/1000) * s.molarMassC
-    # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
-    s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol
-    
-    kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
-    s.kdes = kdes * yr_per_d
+    s.css1Function = 5 # current adsorption function implemented.
+
     
     
     return s
@@ -90,9 +80,9 @@ def setBiochemParam(s):
     s.setParameter("Soil.Km", str(s.Km)) #m^2/s
 
     #sorption
-    s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3 scv zone 1] or mol
-    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d] or [1/d]
-    s.setParameter("Soil.kdes", str(s.kdes)) #[1/d]
+    s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3] 
+    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol]
+    s.setParameter("Soil.kdes", str(s.kdes)) #[-]
     
     if s.dimWorld == 3:
         # 1 == True
@@ -112,6 +102,42 @@ def getCSS(s, CSW):
     """
     return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) #kd*CSW
     
+def getCSWfromC_total(s, C_total, theta):
+    """
+    Compute the dissolved concentration C_SW (mol/cm3 water)
+    from total concentration C_total (mol/cm3 soil),
+    using equilibrium adsorption.
+
+    Parameters:
+    - C_total: float, total concentration [mol/cm3 soil]
+    - kads: float, adsorption rate constant [cm3 water / mol]
+    - kdes: float, desorption rate constant [dimensionless]
+    - CSSmax: float, max sorption site capacity [mol/cm3 soil]
+
+    Returns:
+    - C_SW: float, dissolved concentration [mol/cm3 water]
+    """
+    a = s.kads
+    d = s.kdes
+    Cmax = s.CSSmax
+    Ct = C_total
+    
+    # Coefficients for the quadratic equation: A*C^2 + B*C + C0 = 0
+    A = theta * a
+    B = -a * Ct + theta * d + a * Cmax
+    C0 = -Ct * d
+
+    discriminant = B**2 - 4 * A * C0
+    
+    if isinstance(discriminant, numbers.Number):
+        if discriminant < 0:
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+    else:
+        if min(discriminant) < 0:
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+            
+    # Only the positive root is physically meaningful
+    return (-B + discriminant**0.5) / (2 * A)
 
 def setIC3D(s, soil_type, ICcc = None):
     return setIC(s, soil_type, ICcc)
@@ -125,9 +151,7 @@ def setIC(s, soil_type, ICcc = None):
         @param: ICcc (optional) predefined initial conditions
     """
     if ICcc is None:
-        #paramSet = pd.read_csv('./output_random_rows.csv').loc[paramIdx]
-        #C_S = paramSet['CS_init'] /s.mg_per_molC## small C solutes in mol/cm3 water
-        #C_L = paramSet['CL_init'] /s.mg_per_molC## large C solutes in mol/cm3 water
+    
         C_S = 0
         C_L = 0
 
@@ -139,13 +163,8 @@ def setIC(s, soil_type, ICcc = None):
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           C_L*unitConversion*addedVar,
-                            0.,
-                            0.,
-                            0.,
-                            0.,
-                            s.CSS_init*unitConversion*addedVar,
-                           0.])# in mol/m3 water or mol/m3 scv
+                           0. 
+                           ])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc)
     else:
@@ -189,10 +208,10 @@ def setDefault(s):
     s.SatisfyResidualAndShiftCriterion = False
     s.setParameter("Newton.SatisfyResidualAndShiftCriterion",
                      str( s.SatisfyResidualAndShiftCriterion) )  
-    s.MaxTimeStepDivisions = 10
+    s.MaxTimeStepDivisions = 100
     s.setParameter("Newton.MaxTimeStepDivisions",
                      str( s.MaxTimeStepDivisions) )  
-    s.MaxSteps = 18
+    s.MaxSteps = 50
     s.setParameter("Newton.MaxSteps",
                      str( s.MaxSteps) )  
     s.setParameter("Newton.MaxRelativeShift", str(s.MaxRelativeShift))
@@ -215,7 +234,7 @@ def getSoilTextureAndShape(soil_= "loam"):
     """
     min_b = np.array([-3./2, -3./2, -5.]) # np.array( [5, 5, 0.] )
     max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array( [3,3,5]) #np.array( [1,1,1]) # 1cm3
+    cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
     area = 3*3
     #min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
     #max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
@@ -239,7 +258,7 @@ def getSoilTextureAndShape(soil_= "loam"):
     dummy = 0
     for i in range(0,len(Kc)):
         if i+1 in Kc_days:
-            Kc[i] = Kc_value[np.where(Kc_days==(i+1))[0]]
+            Kc[i] = Kc_value[np.where(Kc_days == (i + 1))[0][0]]
             dummy = dummy+1
         else:
             slope = (Kc_value[dummy]-Kc_value[dummy-1])/(Kc_days[dummy]-Kc_days[dummy-1])
@@ -279,14 +298,14 @@ def setSoilParam(s):
     return s
 
 
-def create_soil_model3D( usemoles, results_dir ,
+def create_soil_model3D(  results_dir ,
                         p_mean_ = -100,paramIndx =0,
                      noAds = False, ICcc = None, doSoluteFlow = True):
-    return create_soil_model( usemoles , results_dir,
+    return create_soil_model(results_dir,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
-def create_soil_model(simMax, usemoles, results_dir , soil_='loam',
+def create_soil_model(simMax, results_dir , soil_='loam',
                      noAds = False, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, 
                      MaxRelativeShift = 1e-8):
@@ -297,7 +316,6 @@ def create_soil_model(simMax, usemoles, results_dir , soil_='loam',
         @ param: noAds: turn off adsorption?
         @param: paramIndx index of the TraiRhizo parameter set to use
         @param: ICcc (optional) initial concentraiton values for the solute components
-        @param: usemoles [bool] dumux uses moles (True) or grammes (False)
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
     if soil_ == "loam":
@@ -305,12 +323,12 @@ def create_soil_model(simMax, usemoles, results_dir , soil_='loam',
     else:
         soil_type = 1
         
-    s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
+    s = RichardsWrapper(Richards4CSP())  # water and N solute          
     s.results_dir = results_dir   
     s.pindx = soil_type
     
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
-    s.MaxRelativeShift_1DS = MaxRelativeShift
+    s.MaxRelativeShift_1DS = MaxRelativeShift / 10.
     
     soilTextureAndShape = getSoilTextureAndShape(soil_type) 
     min_b = soilTextureAndShape['min_b']
@@ -401,14 +419,13 @@ def setupOther(s, soil_type, simMax):
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
+    s.getCSWfromC_total = getCSWfromC_total
     return s
 
 
     
 def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type,
-                stochastic = False, 
-                static_plant = False,
-                usemoles = True, limErr1d3d = 1e-11):
+                stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -420,14 +437,14 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     if fname.endswith(".rsml"):
         plantModel = XylemFluxPython(fname)
         
-        perirhizalModel = RhizoMappedSegments(  mode, soil_model,  usemoles, seedNum = seed, 
+        perirhizalModel = RhizoMappedSegments(  mode, soil_model, seedNum = seed, 
                                  limErr1d3dAbs = limErr1d3d)
     elif fname.endswith(".xml"):
         seed = 1
         perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
-                                 usemoles=usemoles,
                                  ms = pb.MappedRootSystem(),
-                                 limErr1d3dAbs = limErr1d3d)
+                                 limErr1d3dAbs = limErr1d3d, 
+                                 RichardsNCCylFoam = Richards4CCylFoam)
 
         perirhizalModel.ms.setSeed(seed)
         perirhizalModel.ms.readParameters(path + fname)
@@ -475,9 +492,7 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     plantModel.TranspirationCumul = 0 # real cumulative transpiration
     plantModel.TranspirationCumul_eval = 0 # cumulative transpiration during period with dinamic soil (for mass balance check)
     # cumulative flow    
-    plantModel.seg_fluxes0Cumul = np.array([])
-    plantModel.seg_fluxes1Cumul = np.array([])
-    plantModel.seg_fluxes2Cumul = np.array([])
+    plantModel.seg_fluxesCumul = np.zeros((perirhizalModel.soilModel.numFluidComp, len(plantModel.plant.radii)))
     
     return perirhizalModel, plantModel
     

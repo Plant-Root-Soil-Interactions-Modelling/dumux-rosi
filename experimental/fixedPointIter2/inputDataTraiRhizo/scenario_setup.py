@@ -14,12 +14,13 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
-from rosi_richards10c_cyl import RichardsNCCylFoam # C++ part (Dumux binding)
+from rosi_richards10c_cyl import Richards10CCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from rosi_richards10c import RichardsNCSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards10c import Richards10CSPILU as Richards10CSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
+from rosi_richards10c_cyl import Richards10CCylFoam  # C++ part (Dumux binding)
 
 import plantbox as pb  # CPlantBox
 import functional.van_genuchten as vg
@@ -326,7 +327,7 @@ def create_soil_model( usemoles, results_dir ,
         returns soil_model (RichardsWrapper(RichardsSP())) and soil parameter (vg.Parameters)
     """
         
-    s = RichardsWrapper(RichardsNCSP(), usemoles)  # water and N solute          
+    s = RichardsWrapper(Richards10CSP(), usemoles)  # water and N solute          
     s.results_dir = results_dir   
     s.pindx = paramIndx
     
@@ -456,7 +457,8 @@ def create_mapped_plant(initSim, soil_model, fname, path,
         perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                                  usemoles=usemoles,
                                               ms = pb.MappedPlant(),
-                                 limErr1d3dAbs = limErr1d3d)
+                                 limErr1d3dAbs = limErr1d3d, 
+                                 RichardsNCCylFoam = Richards10CCylFoam)
 
         perirhizalModel.ms.setSeed(seed)
         perirhizalModel.ms.readParameters(path + fname)
@@ -467,7 +469,8 @@ def create_mapped_plant(initSim, soil_model, fname, path,
         perirhizalModel.ms.initialize(verbose = False)
         perirhizalModel.ms.simulate(initSim,verbose= False)
         if doPhloemFlow:
-            plantModel = PhloemFluxPython(perirhizalModel.ms,psiXylInit = -659.8 - min_b[2],ciInit = weatherInit["cs"]*0.5) 
+            plantModel = PhloemFluxPython(perirhizalModel.ms,psiXylInit = -659.8 - min_b[2],
+                                ciInit = weatherInit["cs"]*0.5) 
         else:
             plantModel = XylemFluxPython(perirhizalModel.ms)
             

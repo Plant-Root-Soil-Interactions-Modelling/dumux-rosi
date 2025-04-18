@@ -415,7 +415,10 @@ void init_richards(py::module &m, std::string name) {
    .def("getbcSTopType", &Richards_::getbcSTopType)
    .def("getbcSBotType", &Richards_::getbcSBotType)
    .def("getbcSTopValue", &Richards_::getbcSTopValue)
-   .def("getbcSBotValue", &Richards_::getbcSBotValue);
+   .def("getbcSBotValue", &Richards_::getbcSBotValue)
+   .def_readwrite("molarMassWat", &Richards_::molarMassWat)
+   .def_readwrite("densityWat_m3", &Richards_::densityWat_m3)
+   .def_readwrite("molarDensityWat_m3", &Richards_::molarDensityWat_m3);
 }
 
 

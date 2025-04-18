@@ -7,7 +7,6 @@ import plantbox as pb
 import functional.xylem_flux as xylem_flux
 import sys
 from functional.xylem_flux import XylemFluxPython
-from rosi_richards10c_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from fv.fv_grid import *
 import fv.fv_richards as rich  # local pure Python cylindrical models
@@ -41,10 +40,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     # TODO copy mapped segments constructors (!)...
 
     def __init__(self,  soilModel,
-                usemoles, 
                  ms = None,
                  #seedNum=None,
-                 limErr1d3dAbs = 1e-11):
+                 limErr1d3dAbs = 1e-11, RichardsNCCylFoam = None):
         """ @param file_name is either a pb.MappedRootSystem, pb.MappedSegments, or a string containing a rsml filename"""
         #if not seedNum is None:
         #    super().__init__(seednum = seedNum)
@@ -56,12 +54,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # simulation characteristics            
         self.results_dir = soilModel.results_dir # directory for output data
         self.mode = "dumux_10c" # mode of the simulation represented
-        self.useMoles = usemoles
         self.numFluidComp = soilModel.numFluidComp
         self.numDissolvedSoluteComp = soilModel.numDissolvedSoluteComp
         self.numSoluteComp = soilModel.numSoluteComp
         self.numComp = soilModel.numComp
         self.debugMode = False
+        self.RichardsNCCylFoam = RichardsNCCylFoam
         
         
         # constants
@@ -298,11 +296,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         if rank == 0:
             wat_total_ =  self.soil_water3dAfter[cellIds]  # [cm3].
 
-            self.allDiff1d3dCW_abs[0] = np.array([
-                abs(self.soil_water3dAfter[cellId] - self.rhizoWAfter_eachCyl[
-                        self.getIdCyllMPI(cellId)[0]
-                    ].sum()
-                   ) for cellId in cellIds])
+            self.allDiff1d3dCW_abs[0] = abs(self.soil_water3dAfter[cellIds] - self.soil_W1d_perVoxelAfter )
+            #np.array([
+            #    abs(self.soil_water3dAfter[cellId] - self.rhizoWAfter_eachCyl[
+            #            self.getIdCyllMPI(cellId)[0]
+            #        ].sum()
+            #       ) for cellId in cellIds])
 
             self.allDiff1d3dCW_rel[0] = abs((
                     self.allDiff1d3dCW_abs[0]/wat_total_
@@ -310,35 +309,41 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             self.sumDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].sum()
 
             self.maxDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].max()
-            if self.maxDiff1d3dCW_abs[0] > 1e-13:
+            if self.maxDiff1d3dCW_abs[0] > 1e-12:
                 self.maxDiff1d3dCW_rel[0] = self.allDiff1d3dCW_rel[0].max()
 
 
             self.allDiff1d3dCW_abs[1:] = np.array([abs(
                 self.totC3dAfter_eachVoxeleachComp[idComp][cellIds] - self.soil_solute1d_perVoxelAfter[idComp]
             ) for idComp in range(0, self.numComp-1)])
+            
             self.allDiff1d3dCW_rel[1:] = np.array([ (
                 self.allDiff1d3dCW_abs[idComp+1]/np.where(
                 self.totC3dAfter_eachVoxeleachComp[idComp][cellIds]>0.,
                 self.totC3dAfter_eachVoxeleachComp[idComp][cellIds],1.))*100. for idComp in range(0, self.numSoluteComp)])
-
+            
+            
             self.sumDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].sum() for idComp in range(1, self.numComp)])
 
             self.maxDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].max() for idComp in range(1, self.numComp)])
 
             divideTemp_ =  np.array([ sum(self.soil_solute1d_perVoxelAfter[idComp]) for idComp in range(0, self.numComp-1)])
             divideTemp = np.array([ divideTemp_[idComp] if divideTemp_[idComp] != 0. else 1. for idComp in range(0, self.numComp-1)])
-            print()
+            
             self.sumDiff1d3dCW_rel[1:] = np.array([self.sumDiff1d3dCW_abs[idComp]/divideTemp[idComp-1] for idComp in range(1, self.numComp)])
-
-            self.maxDiff1d3dCW_rel[1:] = np.array([self.allDiff1d3dCW_rel[idComp].max() if  self.allDiff1d3dCW_abs[idComp].max() > 1e-13 else 0.  for idComp in range(1, self.numComp)])
-
+            
+            self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
 
 
             issueWater = ((self.maxDiff1d3dCW_abs[0].max() > diff1d3dCW_abs_lim) and 
                 (self.maxDiff1d3dCW_rel[0] > diff1d3dCW_rel_lim[0]))
-            issueSolute = [(self.maxDiff1d3dCW_rel[idComp] > diff1d3dCW_rel_lim[idComp]) and (self.maxDiff1d3dCW_rel[idComp]  > 0.1) and (self.maxDiff1d3dCW_abs[idComp]  > 1e-13) for idComp in range(1, self.numComp)]
+            issueSolute = [(self.maxDiff1d3dCW_rel[idComp] > diff1d3dCW_rel_lim[idComp]) and (self.maxDiff1d3dCW_rel[idComp]  > 0.1) and (self.maxDiff1d3dCW_abs[idComp]  > 1e-12) for idComp in range(1, self.numComp)]
 
+            #print('self.allDiff1d3dCW_rel',self.allDiff1d3dCW_rel,
+            #'\nself.allDiff1d3dCW_abs',self.allDiff1d3dCW_abs,
+            #    '\nself.totC3dAfter_eachVoxeleachComp',self.totC3dAfter_eachVoxeleachComp,
+            #    '\nself.soil_solute1d_perVoxelAfter',self.soil_solute1d_perVoxelAfter)
+            
             if issueWater or any(issueSolute) :
                 print("check1d3dDiff error", issueWater, issueSolute, 
                       'self.maxDiff1d3dCW_rel',self.maxDiff1d3dCW_rel,
@@ -578,20 +583,37 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         #self.eidx_all = self.allgatherv(np.array(self.eidx), data2share_type_default = np.int64)# all epreviously existsing segs
         self.cylSoilidx_all = self.allgatherv(np.array(self.cylSoilidx), data2share_type_default = np.int64)# all epreviously existsing segs
         self.eidx_all = self.eidx_all_.copy()#self.gather(np.array(self.eidx), dtype = int)# all epreviously existsing segs
-        #self.cylSoilidx_all = self.gather(np.array(self.cylSoilidx))# all epreviously existsing segs
         
         self.storeIdCyllMPI()
+        
+        # growth changes csw and therefore css1
+        # so need to reset soilModel accordingly
+        FPItHelper.storeNewMassData1d(self)
+        self.updateCSS1AfterRSGrowth(cellIds)  
+        FPItHelper.storeNewMassData3d(self.soilModel,self)
+        self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d) 
+        
+
+        
         self.finishedUpdate = True
         
         if self.debugMode :
+                # check CSS1toCSS2 
+            csw = self.soilModel.getSolution(1)
+            css1 = self.soilModel.getCss1()
+            css2 = self.soilModel.getSolution(2)
+            assert (len(css2[css2 !=0.]) == 0)or((css1[css2 !=0.] == 0.).all())
+            assert (len(css1[css1 !=0.]) == 0)or((css2[css1 !=0.] == 0.).all())
+            assert (len(csw[csw !=0.]) == 0)or((css1 + css2)[csw>0.] > 0.).all() # att will throw error if turn off adsorption
+            assert (len(cellIds) == 0)or(css1[cellIds] == 0.).all()
             self.printData('updateAfter')
             
             self.checkVolumeAndRadii(finishedUpdate=self.finishedUpdate)
 
-            FPItHelper.storeNewMassData1d(self)
-            FPItHelper.storeNewMassData3d(self.soilModel,self)
+            #FPItHelper.storeNewMassData1d(self)
+            #FPItHelper.storeNewMassData3d(self.soilModel,self)
             
-            self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d)
+            #self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d)
             
         
         
@@ -600,7 +622,35 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.nsAirOld = sum(self.repartitionAirOld )
         self.nsAirOld = comm.bcast(self.nsAirOld, root = 0)
 
-        
+    def updateCSS1AfterRSGrowth(self,cellsWithRoot):
+        '''
+            for soil voxels that gained their first root, switch from equilibium
+            adsorption (CSS1) to source-driven adsorption (CSS2) 
+            for other soil voxels, adapt their csw and css1: 
+            root segment growth lead to local changes of concentration
+            => changes in distribution of C between CSW and CSS1
+        '''        
+        cswFr3d = self.soilModel.getSolution(1) # mol/mol water
+        css2Fr3d = self.soilModel.getSolution(2) # mol/mol soil
+        # mol wat = cm3 W * [mol wat/m3 wat] * m3/cm3
+        watMol = self.soil_W1d_perVoxelAfter*(self.soilModel.molarDensityWat_m3*1e-6)
+        cswFr1d = self.soil_solute1d_perVoxelAfter[0]/watMol
+        css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
+        #print('water', self.soilModel.getWaterVolumes(), self.soil_W1d_perVoxelAfter)
+        #print('watdensity', self.soilModel.molarDensityWat_m3,watMol)
+        #print('self.soilModel.getContent',self.soilModel.getContent(1), self.soilModel.getContent(2))
+        #print('self.soil_solute1d_perVoxelAfter',self.soil_solute1d_perVoxelAfter)
+        #print('updateCSS1AfterRSGrowth\ncswFr3d[cellsWithRoot] , cswFr1d',cswFr3d[cellsWithRoot] , cswFr1d)
+        #print('css2Fr3d[cellsWithRoot] ,css1Fr1d',css2Fr3d[cellsWithRoot] ,css1Fr1d)
+        cswFr3d[cellsWithRoot] = cswFr1d#[cellsWithRoot]
+        css2Fr3d[cellsWithRoot] = css1Fr1d#[cellsWithRoot]
+        self.soilModel.base.setSolution(cswFr3d,1)
+        self.soilModel.base.setSolution(css2Fr3d,2)
+        #print('self.soilModel.getSolution(1)',self.soilModel.getSolution(1))
+        #print('self.soilModel.getSolution(2)',self.soilModel.getSolution(2))
+        #print('cellsWithRoot',cellsWithRoot)
+        #if sum(self.soilModel.getSolution(1)) != 0.:
+        #    raise Exception
     
     def printData(self, title):
         '''to see how the water and volume gets divided between the volumes'''
@@ -917,13 +967,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return contentOrKonz
         
         
-    def update_concentration(self, totContent, changeRatio, gradient, phaseVolOrMolFrOldold, volumes, isWater, verbose=False):
+    def update_concentration(self, totContent, changeRatio, gradient, volumes, isWater, verbose=False):
         """
         Update the concentration to get specific total content and gradient.
         @param totContent: new total content of the element in the cylinder (cm3 water or mol solute)
         @param changeRatio: ratio between toContent and old total content of the element (for trouble shooting)
         @param gradient: old concentration gradient
-        @param phaseVolOrMolFrOldold: old water content (cm3/cm3) or volume of bulk soil
         @param volumes: volume of each cell of the cylinder (cm3)
         @param isWater : water element (True) or solute (False)
         @param verbose
@@ -944,11 +993,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 assert (abs((val_new[1:] - val_new[:-1]) - gradient) < 1e-13).all()
             except:
                 print_verbose('update_concentration error', 'val_new', val_new, 'totContent', totContent, 'gradient', gradient, 
-                'phaseVolOrMolFrOldold', phaseVolOrMolFrOldold, 'volumes', volumes, 'changeRatio', changeRatio)
+                 'volumes', volumes, 'changeRatio', changeRatio)
                 raise Exception
 
         # Verbose initial information
-        print_verbose('isWater', isWater, 'update_concentration error', 'totContent', totContent, 'gradient', gradient, 'phaseVolOrMolFrOldold', phaseVolOrMolFrOldold, 'volumes', volumes, 'changeRatio', changeRatio)
+        print_verbose('isWater', isWater, 'update_concentration error', 'totContent', totContent, 'gradient', gradient,'volumes', volumes, 'changeRatio', changeRatio)
 
         # Create and solve concentration matrix
         matrix_size = self.NC - 1
@@ -1066,8 +1115,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             changeShape = (shapeOnly and ((deltaVol != 0.)  or self.changedLen(cyl)
                                           ) and (cellId not in self.cellIdleftover))
 
-
-            if changeShapeAndConc or changeShape:
+            if (changeShapeAndConc or changeShape) and (not self.static_plant):
 
 
                 changeRatio = 1.
@@ -1116,13 +1164,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         # get theta for each cell
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, phaseVolOrMolFrOldold = theta_old, volumes = volNew,isWater = True,
+                                                         gradient =gradientNew, volumes = volNew,isWater = True,
                                                             verbose = verbose)
                     except:
                         print('1st faile of update_concentration for water, try again, try again with verbose = True. rank', rank)
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, phaseVolOrMolFrOldold = theta_old, volumes = volNew,isWater = True,
+                                                         gradient =gradientNew, volumes = volNew,isWater = True,
                                                             verbose = True)
                     newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
                 except:
@@ -1145,60 +1193,66 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('\t',gId,"changeRatio",changeRatio, changeRatioW)   
                     
                 ## new contents:  
-                molFrOld =np.array( [np.array(cyl.getSolution(nC+1)) for nC in range(self.numSoluteComp)])   #mol/mol 
+                molKonzOld =np.array( [np.array(cyl.getConcentration(nC+1)) for nC in range(self.soilModel.numSoluteComp)]) #mol/cm3 
                 volWatNew = theta_new *volNew
+                molKonzNew = []
                 molFrNew = []
                 for nComp in range(1, self.numComp):
-                    if (molFrOld[nComp -1] != 0.).any():
-                        isDissolved = (nComp <= self.numDissolvedSoluteComp)
-                        if isDissolved: # mol phase = [cm3 phase] * [m3/cm3] * [mol phase /m3 phase] 
-                            molarPhaseOld = theta_old*volOld/1e6 * self.phaseDensity(nComp ) 
-                            molarPhaseNew = volWatNew/1e6 * self.phaseDensity(nComp ) # 
-                        else:
-                            molarPhaseOld = volOld/1e6 * self.phaseDensity(nComp )
-                            molarPhaseNew = volNew/1e6 * self.phaseDensity(nComp ) 
-                        gradientOld = (molFrOld[nComp -1][1:] - molFrOld[nComp -1][:-1])   
+                    isDissolved = (nComp <= self.numDissolvedSoluteComp)
+                    if (molKonzOld[nComp -1] != 0.).any():
+                        if isDissolved: # cm3 phase
+                            molKonzOld[nComp -1] *= theta_old # to go from C_S^l in mol/cm3 wat to mol/cm3 scv
+                            if nComp == 1:
+                                molKonzOld[nComp -1] += cyl.getCss1() # add linear adsorption: C_S^l + C_S^s in mol/cm3 scv
+
+
+                        gradientOld = (molKonzOld[nComp -1][1:] - molKonzOld[nComp -1][:-1])   
                         gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-                        cOld = sum(molFrOld[nComp -1] *   molarPhaseOld  )    
-                        
-                        assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
+                        cOld = sum(molKonzOld[nComp -1] * volOld  )                            
+                                
+                        if nComp == 1:
+                            assert abs(cOld - sum(cyl.getCss1()*volOld) - sum(cyl.getContent(nComp) ))< 1e-13
+                        else:
+                            assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
                         
                         try:
                             try:
                                 #get mole fraction for each cell
-                                molFrNew.append(
+                                molKonzNew.append(
                                     self.update_concentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        phaseVolOrMolFrOldold = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose = False))                             
+                                       volumes = volNew,isWater = False, verbose = False))                             
                             except:
                                 print('1st faile of update_concentration for comp no',nComp,', try again, try again with verbose = True. rank', rank,
                                      'max(konzLeftOver[nComp -1]*deltaVol,0.)',max(konzLeftOver[nComp -1]*deltaVol,0.))
-                                molFrNew.append(
+                                molKonzNew.append(
                                     self.update_concentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        phaseVolOrMolFrOldold = molFrOld[nComp -1], volumes = molarPhaseNew,isWater = False, verbose = True)) 
+                                        volumes = volNew,isWater = False, verbose = True)) 
                                         
                         except:
-                            print('update_concentration failed','cOld',cOld,#'contentC[nComp-1][cellId] ',contentC[nComp-1][cellId] ,
-                                  'changeRatio',changeRatio,'gradientNew',gradientNew,'molarPhaseNew',
-                                 molarPhaseNew,'molFrOld[nComp -1]',molFrOld[nComp -1],'molFrOld',molFrOld[nComp -1] ,
-                                  'molarPhaseOld',   molarPhaseOld,'sum(volNew)',sum(volNew),
+                            print('update_concentration failed','cOld',cOld, 
+                                  'changeRatio',changeRatio,'gradientNew',gradientNew,'molKonzOld',molKonzOld[nComp -1] ,
+                                  'sum(volNew)',sum(volNew),
                                   'sum(volOld)',sum(volOld) )
                             raise Exception
                         # final checks that the content is as expected after the updates
                         try:
-                            assert (abs(sum(molFrNew[nComp -1]* molarPhaseNew)- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.)) < 1e-14) or (abs(sum(molFrNew[nComp -1]* molarPhaseNew)<1e-14)) or (abs(abs(sum(molFrNew[nComp -1]* molarPhaseNew)/ (cOld*changeRatio  + max(konzLeftOver[nComp -1]*deltaVol,0.)))*100 -100) < 1e-5)
+                            assert (abs(sum(molKonzNew[nComp -1]* volNew)- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.)) < 1e-14) or (abs(sum(molKonzNew[nComp -1]* volNew)<1e-14)) or (abs(abs(sum(molKonzNew[nComp -1]* volNew)/ (cOld*changeRatio  + max(konzLeftOver[nComp -1]*deltaVol,0.)))*100 -100) < 1e-5)
                         except:
                             print('\t',rank,gId,"error",nComp, 'totContent', cOld*changeRatio,'changeRatio',changeRatio,
                                    'added',max(konzLeftOver[nComp -1]*deltaVol,0.),
-                                 'new content', molFrNew[nComp -1]* molarPhaseNew, 'old content',molFrOld[nComp -1] *   molarPhaseOld,
-                                  'sum new content',sum(molFrNew[nComp -1]* molarPhaseNew),#sum(molFrNew[nComp -1]* molarPhaseOld),
-                                  'sum old content',sum(molFrOld[nComp -1] *   molarPhaseOld)  + max(konzLeftOver[nComp -1]*deltaVol,0.),
-                                   'change ratio error',sum(molFrNew[nComp -1]* molarPhaseNew)- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.))
+                                 'new content', molKonzNew[nComp -1]* volNew, 'old content',molKonzOld[nComp -1] * volOld,
+                                  'sum new content',sum(molKonzNew[nComp -1]* volNew),
+                                  'sum old content',sum(molKonzOld[nComp -1] * volOld)  + max(konzLeftOver[nComp -1]*deltaVol,0.))
                             raise Exception
+                            
+                        if isDissolved:
+                            molKonzNew[nComp -1] = self.soilModel.getCSWfromC_total(self.soilModel, molKonzNew[0], theta_new)# from C_S^l + C_S^s in mol/cm3 scv to C_S^l in mol/cm3 wat
                     else:
-                        molFrNew.append(molFrOld[nComp -1])
-                        
+                        molKonzNew.append(molKonzOld[nComp -1])
+                    
+                    molFrNew.append( molKonzNew[nComp -1] / (self.soilModel.phaseDensity(isDissolved)/1e6) )# go from concentration to mol fraction    
                 # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                             x = newHead,# cm
@@ -1355,7 +1409,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
         if a_in < a_out:
         
-            cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), self.useMoles)  # only works for RichardsCylFoam compiled without MPI
+            cyl = RichardsNoMPIWrapper(self.RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
             cyl.pindx = self.soilModel.pindx
             cyl.results_dir = self.soilModel.results_dir
             cyl.setParameter("Newton.Verbosity", "0") 
@@ -1380,8 +1434,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.setParameter("Problem.verbose", "0")
             cyl.setParameter("Problem.reactionExclusive", "0")
             cyl.setParameter("Soil.CriticalPressure", str(self.soilModel.wilting_point))
-            if verbose:
-                print("Soil.IC.P", cyl.dumux_str(x), Cells)
             cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
             
             #default: no flux
@@ -1554,6 +1606,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 print('(abs((pHeadcyl - x)/x_divide)*100 > 1e-5).all()?',abs((pHeadcyl - x)/x_divide)*100, pHeadcyl,x,'x_divide',x_divide)
                 print('theta',thetainit,thetainitth)
                 raise Exception
+                
             return cyl
             
         else:
@@ -1648,30 +1701,24 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         """Initialize flux storage arrays for post-processing."""
         self.seg_fluxes_limited = np.full(len(self.cyls), np.nan)
         self.seg_fluxes_limited_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_sol_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_mucil_Out = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_sol_In = np.full(len(self.cyls), np.nan)
-        self.seg_fluxes_limited_mucil_In = np.full(len(self.cyls), np.nan)
+        self.seg_fluxes_limited_sol_Out = np.full((self.numDissolvedSoluteComp,len(self.cyls)), np.nan)
+        self.seg_fluxes_limited_sol_In = np.full((self.numDissolvedSoluteComp,len(self.cyls)), np.nan)
         
             
-    def _handle_air_segment(self, cyl, lId, inner_fluxes, outer_fluxes, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil):
+    def _handle_air_segment(self, cyl, lId, inner_fluxes, outer_fluxes, inner_fluxes_sol, outer_fluxes_sol):
         """Handle the case where the segment is an AirSegment."""
         cyl.setInnerFluxCyl(inner_fluxes[cyl.gId])
         self.seg_fluxes_limited[lId] = inner_fluxes[cyl.gId]
         self.seg_fluxes_limited_Out[lId] = outer_fluxes[cyl.gId]
-        self.seg_fluxes_limited_sol_Out[lId] = outer_fluxes_sol[cyl.gId]
-        self.seg_fluxes_limited_sol_In[lId] = inner_fluxes_sol[cyl.gId]
-        self.seg_fluxes_limited_mucil_Out[lId] = outer_fluxes_mucil[cyl.gId]
-        self.seg_fluxes_limited_mucil_In[lId] = inner_fluxes_mucil[cyl.gId]
+        for jj in range(self.numDissolvedSoluteComp):
+            self.seg_fluxes_limited_sol_Out[jj][lId] = outer_fluxes_sol[jj][cyl.gId]
+            self.seg_fluxes_limited_sol_In[jj][lId] = inner_fluxes_sol[jj][cyl.gId]
         
         
-    def _calculate_and_set_initial_solute_flows(self,cyl, dt,inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil, verbose):
+    def _calculate_and_set_initial_solute_flows(self,cyl, dt,inner_fluxes_sol, outer_fluxes_sol,verbose):
         """Retrieve solute values for the segment.
             inner_fluxes_sol : net plant small C molecule releases,  [mol C day-1] 
             outer_fluxes_sol: 1d-3d or 1d-1d small C molecule exchanges,  [mol C day-1] 
-            inner_fluxes_mucil : net plant large C molecule releases,  [mol C day-1] 
-            outer_fluxes_mucil: 1d-3d or 1d-1d large C molecul exchanges,  [mol C day-1] 
-            
             returns
             inner_fluxes_solMucil: net plant C molecule releases,  [mol C day-1] 
             outer_fluxes_solMucil: net soil C molecule exchanges,  [mol C day-1] 
@@ -1680,36 +1727,35 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         l = cyl.segLength
         
         # from list to float
-        inner_fluxes_sol = inner_fluxes_sol[gId] if not isinstance(inner_fluxes_sol, numbers.Number) else inner_fluxes_sol
-        outer_fluxes_sol = outer_fluxes_sol[gId] if not isinstance(outer_fluxes_sol, numbers.Number) else outer_fluxes_sol
-        inner_fluxes_mucil = inner_fluxes_mucil[gId] if not isinstance(inner_fluxes_mucil, numbers.Number) else inner_fluxes_mucil
-        outer_fluxes_mucil = outer_fluxes_mucil[gId] if not isinstance(outer_fluxes_mucil, numbers.Number) else outer_fluxes_mucil
+        inner_fluxes_solMucil = np.array([ 
+            inner_fluxes_sol[jj][gId] if not isinstance(inner_fluxes_sol[jj], numbers.Number) else inner_fluxes_sol[jj]
+            for jj in range(self.numDissolvedSoluteComp)])
+        outer_fluxes_solMucil = np.array([ 
+            outer_fluxes_sol[jj][gId] if not isinstance(outer_fluxes_sol[jj], numbers.Number) else outer_fluxes_sol[jj]
+            for jj in range(self.numDissolvedSoluteComp)])
+           
         if self.do1d1dFlow:
-            outer_fluxes_sol += self.flow1d1d_sol[gId]
-            outer_fluxes_mucil += self.flow1d1d_mucil[gId]
+            outer_fluxes_solMucil += self.flow1d1d_sol[gId]
+            #outer_fluxes_mucil += self.flow1d1d_mucil[gId]
         
 
-        # plant-soil solute exchange
-        inner_fluxes_solMucil = np.array([inner_fluxes_sol, inner_fluxes_mucil]) # todo: add 1d1d flow
-        qIn_solMucil = np.full(self.numSoluteComp, 0.)
-        qIn_solMucil[0] = inner_fluxes_sol / (2 * np.pi * self.radii[gId] * l)
-        qIn_solMucil[1] = inner_fluxes_mucil / (2 * np.pi * self.radii[gId] * l)
+        qIn_solMucil = np.full(self.numComp, 0.)
+        for jj in range(self.numDissolvedSoluteComp):
+            qIn_solMucil[jj] = inner_fluxes_solMucil[jj] / (2 * np.pi * self.radii[gId] * l)
         
         if (not self.doSoluteUptake) :
             cyl.setSoluteBotBC(self.typeBC, qIn_solMucil)
         
         # soil-soil solute exchange
-        outer_fluxes_solMucil = np.array([outer_fluxes_sol, outer_fluxes_mucil]) # todo: add 1d1d flow
+        #outer_fluxes_solMucil = np.array([outer_fluxes_sol, outer_fluxes_mucil]) # todo: add 1d1d flow
 
-        if self.doExudation:
-            outer_fluxes_solMucil[1] = outer_fluxes_solMucil[1]*int(0) 
         QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_solMucil,
-                               inner_fluxs=[inner_fluxes_sol*dt,inner_fluxes_mucil*dt ], 
+                               inner_fluxs=inner_fluxes_solMucil, 
                                eqIdx =  np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]),plantM=self)
         
         # reset after first limitation in _distribute_source
         outer_fluxes_solMucilbu = outer_fluxes_solMucil
-        outer_fluxes_solMucil = np.array([sum(QflowOutCellLim[0]),sum(QflowOutCellLim[1])])
+        outer_fluxes_solMucil = np.array([sum(QflowOutCellLim[nc]) for nc in range(self.numDissolvedSoluteComp)])
         
         for nc in range(self.numDissolvedSoluteComp):
             divideQout = outer_fluxes_solMucilbu[nc] if outer_fluxes_solMucilbu[nc] != 0 else 1
@@ -1788,10 +1834,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # store boundary fluxes for mass balance check
         self.seg_fluxes_limited[lId] = inner_fluxes_water
         self.seg_fluxes_limited_Out[lId] = outer_fluxes_water
-        self.seg_fluxes_limited_sol_In[lId] = inner_fluxes_solMucil[0]
-        self.seg_fluxes_limited_sol_Out[lId] = outer_fluxes_solMucil[0]
-        self.seg_fluxes_limited_mucil_In[lId] = inner_fluxes_solMucil[1]   
-        self.seg_fluxes_limited_mucil_Out[lId] = outer_fluxes_solMucil[1]  
+        for jj in range(self.numDissolvedSoluteComp):
+            self.seg_fluxes_limited_sol_In[jj][lId] = inner_fluxes_solMucil[jj]
+            self.seg_fluxes_limited_sol_Out[jj][lId] = outer_fluxes_solMucil[jj]
     
     def solve(self, dt, *argv):
         """ set bc and sinks for cyl and solves it 
@@ -1810,24 +1855,18 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             proposed_inner_fluxes = argv[0]
             proposed_outer_fluxes = argv[1]
             proposed_inner_fluxes_sol = argv[2]
-            proposed_outer_fluxes_sol = argv[3]
-            proposed_inner_fluxes_mucil = argv[4]
-            proposed_outer_fluxes_mucil = argv[5]            
+            proposed_outer_fluxes_sol = argv[3]        
         else:
             proposed_inner_fluxes = None
             proposed_outer_fluxes = None
             proposed_inner_fluxes_sol = None
             proposed_outer_fluxes_sol = None
-            proposed_inner_fluxes_mucil = None
-            proposed_outer_fluxes_mucil = None
             
 
         proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root=0)
         proposed_outer_fluxes = comm.bcast(proposed_outer_fluxes, root=0)
         proposed_inner_fluxes_sol = comm.bcast(proposed_inner_fluxes_sol, root=0)
         proposed_outer_fluxes_sol = comm.bcast(proposed_outer_fluxes_sol, root=0)
-        proposed_inner_fluxes_mucil = comm.bcast(proposed_inner_fluxes_mucil, root=0)
-        proposed_outer_fluxes_mucil = comm.bcast(proposed_outer_fluxes_mucil, root=0)
         
         self._initialize_flux_storage()
         
@@ -1841,36 +1880,30 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 self._handle_air_segment(cyl, lId, proposed_inner_fluxes,
                                     proposed_outer_fluxes,
                                     proposed_inner_fluxes_sol,
-                                    proposed_outer_fluxes_sol,
-                                    proposed_inner_fluxes_mucil,
-                                    proposed_outer_fluxes_mucil)                
+                                    proposed_outer_fluxes_sol
+                                    )                
             else:
                 self._handle_non_air_segment(cyl, lId, dt, proposed_inner_fluxes,
                                     proposed_outer_fluxes,
                                     proposed_inner_fluxes_sol,
                                     proposed_outer_fluxes_sol,
-                                    proposed_inner_fluxes_mucil,
-                                    proposed_outer_fluxes_mucil, verbose)
+                                    verbose)
 
 
     def _handle_non_air_segment(self, cyl,lId, dt, inner_fluxes, outer_fluxes, inner_fluxes_sol,
-            outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil, verbose = False):
+            outer_fluxes_sol,  verbose = False):
         """ set bc and sinks for cyl and solves it 
             proposed_inner_fluxes: PWU,  [cm3 day-1] 
             proposed_outer_fluxes: 1d-3d or 1d-1d water exchanges,  [mol C day-1] 
-            proposed_inner_fluxes_sol : net plant small C molecule releases,  [mol C day-1] 
-            proposed_outer_fluxes_sol: 1d-3d or 1d-1d small C molecule exchanges,  [mol C day-1] 
-            proposed_inner_fluxes_mucil : net plant large C molecule releases,  [mol C day-1] 
-            proposed_outer_fluxes_mucil: 1d-3d or 1d-1d large C molecul exchanges,  [mol C day-1] 
+            proposed_inner_fluxes_sol : net plant C molecule releases,  [mol C day-1] 
+            proposed_outer_fluxes_sol: 1d-3d or 1d-1d C molecule exchanges,  [mol C day-1] 
         """
         inner_fluxes_water, outer_fluxes_water = self._calculate_and_set_initial_water_flows(cyl,dt, inner_fluxes, outer_fluxes, verbose) 
-        inner_fluxes_solMucil, outer_fluxes_solMucil = self._calculate_and_set_initial_solute_flows(cyl, dt, inner_fluxes_sol, outer_fluxes_sol, inner_fluxes_mucil, outer_fluxes_mucil, verbose)    
+        inner_fluxes_solMucil, outer_fluxes_solMucil = self._calculate_and_set_initial_solute_flows(cyl, dt, inner_fluxes_sol, outer_fluxes_sol, verbose)    
         
         self._run_solver(cyl, dt, lId,  inner_fluxes_water, 
                         outer_fluxes_water,  inner_fluxes_solMucil, outer_fluxes_solMucil, verbose)
         
-        #print(lId, inner_fluxes_water, outer_fluxes_water,  inner_fluxes_solMucil, outer_fluxes_solMucil)
-        #sys.exit()
                 
     def _check_Ccontent(self, cyl):
         for ncomp in range(self.numSoluteComp):
@@ -1940,8 +1973,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         maxRelShift = float(cyl.MaxRelativeShift)
         
         # use first ddt during last simulation
-        if len(cyl.base.BC_ddt)>0:
-            cyl.ddt = cyl.base.BC_ddt[0]/24./60./60.
+        #if len(cyl.base.BC_ddt)>0:
+        #    cyl.ddt = cyl.base.BC_ddt[0]/24./60./60.
             
         initialDdt = float(cyl.ddt)
         gId = cyl.gId
@@ -1972,6 +2005,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
+        
         while redoSolve:
         
             try:
@@ -1984,7 +2018,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 helpfull.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
                 # error, time out error
                 # cm3 water or  mol C /cm3
-                inner_fluxes_real, outer_fluxes_real = cyl.getSavedBC(a_in, a_out)  
+                inner_fluxes_real, outer_fluxes_real = cyl.getBCFlows()  
+                inner_fluxes_real = -inner_fluxes_real
+                
                 assert (outer_fluxes_real == 0.).all() # outer exchange implemented via sinks not via outer BC
                      
                 
@@ -2147,8 +2183,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             outer_fluxes_solMucil[np.where(outer_fluxes_solMucil == min(outer_fluxes_solMucil))] *= divVale # or id where getSolution < 0
             QflowOutCellLim = cyl.distributeSources(dt, outer_fluxes_solMucil, inner_fluxes_solMucil_temp * dt,
                                       np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]), plantM=self)
-            outer_fluxes_solMucil[0] = sum(QflowOutCellLim[0])
-            outer_fluxes_solMucil[1] = sum(QflowOutCellLim[1]) # maybe outer_fluxes_solMucil was re-adjusted inside distribSource
+            for jj in range(self.numDissolvedSoluteComp):
+                outer_fluxes_solMucil[jj] = sum(QflowOutCellLim[jj]) # maybe outer_fluxes_solMucil was re-adjusted inside distribSource
                                                    
         return inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil
         

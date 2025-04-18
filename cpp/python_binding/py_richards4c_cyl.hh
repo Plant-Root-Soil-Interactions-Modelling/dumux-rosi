@@ -1,5 +1,5 @@
-#ifndef PYTHON_RICHARDS10C_CYL_H_
-#define PYTHON_RICHARDS10C_CYL_H_
+#ifndef PYTHON_RICHARDS4C_CYL_H_
+#define PYTHON_RICHARDS4C_CYL_H_
 
 #include "../../../CPlantBox/src/external/pybind11/include/pybind11/pybind11.h"
 #include "../../../CPlantBox/src/external/pybind11/include/pybind11/stl.h"
@@ -8,9 +8,9 @@ namespace py = pybind11;
 #include <config.h> // configuration file
 
 #include <dune/foamgrid/foamgrid.hh>		  
-#include "richards10_cyl.hh" // includes solverbase
+#include "richards4_cyl.hh" // includes solverbase
 
-#include "../soil_richards10c/richards1p10cproblem.hh" // the problem class
+#include "../soil_richards4c/richards1p4cproblem.hh" // the problem class
 
 #include <dumux/common/properties.hh>
 #include <dumux/linear/istlsolvers.hh>
@@ -21,7 +21,7 @@ namespace py = pybind11;
 #include <dumux/discretization/cctpfa.hh>
 #include <dumux/discretization/box.hh>
 
-#include <dumux/porousmediumflow/richards10c/model.hh>
+#include <dumux/porousmediumflow/richards4c/model.hh>
 
 
 //#include <dumux/multidomain/traits.hh>
@@ -34,14 +34,14 @@ namespace Dumux { namespace Properties {
 
 namespace TTag { // Create new type tags
 
-struct RichardsTT { using InheritsFrom = std::tuple<Richards10C>; }; // defaults,  <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
+struct RichardsTT { using InheritsFrom = std::tuple<Richards4C>; }; // defaults,  <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
 struct RichardsNCCylFoamTT { using InheritsFrom = std::tuple<RichardsTT>; }; // Foam grid
 struct RichardsNCCylFoamCC { using InheritsFrom = std::tuple<RichardsNCCylFoamTT, CCTpfaModel>; };
 
 };
 
 template<class TypeTag> // Set Problem
-struct Problem<TypeTag, TTag::RichardsTT> { using type = Richards1P10CProblem<TypeTag>; };
+struct Problem<TypeTag, TTag::RichardsTT> { using type = Richards1P4CProblem<TypeTag>; };
 
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RichardsTT> { using type = RichardsParams<GetPropType<TypeTag, Properties::GridGeometry>, GetPropType<TypeTag, Properties::Scalar>>; };
@@ -62,12 +62,12 @@ using GridGeometryRNCCFoamTT = Dumux::GetPropType<RNCCFoamTT, Dumux::Properties:
 using RichardsNCCylFoamAssembler = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::numeric>;
 using RichardsNCCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRNCCFoamTT>,//RCFoamTT, 
 	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCCylFoamAssembler>>;
-using RichardsNCCylFoamProblem = Dumux::Richards1P10CProblem<RNCCFoamTT>;
+using RichardsNCCylFoamProblem = Dumux::Richards1P4CProblem<RNCCFoamTT>;
 
 
-PYBIND11_MODULE(rosi_richards10c_cyl, m) {
-    init_solverbase<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichards10CCylFoam");
-    init_richards_10cyl<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "Richards10CCylFoam");
+PYBIND11_MODULE(rosi_richards4c_cyl, m) {
+    init_solverbase<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichards4CCylFoam");
+    init_richards_4cyl<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "Richards4CCylFoam");
 }
 
 #endif

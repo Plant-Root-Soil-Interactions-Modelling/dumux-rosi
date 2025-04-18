@@ -40,41 +40,6 @@ public:
 	}
     
 	
-    /**
-     * for 1d3d coupling, useful to get from dumux 
-	 * the boundary flows at each time step
-	 * more accurate than getNeumann()
-	 * currently only implemented for richards_cyl
-     */
-	 
-    void clearSaveBC() {    
-        BC_in_vals.clear();
-        BC_out_vals.clear();
-        BC_time.clear();
-        BC_ddt.clear();
-        potential_in_vals.clear();
-        kr_in_vals.clear();
-    }
-    void doSaveBC(double ddt_current) {
-		int numC = this->numComp();
-        std::vector<double> BC_in_vals_i(numC);
-        std::vector<double> BC_out_vals_i(numC);
-        std::vector<double> potential_in_vals_i(numC);
-		
-            
-        for(int nc = 0.; nc < numC; nc++)
-        {
-			potential_in_vals_i.at(nc) = this->getInnerPot(nc);// cm or mol/mol
-            BC_in_vals_i.at(nc) = this->getInnerFlux(nc)/this->rIn;// [ mol / (m^2 \cdot s)]_axissymmetric / [axyssimetric factor] = [ mol / (m^2 * s)]
-            BC_out_vals_i.at(nc) = this->getOuterFlux(nc)/this->rOut;// [ mol / (m^2 \cdot s)]_axissymmetric  / [axyssimetric factor] = [ mol / (m^2 * s)]
-        }
-        BC_in_vals.push_back(BC_in_vals_i);
-        BC_out_vals.push_back(BC_out_vals_i);
-		potential_in_vals.push_back(potential_in_vals_i);
-        BC_ddt.push_back(ddt_current);// s
-		kr_in_vals.push_back(this->getInnerKrw());//  [1/s]
-    }
-	
 	
     /**
      * soil conductance at inner face
@@ -93,17 +58,18 @@ public:
 			int c = 0; double t = 0.;
 			GlobalPosition ePos = e.geometry().center();
 				
-			double kc = this->problem->spatialParams().hydraulicConductivity(e); //  [m/s]
-			auto materialLaw_ = this->problem->materialLaw(e);
+			//double kc = this->problem->spatialParams().hydraulicConductivity(e); //  [m/s]
 			int h2OIdx = 0;
             for (const auto& scvf : scvfs(fvGeometry)) {
 				GlobalPosition pos = scvf.center();
 				if ( this->onUpperBoundary_(pos) || this->onLowerBoundary_(pos) ) {
 					c++;
 					double dz = std::fabs(ePos[this->dimWorld - 1] - pos[this->dimWorld - 1]); // m	
-					//auto& volVars = elemVolVars[scvf.insideScvIdx()];
-					double s =  elemVolVars[scvf.insideScvIdx()].saturation(h2OIdx);
-					double krw = materialLaw_.krw(s);//	The relative permeability for the wetting phase [between 0 and 1]
+					auto& volVars = elemVolVars[scvf.insideScvIdx()];
+					double kc = volVars.permeability() * volVars.density(h2OIdx) * g_/volVars.viscosity(h2OIdx);
+					//
+					//double s =  elemVolVars[scvf.insideScvIdx()].saturation(h2OIdx);
+					double krw =  volVars.relativePermeability();//	The relative permeability for the wetting phase [between 0 and 1]
 					
 					t += krw * kc/dz; // 1/s
 				}
@@ -183,12 +149,7 @@ public:
     double rIn = 0.;
     double rOut = 0.;
 
-    std::vector<std::vector<double>> BC_in_vals;
-    std::vector<std::vector<double>> BC_out_vals;
-    std::vector<std::vector<double>> potential_in_vals;
-    std::vector<double> BC_time;
-    std::vector<double> BC_ddt;
-    std::vector<double> kr_in_vals;
+	static constexpr double g_ = 9.81; // cm / s^2 (for type conversions)
 };
 
 /**
@@ -226,12 +187,6 @@ void init_richards_cyl(py::module &m, std::string name) {
 
    .def("numComp",&RichardsFoam::numComp)
 
-    .def_readwrite("BC_in_vals", &RichardsFoam::BC_in_vals) 
-    .def_readwrite("BC_out_vals", &RichardsFoam::BC_out_vals) 
-    .def_readwrite("BC_time", &RichardsFoam::BC_time) 
-    .def_readwrite("BC_ddt", &RichardsFoam::BC_ddt) 
-    .def_readwrite("kr_in_vals", &RichardsFoam::kr_in_vals) 
-    .def_readwrite("potential_in_vals", &RichardsFoam::potential_in_vals) 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
