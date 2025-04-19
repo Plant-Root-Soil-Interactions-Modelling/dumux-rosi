@@ -738,7 +738,7 @@ public:
 		double g2kg = 1./1000. ;
 		double m2_2_cm2 = 10000;
 		double unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
-		for(int i_s = 0; i_s < bcSBotType_.size(); i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
+		for(int i_s = 0; i_s < numFluidSolutes; i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
 		{
         
 			int i = i_s + 1;//int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable

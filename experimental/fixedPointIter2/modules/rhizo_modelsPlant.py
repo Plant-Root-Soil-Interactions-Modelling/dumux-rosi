@@ -117,6 +117,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.limErr1d3dAbs = limErr1d3dAbs
         self.maxDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.maxDiff1d3dCW_relOld = np.full(self.numComp, 0.)
+        self.maxDiff1d3dCW_abs = np.full(self.numComp, 0.)
+        self.maxDiff1d3dCW_rel = np.full(self.numComp, 0.)
         self.maxdiff1d3dCurrant_rel = np.inf
         self.maxdiff1d3dCurrant = np.inf
         self.sumDiff1d3dCW_absOld = np.full(self.numComp, 0.)
@@ -307,10 +309,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     self.allDiff1d3dCW_abs[0]/wat_total_
                 ) *100)
             self.sumDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].sum()
-
-            self.maxDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].max()
-            if self.maxDiff1d3dCW_abs[0] > 1e-12:
-                self.maxDiff1d3dCW_rel[0] = self.allDiff1d3dCW_rel[0].max()
+            
+            # only look at the relative error if the absolute error is high enough
+            compErrorAboveLim = np.where(self.allDiff1d3dCW_abs[0] > 1e-12)
+            if len(compErrorAboveLim) > 0:
+                self.maxDiff1d3dCW_abs[0] = np.concatenate(([0.],self.allDiff1d3dCW_abs[0][compErrorAboveLim])).max()
+            else:
+                self.maxDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].max()
 
 
             self.allDiff1d3dCW_abs[1:] = np.array([abs(
@@ -339,11 +344,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 (self.maxDiff1d3dCW_rel[0] > diff1d3dCW_rel_lim[0]))
             issueSolute = [(self.maxDiff1d3dCW_rel[idComp] > diff1d3dCW_rel_lim[idComp]) and (self.maxDiff1d3dCW_rel[idComp]  > 0.1) and (self.maxDiff1d3dCW_abs[idComp]  > 1e-12) for idComp in range(1, self.numComp)]
 
-            #print('self.allDiff1d3dCW_rel',self.allDiff1d3dCW_rel,
-            #'\nself.allDiff1d3dCW_abs',self.allDiff1d3dCW_abs,
-            #    '\nself.totC3dAfter_eachVoxeleachComp',self.totC3dAfter_eachVoxeleachComp,
-            #    '\nself.soil_solute1d_perVoxelAfter',self.soil_solute1d_perVoxelAfter)
-            
             if issueWater or any(issueSolute) :
                 print("check1d3dDiff error", issueWater, issueSolute, 
                       'self.maxDiff1d3dCW_rel',self.maxDiff1d3dCW_rel,
@@ -885,16 +885,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self.getXcyl(data2share=theta, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
     
     def getWaterVolumesCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
-        localIdCyls =   self.getLocalIdCyls(idCyls)           
-        wat_rhizo_ = np.array([self.cyls[i].getWaterVolumesCyl() for i in localIdCyls ],dtype=object) 
-        wat_rhizo = np.array([xxx.sum() for xxx in wat_rhizo_ ]) 
-        #wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ]) #cm3
-        if verbose:
-            comm.barrier()
-            for i in localIdCyls:
-                print("getWaterVolumesCyl_",self.cyls[i].gId, self.cyls[i].getWaterVolumesCyl())
-            print('getWaterVolumesCyl',idCyls,wat_rhizo,wat_rhizo_)
-            comm.barrier()
+        localIdCyls =   self.getLocalIdCyls(idCyls)         
+        wat_rhizo = np.array([self.cyls[i].getWaterVolumesCyl().sum() for i in localIdCyls ])
         return self.getXcyl(data2share=wat_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
         
     def getVolumesCyl(self,idCyls=None,idCylsAll=None,  doSum = True, reOrder = True):#cm3
@@ -1149,7 +1141,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     assert max(theta_old)<=maxVal
                     assert ((changeRatioW <= 1.) and (changeRatioW > 0.))
                     assert wOld > 0.
-                    assert max(thetaLeftOver*deltaVol,0.) >= 0.
                 except:
                     print('changeRatioW error', changeRatioW, wOld, thetaLeftOver,deltaVol, maxVal, minVal)
                     print('sum(maxVal*volNew)/wOld)',sum(maxVal*volNew)/wOld, sum(minVal*volNew)/wOld)
@@ -1496,7 +1487,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.Km", str(self.soilModel.Km)) #mol C / m^3 scv
 
             
-            for j in range( 1, self.numComp):
+            for j in range( 1, self.numSoluteComp):
                 cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Type", str(3))
                 cyl.setParameter( "Soil.BC.Top.C"+str(j)+"Type", str(3))
                 cyl.setParameter( "Soil.BC.Bot.C"+str(j)+"Value", str(0)) 
@@ -1741,7 +1732,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             #outer_fluxes_mucil += self.flow1d1d_mucil[gId]
         
 
-        qIn_solMucil = np.full(self.numComp, 0.)
+        qIn_solMucil = np.full(self.numSoluteComp, 0.)
         for jj in range(self.numDissolvedSoluteComp):
             qIn_solMucil[jj] = inner_fluxes_solMucil[jj] / (2 * np.pi * self.radii[gId] * l)
         
@@ -2043,7 +2034,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                           max_divisions=cyl.MaxTimeStepDivisions#20
                                          )
                 
-            except Exception as e: 
+            except Exception as e:
                 np.set_printoptions(precision=20)
                 
                 

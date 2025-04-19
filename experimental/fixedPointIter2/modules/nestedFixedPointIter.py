@@ -271,6 +271,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
             weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
         
+        if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
             PhloemPhotosynthesis.computeAtmosphereData(plantModel, perirhizalModel)
             
         ####

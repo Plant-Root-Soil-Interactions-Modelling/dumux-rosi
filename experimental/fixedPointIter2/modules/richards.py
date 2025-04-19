@@ -314,10 +314,19 @@ class RichardsWrapper(SolverWrapper):
 
     def setSoluteTopBC(self, type_top, value_top):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        try:
+            assert len(type_top) == len(value_top)
+        except:
+            raise ValueError(f'richards::setSoluteTopBC: Length of the solute boundary condition arrays for types and values ({len(type_top)}, {len(value_top)}) different from number of dissolved solutes {self.numDissolvedSoluteComp}.')
+        print('setSoluteTopBC',type_top, value_top)
         self.base.setSTopBC(type_top, value_top)
         
     def setSoluteBotBC(self, type_bot, value_bot):
         """  sets the flux directly in the problem (problem must be initialized), calls base.setSToptBC in richards.hh"""
+        try:
+            assert len(type_bot) == len(value_bot)
+        except:
+            raise ValueError(f'richards::setSoluteBotBC: Length of the solute boundary condition arrays for types and values ({len(type_bot)} and {len(value_bot)}) different from number of dissolved solutes {self.numDissolvedSoluteComp}.')
         self.base.setSBotBC(type_bot, value_bot)
 
     def getInnerHead(self):
@@ -348,10 +357,10 @@ class RichardsWrapper(SolverWrapper):
             
         else:
             if eq_idx == 0:
-                #molarMassWat = 18.068 # [g/mol]
+                molarMassWat = self.molarMassWat # [g/mol]
                 densityWat = 1. #[g/cm3]
                 # [mol/cm3] = [g/cm3] /  [g/mol] 
-                molarDensityWat =  densityWat / self.molarMassWat # [mol/cm3] 
+                molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
                 unitConversion = 1/ 24. / 3600.  * molarDensityWat; # [cm3/day] -> [mol/s] 
             else:
                 unitConversion = 1/ 24. / 3600. ; # [mol/day] -> [mol/s] 

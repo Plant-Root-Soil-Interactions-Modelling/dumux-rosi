@@ -26,6 +26,7 @@ def timeout_handler(signum, frame):
 # Set the timeout handler
 signal.signal(signal.SIGALRM, timeout_handler)
 
+R_ph = 83.143 #perfect gas constant, hPa cm3K−1mmol−1
 
 def check_os():
     if os.name == 'nt':
@@ -65,6 +66,8 @@ def run_with_timeout(timeout, func, *args, **kwargs):
     signal.alarm(int(timeout))
     try:
         result = func(*args, **kwargs)
+    except Exception as e:
+        raise e # halpe passe the error ?
     finally:
         # Disable the alarm
         signal.alarm(0)
@@ -195,21 +198,17 @@ def write_file_float(name, data, directory_, allranks = False):
         if  False:#'fpit' in name:
             modeOp = 'w'
         with open(name2, modeOp) as log:
-            log.write(repr( data)  +'\n')
+            #log.write(repr( data)  +'\n')
+            np.savetxt(log, [data], delimiter=',')
         
 def write_file_array(name, data, space =",", directory_ ="./results/", fileType = '.txt',
                      allranks = False ):
     if (rank == 0) or allranks:
         try:
-
-            np.array(data).reshape(-1)
-            modeOp = 'a'
-            if False:#'fpit' in name:
-                modeOp = 'w'
-            name2 = directory_+ name+ fileType
-            #print('write_file_array',name2)
-            with open(name2, modeOp) as log:
-                log.write(space.join([num for num in map(str, data)])  +'\n')
+            data = np.array(data, dtype=str).ravel()
+            file_path = directory_+ name+ fileType
+            with open(file_path, "a") as log:
+                np.savetxt(log, [data], delimiter=space, fmt="%s")
         except:
             print('write_file_array',name, data,data.shape)
             raise Exception
@@ -238,7 +237,6 @@ def sinusoidal3(t, dt):
 
 def getPsiAir(RH, TairC):#constants are within photosynthesys.h
     Mh2o = 18 #molar weight, g mol-1, mg mmol-1
-    R_ph = 83.143 #perfect gas constant, hPa cm3K−1mmol−1
     rho_h2o = 1000 #water density mg cm-3
     return np.log(RH) * rho_h2o * R_ph * (TairC + 237.3)/Mh2o * (1/0.9806806)  ; #in cm
  
@@ -280,7 +278,7 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
 
         if (rank == 0) and isInner:
             if FPIT_id == 2:
-                print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+                print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}\n\tmax absolute 1d-3d difference: {perirhizalModel.maxDiff1d3dCW_abs}\n\tmax relative 1d-3d difference: {perirhizalModel.maxDiff1d3dCW_rel}')
             if FPIT_id == 3:
                 print(f'\t\t\t\tcontinue INNER loop? {bool(cL)}\n\t\t\t\tn_iter: {n_iter}, '
                       f'non-convergence and error metrics: {perirhizalModel.err2:.2e}, '

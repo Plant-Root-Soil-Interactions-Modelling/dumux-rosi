@@ -352,8 +352,8 @@ def create_soil_model(simMax, results_dir , soil_='loam',
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, soil_, simMax)
     
-    if rank == 0:
-        s.base.printParams()
+    #if rank == 0:
+    #    s.base.printParams()
     
     # just print once as will not change during simulation
     write_file_array("cellVol", np.array(s.getCellVolumes()), directory_ =s.results_dir) # cm3 

@@ -67,8 +67,6 @@ public:
 					double dz = std::fabs(ePos[this->dimWorld - 1] - pos[this->dimWorld - 1]); // m	
 					auto& volVars = elemVolVars[scvf.insideScvIdx()];
 					double kc = volVars.permeability() * volVars.density(h2OIdx) * g_/volVars.viscosity(h2OIdx);
-					//
-					//double s =  elemVolVars[scvf.insideScvIdx()].saturation(h2OIdx);
 					double krw =  volVars.relativePermeability();//	The relative permeability for the wetting phase [between 0 and 1]
 					
 					t += krw * kc/dz; // 1/s

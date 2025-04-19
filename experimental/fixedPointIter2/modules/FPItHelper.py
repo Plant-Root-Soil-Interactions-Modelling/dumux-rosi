@@ -442,11 +442,7 @@ class fixedPointIterationHelper():
         self.seg_fluxes_limited_sol_In = np.array([ perirhizalModel.getXcyl(data2share=perirhizalModel.seg_fluxes_limited_sol_In[jj],
                                                                  idCyll_=None, doSum = False, reOrder = True)
                                                       for jj in range(self.s.numDissolvedSoluteComp)])
-                                                                 
-        #self.seg_fluxes_limited_mucil_Out = perirhizalModel.getXcyl(data2share=perirhizalModel.seg_fluxes_limited_mucil_Out,
-        #                                                            idCyll_=None, doSum = False, reOrder = True) 
-        #self.seg_fluxes_limited_mucil_In = perirhizalModel.getXcyl(data2share=perirhizalModel.seg_fluxes_limited_mucil_In,
-        #                                                           idCyll_=None, doSum = False, reOrder = True) 
+                 
 
         if rank ==0:
             if len(self.airSegsId)>0:                
@@ -925,11 +921,7 @@ class fixedPointIterationHelper():
             perirhizalModel.rhizoMassWError_rel = abs(perirhizalModel.rhizoMassWError_abs/sum(perirhizalModel.rhizoWAfter_eachCyl)*100)
 
 
-            print(f'\t\trelative error balance soil 1d (%)?\n\t\t\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e
-                                                                                }, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e
-                                                                                }, from PCU: {
-                                                                                perirhizalModel.rhizoMassCError_rel:.2e
-                                                                                }, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
+            print(f'\t\trelative error balance soil 1d (%)?\n\t\t\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e}, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e}, from PCU: {perirhizalModel.rhizoMassCError_rel:.2e}, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
                 )
 
 
