@@ -322,6 +322,39 @@ public:
     //[mol/m3] = [g/m3] /  [g/mol] 
     double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
 
+
+    int getbcTopType() {
+    	return this->problem->bcTopType_;
+    }
+
+    int getbcBotType() {
+    	return this->problem->bcBotType_;
+    }
+
+    std::vector<double> getbcTopValue() {
+    	return this->problem->bcTopValues_;
+    }
+
+    std::vector<double> getbcBotValue() {
+    	return this->problem->bcBotValues_;
+    }
+	//
+    std::vector<int> getbcSTopType() {
+    	return this->problem->bcSTopType_;
+    }
+
+    std::vector<int> getbcSBotType() {
+    	return this->problem->bcSBotType_;
+    }
+
+    std::vector<double> getbcSTopValue() {
+    	return this->problem->bcSTopValue_;
+    }
+
+    std::vector<double> getbcSBotValue() {
+    	return this->problem->bcSBotValue_;
+    }
+
 protected:
     
     
@@ -374,7 +407,18 @@ void init_richards(py::module &m, std::string name) {
    .def("setSTopBC",&Richards_::setSTopBC)
    .def("setSBotBC",&Richards_::setSBotBC)
    .def("getAvgDensity",&Richards_::getAvgDensity)
-   .def("setSBotBC",&Richards_::setSBotBC);
+   .def("setSBotBC",&Richards_::setSBotBC)
+   .def("getbcTopType", &Richards_::getbcTopType)
+   .def("getbcBotType", &Richards_::getbcBotType)
+   .def("getbcTopValue", &Richards_::getbcTopValue)
+   .def("getbcBotValue", &Richards_::getbcBotValue)
+   .def("getbcSTopType", &Richards_::getbcSTopType)
+   .def("getbcSBotType", &Richards_::getbcSBotType)
+   .def("getbcSTopValue", &Richards_::getbcSTopValue)
+   .def("getbcSBotValue", &Richards_::getbcSBotValue)
+   .def_readwrite("molarMassWat", &Richards_::molarMassWat)
+   .def_readwrite("densityWat_m3", &Richards_::densityWat_m3)
+   .def_readwrite("molarDensityWat_m3", &Richards_::molarDensityWat_m3);
 }
 
 

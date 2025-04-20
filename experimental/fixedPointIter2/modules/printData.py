@@ -168,12 +168,10 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
     results_dir = perirhizalModel.results_dir
     
     write_file_float("trans", plantModel.TranspirationCumul, directory_ =results_dir)
-    write_file_array("seg_fluxes0", plantModel.seg_fluxes0 , directory_ =results_dir, fileType = '.csv')
-    write_file_array("seg_fluxes1", plantModel.seg_fluxes1 , directory_ =results_dir, fileType = '.csv')
-    write_file_array("seg_fluxes2", plantModel.seg_fluxes2, directory_ =results_dir, fileType = '.csv')
-    write_file_array("seg_fluxes0Cumul", plantModel.seg_fluxes0Cumul, directory_ =results_dir, fileType = '.csv')
-    write_file_array("seg_fluxes1Cumul", plantModel.seg_fluxes1Cumul, directory_ =results_dir, fileType = '.csv')
-    write_file_array("seg_fluxes2Cumul", plantModel.seg_fluxes2Cumul, directory_ =results_dir, fileType = '.csv')
+    for jj in range(perirhizalModel.soilModel.numFluidComp):
+        write_file_array("seg_fluxes"+str(jj), plantModel.seg_fluxes[jj] , directory_ =results_dir, fileType = '.csv')
+        write_file_array("seg_fluxes"+str(jj)+"Cumul", plantModel.seg_fluxesCumul[jj], directory_ =results_dir, fileType = '.csv')
+    
     
     print("\n\n\n\t\t", int(rs_age//1),"d", int(rs_age%1*24),"h", int(rs_age%1*24%1*60),"mn")
     if perirhizalModel.doPhloemFlow:

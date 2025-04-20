@@ -14,4 +14,4 @@ add_executable(coupled_1p2c_rb EXCLUDE_FROM_ALL coupled_1p2c.cc)
 target_compile_definitions(coupled_1p2c_rb PUBLIC ROOTBOX)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

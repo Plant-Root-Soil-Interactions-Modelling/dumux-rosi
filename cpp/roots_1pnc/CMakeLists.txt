@@ -16,4 +16,4 @@ target_compile_definitions(rootsystem_periodic_1p2c PUBLIC DGF)
 target_compile_definitions(rootsystem_periodic_1p2c PUBLIC ROOTS_PERIODIC)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

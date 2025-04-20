@@ -16,20 +16,18 @@ class SolverWrapper():
         e.g. MPI communication, writeVTK, interpolate        
     """
 
-    def __init__(self, base, usemoles):
+    def __init__(self, base):
         """ 
             @param base is the C++ base class that is wrapped. 
-            @param usemoles: do we use moles (mol) or mass (g) in dumux
             other parameters are created and will be set in
             @see scenario_setup::setSoilParam()
         """
         self.base = base
-        self.useMoles = usemoles
         self.solidDensity = 0
         self.solidMolarMass=0
         self.solidMolDensity=0
         self.bulkDensity_m3 =0 # mol soil minerals / m3 bulk soil density
-        self.molarMassWat = 18. # [g/mol]
+        self.molarMassWat = 18. # [g/mol] same value/precision as the simpleh2o
         self.densityWat_m3 = 1e6 #[g/m3]
         self.m3_per_cm3 = 1e-6 #m3/cm3
         self.cm3_per_m3 = 1e6 #cm3/m3
@@ -744,3 +742,9 @@ class SolverWrapper():
         """
         self.checkGridInitialized() # is this the correct check? we need to have called initializeProblem before
         return self.base.segLength()*100 # m to cm
+        
+    @property
+    def useMoles(self):
+        """ model uses moles (True) or grammes (False) """
+        return self.base.useMoles
+    

@@ -11,4 +11,4 @@ add_executable(rootsystem_rb EXCLUDE_FROM_ALL rootsystem.cc)
 target_compile_definitions(rootsystem_rb PUBLIC ROOTBOX)
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

@@ -94,8 +94,6 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                                   fpit_Helper.proposed_outer_fluxes, # outer BC water
                                   fpit_Helper.seg_sol_fluxes, # inner BC solute 1
                                   fpit_Helper.proposed_outer_sol_fluxes, # outer BC solute 1
-                                  fpit_Helper.seg_mucil_fluxes, # inner BC solute 2
-                                  fpit_Helper.proposed_outer_mucil_fluxes, # outer BC
                                   # solute 2
                                   # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
@@ -146,9 +144,10 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
         # store transpiration and assimilation data    
         if (rank == 0):
             # root -soil exchange per root segment for water and solute 1 and 2
-            plantModel.seg_fluxes0Cumul_inner += perirhizalModel.seg_fluxes_limited * dt
-            plantModel.seg_fluxes1Cumul_inner += perirhizalModel.seg_fluxes_limited_sol_In * dt
-            plantModel.seg_fluxes2Cumul_inner += perirhizalModel.seg_fluxes_limited_mucil_In * dt
+            plantModel.seg_fluxesCumul_inner[0] += fpit_Helper.seg_fluxes_limited * dt
+            for jj in range(1,perirhizalModel.soilModel.numFluidComp):
+                plantModel.seg_fluxesCumul_inner[jj] += fpit_Helper.seg_fluxes_limited_sol_In[jj-1] * dt
+
 
             if perirhizalModel.doPhotosynthesis:
                 plantModel.TranspirationCumul_inner += sum(np.array(plantModel.Ev) * dt) #transpiration [cm3/day] * day
@@ -212,8 +211,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         print("perirhizalModel.rhizoVol",perirhizalModel.rhizoVol)
         print("perirhizalModel.eidx_all_",perirhizalModel.eidx_all_)
     
-    if perirhizalModel.plant_or_RS == 0:
-        airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones
+    # we also have air segments with RS (potentially)
+    airSegsId = perirhizalModel.airSegs # id of plant segments WITHOUT perirhizal zones (shoot segments + roots aboveground)
     rhizoSegsId = perirhizalModel.rhizoSegsId # id of plant segments WITH perirhizal zones   
     cellIds = perirhizalModel.cellWithRoots # only id of cells with roots
     emptyCells = np.array(list(set([xsoil for xsoil in range(s.numberOfCellsTot)]) - set(cellIds))) # -1 (air) not included
@@ -231,7 +230,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
         Q_mucil_i.resize(len(organTypes), refcheck=False)
         
-        if plant_or_RS == 0:
+        if len(airSegsId) > 0:
             try:
                 # make sure that no exudation in shoot segments or roots aboveground
                 assert (Q_Exud_i[airSegsId] == 0).all()
@@ -258,19 +257,21 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
         
+        perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
+                                        hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
+                                        #spellData= perirhizalModel.spellData
+                                        )
+        if rank==0:
+            # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
+            # , transpiration: {transpiration:.2e} cm3/d
+            print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
+    
+        
         if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
-            perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
-                                           hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
-                                           spellData= perirhizalModel.spellData)
-            if rank==0:
-                # transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt) # just for printing: it is recomputed during @see computeWaterFlow()
-                # , transpiration: {transpiration:.2e} cm3/d
-                print(f"\n\ninner loop step: {Ni}/{N}. current simulation time: {rs_age_i_dt:.2f} day, Qlight: {perirhizalModel.weatherX['Qlight']:.2e} cm3/d")
-        
-        
         
             weatherChange(rs_age_i_dt, perirhizalModel, s) # implement sudden change in temperature, soil wat. content ext...
         
+        if perirhizalModel.doPhotosynthesis: # data needed for photosynthesis
             PhloemPhotosynthesis.computeAtmosphereData(plantModel, perirhizalModel)
             
         ####
@@ -407,8 +408,8 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source
-            bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
+            outer_R_bc = -np.array([s.getFluxesPerCell(nc) * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
+            bulkSoil_sources = np.array([s.getSource(nc) * s.getCellVolumes() * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
             
             if rank == 0:
                 fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
@@ -416,7 +417,6 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
                 fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
                 fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
-
                 assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)
             ##
             # 3.6 mass or content balance error 3d 

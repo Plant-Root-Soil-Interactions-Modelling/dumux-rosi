@@ -22,13 +22,22 @@
 
 namespace Dumux {
 namespace FluidSystems {
+/*!
+ * \ingroup Fluidsystems
+ * \brief Policy for the H2O-N2 fluid system
+ */
+template<bool fastButSimplifiedRelations = true>
+struct liquidp2cDefaultPolicy
+{
+    static constexpr  bool useH2ODensityAsLiquidMixtureDensity() { return fastButSimplifiedRelations; }
+};
 
 /*!
  * \ingroup FluidSystems
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent>
+template <class Scalar, class MainComponent, class SecondComponent, class Policy = liquidp2cDefaultPolicy<>>
 class LiquidPhaseTwoC
 : public Base<Scalar, LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent> >
 {
@@ -174,9 +183,8 @@ public:
     {
         const Scalar T = fluidState.temperature(phaseIdx);
         const Scalar p = fluidState.pressure(phaseIdx);
-        const bool constantPhaseDensity = getParam<bool>("liquidPhase.constantDensity", false);// use constant // use constant density for liquid phase
-		
-		if(constantPhaseDensity)
+        
+		if(Policy::useH2ODensityAsLiquidMixtureDensity())
 		{
 			// assume pure water
 			return MainComponent::liquidDensity(T, p);

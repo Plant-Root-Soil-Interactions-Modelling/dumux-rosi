@@ -14,9 +14,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         rewrites all methods using MPI to single process ones
     """
 
-    def __init__(self, base, usemoles):
-        super().__init__(base, usemoles)
-        self.useMoles = usemoles
+    def __init__(self, base):
+        super().__init__(base)
         self.theta_wilting_point = np.nan #minimum acceptable theat value
         self.vg_soil = np.nan #t ostore  theta_S
 
@@ -154,43 +153,16 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         return self._map((self.base.getSolution(eqIdx)), 0)
     
     
-    def getSavedBC(self,  rIn, rOut ):  
+    def getBCFlows(self ):  
         
         """returns the total boundary flow simulated during the last dumux solumation
-            @param rIn: position of the inner boundary == root radius [cm]
-            @param rOut: position of the outer boundary of the perihirzal zone [cm]
         """
         assert self.dimWorld != 3
-        length = self.segLength
         
-        # values saved for each dumux sub-timestep
-        BC_in_vals = np.array(self.base.BC_in_vals) #[ mol / (m^2 \cdot s)]
-        BC_out_vals = np.array(self.base.BC_out_vals) #[ mol / (m^2 \cdot s)]
-        BC_ddt = np.array(self.base.BC_ddt)# s
-        # total flows
-        q_out_vals = BC_out_vals* BC_ddt[:, None] #mol / m^2
-        q_in_vals = BC_in_vals* BC_ddt[:, None] #mol / m^2        
-        q_out = np.sum(q_out_vals,axis = 0) #mol / m^2
-        q_in = np.sum(q_in_vals,axis = 0) #mol / m^2
-        # mean flow rate during the dumux simulaiton
-        q_out_m = q_out/ sum(BC_ddt)  #mol / m^2/s
-        q_in_m = q_in/ sum(BC_ddt) #mol / m^2/s
-        
-        if not self.useMoles:
-            raise Exception # unitConversions = 1/  10000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
-        else:
-            molarMassWat = 18. # [g/mol]
-            densityWat = 1. #[g/cm3]
-            # [mol/cm3] = [g/cm3] /  [g/mol] 
-            molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
-            unitConversionW =- (1/1e4) * (24.* 3600.)  / molarDensityWat; # [m2/cm2]*[s/d] * [cm3/mol]
-            unitConversion =- (1/1e4) * (24.* 3600.) ; # [m2/cm2]*[s/d]
-            unitConversions = np.full(len(q_in_m), unitConversion)
-            unitConversions[0] = unitConversionW
         # water: [mol m-2 s-1]*[m2/cm2]*[s/d] * [cm3/mol] * cm2-> [cm3/d] 
         # solute: [mol m-2 s-1]*[m2/cm2]*[s/d] * cm2 -> [mol/d] 
-        Q_in_m  = q_in_m * unitConversions * (2 * np.pi * rIn  * length)
-        Q_out_m = q_out_m * unitConversions * (2 * np.pi * rOut * length) 
+        Q_in_m  = np.array([self.getInnerFlow(nc, self.segLength) for nc in range(self.numFluidComp)])
+        Q_out_m = np.array([self.getOuterFlow(nc, self.segLength) for nc in range(self.numFluidComp)]) 
         
         return(Q_in_m, Q_out_m)
 
@@ -202,7 +174,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             unitConversion = 1/  1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         else:
             if eqIdx == 0:
-                molarMassWat = 18. # [g/mol]
+                molarMassWat = self.molarMassWat # [g/mol]
                 densityWat = 1. #[g/cm3]
                 # [mol/cm3] = [g/cm3] /  [g/mol] 
                 molarDensityWat =  densityWat / molarMassWat # [mol/cm3] 
@@ -288,6 +260,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """
         splitVals = list()
         # iterate through each component
+        assert len(source) == len(inner_fluxs)
+        
         for i, src in enumerate(source):# [cm3/day] or [mol/day]
             splitVals.append(self.distributeSource(dt, src,inner_fluxs[i],
                                     eqIdx[i], plantM=plantM))
@@ -307,20 +281,11 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         # distribute the value between the cells
         splitVals = self.distributeVals(dt, source, inner_flux, eqIdx,plantM)       
         # send the source data to dumux
-        if source != 0.:# [cm3/day] or [mol/day]
-            test_values = list(splitVals.copy())
-            test_keys = np.array([i for i in range(len(test_values))])
-            res = {}
-            for key in test_keys:
-                for value in test_values:
-                    res[key] = value
-                    test_values.remove(value)
-                    break                        
-            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
-        else: # need to reset to 0 or will use the old source value
-            res = dict()
-            res[0] = 0.
-            self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
+        # convert array to dictionnary
+        values = list(splitVals.copy())
+        res = {i: values[i] for i in range(len(values))}  
+        
+        self.setSource(res.copy(), eq_idx = eqIdx)  # [mol/day], in modules/richards.py
         self.setSourceBu[eqIdx] = res.copy()
         return splitVals
     
@@ -336,7 +301,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """
         # to do: will this still work even if theta < wilting point during solve() calls?
         
-        splitVals = np.array([0.])
+        splitVals = np.array([0. for i in range(self.numberOfCellsTot)])
         verbose = False#self.gId == 541
         if source != 0.:# [cm3/day] or [mol/day]
             
