@@ -830,7 +830,6 @@ public:
 						n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
 					}
 					
-					//const auto bcTypes = this->elemBcTypes()[fvGeometry.frontalScvfOnBoundary(scv).localIndex()];
                      
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }

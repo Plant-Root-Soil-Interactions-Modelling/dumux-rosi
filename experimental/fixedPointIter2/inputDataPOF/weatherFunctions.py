@@ -111,8 +111,8 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
 
         perirhizalModel.check1d3dDiff() # get error before changing data (for troubleshooting)
         if rank ==0:
-            print('weather::weatherChange(): error before change',perirhizalModel.sumDiff1d3dCW_rel ,
-                  perirhizalModel.sumDiff1d3dCW_abs,'pheadinit_cm',pheadinit_cm)
+            print('weather::weatherChange(): error before change',perirhizalModel.sumdiff1d3dCNW_rel ,
+                  perirhizalModel.sumdiff1d3dCNW_abs,'pheadinit_cm',pheadinit_cm)
             
         #  save dissolved solute content (no need to change anything for solutes in soil phase)
         nc_content = np.array([comm.bcast(s.getContent(nc+1), root=0)  for nc in range(perirhizalModel.numDissolvedSoluteComp)])
@@ -177,10 +177,10 @@ def weatherChange(rs_age_i_dt, perirhizalModel, s):
             
         # store old error rate and compare with the new one. 
         # allow for small increase
-        beforeChange_sumDiff1d3dCW_abs = perirhizalModel.sumDiff1d3dCW_abs
+        beforeChange_sumdiff1d3dCNW_abs = perirhizalModel.sumdiff1d3dCNW_abs
         perirhizalModel.check1d3dDiff() 
         if rank ==0:
             print('weather::weatherChange(): error after change',
-                  perirhizalModel.sumDiff1d3dCW_rel, perirhizalModel.sumDiff1d3dCW_abs )
-        assert (perirhizalModel.sumDiff1d3dCW_abs <= beforeChange_sumDiff1d3dCW_abs*10).all()
+                  perirhizalModel.sumdiff1d3dCNW_rel, perirhizalModel.sumdiff1d3dCNW_abs )
+        assert (perirhizalModel.sumdiff1d3dCNW_abs <= beforeChange_sumdiff1d3dCNW_abs*10).all()
         

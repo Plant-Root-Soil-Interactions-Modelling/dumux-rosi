@@ -145,10 +145,13 @@ public:
         const auto& priVars = elemSol[scv.localDofIndex()];
 
         // set the wetting pressure
-		Scalar SwPcMucilage = problem.spatialParams().SwPcMucilage_pc( scv, elemSol);
-		SwPcMucilage = std::min(SwPcMucilage, problem.nonwettingReferencePressure() - priVars[Indices::pressureIdx]);
+		Scalar SwPcMucilage = problem.spatialParams().SwPcMucilage_pc( scv, elemSol); //Pa
+		SwPcMucilage = std::max(0.,std::min(SwPcMucilage, 
+			problem.nonwettingReferencePressure() - priVars[Indices::pressureIdx] - fluidMatrixInteraction.endPointPc()));
 		setSwPcMucilage(SwPcMucilage);
-        fluidState.setPressure(0, priVars[Indices::pressureIdx] + SwPcMucilage);
+		Scalar pw = std::min(priVars[Indices::pressureIdx] - SwPcMucilage, 
+							problem.nonwettingReferencePressure() - fluidMatrixInteraction.endPointPc());
+        fluidState.setPressure(0, pw);
 
         // compute the capillary pressure to compute the saturation
         // make sure that we the capillary pressure is not smaller than the minimum pc
@@ -156,7 +159,7 @@ public:
         using std::max;
         const Scalar pc = max(fluidMatrixInteraction.endPointPc(),
                               problem.nonwettingReferencePressure() - fluidState.pressure(0));
-        const Scalar sw = fluidMatrixInteraction.sw(pc+ SwPcMucilage);// );
+        const Scalar sw = fluidMatrixInteraction.sw(pc- SwPcMucilage);// );
         fluidState.setSaturation(0, sw);
 
         // set the mole/mass fractions

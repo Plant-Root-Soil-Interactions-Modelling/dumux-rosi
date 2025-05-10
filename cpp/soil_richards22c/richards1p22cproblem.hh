@@ -91,7 +91,7 @@ public:
 			// C elements
 		soluteIdx = 1, // 1st solute index
 		mucilIdx = 2, // mucil index
-		CH_Idx = 3, // mucil index		
+		CH_Idx = 3, // heavy C org mol 	
 			// N elements		
 		NsoluteIdx = 4, // 1st solute-N index
 		NCH_Idx = 5, // N_H^l index
@@ -145,7 +145,9 @@ public:
 		linear = 7,
 		michaelisMenten = 8,
 		managed = 9,
-		outflowCyl = 10
+		outflowCyl = 10,		
+		michaelisMentenNO3 = 11,
+		michaelisMentenNH4 = 12,
 	};
 
 	enum GridParameterIndex {
@@ -311,18 +313,23 @@ public:
         NH4Smax = getParam<double>("Soil.NH4Smax",NH4Smax);
         k_CNobjOut = getParam<double>("Soil.k_CNobjOut",k_CNobjOut);
         k_CNobj = getParam<double>("Soil.k_CNobj",k_CNobj);
-        K_rIm  = getParam<double>("Soil.K_rIm",K_rIm )*1e6;//[mol cm-3] => [mol m-3]
-        K_rMin = getParam<double>("Soil.K_rMin",K_rMin)*1e6;//[mol cm-3] => [mol m-3]
-        f_Im = getParam<double>("Soil.f_Im",f_Im)/(24*3600)*1e6;//[mol cm-3 d-1] => [mol m-3 s-1]
-        f_Min = getParam<double>("Soil.f_Min",f_Min)/(24*3600)*1e6;//[mol cm-3 d-1] => [mol m-3 s-1]
+        K_rIm  = getParam<double>("Soil.K_rIm",K_rIm )*m3_2_cm3;//[mol cm-3] => [mol m-3]
+        K_rMin = getParam<double>("Soil.K_rMin",K_rMin)*m3_2_cm3;//[mol cm-3] => [mol m-3]
+        f_Im = getParam<double>("Soil.f_Im",f_Im)/(24*3600)*m3_2_cm3;//[mol cm-3 d-1] => [mol m-3 s-1]
+        f_Min = getParam<double>("Soil.f_Min",f_Min)/(24*3600)*m3_2_cm3;//[mol cm-3 d-1] => [mol m-3 s-1]
         k_MBtoNH4  = getParam<double>("Soil.k_MBtoNH4 ",k_MBtoNH4 );//(-)
         k_MBtoNO3 = getParam<double>("Soil.k_MBtoNO3",k_MBtoNO3);//(-)
-        K_NH4 = getParam<double>("Soil.K_NH4",K_NH4)*1e6;//[mol cm-3] => [mol m-3]
-        K_NO3 = getParam<double>("Soil.K_NO3",K_NO3)*1e6;//[mol cm-3] => [mol m-3]
+        K_NH4 = getParam<double>("Soil.K_NH4",K_NH4)*m3_2_cm3;//[mol cm-3] => [mol m-3]
+        K_NO3 = getParam<double>("Soil.K_NO3",K_NO3)*m3_2_cm3;//[mol cm-3] => [mol m-3]
         v_maxNH4 = getParam<double>("Soil.v_maxNH4",v_maxNH4)/(24*3600);//[d-1] => [s-1]
         v_maxNO3 = getParam<double>("Soil.v_maxNO3",v_maxNO3)/(24*3600);//[d-1] => [s-1]
         alpha_N = getParam<double>("Soil.alpha_N",alpha_N);//(-)
 		
+        F_PNU_NH4_max = getParam<double>("Soil.F_PNU_NH4_max",F_PNU_NH4_max)/(24*3600)*m3_2_cm3;//[mol cm-2 d-1] => [mol m-2 s-1]
+        K_PNU_NH4 = getParam<double>("Soil.K_PNU_NH4",K_PNU_NH4)*m3_2_cm3;//[mol cm-3] => [mol m-3]
+        F_PNU_NO3_max = getParam<double>("Soil.F_PNU_NO3_max",F_PNU_NO3_max)/(24*3600)*m3_2_cm3;//[mol cm-2 d-1] => [mol m-2 s-1]
+        K_PNU_NO3 = getParam<double>("Soil.K_PNU_NO3",K_PNU_NO3)*m3_2_cm3;//[mol cm-3] => [mol m-3]
+        K2_PNU_NO3 = getParam<double>("Soil.K2_PNU_NO3",K2_PNU_NO3)/(24*3600);//[d-1] => [s-1]
 		
 		///
 		computedCellVolumesCyl = false;
@@ -430,6 +437,18 @@ public:
 		return nonWettingReferencePressure();
 	}
 	
+	
+	Scalar massOrMoleDensity(const auto& volVars, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+				(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
+	}
+
+	Scalar massOrMoleFraction(const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
+				(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
+	}
 
 	/**
 	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
@@ -444,19 +463,6 @@ public:
 				break;
 			}
 			case soluteIdx:{
-				const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
-				{
-					double mOMD = isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-							(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-					return mOMD;
-				};
-
-				const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
-				{
-					double mOMF = isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-							(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-					return mOMF;
-				};
 				
 				// m3 solid / m3 scv
 				//double solidVolFr = (1 - volVars.porosity());//
@@ -704,7 +710,7 @@ public:
 					
 					//kg/m3 * m2 
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
-						f = std::max(f, imax);
+						f = std::min(0.,std::max(f, imax));
                         if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onupperBoundary_constantFluxCyl, f: "<<bcTopValues_[pressureIdx]<<" "<<
@@ -721,7 +727,7 @@ public:
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::max(0.,std::min(f, omax));
 					}
 					break;
 				}
@@ -770,7 +776,8 @@ public:
                             f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::max(f, imax);
+						//f = std::max(f, imax);
+						f = std::min(0.,std::max(f, imax));
 					} else { // outflow
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
@@ -781,7 +788,8 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz
 							<<" criticalPressure_ "<<criticalPressure_<<" gravityOn_ "<<gravityOn_<<std::endl;
 						}
-						f = std::min(f, omax);
+						//f = std::min(f, omax);
+						f = std::max(0.,std::min(f, omax));
 					}
 					break;
 				}
@@ -806,7 +814,7 @@ public:
 		double g2kg = 1./1000. ;
 		double m2_2_cm2 = 10000;
 		double unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
-		for(int i_s = 0; i_s < bcSBotType_.size(); i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
+		for(int i_s = 0; i_s < numFluidSolutes; i_s++) //for(int i = soluteIdx;i<numComponents_;i++)
 		{
         
 			int i = i_s + 1;//int i_s = i - soluteIdx;//for vectors which do not have a value for the H2O primary variable
@@ -962,6 +970,30 @@ public:
 						}
 					break;
 				}
+				case michaelisMentenNH4: {	
+				//double F_PNU_NH4 = k_N*k_C* (F_PNU_NH4_max * NH4soil_node[cpp_id]/(K_PNU_NH4 + NH4soil_node[cpp_id]));
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = F_PNU_NH4_max * std::max(massOrMolFraction,0.)*rhoW/(K_PNU_NH4 + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+						if (verbose)
+						{
+							std::cout<<"michaelisMentenNH4, F_PNU_NH4_max: "<<F_PNU_NH4_max<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" K_PNU_NH4 "<<K_PNU_NH4<<" pos0 "<<pos0<<std::endl;
+						}
+					break;
+				}
+				case michaelisMentenNO3: {	
+		//double F_PNU_NO3 = k_N*k_C * (F_PNU_NO3_max * NO3soil_node[cpp_id]/(K_PNU_NO3 + NO3soil_node[cpp_id])+ K2_PNU_NO3* NO3soil_node[cpp_id]);
+					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
+					flux[i] = F_PNU_NO3_max * std::max(massOrMolFraction,0.)*rhoW/(K_PNU_NO3 + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] += (K2_PNU_NO3 + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					if (verbose)
+						{
+							std::cout<<"michaelisMentenNO3, F_PNU_NO3_max: "<<vMax<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" K_PNU_NO3 "<<K_PNU_NO3
+							<<" K2_PNU_NO3 "<<K2_PNU_NO3<<" pos0 "<<pos0<<std::endl;
+						}
+					break;
+				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
 				}
 			} else {
@@ -1036,17 +1068,6 @@ public:
 		{
 			bioChemicalReaction(element, source, volVars, pos0, scv);
 		}else{ 
-			const auto massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid)
-			{
-				return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-						(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-			};
-
-			const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid)
-			{
-				return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-						(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-			};
 			double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
 			double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;	//mol C/m3 soil water
 			double theta = volVars.saturation(h2OIdx) * volVars.porosity(); //m3 water / m3 scv
@@ -1105,26 +1126,13 @@ public:
 		return 1.;
 	}
 	
-		/*!
-	 *
+	/*
      * E.g. for the mol balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
      */
 	void bioChemicalReaction(const Element &element, 
 								NumEqVector &q, const VolumeVariables &volVars, double pos0, 
 								const SubControlVolume &scv) const
 	{
-		
-		Scalar massOrMoleDensity = [](const auto& volVars, const int compIdx, const bool isFluid) const
-        {
-			return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
-					(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
-		};
-
-        Scalar massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid) const
-        {
-			return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
-					(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
-		};
 		// (mol Soil / m3 soil)  
 		double solidDensity = massOrMoleDensity(volVars, SolidSystem::mainCompIdx , false);//soilIdx -  numFluidComps
 		// m3 soil/m3 scv
@@ -1714,7 +1722,12 @@ private:
 	double v_maxNH4= 4.4*1e4*(24*3600);// use same value as for no3 for now.
 	double v_maxNO3 = 4.4*1e4*(24*3600); // d-1 Stoeriko2022
 	double alpha_N = 0.01; // sharpness parameter for the effect of N limitation on microbial growth and CUE // Manzoni2021b
-
+	double F_PNU_NH4_max = 0.1333 * 24 * 3600; // [mol cm-2 d-1]
+	double K_PNU_NH4 = 211812/1e-6/14; // [mol cm-3] // g/m3 => mol/cm-3 Barillot2016
+	double F_PNU_NO3_max = 0.1333 * 24 * 3600; // [mol cm-2 d-1] Barillot2016
+	double K_PNU_NO3 = 211812/1e-6/14; // [mol cm-3]
+	double K2_PNU_NO3 = 4.614*1e6/24/3600; //[d-1]
+	
 };
 
     

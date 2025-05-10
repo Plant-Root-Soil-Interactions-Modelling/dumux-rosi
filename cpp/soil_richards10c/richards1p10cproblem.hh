@@ -898,7 +898,7 @@ public:
 					
 					//kg/m3 * m2 
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
-						f = std::max(f, imax);
+						f = std::min(0.,std::max(f, imax));
                         if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onupperBoundary_constantFluxCyl, f: "<<bcTopValues_[pressureIdx]<<" "<<
@@ -915,7 +915,7 @@ public:
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::max(0.,std::min(f, omax));
 					}
 					break;
 				}
@@ -964,7 +964,8 @@ public:
                             f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::max(f, imax);
+						//f = std::max(f, imax);
+						f = std::min(0.,std::max(f, imax));
 					} else { // outflow
 						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
@@ -975,7 +976,8 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz
 							<<" criticalPressure_ "<<criticalPressure_<<" gravityOn_ "<<gravityOn_<<std::endl;
 						}
-						f = std::min(f, omax);
+						//f = std::min(f, omax);
+						f = std::max(0.,std::min(f, omax));
 					}
 					break;
 				}

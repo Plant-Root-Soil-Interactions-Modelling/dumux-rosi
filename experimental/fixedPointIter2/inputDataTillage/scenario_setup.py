@@ -426,7 +426,7 @@ def setupOther(s, p_mean_):
     s.bulkMassErrorWater_relLim = 0.
     #pressureinit = s.getSolutionHead()
     #thetainit = s.getWaterContent_()
-    s.totC3dInit = sum(s.getTotCContent()) # mol
+    s.totCN3dInit = sum(s.getTotCNContent()) # mol
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water

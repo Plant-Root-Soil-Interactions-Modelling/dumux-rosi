@@ -30,6 +30,26 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
         return volumes;
     }
     
+    virtual std::vector<double> getSwPcMucilage() {
+    	int n =  this->checkGridInitialized();
+        std::vector<double> pw;
+        pw.reserve(n);
+        for (const auto& element : Dune::elements(this->gridGeometry->gridView())) { // soil elements
+            double t = 0;
+            auto fvGeometry = Dumux::localView(*this->gridGeometry); // soil solution -> volume variable
+            fvGeometry.bindElement(element);
+            auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+            elemVolVars.bindElement(element, fvGeometry, this->x);
+            int c = 0;
+            for (const auto& scv : scvs(fvGeometry)) {
+                c++;
+                t += elemVolVars[scv].getSwPcMucilage();
+            }
+            pw.push_back(t/c); // mean value
+        }
+        return pw;
+    }
+	
 	void setComputeDtCSS2(const std::function<double(double,double,double)>& s)
     {
         this->problem->computeDtCSS2 = s;
@@ -215,7 +235,8 @@ void init_richards_10cyl(py::module &m, std::string name) {
    .def("getViscosity", &RichardsFoam::getViscosity)
    .def("getPressureHead", &RichardsFoam::getPressureHead)
    .def("getPressure", &RichardsFoam::getPressure)
-   .def("getConductivity",&RichardsFoam::getConductivity)   
+   .def("getConductivity",&RichardsFoam::getConductivity) 
+   .def("getSwPcMucilage",&RichardsFoam::getSwPcMucilage)    
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)

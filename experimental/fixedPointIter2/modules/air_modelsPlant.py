@@ -114,7 +114,7 @@ class AirSegment():#solve later the atmospheric flow also via dumux?
     def setInnerBC_solute(self,*arg):
         pass
     
-    def getTotCContent_each(self):
+    def getTotCNContent_each(self):
         return np.full((self.numSoluteComp,1),0.)
     
     #all

@@ -90,7 +90,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
     
     if a_in < a_out:
     
-        cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), True)  # only works for RichardsCylFoam compiled without MPI
+        cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
         if False:
             cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
@@ -114,7 +114,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
         cyl.setParameter( "Soil.css1Function", str(9))
         cyl.setParameter("Problem.verbose", "0")
         cyl.setParameter("Problem.reactionExclusive", "0")    
-        cyl.setParameter("Soil.CriticalPressure", str(-15000))
+        cyl.setParameter("Soil.CriticalPressure", str(-50000))
         cyl.seg_length = seg_length
         cyl.setParameter("Problem.segLength", str(seg_length))   # cm
         cyl.l = seg_length   
@@ -123,7 +123,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
         cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
         
         #default: no flux
-        cyl.setInnerBC("fluxCyl", -0.1)#-0.1)  # [cm/day] #Y 0 pressure?
+        cyl.setInnerBC("fluxCyl", -0.1)  # [cm/day] #Y 0 pressure?
         cyl.setOuterBC("fluxCyl", 0.)
         cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str( 0.003456/(24*3600) /10000)) #m^2/s
         cyl.setParameter("Newton.MaxTimeStepDivisions",
@@ -167,10 +167,10 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
         cyl.initializeProblem(maxDt=cyl.maxDt ) # ewton solver configured with the following options and parameters:
 
         
-        cyl.eps_regularization = 1e-14
+        cyl.eps_regularization = 1e-16
         cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization)
 
-        cyl.setCriticalPressure(-15000)  # cm pressure head
+        cyl.setCriticalPressure(-50000)  # cm pressure head
         
         #cyl.setRegularisation(1e-16, 1e-16)
         
@@ -196,10 +196,10 @@ def doPrints(cyl,a_in,timeT, initMolm):
     # mol/molW * molW/cm3W * cm3W/cm3 * cm2 * cm/m = mol/m
     currentCls = sum(cyl.getSolution(2)*rhoWM*cyl.getWaterContent()*cyl.getCellSurfacesCyl().reshape(-1))#*100 # 
     print(currentCls,currentCls-molinput-initMolm,'ex2',ex2,'a_in',a_in,'timeT',timeT)
-ex2 = 1e-6/2#*0
+ex2 = 1e-6/2*0
 a_in=0.02
 a_out =0.03
-NC = 10        
+NC = 10       
 cw = 0.03 #77859 #0.4762 # g m /gW
 molMarssW = 18 # g/mol
 molMassMulC = 30 #g/mol
@@ -223,47 +223,70 @@ cyl = initialize_dumux_nc_(x=[-10000. for i in range(NC-1)],a_in=a_in,a_out=a_ou
 timeT = 0.
 doPrints(cyl,a_in,timeT,0)
 cc = (cyl.getCellCenters_().reshape(-1))#/100.
-getPressureHead = [[],[],[]]
-Cmucil = [[],[],[]]
-theta = [[],[],[]]
-Viscosity = [[],[],[]]
-initpressure = [[],[],[]]
-Ks = [[],[],[]]
-getPressureHead[0] = np.array(cyl.base.getPressureHead())#*100.
-Cmucil[0] = cyl.getSolution(2)*rhoWM
-theta[0] = cyl.getWaterContent()
-Viscosity[0] = np.array(cyl.base.getViscosity())
-initpressure[0] = cyl.getSolutionHead()#/100.
-Ks[0] = np.array(cyl.base.getConductivity())*100.*24.*3600.
-initCls = sum(cyl.getSolution(2)*rhoWM*cyl.getWaterContent()*cyl.getCellSurfacesCyl().reshape(-1))#*100 # 
 
-for i in range(2):
-    print(cyl.numSoluteComp)
-    cyl.ddt = 1e-3
-    cyl.solve(36000./2./24./3600.)#36000/24/3600/2, saveInnerDumuxValues_ =True)
-    timeT += 36000./2.
-    doPrints(cyl,a_in,timeT, initCls)
-    print('timeT',timeT)
-    if False:
-        print('molFr_mucil',cyl.getSolution(2))
-        print('mucil',cyl.getSolution(2)*rhoWM)# mol/cm3
-        print('getSolution0',cyl.getSolution(0))
-        print('getSolutionHead',cyl.getSolutionHead())
-        print('getPressure',cyl.base.getPressure())
-        print('getPressureHead',cyl.base.getPressureHead())
-        print('effect mucil',cyl.getSolutionHead() - cyl.base.getPressureHead())
-        print('getWaterContent',cyl.getWaterContent())
-        print('Viscosity',cyl.base.getViscosity())# [Pa*s]
-        print('getConductivity',cyl.base.getConductivity())  
-        print('getConductivity_cmd',cyl.base.getConductivity()[0]*100.*24.*3600.) # [m/s]?
-        print('mobility',cyl.base.getMobility(0))
-    print('end')
-    Cmucil[i+1] = cyl.getSolution(2)*rhoWM 
-    theta[i+1] = cyl.getWaterContent()
-    Viscosity[i+1] = np.array(cyl.base.getViscosity())
-    getPressureHead[i+1] = np.array(cyl.base.getPressureHead())
-    initpressure[i+1] = cyl.getSolutionHead()#/100.
-    Ks[i+1] = np.array(cyl.base.getConductivity())*100.*24.*3600.
+
+def getSwPcMucilageH(mucilFr):
+    omega0 = 10.**10.
+    beta = 4.1
+    cw = mucilFr / 18. * 30.
+    return omega0 * (cw**beta)
+
+getPressureHead = []
+Cmucil = []
+theta = []
+Viscosity = []
+initpressure = []
+Ks = []
+SwPcMucilagePa = []
+SwPcMucilageH = []
+SwPcMucilageHbis = []
+getPressureHead.append(np.array(cyl.base.getPressureHead()))#*100.
+Cmucil.append(cyl.getSolution(2)*rhoWM)
+theta.append( cyl.getWaterContent())
+Viscosity.append(np.array(cyl.base.getViscosity()))
+initpressure.append( cyl.getSolutionHead())#/100.
+Ks.append(np.array(cyl.base.getConductivity())*100.*24.*3600.)
+#SwPcMucilage.append(vg.pa2head(cyl.base.getSwPcMucilage()))
+SwPcMucilagePa.append(cyl.base.getSwPcMucilage())
+SwPcMucilageH.append(vg.pa2head(cyl.base.getSwPcMucilage(), pnref = 0.))
+SwPcMucilageH_ = getSwPcMucilageH(cyl.getSolution(2))
+SwPcMucilageHbis.append(SwPcMucilageH_)
+initCls = sum(cyl.getSolution(2)*rhoWM*cyl.getWaterContent()*cyl.getCellSurfacesCyl().reshape(-1))#*100 # 
+print('cyl.base.getSwPcMucilage()',cyl.base.getSwPcMucilage())
+
+
+if True:
+    for i in range(1):
+        print(cyl.numSoluteComp)
+        cyl.ddt = 1e-3
+        cyl.solve(36000./2./24./3600.)#36000/24/3600/2, saveInnerDumuxValues_ =True)
+        timeT += 36000./2.
+        doPrints(cyl,a_in,timeT, initCls)
+        print('timeT',timeT)
+        if False:
+            print('molFr_mucil',cyl.getSolution(2))
+            print('mucil',cyl.getSolution(2)*rhoWM)# mol/cm3
+            print('getSolution0',cyl.getSolution(0))
+            print('getSolutionHead',cyl.getSolutionHead())
+            print('getPressure',cyl.base.getPressure())
+            print('getPressureHead',cyl.base.getPressureHead())
+            print('effect mucil',cyl.getSolutionHead() - cyl.base.getPressureHead())
+            print('getWaterContent',cyl.getWaterContent())
+            print('Viscosity',cyl.base.getViscosity())# [Pa*s]
+            print('getConductivity',cyl.base.getConductivity())  
+            print('getConductivity_cmd',cyl.base.getConductivity()[0]*100.*24.*3600.) # [m/s]?
+            print('mobility',cyl.base.getMobility(0))
+        print('end')
+        Cmucil.append(cyl.getSolution(2)*rhoWM )
+        theta.append(cyl.getWaterContent())
+        Viscosity.append(np.array(cyl.base.getViscosity()))
+        getPressureHead.append(np.array(cyl.base.getPressureHead()))
+        initpressure.append(cyl.getSolutionHead())
+        SwPcMucilagePa.append(cyl.base.getSwPcMucilage())
+        SwPcMucilageH.append(vg.pa2head(cyl.base.getSwPcMucilage(), pnref = 0.))
+        SwPcMucilageH_ = getSwPcMucilageH(cyl.getSolution(2))
+        SwPcMucilageHbis.append(SwPcMucilageH_)
+        Ks.append(np.array(cyl.base.getConductivity())*100.*24.*3600.)
     
 
 outputs = {'cc':cc,'getPressureHead':getPressureHead,'Cmucil':Cmucil,'theta':theta,
@@ -273,43 +296,87 @@ import pickle
 with open("results/dataDumux10.pkl", "wb") as file:
     pickle.dump(outputs, file)
     
-fig, axes = plt.subplots(nrows=3, ncols=2, figsize=(10, 8), sharex=True)
+fig, axes = plt.subplots(nrows=3, ncols=4, figsize=(10, 8), sharex=True)
 
 # First subplot (top-left): getPressureHead
-for i in range(3):
+for i in range(len(getPressureHead)):
     axes[0, 0].plot(cc, getPressureHead[i], label=str(18000 * i))
 axes[0, 0].grid(True)
 axes[0, 0].legend()
 axes[0, 0].set_title("Pressure Head")
-
-# Second subplot (top-right): Cmucil
-for i in range(3):
-    axes[0, 1].plot(cc, Cmucil[i], label=str(18000 * i))
-axes[0, 1].grid(True)
-axes[0, 1].legend()
-axes[0, 1].set_title("Cmucil")
-
-for i in range(3):
-    axes[1, 0].plot(cc, theta[i], label=str(18000 * i))
+for i in range(len(getPressureHead)):
+    axes[1, 0].plot(cc, initpressure[i], label=str(18000 * i))
 axes[1, 0].grid(True)
 axes[1, 0].legend()
-axes[1, 0].set_title("theta")
-for i in range(3):
-    axes[1, 1].plot(cc, Viscosity[i], label=str(18000 * i))
-axes[1, 1].grid(True)
-axes[1, 1].legend()
-axes[1, 1].set_title("Viscosity")
-for i in range(3):
-    axes[2, 0].plot(cc, initpressure[i], label=str(18000 * i))
+axes[1, 0].set_title("initpressure")
+for i in range(len(getPressureHead)):
+    axes[2, 0].plot(cc, SwPcMucilageH[i], label=str(18000 * i))
 axes[2, 0].grid(True)
 axes[2, 0].legend()
-axes[2, 0].set_title("initpressure")
-for i in range(3):
-    axes[2, 1].plot(cc, Ks[i], label=str(18000 * i))
+axes[2, 0].set_title("effect mucil")
+
+
+for i in range(len(getPressureHead)):
+    axes[0, 1].plot(cc,vg.pressure_head(theta[i], cyl.vg_soil) - SwPcMucilageHbis[i], label=str(18000 * i))
+axes[0, 1].grid(True)
+axes[0, 1].legend()
+axes[0, 1].set_title("theoretical pressure Head")
+for i in range(len(getPressureHead)):
+    axes[1, 1].plot(cc, vg.pressure_head(theta[i], cyl.vg_soil), label=str(18000 * i))
+axes[1, 1].grid(True)
+axes[1, 1].legend()
+axes[1, 1].set_title("theoretical initpressure")
+for i in range(len(getPressureHead)):
+    axes[2, 1].plot(cc,  SwPcMucilageHbis[i], label=str(18000 * i))
 axes[2, 1].grid(True)
 axes[2, 1].legend()
-axes[2, 1].set_title("Ks")
+axes[2, 1].set_title("theoretical effect mucil")
 
+# Second subplot (top-right): Cmucil
+for i in range(len(getPressureHead)):
+    axes[0, 2].plot(cc, getPressureHead[i] - (vg.pressure_head(theta[i], cyl.vg_soil) - SwPcMucilageHbis[i]), label=str(18000 * i))
+axes[0, 2].grid(True)
+axes[0, 2].legend()
+axes[0, 2].set_title("diff phead")
+axes[0, 2].ticklabel_format(useOffset=False, style='plain')  # full numbers, no offset
+for label in axes[0, 2].get_yticklabels():
+    label.set_rotation(45)
+
+for i in range(len(getPressureHead)):
+    axes[1, 2].plot(cc, initpressure[i] -vg.pressure_head(theta[i], cyl.vg_soil), label=str(18000 * i))
+axes[1, 2].grid(True)
+axes[1, 2].legend()
+axes[1, 2].set_title("diff init phead")
+axes[1, 2].ticklabel_format(useOffset=False, style='plain')  # full numbers, no offset
+for label in axes[1, 2].get_yticklabels():
+    label.set_rotation(45)
+for i in range(len(getPressureHead)):
+    axes[2, 2].plot(cc, initpressure[i] - getPressureHead[i] - SwPcMucilageHbis[i], label=str(18000 * i))
+axes[2, 2].grid(True)
+axes[2, 2].legend()
+axes[2, 2].set_title("diff effect mucil")
+axes[2, 2].ticklabel_format(useOffset=False, style='plain')  # full numbers, no offset
+for label in axes[2, 2].get_yticklabels():
+    label.set_rotation(45)
+
+# Second subplot (top-right): Cmucil
+for i in range(len(getPressureHead)):
+    axes[0, 3].plot(cc, Cmucil[i], label=str(18000 * i))
+axes[0, 3].grid(True)
+axes[0, 3].legend()
+axes[0, 3].set_title("Cmucil")
+for i in range(len(getPressureHead)):
+    #axes[1, 3].plot(cc, Viscosity[i], label=str(18000 * i))
+    axes[1, 3].plot(cc, initpressure[i] - getPressureHead[i], label=str(18000 * i))
+axes[1, 3].grid(True)
+axes[1, 3].legend()
+axes[1, 3].set_title("current effect mucil")
+#axes[1, 3].set_title("Viscosity")
+for i in range(len(getPressureHead)):
+    axes[2, 3].plot(cc, theta[i], label=str(18000 * i))
+axes[2, 3].grid(True)
+axes[2, 3].legend()
+axes[2, 3].set_title("theta")
 
 # Adjust layout
 plt.grid(True)

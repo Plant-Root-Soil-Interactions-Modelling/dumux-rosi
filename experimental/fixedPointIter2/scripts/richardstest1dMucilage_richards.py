@@ -90,7 +90,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
     
     if a_in < a_out:
     
-        cyl = RichardsNoMPIWrapper(RichardsCylFoam(), True)  # only works for RichardsCylFoam compiled without MPI
+        cyl = RichardsNoMPIWrapper(RichardsCylFoam())  # only works for RichardsCylFoam compiled without MPI
         if False:
             cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")

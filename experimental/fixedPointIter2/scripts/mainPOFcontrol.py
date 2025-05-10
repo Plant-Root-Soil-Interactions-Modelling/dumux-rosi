@@ -174,7 +174,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
     start = True # first loop
     
     # inter-cell exchanges of solute and water in 3D soil
-    net_sol_flux =  np.array([np.array([]),np.array([])])
+    net_CN_flux =  np.array([np.array([]),np.array([])])
     net_flux = np.array([])
     # plant-soil water exchange
     seg_Wfluxes = np.array([])
@@ -215,7 +215,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             #fpit_Helper
             FPItHelper.storeNewMassData1d(perirhizalModel)
             FPItHelper.storeNewMassData3d(s,perirhizalModel)
-            perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
+            perirhizalModel.check1d3dDiff( diff1d3dCNW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
             start = False  
 
@@ -236,13 +236,13 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData):
             else:
                 Q_plant_=[[],[]]
             
-            net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
+            net_CN_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
                                                     plantModel, 
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
                                                     rs_age=rs_age, 
                                                     Q_plant=Q_plant_,
                                                     perirhizalModel= perirhizalModel,
-                                                    outer_R_bc_sol = net_sol_flux, 
+                                                    outer_R_bc_CN = net_CN_flux, 
                                                     outer_R_bc_wat = net_flux,
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)

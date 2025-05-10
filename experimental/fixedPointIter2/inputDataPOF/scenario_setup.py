@@ -439,7 +439,7 @@ def setupOther(s, p_mean_):
     s.ddt = 1.e-3  # [day] initial Dumux time step
     s.bulkMassErrorWater_rel = 0.
     s.bulkMassErrorWater_relLim = 0.    
-    s.totC3dInit = sum(s.getTotCContent()) # mol    
+    s.totCN3dInit = sum(s.getTotCNContent()) # mol    
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water

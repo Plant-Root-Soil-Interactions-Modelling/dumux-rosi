@@ -236,7 +236,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
     
     if a_in < a_out:
     
-        cyl = RichardsNoMPIWrapper(RichardsNCCylFoam(), True)  # only works for RichardsCylFoam compiled without MPI
+        cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
         if False:
             cyl.setParameter("Newton.EnableResidualCriterion", "true") # sometimes helps, sometimes makes things worse
             cyl.setParameter("Newton.EnableAbsoluteResidualCriterion", "true")
@@ -281,7 +281,7 @@ def initialize_dumux_nc_(  gId=0, a_in=0.02,
                      str( 100) )
         cyl.setParameter("Newton.MaxSteps",
                      str( 100) )
-            
+        cyl.setParameter("Newton.EnableChop", "true")
         
         for j in range( 1, cyl.numComp):
             cyl.setParameter(str(j)+".Component.LiquidDiffusionCoefficient", str( 0.003456/(24*3600) /10000)) #m^2/s

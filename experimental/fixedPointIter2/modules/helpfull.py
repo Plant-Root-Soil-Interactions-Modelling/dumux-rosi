@@ -206,13 +206,8 @@ def write_file_array(name, data, space =",", directory_ ="./results/", fileType 
     if (rank == 0) or allranks:
         try:
             data = np.array(data, dtype=str).ravel()  # .reshape(-1)
-            #modeOp = 'a'
-            #if False:#'fpit' in name:
-            #    modeOp = 'w'
             file_path = directory_+ name+ fileType
-            #print('write_file_array',name2)
             with open(file_path, "a") as log:
-                #log.write(space.join(map(str, data)) + "\n")  # No need for list comprehension
                 np.savetxt(log, [data], delimiter=space, fmt="%s")
 
         except:
@@ -285,7 +280,7 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
 
         if (rank == 0) and isInner:
             if FPIT_id == 2:
-                print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}')
+                print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}\n\tmax absolute 1d-3d difference: {perirhizalModel.maxdiff1d3dCNW_abs}\n\tmax relative 1d-3d difference: {perirhizalModel.maxdiff1d3dCNW_rel}')
             if FPIT_id == 3:
                 print(f'\t\t\t\tcontinue INNER loop? {bool(cL)}\n\t\t\t\tn_iter: {n_iter}, '
                       f'non-convergence and error metrics: {perirhizalModel.err2:.2e}, '
@@ -314,12 +309,12 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
                                              cL]), directory_ =results_dir, fileType = fileType)
             if not perirhizalModel.doMinimumPrint:
                 write_file_array(name+"2", 
-                                 np.concatenate((perirhizalModel.sumDiff1d3dCW_rel,perirhizalModel.maxDiff1d3dCW_rel)),  
+                                 np.concatenate((perirhizalModel.sumdiff1d3dCNW_rel,perirhizalModel.maxdiff1d3dCNW_rel)),  
                                  directory_ =results_dir, fileType = fileType)
                 write_file_array(name+"Bool", np.array([n_iter, (np.floor(perirhizalModel.err) > perirhizalModel.max_err), 
                                                         (np.floor(perirhizalModel.diff1d3dCurrant_rel*10.)/10. > 0.1),
                                                         (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel) >1),
-                                                        #(abs(perirhizalModel.rhizoMassWError_abs) > 1e-13), (abs(perirhizalModel.rhizoMassCError_abs) > 1e-9), 
+                                                        #(abs(perirhizalModel.rhizoMassWError_abs) > 1e-13), (abs(perirhizalModel.rhizoMassCNError_abs) > 1e-9), 
                                                         #(max(abs(perirhizalModel.errDiffBCs*0)) > 1e-5), 
                                                         perirhizalModel.solve_gave_up, min(perirhizalModel.new_soil_solute.reshape(-1)) < 0.,
                                                              dt_inner,failedLoop,cL]), directory_ =results_dir, fileType = fileType)
@@ -348,7 +343,7 @@ def checkseg2cellMapping(seg2cell_old, plantModel):
 
 def resetAndSaveData(perirhizalModel):
     perirhizalModel.rhizoMassWError_abs = 1.
-    perirhizalModel.rhizoMassCError_abs = 1.
+    perirhizalModel.rhizoMassCNError_abs = 1.
     perirhizalModel.errDiffBCs = 1.
     perirhizalModel.err = 1.
     perirhizalModel.max_err = 1.
@@ -362,17 +357,16 @@ def resetAndSaveData(perirhizalModel):
     return n_iter, keepGoing
 
 
-def resetPlantWFlux(plantModel,perirhizalModel):
+def resetPlantCNWFlux(plantModel,perirhizalModel):
     perirhizalModel.err2 = 1.
-    plantModel.seg_fluxes0Cumul_inner = 0
-    plantModel.seg_fluxes1Cumul_inner = 0
-    plantModel.seg_fluxes2Cumul_inner = 0
+    s = perirhizalModel.soilModel
+    plantModel.seg_fluxesCumul_inner = np.zeros((len(s.RIFidx)+1, len(plantModel.plant.radii)))
     plantModel.TranspirationCumul_inner = 0 # reset transpiration of inner time step to 0
     plantModel.AnCumul_inner = 0 # reset transpiration of inner time step to 0
 
 
 def saveData(plantModel, perirhizalModel, s):
-    resetPlantWFlux(plantModel,perirhizalModel)
+    resetPlantCNWFlux(plantModel,perirhizalModel)
 
     # save data before entering iteration loop
     s.saveManual()
@@ -394,19 +388,15 @@ def resetData(plantModel, perirhizalModel, s):
 
 def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
     if rank == 0:
-        deltalen = len(plantModel.seg_fluxes0Cumul_inner)-len(plantModel.seg_fluxes0Cumul)# plant grew?
-        if deltalen > 0:
-            plantModel.seg_fluxes0Cumul = np.concatenate((plantModel.seg_fluxes0Cumul, np.zeros(deltalen))) 
-            plantModel.seg_fluxes1Cumul = np.concatenate((plantModel.seg_fluxes1Cumul, np.zeros(deltalen))) 
-            plantModel.seg_fluxes2Cumul = np.concatenate((plantModel.seg_fluxes2Cumul, np.zeros(deltalen))) 
-
-        plantModel.seg_fluxes0Cumul += plantModel.seg_fluxes0Cumul_inner 
-        plantModel.seg_fluxes1Cumul += plantModel.seg_fluxes1Cumul_inner
-        plantModel.seg_fluxes2Cumul += plantModel.seg_fluxes2Cumul_inner
-
-        plantModel.seg_fluxes0 = plantModel.seg_fluxes0Cumul_inner/dt
-        plantModel.seg_fluxes1 = plantModel.seg_fluxes1Cumul_inner/dt
-        plantModel.seg_fluxes2 = plantModel.seg_fluxes2Cumul_inner/dt
+        deltalen = len(plantModel.seg_fluxesCumul_inner[0])-len(plantModel.seg_fluxesCumul[0])# plant grew?
+        s = perirhizalModel.soilModel
+        if deltalen > 0:  
+            plantModel.seg_fluxesCumul = np.array([
+                np.concatenate((plantModel.seg_fluxesCumul[jj], np.zeros(deltalen))
+                ) + plantModel.seg_fluxesCumul_inner[jj] for jj in range(len(s.RIFidx)+1)])
+        
+        plantModel.seg_fluxes = np.array([plantModel.seg_fluxesCumul_inner[jj]/dt for jj in range(len(s.RIFidx)+1)])
+        
         
         plantModel.TranspirationCumul += plantModel.TranspirationCumul_inner 
         if perirhizalModel.doPhotosynthesis:
