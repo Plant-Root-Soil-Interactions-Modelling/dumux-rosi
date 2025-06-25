@@ -61,6 +61,9 @@ else:
     ind = -1
     ind10 = -1
 
+ind = -1
+ind10 = -1
+
 print("index", ind)
 print("Plotting for day", times[ind])
 dt_ = np.diff(times[:ind])
@@ -144,7 +147,6 @@ for lind in range(0, len(names)):
         x = ranges[lind][sa_len // 2]
         ax.flat[ac].plot([x], [1.], 'r*')
 
-        ax.flat[ac].legend()
         ax.flat[ac].set_title(names[lind])
         # ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
@@ -160,6 +162,9 @@ print("final")
 print(names)
 print(final)
 
-print()
-print(names)
-print(finaln)
+names = np.array(names)
+final = np.array(final)
+I = np.argsort(final)
+print("sorted")
+print(names[I])
+print(final[I])

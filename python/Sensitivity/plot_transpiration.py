@@ -30,6 +30,11 @@ pick12 = [
 ]
 envirotypes = ["0", "1", "5", "36", "59"]
 
+cluster_10_opt = [
+    "soybean_all14_3564a0f636e9f600fe68bf96ffca4124135106ae4787b9a3332334b04abcdf1a",  # 213
+    "soybean_all14_f7319dc5d83c72932fd39e4afbf6e50822c2f7bf13b27fc5749c1128642a95d2"  # 138
+    ]
+
 name = "soybean_water_0"
 name = "local_soybean_noFlux_1"
 name = "local_soybean_1"
@@ -38,7 +43,8 @@ name = "singleroot_test"
 name = "soybean_test_1"
 name = "local_soybean_new_1"
 
-name = pick12[6] + "_1"
+name = pick12[6] + "_0"
+name = cluster_10_opt[0] + "_36"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data
@@ -77,8 +83,6 @@ area = 76 * 3
 # potential_trans = evap.get_transpiration_beers_csvS(start_date, 95, area, evap.lai_maize2, Kc_maize)
 # # evap.net_infiltration_table_beers_csv(start_date, 95, evap.lai_maize2, Kc_maize)
 # trans = 1
-
-rs_age = 1
 
 # fnames = np.array(["transpiration_" + name + s for s in str_ ])
 # fnames2 = np.array(["nitrate_" + name + s for s in str_ ])

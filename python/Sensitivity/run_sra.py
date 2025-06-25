@@ -223,7 +223,25 @@ if __name__ == "__main__":
             "src": src
             }
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
-
+    elif type == "original_new2":
+        print("running new2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
+        r = float(sys.argv[5])
+        r145 = float(sys.argv[6])
+        r2 = float(sys.argv[7])
+        r3 = float(sys.argv[8])
+        ln = float(sys.argv[9])
+        ln145 = float(sys.argv[10])
+        ln2 = float(sys.argv[11])
+        a145 = float(sys.argv[12])
+        a2 = float(sys.argv[13])
+        a3 = int(float(sys.argv[14]))
+        mods = {
+            "conductivity_mode": "scale",
+            "r": r, "r145": r145, "r2": r2, "r3": r3,
+            "ln": ln, "ln145": ln145, "ln2": ln2,
+            "a145":a145, "a2": a2, "a3": a3
+            }
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
     elif type == "conductivities10":  # makes little sense to treat kr, kx independently
         print("running conductivities10", flush = True)
         mods = {

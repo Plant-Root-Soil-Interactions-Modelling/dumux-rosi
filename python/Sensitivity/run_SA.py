@@ -94,7 +94,8 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
 
         if run_local:
-            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}& \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
+            # print("len", len(job[1:]))
+            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         else:
             if type_str == "file":  # for "file" add an index to the file name, for all others job id is stored in job[0] and added in L89
@@ -152,7 +153,7 @@ def local_soybean():
     root_type = "soybean"
     file_name = "local_soybean_new_"
     enviro_type = 0
-    sim_time = 87.5  # 87.5  # days
+    sim_time = 1.  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
@@ -161,6 +162,27 @@ def local_soybean():
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+
+
+def local_soybean_new2():
+    """ constructs a local sensitivity  """
+
+    print("new local_soybean")
+    type_str = "original_new2"
+    root_type = "soybean"
+    file_name = "local_soybean_new2_"
+    enviro_type = 0
+    sim_time = 87.5  # 87.5  # 87.5  # days
+
+    p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+    write_ranges("results/" + file_name,
+                 ["r", "r145", "r2", "r3", "ln", "ln145", "ln2", "a145", "a2", "a3"],
+                 [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
+    jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
+
+    print("nubmer of jobs", len(jobs))
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
@@ -201,7 +223,7 @@ def local_singleroot_conductivities():
     root_type = "soybean"
     file_name = "local_singleroot_conductivities64_"
     enviro_type = 0
-    sim_time = 40  # 87.5  # days
+    sim_time = 1.  # 40  # 87.5  # days
 
     kx = np.array([0.1]) / 16
     kx_old = np.array([0.35]) / 16 / 4
@@ -216,7 +238,7 @@ def local_singleroot_conductivities():
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
 def local_soybean_tropisms():
@@ -302,7 +324,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 6
+    i = 7
 
     if i == 1:
         local_soybean()
@@ -317,7 +339,9 @@ if __name__ == "__main__":
     if i == 6:
         simulate_list()
     if i == 7:
-        pass
+        local_soybean_new2()
+    else:
+        raise("on no")
 
 # def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
 #     """ creates the jobs for a global sensitivity analysis  """
