@@ -186,15 +186,17 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
                 type_top[id_tt] = t
+
         if len(value_top) == 0:
             value_top = [0. for i in type_top]
         if self.checkProblemInitialized(throwError = False):
+
             self.base.setSTopBC(type_top, value_top)
         else:
             self.setParameter(self.param_group + "BC.Top.SType", self.dumux_str(type_top))
             self.setParameter(self.param_group + "BC.Top.CValue", self.dumux_str(value_top))
 
-            if type_top == 9:  # managed (nitrogen input)
+            if t == 9:  # managed (nitrogen input)
                 if managed:
                     assert(len(managed[0]) == len(managed[1]))  # sample points
                     self.setParameter("Managed.Time", self.dumux_str(managed[0]))
@@ -285,21 +287,20 @@ class RichardsWrapper(SolverWrapper):
         """
         self.setBotBC(1, x)
 
-
     def getInnerFlow(self, eqIdx = 0, length = None):
         """ mean flow rate at the inner boundary [cm3 / day] """
         assert self.dimWorld == 1
         pos = np.array(self.base.getCylFaceCoordinates())
         flux = self.getBoundaryFluxesPerFace_(eqIdx, length)
         return flux[pos == min(pos)]
-        
+
     def getOuterFlow(self, eqIdx = 0, length = None):
         """ mean flow rate at the outer boundary [cm3 / day] """
         assert self.dimWorld == 1
         pos = np.array(self.base.getCylFaceCoordinates())
         flux = self.getBoundaryFluxesPerFace_(eqIdx, length)
         return flux[pos == max(pos)]
-        
+
     def getInnerFlux(self, eq_idx = 0):
         """ instantaneous flow rate at the inner boundary [cm3 / cm2 / day] """
         return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
@@ -310,8 +311,7 @@ class RichardsWrapper(SolverWrapper):
         @param flux      [cm/day] negative means outflow    
         """
         self.setTopBC(3, flux)
- 
-        
+
     def getOuterFlux(self, eq_idx = 0):
         """ instantaneous flow rate at the outer boundary  [cm / day]"""
         return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
@@ -367,19 +367,18 @@ class RichardsWrapper(SolverWrapper):
     def getSource(self, eqIdx = 0):
         """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.getSource_(eqIdx), root = 0)), 2) 
+        return self._map(self._flat0(comm.gather(self.getSource_(eqIdx), root = 0)), 2)
 
     def getSource_(self, eqIdx = 0):
         """nompi version of """
         self.checkGridInitialized()
-        unitChange = 24 * 3600 / 1e6 # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
+        unitChange = 24 * 3600 / 1e6  # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
         if eqIdx == 0:
             if self.useMoles:
-                unitChange *=  18.068 # [mol/cm3/day -> cm3/cm3/day]
+                unitChange *= 18.068  # [mol/cm3/day -> cm3/cm3/day]
             else:
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
-        return np.array(self.base.getScvSources()[eqIdx]) * unitChange 
-        
+        return np.array(self.base.getScvSources()[eqIdx]) * unitChange
 
     def setSource(self, source_map, eq_idx = 0):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
@@ -387,11 +386,11 @@ class RichardsWrapper(SolverWrapper):
         for key, value in source_map.items():
             if eq_idx == 0:
                 if self.useMoles:
-                    source_map[key] = value / 24. / 3600. / 18.068;  # [cm3/day] -> [mol/s] 
+                    source_map[key] = value / 24. / 3600. / 18.068;  # [cm3/day] -> [mol/s]
                 else:
                     source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
             else:
-                source_map[key] = value / 24. / 3600.    # [kg/day] -> [kg/s] or [mol/day] -> [mol/s]
+                source_map[key] = value / 24. / 3600.  # [kg/day] -> [kg/s] or [mol/day] -> [mol/s]
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):
