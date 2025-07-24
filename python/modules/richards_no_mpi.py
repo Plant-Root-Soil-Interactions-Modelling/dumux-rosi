@@ -70,7 +70,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (dof, neq), 
         model dependent units [Pa, ...]"""
         self.checkGridInitialized()
-        return self._map((self.base.getSolution(eqIdx), 0))
+        return self._map((self.base.getSolution(eqIdx)), 0)
 
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
