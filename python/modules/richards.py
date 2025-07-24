@@ -244,6 +244,10 @@ class RichardsWrapper(SolverWrapper):
     def setBotBC_solute(self, type_bot:list, value_bot:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
         """
+        if not isinstance(type_bot, (list, type(np.array([])))):
+            type_bot = [type_bot]
+        if not isinstance(value_bot, (list, type(np.array([])))):
+            value_bot = [value_bot]
         assert isinstance(type_bot[0], (str, int))
         for id_tb, tb in enumerate(type_bot):
             if isinstance(tb, str):
