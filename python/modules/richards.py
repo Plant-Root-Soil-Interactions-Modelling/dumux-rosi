@@ -166,14 +166,21 @@ class RichardsWrapper(SolverWrapper):
                     raise Exception('richards.setTopBC(): Atmospheric boundary conditions where set, but no climatic data were given')
 
     def setTopBC_solute(self, type_top:list, value_top:list = [], managed:list = []):
+        if not isinstance(type_top, (list, type(np.array([])))):
+            type_top = [type_top]
+        if not isinstance(value_top, (list, type(np.array([])))):
+            value_top = [value_top]
+            
         assert isinstance(type_top[0], (str, int))
+        if len(value_top) == 0:
+            value_top = [0. for i in type_top]
         for id_tt, tt in enumerate(type_top):
             if isinstance(tt, str):
                 if tt == "constantConcentration":
                     t = 1
                 elif tt == "constantFlux":
                     t = 2
-                elif tt == "constantFluxCyl" or type_top == "fluxCyl":
+                elif tt == "constantFluxCyl" or tt == "fluxCyl":
                     t = 3
                 elif tt == "outflow":
                     t = 6
@@ -183,11 +190,14 @@ class RichardsWrapper(SolverWrapper):
                     t = 8
                 elif tt == "managed":
                     t = 9
+                elif tt == "noflux"  or tt == "noFlux" or tt == "no-flux":
+                    t = 2
+                    if not value_top[id_tt] == 0:
+                        print("RichardsWrapper.setTopBC_solute() warning: value_top must be zero in case of no flux")
+                    value_top[id_tt] = 0.
                 else:
                     raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
                 type_top[id_tt] = t
-        if len(value_top) == 0:
-            value_top = [0. for i in type_top]
         if self.checkProblemInitialized(throwError = False):
             self.base.setSTopBC(type_top, value_top)
         else:
@@ -242,6 +252,14 @@ class RichardsWrapper(SolverWrapper):
     def setBotBC_solute(self, type_bot:list, value_bot:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
         """
+        if not isinstance(type_bot, (list, type(np.array([])))):
+            type_bot = [type_bot]
+        if not isinstance(value_bot, (list, type(np.array([])))):
+            value_bot = [value_bot]
+            
+        if len(value_bot) == 0:
+            value_bot = [0. for i in type_bot]
+            
         assert isinstance(type_bot[0], (str, int))
         for id_tb, tb in enumerate(type_bot):
             if isinstance(tb, str):
@@ -257,11 +275,14 @@ class RichardsWrapper(SolverWrapper):
                     b = 7
                 elif tb == "michaelisMenten":
                     b = 8
+                elif tb == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
+                    b = 2
+                    if not value_bot[id_tb] == 0:
+                        print("RichardsWrapper.setBotBC() warning: value_bot must be zero in case of no flux")
+                    value_bot[id_tb] = 0.
                 else:
                     raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
                 type_bot[id_tb] = b
-        if len(value_bot) == 0:
-            value_bot = [0. for i in type_bot]
 
         if self.checkProblemInitialized(throwError = False):
             self.base.setSBotBC(type_bot, value_bot)
