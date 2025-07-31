@@ -1,10 +1,10 @@
 from solverbase import SolverWrapper
-from richards import RichardsWrapper
+from richards_no_mpi import RichardsNoMPIWrapper
 
 import numpy as np
 
 
-class RichardsFlatWrapper(RichardsWrapper):
+class RichardsNoMPIFlatWrapper(RichardsNoMPIWrapper):
     """ 
     get the outputs as flattened arrays for 1D models, without re-writing RichardsNoMPIWrapper
     """
@@ -29,6 +29,14 @@ class RichardsFlatWrapper(RichardsWrapper):
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np,) [cm]"""
         return super().getPoints().flatten() 
+
+    def getCellCenters(self):
+        """Gathers cell centers into rank 0, and converts it into numpy array (Nc,) [cm]"""
+        return super().getCellCenters().flatten()
+
+    def getDofCoordinates(self):
+        """Gathers dof coorinates into rank 0, and converts it into numpy array (Ndof,) [cm]"""
+        return super().getDofCoordinates().flatten() 
 
     def getCellVolumes(self):
         return super().getCellVolumes().flatten() 

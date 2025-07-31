@@ -72,8 +72,10 @@ public:
     using VectorType = std::array<double, dim>;
     using NumEqVector = typename Problem::NumEqVector;
     using VelocityVector = std::vector<Dune::FieldVector<double, dim>>;
-
-    int numComp(){return nEV.size();}
+	using GlobalPosition = typename Problem::GlobalPosition; 
+	
+    int numComp(){return nEV.size();}    
+	int numFluidComp(){return Problem::FluidSystem::numComponents;}
     NumEqVector nEV;
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
@@ -529,6 +531,18 @@ public:
     }
 
     /**
+	 * Change the maximum step size of the time loop
+     */
+	void setMaxTimeStepSize(double maxDt)
+	{
+        checkGridInitialized();
+		maxDt_ = maxDt;
+		if(maxDt_ > 0.)
+		{
+			timeLoop->setMaxTimeStepSize(maxDt_);
+		}
+	}
+    /**
      * Finds the steady state of the problem.
      *
      * Optionally, solve for a time span first, to get a good initial guess.
@@ -793,8 +807,13 @@ public:
 			//elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
 
             for (const auto& scvf : scvfs(fvGeometry)) {
-                if (scvf.boundary()) {
-                    double n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+				if (scvf.boundary()) {
+					const auto& bcTypes = problem->boundaryTypes(e, scvf);
+					double n;
+					if (bcTypes.hasNeumann()){
+						n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+					}
+					
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
@@ -1174,7 +1193,42 @@ public:
 	virtual void saveInnerVals() {}
     virtual void resetInnerValsManual() {}
     virtual void saveInnerValsManual() {}
+	
+	
+    /**
+	 * manually (re)create linear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createLinearSolver()
+	{
+		linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+	}
+	
+    /**
+	 * manually (re)create nonlinear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createNewtonSolver()
+	{
+		// also reset assembler?
+        nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbosity(false);
+        nonLinearSolverNoMPI = std::make_shared<NonLinearSolverNoMPI>(assembler, linearSolver,
+								Dune::FakeMPIHelper::getCommunication());
+        nonLinearSolverNoMPI->setVerbosity(false);
+	}
 
+	//! true if on the point lies on the upper boundary
+	// TODO: use to get specific fluxes
+	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] > this->gridGeometry->bBoxMax()[dimWorld - 1] - eps_;
+	}
+
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
+	}
+	static constexpr double eps_ = 1.e-7;
 
 protected:
 
@@ -1224,6 +1278,7 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
+			.def("numFluidComp",  &Solver::numFluidComp)
 			.def("numComp",  &Solver::numComp)
             .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),
 													py::arg("verbose") = true,py::arg("doMPI") = true)
@@ -1236,6 +1291,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
             .def("printParams", &Solver::printParams)
+			.def("setMaxTimeStepSize",&Solver::setMaxTimeStepSize)
+			.def("createLinearSolver",&Solver::createLinearSolver)
+			.def("createNewtonSolver",&Solver::createNewtonSolver)
             .def("initializeProblem", &Solver::initializeProblem, py::arg("maxDt") = -1)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
 			.def("reset", &Solver::reset)
