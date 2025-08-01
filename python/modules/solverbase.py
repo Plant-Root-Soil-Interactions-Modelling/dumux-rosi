@@ -50,6 +50,7 @@ class SolverWrapper():
             change the maximum inner time step which can be tested by dumux
         """
         self.base.setMaxTimeStepSize(maxDt)
+        
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
         self.base.createGrid(modelParamGroup)
@@ -65,7 +66,6 @@ class SolverWrapper():
             @param numberOfCells    resoultion [1]
             @param periodic         If true, the domain is periodic in x and y, not in z 
         """
-        print("createGrid", periodic)  # OK
         self.base.createGrid(np.array(boundsMin) / 100., np.array(boundsMax) / 100., np.array(numberOfCells), periodic)  # cm -> m
         
         self.numberOfCellsTot = np.prod(self.numberOfCells)
@@ -155,8 +155,8 @@ class SolverWrapper():
             self.cellsVertex = [None]
             
         # volumes, surface
-        self.CellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
-        self.CellVolumes = self._map(self._flat0(self.gather(self.CellVolumes_)), 2)   # m2 -> cm2
+        self.cellVolumes_ =np.array( self.base.getCellVolumes()) * 1.e6  # m3 -> cm3
+        self.cellVolumes = self._map(self._flat0(self.gather(self.cellVolumes_)), 2)   # m2 -> cm2
         
         # coordinates
         self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm
@@ -234,14 +234,14 @@ class SolverWrapper():
     def getCellVolumes(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
         if self.dimWorld == 3 :
-            return self.CellVolumes
+            return self.cellVolumes
         elif self.dimWorld == 1 :
             return self.getCellVolumesCyl()
 
     def getCellVolumes_(self):
         """nompi version of  """
         if self.dimWorld == 3 :
-            return self.CellVolumes_ 
+            return self.cellVolumes_ 
         elif self.dimWorld == 1 :
             return self.getCellVolumesCyl_()
         
@@ -394,10 +394,7 @@ class SolverWrapper():
         surfaces = self.getFaceSurfaces_(length)  # cm2 
         notGhost = surfaces > 0
         return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]) * surfaces)[notGhost] * unitChange
-        
-        
-        
-    
+            
     def getCell2CellFluxesPerFace_(self, eqIdx = 0, length = None):
         """  [cm3/day] """
         self.checkGridInitialized()

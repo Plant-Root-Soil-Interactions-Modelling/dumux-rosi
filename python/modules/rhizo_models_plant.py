@@ -296,14 +296,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.alldiff1d3dCNW_rel = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_abs = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_ = np.full((self.numComp,len(cellIds)), 0.)
-        self.alldiff1d3dCNW = np.full((self.numComp,len(s.CellVolumes)), 0.)
+        self.alldiff1d3dCNW = np.full((self.numComp,len(s.cellVolumes)), 0.)
         
         self.sumdiff1d3dCNW_abs = np.full(self.numComp, 0.)
         self.sumdiff1d3dCNW_rel = np.full(self.numComp, 0.)
         self.maxdiff1d3dCNW_abs = np.full(self.numComp, 0.)
         self.maxdiff1d3dCNW_rel = np.full(self.numComp, 0.)
         water_content = self.soilModel.getWaterContent() 
-        self.soil_water3dAfter = np.multiply(water_content, s.CellVolumes) 
+        self.soil_water3dAfter = np.multiply(water_content, s.cellVolumes) 
         self.totCN3dAfter_eachVoxeleachComp = np.array([s.getContent(i+1) for i in range(s.numSoluteComp)])
         self.rhizoWAfter_eachCyl = self.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
 
@@ -1065,7 +1065,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         else:
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), self.NC, base = lb) # cm
 
-            volOld = cyl.cellVolumes
+            volOld = cyl.getCellVolumes()
             ## new shape: 
             volNew = self.getVolumes(points, self.seg_length[gId] ) # cm^3
             deltaVol = sum(volNew) - sum(volOld) 
@@ -1394,7 +1394,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.maxDt =  250./(3600.*24.)
             cyl.initializeProblem(cyl.maxDt)
             cyl.ddt = 1.e-3
-            cyl.cellVolumes = cyl.getCellVolumes()
             
             cyl.setCriticalPressure(cyl.wilting_point)  
             
@@ -1853,7 +1852,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         repr(oldWaterContent),
                         repr(cyl.getSolutionHead()),
                   'shape', repr(cyl.getPoints()),
-                  repr( cyl.CellVolumes), a_in, a_out, l, 'dt', dt)
+                  repr( cyl.getCellVolumes()), a_in, a_out, l, 'dt', dt)
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
@@ -1879,7 +1878,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 inner_fluxes_real_ = np.zeros(self.numComp)
                 inner_fluxes_real_[:self.numFluidComp] = inner_fluxes_real
                 
-                cyl_sources = np.array([cyl.getSource(nc) * cyl.cellVolumes * dt for nc in range(cyl.numComp)]).sum(axis=1)    
+                cyl_sources = np.array([cyl.getSource(nc) * cyl.getCellVolumes() * dt for nc in range(cyl.numComp)]).sum(axis=1)    
                 
                 assert (outer_fluxes_real == 0.).all() # outer exchange implemented via sinks not via outer BC
                      
@@ -2003,10 +2002,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     repr(cyl.getSolutionHead()),
                   'inner_fluxes_real',inner_fluxes_real, 
                   'inner_fluxes_water_temp', inner_fluxes_water_temp, 
-                  repr(cyl.cellVolumes),
+                  repr(cyl.getCellVolumes()),
                   'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
-                   cyl.cellVolumes))
-
+                   cyl.getCellVolumes()))
         return inner_fluxes_real, outer_fluxes_water_temp, outer_fluxes_solMucil_temp, cyl_sources        
      
     def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, 
