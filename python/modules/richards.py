@@ -1,3 +1,6 @@
+import sys
+sys.path.append("../../../CPlantBox/src")
+import functional.van_genuchten as vg  
 from solverbase import SolverWrapper
 import numpy as np
 from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
@@ -23,6 +26,8 @@ class RichardsWrapper(SolverWrapper):
         """ to pass lists to dumux parameter tree as string """
         if type(l).__name__ == "float" or type(l).__name__ == "int":
             return str(l)
+        elif type(l).__name__ == 'float64':
+            return str(l)
         else:
             s = ""
             for l_ in l:
@@ -39,7 +44,7 @@ class RichardsWrapper(SolverWrapper):
             raise Exception('use setVGParameters before calling initialize()')
 
         qr, qs, alpha, n, ks = [], [], [], [], []
-
+        self.vg_soils = []
         for soil in soils:
             assert len(soil) == 5, "setVGParameters, soil need to be a list of 5 parameters: qr, qs, alpha, n, ks "
             qr.append(soil[0])
@@ -47,6 +52,7 @@ class RichardsWrapper(SolverWrapper):
             alpha.append(soil[2])
             n.append(soil[3])
             ks.append(soil[4])
+            self.vg_soils.append(vg.Parameters(soil))
 
         self.setParameter(self.param_group + "VanGenuchten.Qr", self.dumux_str(qr))
         self.setParameter(self.param_group + "VanGenuchten.Qs", self.dumux_str(qs))
@@ -55,6 +61,7 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
 
         self.soils = soils.copy()
+        
 
     def setLayersZ(self, number:list, z:list = []):
         """ sets depth dependent layers 
@@ -77,6 +84,7 @@ class RichardsWrapper(SolverWrapper):
         @param z     list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
         self.setParameter(self.param_group + "IC.P", self.dumux_str(p))
+        
         if z:
             assert(len(p) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.Z", self.dumux_str(np.array(z) / 100.))
@@ -87,6 +95,9 @@ class RichardsWrapper(SolverWrapper):
         @param p     list of concentrations at the z-positions (if given), or per soil layer, [g/cm3].      
         @param z     list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
+        if isinstance(c, float):
+            c = [float(c)]
+            
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setICZ_solute before calling initialize()')
 
@@ -156,7 +167,7 @@ class RichardsWrapper(SolverWrapper):
             self.setParameter(self.param_group + "BC.Top.Type", str(type_top))
             self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
 
-            if type_top == 4:  # atmospheric
+            if t == 4:  # atmospheric
                 if climate:
                     assert(len(climate[0]) == len(climate[1]))  # sample points
                     self.setParameter("Climate.Time", self.dumux_str(climate[0]))
@@ -166,14 +177,26 @@ class RichardsWrapper(SolverWrapper):
                     raise Exception('richards.setTopBC(): Atmospheric boundary conditions where set, but no climatic data were given')
 
     def setTopBC_solute(self, type_top:list, value_top:list = [], managed:list = []):
+        if not isinstance(type_top, (list, type(np.array([])))):
+            type_top = [type_top]
+        if not isinstance(value_top, (list, type(np.array([])))):
+            value_top = [value_top]
+        if len(value_top) == 0:
+            value_top = [0. for i in type_top]
+            
         assert isinstance(type_top[0], (str, int))
         for id_tt, tt in enumerate(type_top):
             if isinstance(tt, str):
                 if tt == "constantConcentration":
                     t = 1
                 elif tt == "constantFlux":
+                    t = 2                
+                elif tt == "noflux"  or tt == "noFlux" or tt == "no-flux":
                     t = 2
-                elif tt == "constantFluxCyl" or type_top == "fluxCyl":
+                    if not value_top[id_tt] == 0:
+                        print("RichardsWrapper.setTopBC_solute() warning: value_top must be zero in case of no flux")
+                    value_top[id_tt] = 0.
+                elif tt == "constantFluxCyl" or tt == "fluxCyl":
                     t = 3
                 elif tt == "outflow":
                     t = 6
@@ -187,8 +210,6 @@ class RichardsWrapper(SolverWrapper):
                     raise Exception('richards.setTopBC_solute(): Top solute type should be "constantConcentration", "constantFlux", "constantFluxCyl",  or "managed" unknown top type {}'.format(type_top))
                 type_top[id_tt] = t
 
-        if len(value_top) == 0:
-            value_top = [0. for i in type_top]
         if self.checkProblemInitialized(throwError = False):
 
             self.base.setSTopBC(type_top, value_top)
@@ -248,6 +269,8 @@ class RichardsWrapper(SolverWrapper):
             type_bot = [type_bot]
         if not isinstance(value_bot, (list, type(np.array([])))):
             value_bot = [value_bot]
+        if len(value_bot) == 0:
+            value_bot = [0. for i in type_bot]
         assert isinstance(type_bot[0], (str, int))
         for id_tb, tb in enumerate(type_bot):
             if isinstance(tb, str):
@@ -255,8 +278,13 @@ class RichardsWrapper(SolverWrapper):
                     b = 1
                 elif tb == "constantFlux":
                     b = 2
-                elif tb == "constantFluxCyl" or type_bot == "fluxCyl":
+                elif tb == "constantFluxCyl" or tb == "fluxCyl":
                     b = 3
+                elif tb == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
+                    b = 2
+                    if not value_bot[id_tb] == 0:
+                        print("RichardsWrapper.setBotBC() warning: value_bot must be zero in case of no flux")
+                    value_bot[id_tb] = 0.
                 elif tb == "outflow":
                     b = 6
                 elif tb == "linear":
@@ -266,8 +294,7 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
                 type_bot[id_tb] = b
-        if len(value_bot) == 0:
-            value_bot = [0. for i in type_bot]
+        
 
         if self.checkProblemInitialized(throwError = False):
             self.base.setSBotBC(type_bot, value_bot)
@@ -291,6 +318,17 @@ class RichardsWrapper(SolverWrapper):
         """
         self.setBotBC(1, x)
 
+    def getBCFlows(self ):          
+        """returns the total boundary flow simulated during the last dumux solumation
+        """
+        assert self.dimWorld == 1
+        # water: [cm3/d] 
+        # solute: [g/d] or [mol/d] 
+        Q_in_m  = np.array([self.getInnerFlow(nc, self.length) for nc in range(self.numFluidComp)])
+        Q_out_m = np.array([self.getOuterFlow(nc, self.length) for nc in range(self.numFluidComp)]) 
+        
+        return(Q_in_m, Q_out_m)
+        
     def getInnerFlow(self, eqIdx = 0, length = None):
         """ mean flow rate at the inner boundary [cm3 / day] """
         assert self.dimWorld == 1
@@ -371,7 +409,7 @@ class RichardsWrapper(SolverWrapper):
     def getSource(self, eqIdx = 0):
         """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.getSource_(eqIdx), root = 0)), 2)
+        return self._map(self._flat0(self.gather(self.getSource_(eqIdx), root = 0)), 2)
 
     def getSource_(self, eqIdx = 0):
         """nompi version of """
@@ -379,9 +417,13 @@ class RichardsWrapper(SolverWrapper):
         unitChange = 24 * 3600 / 1e6  # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
         if eqIdx == 0:
             if self.useMoles:
-                unitChange *= 18.068  # [mol/cm3/day -> cm3/cm3/day]
+                unitChange *= self.molarDensityWat  # [mol/cm3/day -> cm3/cm3/day]
             else:
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
+        else:
+            if not self.useMoles:
+                unitChange *= 1e3 # [kg/cm3/day -> g/cm3/day]
+            
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange
 
     def setSource(self, source_map, eq_idx = 0):
@@ -390,11 +432,11 @@ class RichardsWrapper(SolverWrapper):
         for key, value in source_map.items():
             if eq_idx == 0:
                 if self.useMoles:
-                    source_map[key] = value / 24. / 3600. / 18.068;  # [cm3/day] -> [mol/s]
+                    source_map[key] = value / 24. / 3600. / self.molarDensityWat;  # [cm3/day] -> [mol/s]
                 else:
                     source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
             else:
-                source_map[key] = value / 24. / 3600.  # [kg/day] -> [kg/s] or [mol/day] -> [mol/s]
+                source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s] or [mol/day] -> [mol/s]
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):
@@ -412,7 +454,7 @@ class RichardsWrapper(SolverWrapper):
         """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof, neq), 
         model dependent units, [Pa, ...]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)
+        return self._map(self._flat0(self.gather(self.base.getSolutionHead(eqIdx), root = 0)), 0)
 
     def getSolutionHead_(self, eqIdx = 0):
         """ no mpi version of getSolutionHead() """
@@ -426,7 +468,7 @@ class RichardsWrapper(SolverWrapper):
     def getWaterContent(self):
         """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc, 1) [1]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.base.getWaterContent(), root = 0)), 2)
+        return self._map(self._flat0(self.gather(self.base.getWaterContent(), root = 0)), 2)
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
@@ -463,8 +505,72 @@ class RichardsWrapper(SolverWrapper):
             defined via @see addVanGenuchtenDomain
         """
         self.checkGridInitialized()
-        return np.unique(self._flat0(comm.gather(self.base.getLayerCellIndx(layerIndex), root = 0)))
+        return np.unique(self._flat0(self.gather(self.base.getLayerCellIndx(layerIndex), root = 0)))
 
+    def getConcentration_(self,idComp):      
+        """ returns the concentraiton of a component (solute)
+            @param idcomp: index of the component (> 0) [int]
+        """
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
+        C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity #mol/m3 scv
+            return C_ #mol/cm3 scv
+        if self.useMoles:
+            C_ *= self.molarDensityWat # mol/cm3 wat            
+        return C_
+        
+    def getConcentration(self,idComp):      
+        """ returns the concentration of a component (solute)
+            @param idcomp: index of the component (> 0) [int]
+        """
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
+        C_ = self.getSolution(idComp) # mol/mol wat or mol/mol scv
+        if not isDissolved:
+            if self.useMoles:
+                C_ *= self.bulkDensity #mol/cm3 scv
+            return C_ #mol/cm3 scv
+        if self.useMoles:
+            C_ *= self.molarDensityWat # mol/m3 wat            
+        return C_ 
+        
+    def getContent(self,idComp):
+        """ returns the content of a component (solute)
+            @param idcomp: index of the component (> 0) [int]
+        """
+        # do not use for water content
+        if (idComp <= 0)|(idComp > self.numComp):
+            raise Exception("richards::getContent: Requested element id {idComp} does not correspond to a solute.")
+        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
+        vols = self.getCellVolumes_() # cm3 scv            
+        
+        C_ = self.getSolution_(idComp) # mol/mol or g/g 
+        C_ *= self.phaseDensity(isDissolved)
+            
+        if not isDissolved:
+            return self._map(self._flat0(self.gather(np.multiply(vols , C_  ))),0)
+        
+        watCont = self.getWaterContent_() # cm3 wat/cm3 scv
+        return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_ ))),0)
+          
+        
+    def phaseDensity(self, isDissolved):
+        """ returns the density of the phase the solute is in [mol / m3]
+            i.e., water phase for disolved solutes, solide phase otherwise
+            @param isDissolved: is the solute disolved in water [bool]
+        """
+        if isDissolved: 
+            if self.useMoles:
+                return self.molarDensityWat #mol wat / cm3 wat
+            else:
+                return self.densityWat # g wat / cm3 wat
+        else:   
+            if self.useMoles:
+                return self.molarBulkDensity # mol soil minerals / cm3 scv
+            else:
+                return self.bulkDensity # g soil minerals / cm3 scv
+            
     def writeDumuxVTK(self, file_name):
         """Uses the Dumux VTK writer to write the current model output"""
         self.checkGridInitialized()
