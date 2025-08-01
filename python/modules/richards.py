@@ -508,49 +508,39 @@ class RichardsWrapper(SolverWrapper):
         return np.unique(self._flat0(self.gather(self.base.getLayerCellIndx(layerIndex), root = 0)))
 
     def getConcentration_(self,idComp):      
-        """ returns the concentraiton of a component (solute)
-            @param idcomp: index of the component (> 0) [int]
+        """ non mpi version of
         """
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
-        if not isDissolved:
-            if self.useMoles:
-                C_ *= self.bulkDensity #mol/m3 scv
-            return C_ #mol/cm3 scv
-        if self.useMoles:
-            C_ *= self.molarDensityWat # mol/cm3 wat            
-        return C_
+        return C_ * self.phaseDensity(isDissolved)
         
     def getConcentration(self,idComp):      
-        """ returns the concentration of a component (solute)
+        """ returns the concentration of a component (solute) [mol/cm3 phase] or [g/cm3 phase]
+            with phase either the liquid (water) or the solid (bulk soil) phase
             @param idcomp: index of the component (> 0) [int]
         """
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
-        C_ = self.getSolution(idComp) # mol/mol wat or mol/mol scv
-        if not isDissolved:
-            if self.useMoles:
-                C_ *= self.bulkDensity #mol/cm3 scv
-            return C_ #mol/cm3 scv
-        if self.useMoles:
-            C_ *= self.molarDensityWat # mol/m3 wat            
-        return C_ 
+        C_ = self.getSolution(idComp) # [mol/mol phase] or [g/g phase]   
+        return C_ * self.phaseDensity(isDissolved)
         
     def getContent(self,idComp):
-        """ returns the content of a component (solute)
+        """ returns the content of a component (solute) [mol] or [g]
             @param idcomp: index of the component (> 0) [int]
         """
-        # do not use for water content
+        # only vald for solutes (idComp > 0). 
         if (idComp <= 0)|(idComp > self.numComp):
             raise Exception("richards::getContent: Requested element id {idComp} does not correspond to a solute.")
+            
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         vols = self.getCellVolumes_() # cm3 scv            
         
-        C_ = self.getSolution_(idComp) # mol/mol or g/g 
-        C_ *= self.phaseDensity(isDissolved)
+        C_ = self.getSolution_(idComp) # concentration in [mol solute/mol phase] or [g solute/g phase] 
+        C_ *= self.phaseDensity(isDissolved) # [mol solute/mol phase] * [mol phase/cm3 phase] or [g solute/g phase] * [g phase/cm3 phase]
             
-        if not isDissolved:
+        if not isDissolved: # is in the soil phase
             return self._map(self._flat0(self.gather(np.multiply(vols , C_  ))),0)
         
+        # is in the water phase: needs to be multiplied by the water content to get the total concentration in the subcrontrol volume
         watCont = self.getWaterContent_() # cm3 wat/cm3 scv
         return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_ ))),0)
           
