@@ -296,14 +296,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.alldiff1d3dCNW_rel = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_abs = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_ = np.full((self.numComp,len(cellIds)), 0.)
-        self.alldiff1d3dCNW = np.full((self.numComp,len(s.cellVolumes)), 0.)
+        self.alldiff1d3dCNW = np.full((self.numComp,len(s.getCellVolumes())), 0.)
         
         self.sumdiff1d3dCNW_abs = np.full(self.numComp, 0.)
         self.sumdiff1d3dCNW_rel = np.full(self.numComp, 0.)
         self.maxdiff1d3dCNW_abs = np.full(self.numComp, 0.)
         self.maxdiff1d3dCNW_rel = np.full(self.numComp, 0.)
         water_content = self.soilModel.getWaterContent() 
-        self.soil_water3dAfter = np.multiply(water_content, s.cellVolumes) 
+        self.soil_water3dAfter = np.multiply(water_content, s.getCellVolumes()) 
         self.totCN3dAfter_eachVoxeleachComp = np.array([s.getContent(i+1) for i in range(s.numSoluteComp)])
         self.rhizoWAfter_eachCyl = self.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
 
