@@ -510,6 +510,9 @@ class RichardsWrapper(SolverWrapper):
     def getConcentration_(self,idComp):      
         """ non mpi version of
         """
+        # only valid for solutes (idComp > 0). 
+        if (idComp <= 0)|(idComp > self.numComp):
+            raise Exception("richards::getConcentration_: Requested element id {idComp} does not correspond to a solute.")
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
         return C_ * self.phaseDensity(isDissolved)
@@ -519,6 +522,9 @@ class RichardsWrapper(SolverWrapper):
             with phase either the liquid (water) or the solid (bulk soil) phase
             @param idcomp: index of the component (> 0) [int]
         """
+        # only valid for solutes (idComp > 0). 
+        if (idComp <= 0)|(idComp > self.numComp):
+            raise Exception("richards::getConcentration: Requested element id {idComp} does not correspond to a solute.")
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution(idComp) # [mol/mol phase] or [g/g phase]   
         return C_ * self.phaseDensity(isDissolved)
@@ -527,7 +533,7 @@ class RichardsWrapper(SolverWrapper):
         """ returns the content of a component (solute) [mol] or [g]
             @param idcomp: index of the component (> 0) [int]
         """
-        # only vald for solutes (idComp > 0). 
+        # only valid for solutes (idComp > 0). 
         if (idComp <= 0)|(idComp > self.numComp):
             raise Exception("richards::getContent: Requested element id {idComp} does not correspond to a solute.")
             
