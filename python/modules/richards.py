@@ -407,7 +407,9 @@ class RichardsWrapper(SolverWrapper):
         return self.base.getInnerSolutes(shift)
 
     def getSource(self, eqIdx = 0):
-        """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
+        """ Gathers the net sources for each cell into rank 0 as a map with global index as key 
+            [g / cm3 / day] or [mol / cm3 / day]
+        """
         self.checkGridInitialized()
         return self._map(self._flat0(self.gather(self.getSource_(eqIdx), root = 0)), 2)
 
@@ -423,7 +425,6 @@ class RichardsWrapper(SolverWrapper):
         else:
             if not self.useMoles:
                 unitChange *= 1e3 # [kg/cm3/day -> g/cm3/day]
-            
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange
 
     def setSource(self, source_map, eq_idx = 0):

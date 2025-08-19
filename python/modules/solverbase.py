@@ -364,7 +364,9 @@ class SolverWrapper():
         return scvFluxes 
  
     def getFluxesPerCell_(self, eqIdx = 0, length = None):
-        """nompi version of """
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
         self.checkGridInitialized()
         scvfFluxes = np.array(self.getFluxesPerFace_(eqIdx, length)  ) # [cm3/day] 
         face2CellIdx = np.array(self.getFace2CellIdx_())
@@ -375,11 +377,11 @@ class SolverWrapper():
             
     def getFluxesPerFace_(self, eqIdx = 0, length = None):
         """nompi version of 
-            [cm3/day] 
+            [cm3/day] or [g/day] or [mol/day]
         """
         self.checkGridInitialized() 
         scvfFluxes = self.getBoundaryFluxesPerFace_(eqIdx, length)      
-        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)   
+        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)     
         return scvfFluxes 
         
     def getBoundaryFluxesPerFace_(self, eqIdx = 0, length = None):
@@ -390,7 +392,10 @@ class SolverWrapper():
             if self.useMoles:
                 unitChange *=  18.068 # [mol/cm2/day -> cm3/cm2/day]
             else:
-                unitChange *= 1e3  # [kg/cm2/day -> cm3/cm2/day]
+                unitChange *= 1e3  # [kg/cm2/day] -> [cm3/cm2/day] 
+        elif not self.useMoles:
+            unitChange *= 1e3  # [kg/cm2/day] -> [g/cm2/day]
+            
         surfaces = self.getFaceSurfaces_(length)  # cm2 
         notGhost = surfaces > 0
         return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]) * surfaces)[notGhost] * unitChange
@@ -403,7 +408,10 @@ class SolverWrapper():
             if self.useMoles:
                 unitChange *=  18.068 # [mol/day -> cm3/day]
             else:
-                unitChange *= 1e3  # [kg/day -> cm3/day]
+                unitChange *= 1e3  # [kg/cm2/day] -> [cm3/cm2/day] 
+        elif not self.useMoles:
+            unitChange *= 1e3  # [kg/cm2/day] -> [g/cm2/day]
+            
         surfaces = self.getFaceSurfaces_(length)        
         notGhost = surfaces > 0
         return np.array(self.base.getScvfInnerFluxes()[eqIdx])[notGhost] * unitChange
