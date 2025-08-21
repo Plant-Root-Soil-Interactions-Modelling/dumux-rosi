@@ -74,16 +74,16 @@ def solve(simtimes):
         Smassafter = s.getSolution(1)   * Wvolafter # kg
         
             
-        scvFluxes   = s.getFluxesPerCell(0) * dt # cm3
-        scvFluxesS  = s.getFluxesPerCell(1) * dt # kg
+        scvIntegratedFlows   = s.getFlowsPerCell(0) * dt # cm3
+        scvIntegratedFlowsS  = s.getFlowsPerCell(1) * dt # g
         scvSources  = s.getSource(0) * s.getCellVolumes() * dt # cm3
-        scvSourcesS = s.getSource(1) * s.getCellVolumes() * dt # kg
+        scvSourcesS = s.getSource(1) * s.getCellVolumes() * dt # g
         
         if rank == 0:
             print('\tChange in water volume [cm3] per voxel:',Wvolafter-Wvolbefore)
             print('\tChange in solute mass [g] per voxel:',Smassafter-Smassbefore)
-            print('\n\n\tRMSE for water volume balance [cm3]:',np.mean(np.abs(scvFluxes+(Wvolafter-Wvolbefore)-scvSources)))
-            print('\tRMSE for solute mass balance [g]:',np.mean(np.abs(scvFluxesS+(Smassafter-Smassbefore)-scvSourcesS)),'\n\n')
+            print('\n\n\tRMSE for water volume balance [cm3]:',np.mean(np.abs(scvIntegratedFlows+(Wvolafter-Wvolbefore)-scvSources)))
+            print('\tRMSE for solute mass balance [g]:',np.mean(np.abs(scvIntegratedFlowS+(Smassafter-Smassbefore)-scvSourcesS)),'\n\n')
 
 
 
