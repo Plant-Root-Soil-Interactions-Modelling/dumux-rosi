@@ -162,6 +162,8 @@ class SolverWrapper():
         self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm
         self.cellCenters = self._map(self._flat0(self.gather(self.base.getCellCenters())), 2) * 100.  # m -> cm
         self.dofCoordinates = self._map(self._flat0(self.gather(self.base.getDofCoordinates())), 0) * 100.  # m -> cm
+        self.lowerBoundary = np.array([self.base.onLowerBoundary( cc ) for cc in self.cellCenters])
+        self.upperBoundary = np.array([self.base.onUpperBoundary( cc ) for cc in self.cellCenters])
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
@@ -181,6 +183,12 @@ class SolverWrapper():
         """ Finds the steady state of the problem """
         self.base.solveSteadyState()
 
+    def getLowerBoundary(self):
+        return self.lowerBoundary
+        
+    def getUpperBoundary(self):
+        return self.upperBoundary
+
     def getPoints(self):
         """Gathers vertices into rank 0, and converts it into numpy array (Np, 3) [cm]"""
         self.checkGridInitialized()
@@ -197,7 +205,7 @@ class SolverWrapper():
     def getCellCenters(self):
         """Gathers cell centers into rank 0, and converts it into numpy array (Nc, 3) [cm]"""
         self.checkGridInitialized()
-        return self._map(self._flat0(self.gather(self.base.getCellCenters(), root = 0)), 2) * 100.  # m -> cm
+        return self.cellCenters
 
     def getCellCenters_(self):
         """nompi version of """
@@ -221,7 +229,6 @@ class SolverWrapper():
     def getCells_(self):
         """nompi version of """
         return np.array(self.base.getCells(), dtype = np.int64)
-
 
     def getCellSurfacesCyl(self):
         """ Gathers element volumes (Nc, 1) [cm3] """
@@ -352,40 +359,99 @@ class SolverWrapper():
         self.checkGridInitialized()
         return np.array(self.base.getVelocities(eqIdx)) * 100. *24 * 3600  # cm/s -> cm/day
         
-    def getFluxesPerCell(self, eqIdx = 0, length = None):
+    def getFlowsPerCell(self, eqIdx = 0, length = None):
         """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
-        scvfFluxes = self._flat0(self.gather(self.getFluxesPerFace_(eqIdx, length), root = 0))
+        scvfFlows = self._flat0(self.gather(self.getFlowsPerFace_(eqIdx, length), root = 0))
         face2CellIdx = self._flat0(self.gather(self.getFace2CellIdx_(), root = 0)) # cannotuse map, as we took out the ghost cells 
-        scvFluxes = np.array([
-             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+        scvFlows = np.array([
+             sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
             ])
         if rank == 0:
-            scvFluxes = scvFluxes[np.unique(face2CellIdx)]
-        return scvFluxes 
+            scvFlows = scvFlows[np.unique(face2CellIdx)]
+        return scvFlows 
  
-    def getFluxesPerCell_(self, eqIdx = 0, length = None):
+    def getFlowsPerCell_(self, eqIdx = 0, length = None):
         """nompi version of
            [cm3/day] or [g/day] or [mol/day]
         """
         self.checkGridInitialized()
-        scvfFluxes = np.array(self.getFluxesPerFace_(eqIdx, length)  ) # [cm3/day] 
+        scvfFlows = np.array(self.getFlowsPerFace_(eqIdx, length)  ) # [cm3/day] 
         face2CellIdx = np.array(self.getFace2CellIdx_())
-        scvFluxes = np.array([
-             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+        scvFlows = np.array([
+             sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
             ])
-        return scvFluxes
+        return scvFlows
             
-    def getFluxesPerFace_(self, eqIdx = 0, length = None):
+    def getFlowsPerFace_(self, eqIdx = 0, length = None):
         """nompi version of 
             [cm3/day] or [g/day] or [mol/day]
         """
         self.checkGridInitialized() 
-        scvfFluxes = self.getBoundaryFluxesPerFace_(eqIdx, length)      
-        scvfFluxes += self.getCell2CellFluxesPerFace_(eqIdx, length)     
-        return scvfFluxes 
+        scvfFlows = self.getBoundaryFlowsPerFace_(eqIdx, length)      
+        scvfFlows += self.getCell2CellFlowsPerFace_(eqIdx, length)     
+        return scvfFlows 
+        
+    def getUpperBoundaryFlowPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        scvFlows = self.getBoundaryFlowsPerCell(eqIdx, length)
+        upperBoundary = self.getUpperBoundary()
+        if rank == 0:
+            scvFlows[~ upperBoundary] = 0.
+        return scvFlows
+        
+        
+    def getLowerBoundaryFlowsPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        scvFlows = self.getBoundaryFlowsPerCell(eqIdx, length)
+        lowerBoundary = self.getLowerBoundary()
+        if rank == 0:
+            scvFlows[~ lowerBoundary] = 0.
+        return scvFlows
+        
+    def getLowerBoundaryFluxesPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        scvFluxes = self.getBoundaryFluxesPerCell(eqIdx, length)
+        lowerBoundary = self.getLowerBoundary()
+        if rank == 0:
+            scvFluxes[~ lowerBoundary] = 0.
+        return scvFluxes
+        
+    def getBoundaryFluxesPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        self.checkGridInitialized()
+        scvfFluxes = np.array(self.getBoundaryFluxesPerFace_(eqIdx, length)  ) # [cm3/day] 
+        face2CellIdx = np.array(self.getFace2CellIdx_())
+        scvfFluxes = np.array([
+             sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+            ])
+        if rank == 0:
+            scvfFluxes = scvfFluxes[np.unique(face2CellIdx)]
+        return scvfFluxes
+        
+    def getBoundaryFlowsPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        self.checkGridInitialized()
+        scvfFlows = np.array(self.getBoundaryFlowsPerFace_(eqIdx, length)  ) # [cm3/day] 
+        face2CellIdx = np.array(self.getFace2CellIdx_())
+        scvFlows = np.array([
+             sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
+            ])
+        if rank == 0:
+            scvFlows = scvFlows[np.unique(face2CellIdx)]
+        return scvFlows
         
     def getBoundaryFluxesPerFace_(self, eqIdx = 0, length = None):
-        """  [cm3/day] """
+        """  [cm3/cm2/day] """
         self.checkGridInitialized()
         unitChange = 24 * 3600 / 1e4 # [ kgOrmol/m2/s -> kgOrmol/cm2/day]
         if eqIdx == 0:
@@ -398,9 +464,18 @@ class SolverWrapper():
             
         surfaces = self.getFaceSurfaces_(length)  # cm2 
         notGhost = surfaces > 0
-        return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]) * surfaces)[notGhost] * unitChange
+        return (np.array(self.base.getScvfBoundaryFluxes()[eqIdx]))[notGhost] * unitChange
+    
+    def getBoundaryFlowsPerFace_(self, eqIdx = 0, length = None):
+        """  [cm3/day] """
+        self.checkGridInitialized()
+        scvfFluxes = getBoundaryFluxesPerFace_(eqIdx, length)
+        surfaces = self.getFaceSurfaces_(length)  # cm2 
+        notGhost = surfaces > 0
+        surfaces = surfaces[notGhost]
+        return scvfFluxes * surfaces
             
-    def getCell2CellFluxesPerFace_(self, eqIdx = 0, length = None):
+    def getCell2CellFlowsPerFace_(self, eqIdx = 0, length = None):
         """  [cm3/day] """
         self.checkGridInitialized()
         unitChange = 24 * 3600 # [ kgOrmol/s -> kgOrmol/day]

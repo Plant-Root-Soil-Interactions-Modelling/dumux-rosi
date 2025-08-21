@@ -1228,6 +1228,15 @@ public:
 	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
 		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
 	}
+	
+	bool onUpperBoundary(std::vector<double> globalPos) const {
+		return globalPos[dimWorld - 1] > this->gridGeometry->bBoxMax()[dimWorld - 1] - eps_;
+	}
+
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary(std::vector<double> globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
+	}
 	static constexpr double eps_ = 1.e-7;
 
 protected:
@@ -1331,6 +1340,8 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getScvfBoundaryFluxes", &Solver::getScvfBoundaryFluxes)
             .def("getScvfInnerFluxes", &Solver::getScvfInnerFluxes)
             .def("getScvSources", &Solver::getScvSources)
+            .def("onUpperBoundary", &Solver::onUpperBoundary)
+            .def("onLowerBoundary", &Solver::onLowerBoundary)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
 			.def("useMoles",&Solver::useMoles)
