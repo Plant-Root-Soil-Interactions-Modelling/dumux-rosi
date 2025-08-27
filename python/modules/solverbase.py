@@ -36,14 +36,14 @@ class SolverWrapper():
             If the python code is run in parallel, we can use doMPI_=False for the
             1d models only (FoamGrid). Does not work for the other (3d) grids.
         """
-        try:
-            with helpful.StdoutRedirector() as redirector:
+        with helpful.StdoutRedirector() as redirector:
+            try:
                 self.base.initialize(args_, verbose, doMPI=doMPI_)
-        except Exception as e:
-            target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
-            with open(target_filepath, 'w') as f:
-                f.write(redirector.buffer)
-            raise Exception
+            except Exception as e:
+                target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
+                with open(target_filepath, 'w') as f:
+                    f.write(redirector.buffer)
+                raise Exception
             
     def setMaxTimeStepSize(self, maxDt):
         """
@@ -86,14 +86,14 @@ class SolverWrapper():
         for v in points:
             p.append([v / 100.])  # cm -> m
         
-        try:
-            with helpful.StdoutRedirector() as redirector: # limit outputs from c++
+        with helpful.StdoutRedirector() as redirector:
+            try:
                 self.base.createGrid1d(p)
-        except Exception as e:
-            target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
-            with open(target_filepath, 'w') as f:
-                f.write(redirector.buffer)
-            raise Exception
+            except Exception as e:
+                target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
+                with open(target_filepath, 'w') as f:
+                    f.write(redirector.buffer)
+                raise Exception
             
         self.length = length
 
@@ -130,14 +130,14 @@ class SolverWrapper():
         """ After the grid is created, the problem can be initialized 
         @param maxDt    maximal time step [days] 
         """
-        try:
-            with helpful.StdoutRedirector() as redirector:
+        with helpful.StdoutRedirector() as redirector:
+            try:
                 self.base.initializeProblem(maxDt * 24.*3600.)
-        except Exception as e:
-            target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
-            with open(target_filepath, 'w') as f:
-                f.write(redirector.buffer)
-            raise Exception
+            except Exception as e:
+                target_filepath = self.results_dir + 'stdcout_cpp_'+str(rank)+'.txt'
+                with open(target_filepath, 'w') as f:
+                    f.write(redirector.buffer)
+                raise Exception
 
         ##       saves shape data of the grid  (to limit the communication needed between threads)
         # local indices
@@ -162,8 +162,12 @@ class SolverWrapper():
         self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm
         self.cellCenters = self._map(self._flat0(self.gather(self.base.getCellCenters())), 2) * 100.  # m -> cm
         self.dofCoordinates = self._map(self._flat0(self.gather(self.base.getDofCoordinates())), 0) * 100.  # m -> cm
-        self.lowerBoundary = np.array([self.base.onLowerBoundary( cc ) for cc in self.cellCenters])
-        self.upperBoundary = np.array([self.base.onUpperBoundary( cc ) for cc in self.cellCenters])
+        if rank == 0:
+            self.lowerBoundary = np.array([self.base.onLowerBoundary( cc ) for cc in self.cellCenters])
+            self.upperBoundary = np.array([self.base.onUpperBoundary( cc ) for cc in self.cellCenters])
+        else:    
+            self.lowerBoundary = []
+            self.upperBoundary = []
 
     def setInitialCondition(self, ic, eqIdx = 0):
         """ Sets the initial conditions for all global elements, processes take from the shared @param ic """
@@ -176,9 +180,15 @@ class SolverWrapper():
     def solve(self, dt:float, doMPIsolve_ = True, saveInnerFluxes_ = False):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
+        
+            # get error:
+            # Successive accumulation of data on coarse levels only works with ParMETIS installed.  
+            # Fell back to accumulation to one domain on coarsest level
+            # see matrixhierarchy.hh l695
+            # TODO: suppress message? change input parameters?
         """
         self.base.solve(dt * 24.*3600., doMPIsolve = doMPIsolve_, saveInnerDumuxValues = saveInnerFluxes_)  # days -> s
-
+                
     def solveSteadyState(self):
         """ Finds the steady state of the problem """
         self.base.solveSteadyState()
@@ -359,16 +369,22 @@ class SolverWrapper():
         self.checkGridInitialized()
         return np.array(self.base.getVelocities(eqIdx)) * 100. *24 * 3600  # cm/s -> cm/day
         
+    def getFaceSurfaces_(self, length = None):
+        if self.dimWorld == 1:
+            if length is None:
+                raise Exception('getFaceSurfaces_: length parameter required to get flux of 1d domain')
+            return np.array(self.base.getCylFaceCoordinates()) * 100 * 2 * np.pi * length
+        else:
+            return np.array( self.base.getFaceSurfaces()) * 1e4 # cm2
+        
+    def getFace2CellIdx_(self):
+        face2CellIdx = np.array(self.base.getFace2CellIdx())
+        notGhost = face2CellIdx >= 0
+        return face2CellIdx[notGhost]
+        
     def getFlowsPerCell(self, eqIdx = 0, length = None):
         """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
-        scvfFlows = self._flat0(self.gather(self.getFlowsPerFace_(eqIdx, length), root = 0))
-        face2CellIdx = self._flat0(self.gather(self.getFace2CellIdx_(), root = 0)) # cannotuse map, as we took out the ghost cells 
-        scvFlows = np.array([
-             sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
-            ])
-        if rank == 0:
-            scvFlows = scvFlows[np.unique(face2CellIdx)]
-        return scvFlows 
+        return self._map(self._flat0(self.gather(self.getFlowsPerCell_(eqIdx, length), root = 0)), 2)
  
     def getFlowsPerCell_(self, eqIdx = 0, length = None):
         """nompi version of
@@ -377,7 +393,9 @@ class SolverWrapper():
         self.checkGridInitialized()
         scvfFlows = np.array(self.getFlowsPerFace_(eqIdx, length)  ) # [cm3/day] 
         face2CellIdx = np.array(self.getFace2CellIdx_())
-        scvFlows = np.array([
+        localcellsnumber = len(self.cellIndices_)
+        scvFlows = np.zeros(localcellsnumber)
+        scvFlows[np.unique(face2CellIdx)] = np.array([
              sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
             ])
         return scvFlows
@@ -426,28 +444,40 @@ class SolverWrapper():
         """nompi version of
            [cm3/day] or [g/day] or [mol/day]
         """
+        return self._map(self._flat0(self.gather(self.getBoundaryFluxesPerCell_(eqIdx, length), root = 0)), 2)
+ 
+    def getBoundaryFluxesPerCell_(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
         self.checkGridInitialized()
         scvfFluxes = np.array(self.getBoundaryFluxesPerFace_(eqIdx, length)  ) # [cm3/day] 
         face2CellIdx = np.array(self.getFace2CellIdx_())
-        scvfFluxes = np.array([
+        localcellsnumber = len(self.cellIndices_)
+        scvFluxes = np.zeros(localcellsnumber)
+        scvFluxes[np.unique(face2CellIdx)] = np.array([
              sum(scvfFluxes[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
             ])
-        if rank == 0:
-            scvfFluxes = scvfFluxes[np.unique(face2CellIdx)]
-        return scvfFluxes
+        return scvFluxes
         
     def getBoundaryFlowsPerCell(self, eqIdx = 0, length = None):
+        """nompi version of
+           [cm3/day] or [g/day] or [mol/day]
+        """
+        return self._map(self._flat0(self.gather(self.getBoundaryFlowsPerCell_(eqIdx, length), root = 0)), 2)
+        
+    def getBoundaryFlowsPerCell_(self, eqIdx = 0, length = None):
         """nompi version of
            [cm3/day] or [g/day] or [mol/day]
         """
         self.checkGridInitialized()
         scvfFlows = np.array(self.getBoundaryFlowsPerFace_(eqIdx, length)  ) # [cm3/day] 
         face2CellIdx = np.array(self.getFace2CellIdx_())
-        scvFlows = np.array([
+        localcellsnumber = len(self.cellIndices_)
+        scvFlows = np.zeros(localcellsnumber)
+        scvFlows[np.unique(face2CellIdx)] = np.array([
              sum(scvfFlows[face2CellIdx == cellindx]) for cellindx in np.unique(face2CellIdx) 
             ])
-        if rank == 0:
-            scvFlows = scvFlows[np.unique(face2CellIdx)]
         return scvFlows
         
     def getBoundaryFluxesPerFace_(self, eqIdx = 0, length = None):
@@ -469,7 +499,7 @@ class SolverWrapper():
     def getBoundaryFlowsPerFace_(self, eqIdx = 0, length = None):
         """  [cm3/day] """
         self.checkGridInitialized()
-        scvfFluxes = getBoundaryFluxesPerFace_(eqIdx, length)
+        scvfFluxes = self.getBoundaryFluxesPerFace_(eqIdx, length)
         surfaces = self.getFaceSurfaces_(length)  # cm2 
         notGhost = surfaces > 0
         surfaces = surfaces[notGhost]
@@ -491,19 +521,6 @@ class SolverWrapper():
         notGhost = surfaces > 0
         return np.array(self.base.getScvfInnerFluxes()[eqIdx])[notGhost] * unitChange
         
-    def getFaceSurfaces_(self, length = None):
-        if self.dimWorld == 1:
-            if length is None:
-                raise Exception('getFaceSurfaces_: length parameter required to get flux of 1d domain')
-            return np.array(self.base.getCylFaceCoordinates()) * 100 * 2 * np.pi * length
-        else:
-            return np.array( self.base.getFaceSurfaces()) * 1e4 # cm2
-        
-    def getFace2CellIdx_(self):
-        face2CellIdx = np.array(self.base.getFace2CellIdx())
-        surfaces = np.array( self.base.getFaceSurfaces()) 
-        notGhost = surfaces > 0
-        return face2CellIdx[notGhost]
     def pickCell(self, pos):
         """ Picks a cell and returns its global element cell index """
         return self.base.pickCell(np.array(pos) / 100.)  # cm -> m
