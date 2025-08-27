@@ -79,21 +79,25 @@ def is_number(obj):
 
 
 class StdoutRedirector:
-    def __init__(self):
+    def __init__(self, suppress_cerr = False):
         self.libc = ctypes.CDLL(None)
         self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
         self.buffer = None
         self.filepath = None
+        if suppress_cerr:
+            self.fd = 2
+        else:
+            self.fd = 1 # Do not suppress error messages
 
     def __enter__(self):
-        self.old_stdout_fd = os.dup(1)
+        self.old_stdout_fd = os.dup(self.fd)
         self.temp_file = tempfile.NamedTemporaryFile(delete=False)
         self.temp_file_fd = self.temp_file.fileno()
-        os.dup2(self.temp_file_fd, 1)
+        os.dup2(self.temp_file_fd, self.fd)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        os.dup2(self.old_stdout_fd, 1)
+        os.dup2(self.old_stdout_fd, self.fd)
         os.close(self.old_stdout_fd)
         self.temp_file.close()
 
@@ -106,7 +110,8 @@ class StdoutRedirector:
             with open(self.filepath, 'w') as f:
                 f.write(self.buffer)
 
-        return False  # Do not suppress exceptions
+        return False 
+
         
 def suggestNumStepsChange(dt, dt_inner, failedLoop, perirhizalModel, n_iter_inner_max):# taken from dumux
     """

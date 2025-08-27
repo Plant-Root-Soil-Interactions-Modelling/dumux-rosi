@@ -1,5 +1,6 @@
 from solverbase import SolverWrapper
 from richards import RichardsWrapper
+from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
 
 import numpy as np
 
@@ -11,30 +12,3 @@ class RichardsFlatWrapper(RichardsWrapper):
 
     def __init__(self, base):
         super().__init__(base)
-
-    def getSolutionHead(self, eqIdx=0):
-        """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof,), 
-        model dependent units, [Pa, ...]"""
-        return super().getSolutionHead(eqIdx).flatten()
-        
-    def getSolution(self, eqIdx=0):
-        """Gathers the current solution into rank 0, and converts it into a numpy array (Ndof,), 
-        model dependent units"""
-        return super().getSolution(eqIdx).flatten()
-
-    def getWaterContent(self):
-        """Gathers the current solution's saturation into rank 0, and converts it into a numpy array (Nc,) [1]"""
-        return super().getWaterContent().flatten()
-    
-    def getPoints(self):
-        """Gathers vertices into rank 0, and converts it into numpy array (Np,) [cm]"""
-        return super().getPoints().flatten() 
-
-    def getCellVolumes(self):
-        return super().getCellVolumes().flatten() 
-
-    def getSource(self, eqIdx = 0):
-        return super().getSource(eqIdx).flatten() 
-        
-    def getContent(self,eqIdx):
-        return super().getContent(eqIdx).flatten() 

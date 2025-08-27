@@ -296,7 +296,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.alldiff1d3dCNW_rel = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_abs = np.full((self.numComp,len(cellIds)), 0.)
         self.alldiff1d3dCNW_ = np.full((self.numComp,len(cellIds)), 0.)
-        self.alldiff1d3dCNW = np.full((self.numComp,len(s.getCellVolumes())), 0.)
+        self.alldiff1d3dCNW = np.full((self.numComp, s.numberOfCellsTot), 0.)
         
         self.sumdiff1d3dCNW_abs = np.full(self.numComp, 0.)
         self.sumdiff1d3dCNW_rel = np.full(self.numComp, 0.)
@@ -305,18 +305,19 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         water_content = self.soilModel.getWaterContent() 
         self.soil_water3dAfter = np.multiply(water_content, s.getCellVolumes()) 
         self.totCN3dAfter_eachVoxeleachComp = np.array([s.getContent(i+1) for i in range(s.numSoluteComp)])
-        self.rhizoWAfter_eachCyl = self.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
-
-        self.soil_W1d_perVoxelAfter = np.array([self.rhizoWAfter_eachCyl[
-                        self.getIdCyllMPI(cellId, False)
+        self.rhizoWAfter_eachCyl = self.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model        
+        self.soil_CN1d_eachCylAfter = self.getTotCNContentAll(doSum = False, reOrder = True) # total carbon content per 1d model
+                
+        if rank == 0:
+            self.soil_W1d_perVoxelAfter = np.array([self.rhizoWAfter_eachCyl[
+                        self.getIdCyllMPI(cellId)[0]
                     ].sum()
                     for cellId in cellIds])
-        self.soil_CN1d_eachCylAfter = self.getTotCNContentAll(doSum = False, reOrder = True) # total carbon content per 1d model
-        self.soil_CN1d_perVoxelAfter = np.array([
-            self.soil_CN1d_eachCylAfter[self.getIdCyllMPI(cellId, False)].sum(axis=0) for cellId in cellIds
-        ]).T
+                    
+            self.soil_CN1d_perVoxelAfter = np.array([
+                            self.soil_CN1d_eachCylAfter[self.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
+                        ]).T
         
-        if rank == 0:
             wat_total_ =  self.soil_water3dAfter[cellIds]  # [cm3].
 
             self.alldiff1d3dCNW_[0] = self.soil_water3dAfter[cellIds] - self.soil_W1d_perVoxelAfter 
@@ -2178,7 +2179,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
         if isDissolved:
             seg_volume = self.getWaterVolumesCyl(doSum = False, reOrder = True) #cm3 water per 1d model
-            seg_volume[self.airSegs] = 1. # to avoid division by 0.
+            if rank ==0:
+                seg_volume[self.airSegs] = 1. # to avoid division by 0.
         else:
             seg_volume = self.getVolumesCyl(doSum = False)
             
@@ -2202,7 +2204,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 splitVals = np.zeros(len(self.organTypes))
 
             return splitVals
-        
+            
+    def sumSeg(self, to_sum):
+        if rank == 0:
+            sum_seg = self.sumSegFluxes(to_sum)
+        else:
+            sum_seg = None
+        return sum_seg
     
     def _map(self, x, dtype = np.float64, doMap = True):
         """Converts @param x to a numpy array and maps it to the right indices                 """
