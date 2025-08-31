@@ -1400,7 +1400,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             try:
                 cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) 
             except:
-                print('no regularisation')
+                if gId == 0:
+                    print('no regularisation for 1D models')
             
             ThetaCyl = cyl.getWaterContent()
             cyl.createNewtonSolver() # make sure solver parameters are implemented.
