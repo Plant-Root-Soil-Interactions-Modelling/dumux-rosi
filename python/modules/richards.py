@@ -333,14 +333,14 @@ class RichardsWrapper(SolverWrapper):
         """ mean flow rate at the inner boundary [cm3 / day] """
         assert self.dimWorld == 1
         pos = np.array(self.base.getCylFaceCoordinates())
-        flux = self.getBoundaryFluxesPerFace_(eqIdx, length)
+        flux = self.getBoundaryFlowsPerFace_(eqIdx, length)
         return flux[pos == min(pos)]
 
     def getOuterFlow(self, eqIdx = 0, length = None):
         """ mean flow rate at the outer boundary [cm3 / day] """
         assert self.dimWorld == 1
         pos = np.array(self.base.getCylFaceCoordinates())
-        flux = self.getBoundaryFluxesPerFace_(eqIdx, length)
+        flux = self.getBoundaryFlowsPerFace_(eqIdx, length)
         return flux[pos == max(pos)]
 
     def getInnerFlux(self, eq_idx = 0):
