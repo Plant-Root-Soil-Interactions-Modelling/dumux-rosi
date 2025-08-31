@@ -1397,6 +1397,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.ddt = 1.e-3
             
             cyl.setCriticalPressure(cyl.wilting_point)  
+            try:
+                cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) 
+            except:
+                print('no regularisation')
             
             ThetaCyl = cyl.getWaterContent()
             cyl.createNewtonSolver() # make sure solver parameters are implemented.
@@ -1633,7 +1637,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     def solve(self, dt, *argv):
         """ set bc and sinks for cyl and solves it 
             proposed_inner_fluxes: PWU,  [cm3 day-1] 
-            proposed_outer_fluxes: 1d-3d or 1d-1d water exchanges,  [mol C day-1] 
+            proposed_outer_fluxes: 1d-3d or 1d-1d water exchanges,  [cm3 day-1] 
             proposed_inner_fluxes_sol : net plant small C molecule releases,  [mol C day-1] 
             proposed_outer_fluxes_sol: 1d-3d or 1d-1d small C molecule exchanges,  [mol C day-1] 
             proposed_inner_fluxes_mucil : net plant large C molecule releases,  [mol C day-1] 
@@ -1723,12 +1727,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         inner_fluxes_water, outer_fluxes_water = self._calculate_and_set_initial_water_flows(
                                                     cyl,dt, inner_fluxes, outer_fluxes, 
                                                         verbose)         
+                                                    
         inner_fluxes_CN, outer_fluxes_CN = self._calculate_and_set_initial_solute_flows(cyl, dt, 
                                                        inner_fluxes_sol, outer_fluxes_sol, verbose)    
         
         self._run_solver(cyl, dt, lId,  inner_fluxes_water, 
                         outer_fluxes_water,  inner_fluxes_CN, outer_fluxes_CN, verbose)
-    
+                        
     def _run_solver(self, cyl, dt, lId,  inner_fluxes_water,  outer_fluxes_water,   inner_fluxes_solMucil, outer_fluxes_solMucil, verbose):
         """Run the solver for the segment.
             cyl: 1ds object
@@ -1873,7 +1878,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 #helpful.run_with_timeout(60., cyl.solve, dt) # after Xmn time out
                 # error, time out error
                 
-                # cm3 water or  mol C /cm3
+                # cm3 water or  mol C 
                 inner_fluxes_real, outer_fluxes_real = cyl.getBCFlows()  
                 inner_fluxes_real = -inner_fluxes_real.flatten()   
                 inner_fluxes_real_ = np.zeros(self.numComp)
