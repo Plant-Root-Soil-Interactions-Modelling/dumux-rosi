@@ -204,7 +204,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         if not (self.cell2seg.get(-1) is None):
             aboveGround = self.cell2seg.get(-1)                
         self.airSegs = np.array(list(set(np.concatenate((aboveGround,
-                                                    np.where(np.array(self.organTypes) != 2)[0])) )))
+                                                    np.where(np.array(self.organTypes) > 3
+                                                    )[0])) )))
         self.airSegs.sort()#to go from local segIdx to global segIdx easely
     
     def getNewCyldistribution(self):
@@ -1447,29 +1448,34 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             # ==> all the water elements except if we have a michaelis menten uptake (BC idx == 8)
             # TODO: update for the 10c and 22c model
             ##
-            cyl.typeBC = int(cyl.getParameter(cyl.param_group + "BC.Bot.SType"))
-            if cyl.typeBC == 8:
+            if cyl.numSoluteComp > 0:
+                cyl.typeBC = int(cyl.getParameter(cyl.param_group + "BC.Bot.SType"))
+                if cyl.typeBC == 8:
+                    self.PIFidx = []
+                else: 
+                    self.PIFidx = self.RIFidx.copy()
+            else:
                 self.PIFidx = []
-            else: 
-                self.PIFidx = self.RIFidx.copy()
-                
+            
             return cyl
             
         else:
             print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(gId, a_in, a_out))
             raise Exception
             return []
-
-
-
+        
     def get_inner_heads(self,  weather:dict={}):#        
         """ matric potential at the root surface interface [cm]"""
-        
-        RH = weather['RH'] if 'RH' in weather.keys() else weather["ea"]/weather["es"]
-        TairC = weather['TairC'] if 'TairC' in weather.keys() else weather["Tair"]
-        rsx = np.array([
-            cyl.getInnerHead() if not isinstance(cyl, AirSegment) else helpful.getPsiAir(RH,TairC) for cyl in self.cyls
-        ])  # [cm] (in richards.py, then richards_cyl.hh)
+        if ('RH' in weather.keys()) and ('TairC' in weather.keys()):
+            RH = weather['RH'] if 'RH' in weather.keys() else weather["ea"]/weather["es"]
+            TairC = weather['TairC'] if 'TairC' in weather.keys() else weather["Tair"]
+            rsx = np.array([
+                cyl.getInnerHead() if not isinstance(cyl, AirSegment) else helpful.getPsiAir(RH,TairC) for cyl in self.cyls
+            ])  # [cm] (in richards.py, then richards_cyl.hh)
+        else:
+            rsx = np.array([
+                cyl.getInnerHead() if not isinstance(cyl, AirSegment) else  np.nan for cyl in self.cyls
+            ])
         inner_heads = self.gather( rsx)
         return inner_heads
 
@@ -1563,37 +1569,38 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
 
         
-                  
-        qIn_solMucil = np.full(self.numSoluteComp, 0.)
-        for jj in range(self.numDissolvedSoluteComp):
-            qIn_solMucil[jj] = inner_fluxes_CN[jj] / (2 * np.pi * self.radii[gId] * l)
-        
-        cyl.setSoluteBotBC(cyl.typeBC, qIn_solMucil)
-        
-        QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_CN,
-                               inner_fluxs=inner_fluxes_CN, 
-                               eqIdx =  np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]),plantM=self)
-        
-        # reset after first limitation in _distribute_source
-        outer_fluxes_CNbu = outer_fluxes_CN
-        outer_fluxes_CN = np.array([sum(QflowOutCellLim[nc]) for nc in range(self.numDissolvedSoluteComp)])
-        
-        for nc in range(self.numDissolvedSoluteComp):
-            divideQout = outer_fluxes_CNbu[nc] if outer_fluxes_CNbu[nc] != 0 else 1
+        if self.numDissolvedSoluteComp > 0:         
+            qIn_solMucil = np.full(self.numSoluteComp, 0.)
+            for jj in range(self.numDissolvedSoluteComp):
+                print('self.numDissolvedSoluteComp',self.numDissolvedSoluteComp,jj)
+                qIn_solMucil[jj] = inner_fluxes_CN[jj] / (2 * np.pi * self.radii[gId] * l)
+            
+            cyl.setSoluteBotBC(cyl.typeBC, qIn_solMucil)
+            
+            QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_CN,
+                                   inner_fluxs=inner_fluxes_CN, 
+                                   eqIdx =  np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]),plantM=self)
+            
+            # reset after first limitation in _distribute_source
+            outer_fluxes_CNbu = outer_fluxes_CN
+            outer_fluxes_CN = np.array([sum(QflowOutCellLim[nc]) for nc in range(self.numDissolvedSoluteComp)])
+            
+            for nc in range(self.numDissolvedSoluteComp):
+                divideQout = outer_fluxes_CNbu[nc] if outer_fluxes_CNbu[nc] != 0 else 1
 
-            #print('here', outer_fluxes_CN[nc],outer_fluxes_CNbu[nc])
-            test = abs((outer_fluxes_CN[nc] - (outer_fluxes_CNbu[nc]))/ divideQout)*100
+                #print('here', outer_fluxes_CN[nc],outer_fluxes_CNbu[nc])
+                test = abs((outer_fluxes_CN[nc] - (outer_fluxes_CNbu[nc]))/ divideQout)*100
 
-            #if verbose or (test > 1.):
-            if (test > 1.):
-                print('rhizo_modelsPlant::_calculate_and_set_initial_solute_flows, gId',gId,
-                      ' qIn',qIn_solMucil, 
-                inner_fluxes_CN,'qout', QflowOutCellLim,'outer_fluxes_CN',
-                outer_fluxes_CN,
-                      'qout init',outer_fluxes_CNbu,'divideQout',divideQout,
-                      'shape', self.radii[gId],  
-                      np.array( self.outer_radii)[gId] , 'length', cyl.segLength,'nc',nc,self.plant_or_RS,test )
-                raise Exception
+                #if verbose or (test > 1.):
+                if (test > 1.):
+                    print('rhizo_modelsPlant::_calculate_and_set_initial_solute_flows, gId',gId,
+                          ' qIn',qIn_solMucil, 
+                    inner_fluxes_CN,'qout', QflowOutCellLim,'outer_fluxes_CN',
+                    outer_fluxes_CN,
+                          'qout init',outer_fluxes_CNbu,'divideQout',divideQout,
+                          'shape', self.radii[gId],  
+                          np.array( self.outer_radii)[gId] , 'length', cyl.segLength,'nc',nc,self.plant_or_RS,test )
+                    raise Exception
         return  inner_fluxes_CN, outer_fluxes_CN                 
                      
         
@@ -1828,7 +1835,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             return
             inner_fluxes_real: inner BC as implemented in dumux [cm3 day-1]  or [mol C day-1] 
         """          
-                
+        print('inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp',
+        inner_fluxes_water_temp, outer_fluxes_water_temp, 
+                        inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp)
         maxRelShift = float(cyl.MaxRelativeShift)
         
         # use first ddt during last simulation

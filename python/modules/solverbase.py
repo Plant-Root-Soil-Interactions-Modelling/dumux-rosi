@@ -835,9 +835,9 @@ class SolverWrapper():
     @property
     def numFluidComp(self):
         """Get the number of components in the fluid phase (including water)."""
-        return self.base.numFluidComp()
+        return min(self.numComp, self.base.numFluidComp()) # because for richards, air is seen as a fluidcomp
         
     @property
     def numDissolvedSoluteComp(self):
         """Get the number of disolved solutes."""
-        return self.base.numFluidComp() - 1
+        return self.numFluidComp - 1
