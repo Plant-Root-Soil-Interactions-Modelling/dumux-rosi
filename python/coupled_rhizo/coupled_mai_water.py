@@ -3,7 +3,7 @@ sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src"
 
 import os
 import plantbox as pb  # CPlantBox
-from rosi_richardsnc import RichardsNCSP
+from rosi_richards import RichardsSP
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.xylem_flux import *  # root system Python hybrid solver
 from rhizo_models import *  # Helper class for cylindrical rhizosphere models
@@ -41,8 +41,7 @@ name = "bauw_coupled_rhizo"
 min_b = [-4., -4., -15.]  # cm
 max_b = [4., 4., 0.]  # cm
 domain_volume = np.prod(np.array(max_b) - np.array(min_b))
-cell_number = [2, 2, 2]  
-#[7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
+cell_number = [7, 7, 15]  # [8, 8, 15]  # [16, 16, 30]  # [32, 32, 60]  # [8, 8, 15] # [1]
 periodic = False
 loam = [0.08, 0.43, 0.04, 1.6, 50]
 # loam = [0.03, 0.345, 0.01, 2.5, 28.6]
@@ -58,13 +57,13 @@ predefined_growth = False  # root growth by setting radial conductivities
 rs_age = 8 * (not predefined_growth) + 1 * predefined_growth  # rs_age = 0 in case of growth, else 8 days
 
 """ rhizosphere models """
-mode = "dumux_nc"  # or "dumux"
+mode = "dumux"  # or "dumux"
 NC = 10  # dof+1
 logbase = 1.5  # according to Mai et al. (2019)
 split_type = 0  # type 0 == volume, type 1 == surface, type 2 == length
 
 """ simulation time """
-sim_time = 1  # 0.65  # 0.25  # [day]
+sim_time = 0.01 #1  # 0.65  # 0.25  # [day]
 dt = 30 / (24 * 3600)  # time step [day]
 NT = int(np.ceil(sim_time / dt))  # number of iterations
 skip = 1  # for output and results, skip iteration
@@ -72,24 +71,8 @@ skip = 1  # for output and results, skip iteration
 """ 
 Initialize macroscopic soil model (Dumux binding)
 """
-s = RichardsWrapper(RichardsNCSP())
+s = RichardsWrapper(RichardsSP())
 s.initialize()
-
-s.setParameter("Component.MolarMass", "3.1e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
-s.setParameter("Component.LiquidDiffusionCoefficient", "6.e-10")  # m^2 s-1
-s.setParameter("Component.freundlichN_", "124.8.")
-s.setParameter("Component.freundlichK_", ".4")
-# s.setParameter("Component.BufferPower", "140")  # buffer power = \rho * Kd [1]
-s.setParameter("Soil.IC.C", "0.01")  # (mol)g / cm3  # TODO specialised setter?
-s.setParameter("Soil.BC.Top.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
-s.setParameter("Soil.BC.Top.CValue", "0.")  # michaelisMenten=8 (SType = Solute Type)
-# s.setParameter("Soil.BC.Top.SType", "1")  # michaelisMenten=8 (SType = Solute Type)
-# s.setParameter("Soil.BC.Top.CValue", "0.007")  # michaelisMenten=8 (SType = Solute Type)
-s.setParameter("Soil.BC.Bot.SType", "2")  # michaelisMenten=8 (SType = Solute Type)
-s.setParameter("Soil.BC.Bot.CValue", "0.")
-# s.setParameter("Soil.BC.Bot.SType", "8")  # michaelisMenten (SType = Solute Type)
-# s.setParameter("RootSystem.Uptake.Vmax", s.dumux_str(3.26e-6 * 24 * 3600))  # (mol)g /cm^2 / s - > (mol)g /cm^2 / day
-# s.setParameter("RootSystem.Uptake.Km", s.dumux_str(5.8e-3))  # (mol)g / cm3
 
 s.createGrid(min_b, max_b, cell_number, periodic)  # [cm]
 s.setHomogeneousIC(initial, True)  # cm pressure head, equilibrium
@@ -101,7 +84,6 @@ s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source
 s.initializeProblem()
 s.setCriticalPressure(wilting_point)  # new source term regularisation
 s.ddt = 1.e-5  # [day] initial Dumux time step
-print()
 
 """ 
 Initialize xylem model 
@@ -115,10 +97,6 @@ rs.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid in
 r = XylemFluxPython(rs.ms)  # wrap the xylem model around the MappedSegments
 init_conductivities(r, age_dependent)  # age_dependent is a boolean, root conductivies are given in the file /root_conductivities.py
 rs.set_xylem_flux(r)
-
-# # For debugging
-# r.plot_conductivities()
-# r.test()  # sanity checks (todo need improvements...)
 
 """ 
 Initialize local soil models (around each root segment) 
@@ -177,19 +155,12 @@ for i in range(0, NT):
     """ 2. local soil models """
     wall_rhizo_models = timeit.default_timer()
     proposed_outer_fluxes = rs.ms.splitSoilFluxes(net_flux / dt, split_type)
-    #
-    # TODO: outer solute fluxes
-    #
-    if rs.mode == "dumux_nc":
-        proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root = 0)
-        rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  # mass fluxes?
-    else:
-        print(rs.mode)
-        raise Exception("this script is for dumux_nc only")
+    
+    proposed_inner_fluxes = comm.bcast(proposed_inner_fluxes, root = 0)
+    rs.solve(dt, proposed_inner_fluxes, proposed_outer_fluxes)  
+    
     realized_inner_fluxes = rs.get_inner_fluxes()
     realized_inner_fluxes = comm.bcast(realized_inner_fluxes, root = 0)
-    realized_mass_fluxes = rs.get_inner_mass_fluxes()
-    realized_mass_fluxes = comm.bcast(realized_mass_fluxes, root = 0)
     wall_rhizo_models = timeit.default_timer() - wall_rhizo_models
 
     """ 3a. macroscopic soil model """
@@ -197,12 +168,8 @@ for i in range(0, NT):
     water_content = np.array(s.getWaterContent())
     water_content = comm.bcast(water_content, root = 0)
     soil_water = np.multiply(water_content, cell_volumes)
-    solute_conc = np.array(s.getSolution(1))  # solute concentration
-    solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]
     soil_fluxes = rs.ms.sumSegFluxes(realized_inner_fluxes)  # [cm3/day]  per soil cell
     s.setSource(soil_fluxes.copy())  # [cm3/day], in richards.py
-    soil_mass_fluxes = rs.ms.sumSegFluxes(realized_mass_fluxes)  # [cm3/day]  per soil cell
-    s.setSource(soil_mass_fluxes.copy(), 1)  # TODO UNITS ???? [cm3/day], in richards.py
     s.solve(dt)  # in solverbase.py
 
     """ 3b. calculate net fluxes """
@@ -213,15 +180,7 @@ for i in range(0, NT):
     for k, root_flux in soil_fluxes.items():
         net_flux[k] -= root_flux * dt
 
-    solute_conc = np.array(s.getSolution(1))  # solute concentration
-    solute_conc = comm.bcast(solute_conc, root = 0)
-    new_solutes = np.multiply(solute_conc, cell_volumes)  # water per cell [cm3]
-    net_mass_flux = new_solutes - solutes
-    for k, root_flux in soil_mass_fluxes.items():
-        net_mass_flux[k] -= root_flux * dt
-
     soil_water = new_soil_water
-    solutes = new_solutes
 
     wall_soil_model = timeit.default_timer() - wall_soil_model
 
@@ -233,8 +192,6 @@ for i in range(0, NT):
         water_cyl.append(np.sum(rs.get_water_volume()))  # cm3
 
         if rank == 0:
-            write_file_array("solute_conc",solute_conc)
-            write_file_array("water_content",water_content)
             out_times.append(t)
             collar_flux.append(r.collar_flux(rs_age + t, rx, rsx, soil_k, False))
             min_rsx.append(np.min(np.array(rsx)))
@@ -251,14 +208,10 @@ for i in range(0, NT):
             water_domain.append(np.min(soil_water))  # cm3
             water_collar_cell.append(soil_water[cci])  # cm3
             water_uptake.append(summed_soil_fluxes)  # cm3/day
-            summed_mass_fluxes = 0.
-            for k, v in soil_mass_fluxes.items():
-                summed_mass_fluxes += v
-            solute_uptake.append(summed_mass_fluxes)
             n = round(float(i) / float(NT) * 100.)
             print("[" + ''.join(["*"]) * n + ''.join([" "]) * (100 - n) + "], {:g} days".format(s.simTime))
             print("Iteration {:g} took {:g} seconds [{:g}% root, {:g}% rhizo {:g}% soil ]\n".
-                  format(i, wall_iteration, wall_root_model / wall_iteration, wall_rhizo_models / wall_iteration, wall_soil_model / wall_iteration))
+                  format(i, wall_iteration, wall_root_model / wall_iteration*100., wall_rhizo_models / wall_iteration*100., wall_soil_model / wall_iteration*100.))
 #             if min_rsx[-1] < -16000:
 #                 print("breaksim time ", sim_time)
 #                 break
@@ -266,37 +219,8 @@ for i in range(0, NT):
 """ plots and output """
 if rank == 0:
     print ("Coupled benchmark solved in ", timeit.default_timer() - start_time, " s")
-    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name, 1)  # VTK vizualisation
-#     rsx = rs.get_inner_heads()  # matric potential at the root soil interface, i.e. inner values of the cylindric models [cm]
-#     soil_k = np.divide(vg.hydraulic_conductivity(rsx, soil), rs.ms.radii)  # only valid for homogenous soil
-#     rx = r.solve(rs_age + t, -trans * sinusoidal(t), 0., rsx, False, wilting_point, soil_k)
-#     fluxes = r.segFluxes(rs_age + t, rx, rsx, approx=False, cells=False, soil_k=soil_k)
-#     ana = pb.SegmentAnalyser(r.rs)
-#     ana.addData("rsx", rsx)
-#     ana.addData("rx", rx)
-#     ana.addData("fluxes", fluxes)
-#     vp.plot_roots(ana, "rsx")  # VTK vizualisation
-#     vp.plot_roots(ana, "fluxes")  # VTK vizualisation
-#     crit_i = np.argmin(rsx)
-#     print("critical segment", crit_i)
-#     cidx = rs.seg2cell[crit_i]
-#     print("mapped to cell",)
-#     print("cell water content", water_content[cidx], "matric potential", s.getSolutionHeadAt(cidx))
-#     rs.plot_cylinder(crit_i)
-    vp.write_soil("mai", s, min_b, max_b, cell_number, ["phosphate"])
-
-    fig, (ax1) = plt.subplots(1, 1)
-    ax1.set_title("phosphate uptake")
-    uptake = -np.array(solute_uptake)
-    ax1.plot(out_times, uptake, label = "phosphate uptake")
-    ax2 = ax1.twinx()
-    ax2.plot(out_times, np.cumsum(uptake), 'c--', label = "cumulative uptake")
-    ax1.legend()
-    ax1.set_xlabel("Time (days)")
-    ax1.set_ylabel("g/cm3")
-    plt.show()
+    vp.plot_roots_and_soil(r.rs, "pressure head", rsx, s, periodic, min_b, max_b, cell_number, name, interactiveImage = False)  # VTK vizualisation
 
     plot_transpiration(out_times, water_uptake, collar_flux, lambda t: trans * sinusoidal(t))  # in rhizo_models.py
     plot_info(out_times, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_rsx, water_uptake, water_domain)  # in rhizo_models.py
-    np.savetxt(name, np.vstack((out_times, -np.array(collar_flux), -np.array(water_uptake))), delimiter = ';')
 

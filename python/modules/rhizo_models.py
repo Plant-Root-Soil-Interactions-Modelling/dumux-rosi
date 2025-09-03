@@ -14,9 +14,10 @@ import functional.van_genuchten as vg
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+from plantbox import Perirhizal
 
 
-class RhizoMappedSegments(pb.MappedSegments):
+class RhizoMappedSegments(Perirhizal):
     """
         Adds 1-dimensional rhizosphere models to each root segment of a MappedSegments (or later MappedPlant)    
         
@@ -38,7 +39,10 @@ class RhizoMappedSegments(pb.MappedSegments):
             self.set_xylem_flux(x)
         elif isinstance(x, pb.MappedSegments):  # should also be true for MappedRootSystem (since MappedSegments is base class)
             ms = x
-        super().__init__(ms.nodes, ms.nodeCTs, ms.segments, ms.radii, ms.subTypes)
+        if ms:
+            super().__init__(ms)
+        else:
+            super().__init__()
 
         # TODO replace by a copy constructor or copy() at some point
         self.seg2cell = ms.seg2cell
@@ -66,11 +70,11 @@ class RhizoMappedSegments(pb.MappedSegments):
         @þaram eidx     in case of mpi the cylinder indices per process
         """
         if eidx is None:
-            eidx = np.array(range(0, len(self.radii)), np.int64)  # segment indices for process
+            eidx = np.array(range(0, len(self.ms.radii)), np.int64)  # segment indices for process
         self.eidx = np.array(eidx, np.int64)
-        self.outer_radii = np.array(self.segOuterRadii())  # not parallel yet
+        self.outer_radii = np.array(self.segOuterRadii(2) )  # not parallel yet
         # self.outer_radii = np.minimum(np.array(self.segOuterRadii()), 1.)  # not parallel yet
-        self.seg_length = self.segLength()
+        self.seg_length = self.ms.segLength()
         self.soil = soil
         self.vg_soil = vg.Parameters(soil)
         vg.create_mfp_lookup(self.vg_soil, -1.e5, 1000)
@@ -78,28 +82,28 @@ class RhizoMappedSegments(pb.MappedSegments):
         self.dx2 = []
         if self.mode == "dumux":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, False))
+                self.cyls.append(self.initialize_dumux_(i, x[self.ms.seg2cell[i]], False, False))
         elif self.mode == "dumux_exact":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], True, False))
+                self.cyls.append(self.initialize_dumux_(i, x[self.ms.seg2cell[i]], True, False))
         elif self.mode == "dumux_dirichlet":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+                self.cyls.append(self.initialize_dumux_(i, x[self.ms.seg2cell[i]], False, True))
         elif self.mode == "dumux_dirichlet_nc":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_nc_(i, x[self.seg2cell[i]], cc[self.seg2cell[i]]))
+                self.cyls.append(self.initialize_dumux_nc_(i, x[self.ms.seg2cell[i]], cc[self.ms.seg2cell[i]]))
         elif self.mode == "dumux_nc":
             for i in eidx:
-                self.cyls.append(self.initialize_dumux_(i, x[self.seg2cell[i]], False, True))
+                self.cyls.append(self.initialize_dumux_(i, x[self.ms.seg2cell[i]], False, True))
         elif self.mode == "python" or self.mode == "python_exact":
             for i in eidx:
-                x0 = x[self.seg2cell[i]]
+                x0 = x[self.ms.seg2cell[i]]
                 self.cyls.append(self.initialize_python_(i, x0))
         else:
             raise Exception("RhizoMappedSegments.initialize: unknown solver {}".format(self.mode))
 
     def initialize_dumux_nc_(self, i, x, c):
-        a_in = self.radii[i]
+        a_in = self.ms.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
             cyl = RichardsNoMPIWrapper(RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
@@ -131,7 +135,7 @@ class RhizoMappedSegments(pb.MappedSegments):
 
     def initialize_dumux_(self, i, x, exact, dirichlet = False):
         """ Dumux RichardsCylFoam solver"""
-        a_in = self.radii[i]
+        a_in = self.ms.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
             cyl = RichardsNoMPIWrapper(RichardsCylFoam())  # only works for RichardsCylFoam compiled without MPI
@@ -161,7 +165,7 @@ class RhizoMappedSegments(pb.MappedSegments):
 
     def initialize_python_(self, i, x):
         """ Python home grown richards fv solver"""
-        a_in = self.radii[i]
+        a_in = self.ms.radii[i]
         a_out = self.outer_radii[i]
         if a_in < a_out:
             lb = self.logbase
@@ -225,11 +229,11 @@ class RhizoMappedSegments(pb.MappedSegments):
         if self.mode.startswith("dumux"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
-                fluxes[i] = -float(cyl.getInnerFlux()) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
+                fluxes[i] = -float(cyl.getInnerFlux()) * (2 * np.pi * self.ms.radii[j] * self.seg_length[j]) / self.ms.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
         elif self.mode.startswith("python"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
-                fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
+                fluxes[i] = cyl.get_inner_flux() * (2 * np.pi * self.ms.radii[j] * self.seg_length[j]) / self.last_dt  # divide by dt is correct here! getInnerFlux only gives the source in cm3/cm2
         else:
             print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
@@ -251,7 +255,7 @@ class RhizoMappedSegments(pb.MappedSegments):
         if self.mode.startswith("dumux"):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
-                fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.radii[j] * self.seg_length[j]) / self.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
+                fluxes[i] = -float(cyl.getInnerFlux(1)) * (2 * np.pi * self.ms.radii[j] * self.seg_length[j]) / self.ms.radii[j]  # [cm/day] -> [cm3/day], ('/inner_radii' comes from cylindrical implementation)
         else:
             print("RhizoMappedSegments.get_inner_fluxes: Warning, mode {:s} unknown".format(self.mode))
         return self._map(self._flat0(comm.gather(fluxes, root = 0)))  # gathers and maps correctly
@@ -276,13 +280,13 @@ class RhizoMappedSegments(pb.MappedSegments):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l))  # [cm3/day] -> [cm /day]
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
                 try:
                     cyl.solve(dt)
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     print("node ", self.nodes[self.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
@@ -299,7 +303,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                     cyl.solve(dt)
                 except:
                     # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     # print("node ", self.nodes[self.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
@@ -316,7 +320,7 @@ class RhizoMappedSegments(pb.MappedSegments):
                     cyl.solve(dt)
                 except:
                     # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     # print("node ", self.nodes[self.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
@@ -340,12 +344,12 @@ class RhizoMappedSegments(pb.MappedSegments):
                 kx = self.rs.kx_f(age, type_)
                 cyl.setRootSystemBC([x0, x1, kr, kx, l, rsx[j]])
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
-                # print("solve dumux_exact", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
+                # print("solve dumux_exact", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.ms.radii[j])
                 try:
                     cyl.solve(dt)
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    str = str.format(proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     raise Exception(str)
         elif self.mode == "python":
             proposed_inner_fluxes = argv[0]
@@ -355,13 +359,13 @@ class RhizoMappedSegments(pb.MappedSegments):
                 l = self.seg_length[j]
                 proposed_inner_fluxes = argv[0]
                 proposed_outer_fluxes = argv[1]
-                q_inner = proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l)
+                q_inner = proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l)
                 cyl.bc[(0, 0)] = ("flux_in_out", [q_inner , self.wilting_point])
                 q_outer = proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l)
                 ndof = self.NC - 1
                 cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point])
                 cyl.solve([dt], dt, False)
-                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
+                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.ms.radii[j])
         elif self.mode == "python_exact":
             rx = argv[0]
             proposed_outer_fluxes = argv[1]
@@ -375,8 +379,8 @@ class RhizoMappedSegments(pb.MappedSegments):
                 x1 = rx[self.segments[j].y]
                 #         rx_approx = 0.5 * (x0 + x1)
                 #         cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, self.kr_f(age, type_)])
-                cyl.bc[(0, 0)] = ("rootsystem_exact", [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.radii[j], l])
-                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.radii[j])
+                cyl.bc[(0, 0)] = ("rootsystem_exact", [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.ms.radii[j], l])
+                # print("solve python", x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), l, self.ms.radii[j])
                 q_outer = proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l)
                 ndof = self.NC - 1
                 cyl.bc[(ndof - 1, 1)] = ("flux_in_out", [q_outer , self.wilting_point])
@@ -387,13 +391,13 @@ class RhizoMappedSegments(pb.MappedSegments):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l))  # [cm3/day] -> [cm /day]
+                cyl.setInnerFluxCyl(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l))  # [cm3/day] -> [cm /day]
                 cyl.setOuterFluxCyl(proposed_outer_fluxes[j] / (2 * np.pi * self.outer_radii[j] * l))  # [cm3/day] -> [cm /day]
                 try:
                     cyl.solve(dt)
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
-                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.radii[j] * l), self.radii[j], self.outer_radii[j])
+                    str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     raise Exception(str)
         else:
             print(self.mode)
@@ -548,8 +552,8 @@ def plot_info(x_, water_collar_cell, water_cyl, collar_sx, min_sx, min_rx, min_r
     ax4.set_ylabel("cm3")
     plt.show()
 
-# print(len(rs.nodeCTs), len(rs.segments))
-# ana2 = pb.SegmentAnalyser(r.rs.nodes, r.rs.segments, r.rs.nodeCTs[1:], r.rs.radii)
+# print(len(rs.nodeCTs), len(rs.ms.segments))
+# ana2 = pb.SegmentAnalyser(r.rs.ms.nodes, r.rs.ms.segments, r.rs.nodeCTs[1:], r.rs.radii)
 # types = np.array(r.rs.subTypes, dtype=np.float64)
 # ana2.addData("subType", types)
 # ana2.addData("age", r.get_ages())
