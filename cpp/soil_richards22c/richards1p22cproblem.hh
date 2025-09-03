@@ -1212,15 +1212,19 @@ public:
 		
 		double N_out = WorCorN[NsoluteIdx] + WorCorN[NCH_Idx] + WorCorN[NH4Idx] + WorCorN[NO3Idx];
 		double C_out = WorCorN[soluteIdx] + WorCorN[CH_Idx] + WorCorN[mucilIdx];
-		int CoAIdx_ = 0; int CcAIdx_ = 1;
+		//int CoAIdx_ = 0; int CcAIdx_ = 1;
 		 const auto safeDivision = [](const double nominator, const double denominator, const double defaultVal = 0.)
         {
 			if(denominator > 0.){
 				return nominator/denominator;
 			}else{return defaultVal;}
 		};
-		for(int CxIdx : {CoAIdx_, CcAIdx_})// 0 = oligo, 1 = copio
+		for(int CxIdx = 0; CxIdx < 2; CxIdx++)// 0 = oligo, 1 = copio
 		{		
+			int CxAIdx = (CxIdx == 0) ? CoAIdx : CcAIdx;
+			int CxDIdx = (CxIdx == 0) ? CoDIdx : CcDIdx;
+			int NxAIdx = (CxIdx == 0) ? NoAIdx : NcAIdx;
+			int NxDIdx = (CxIdx == 0) ? NoDIdx : NcDIdx;
 			// N-dependent maintenance rate
 			double k_eps = 1e-15;
 			double f_N = 1.;
@@ -1229,38 +1233,38 @@ public:
 				f_N = std::max(0.01,std::exp(-alpha_N * std::max(0.,safeDivision(C_out,(N_out+k_eps)) - k_CNobjOut)));
 			}
 			
-			double m_max_ = m_max[CxIdx] / f_N;// * std::max(WorCorN[CoAIdx + CxIdx]/WorCorN[NoAIdx + CxIdx] - k_CNobj, 0) * (1 - ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) );
+			double m_max_ = m_max[CxIdx] / f_N;// * std::max(WorCorN[CxAIdx]/WorCorN[NxAIdx] - k_CNobj, 0) * (1 - ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) );
 			double micro_max_ = micro_max[CxIdx] * f_N;
 			
 			//				Uptake			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 wat] = [mol C_oX / m3 wat /s]
-			F_uptake_S_A[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * WorCorN[CoAIdx + CxIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_uptake_S_D[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * beta[CxIdx] * WorCorN[CoDIdx + CxIdx] ; //mol C/(m^3 bulk soil *s)
+			F_uptake_S_A[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
+			F_uptake_S_D[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * beta[CxIdx] * WorCorN[CxDIdx] ; //mol C/(m^3 bulk soil *s)
 			
 			//				Decay
 			// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
-			F_decay_A[CxIdx] =  m_max_  * WorCorN[CoAIdx + CxIdx]  - F_uptake_S_A[CxIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_decay_D[CxIdx] =  m_max_  * beta[CxIdx]  * WorCorN[CoDIdx + CxIdx]  - F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
+			F_decay_A[CxIdx] =  m_max_  * WorCorN[CxAIdx]  - F_uptake_S_A[CxIdx] ;			//mol C/(m^3 bulk soil *s)
+			F_decay_D[CxIdx] =  m_max_  * beta[CxIdx]  * WorCorN[CxDIdx]  - F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
 			
 			//				Other
 			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_growth[CxIdx] =  f_A * (micro_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(micro_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * (WorCorN[CoAIdx + CxIdx] + C_aLim[CxIdx]) ;		//mol C/(m^3 bulk soil *s)
+			F_growth[CxIdx] =  f_A * (micro_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(micro_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * (WorCorN[CxAIdx] + C_aLim[CxIdx]) ;		//mol C/(m^3 bulk soil *s)
 			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.)) CorN_W
 			{
 				std::cout<<"F_growth["<<CxIdx<<"] " << std::scientific<<std::setprecision(20)
-				<<micro_max_ <<" "<< WorCorN[soluteIdx] <<" "<< k_S[CxIdx] <<" "<< (WorCorN[CoAIdx + CxIdx] + C_aLim[CxIdx])
+				<<micro_max_ <<" "<< WorCorN[soluteIdx] <<" "<< k_S[CxIdx] <<" "<< (WorCorN[CxAIdx] + C_aLim[CxIdx])
 				<<" "<<F_growth[CxIdx]<<std::endl;
 				std::cout<<"F_decay_A["<<CxIdx<<"] " << std::scientific<<std::setprecision(20)
-				 <<" "<< WorCorN[CoAIdx + CxIdx]  <<" "<< F_uptake_S_A[CxIdx]  <<" "
+				 <<" "<< WorCorN[CxAIdx]  <<" "<< F_uptake_S_A[CxIdx]  <<" "
 				<< F_decay_A[CxIdx] <<std::endl;
 			}
 			phi[CxIdx] = 1/(1 + std::exp((C_S_W_thres[CxIdx] - WorCorN[soluteIdx])/(k_phi * C_S_W_thres[CxIdx])));								// - 
 			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[CxIdx]  =  std::max(f_A2D , (1. - phi[CxIdx] )) * k_D[CxIdx]  * WorCorN[CoAIdx + CxIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_react[CxIdx]  =  std::min(f_D2A, phi[CxIdx]) * k_R[CxIdx]  * WorCorN[CoDIdx + CxIdx] ;				//mol C/(m^3 bulk soil *s)
+			F_deact[CxIdx]  =  std::max(f_A2D , (1. - phi[CxIdx] )) * k_D[CxIdx]  * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
+			F_react[CxIdx]  =  std::min(f_D2A, phi[CxIdx]) * k_R[CxIdx]  * WorCorN[CxDIdx] ;				//mol C/(m^3 bulk soil *s)
 			
 			F_uptake_S += F_uptake_S_A[CxIdx] + F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
 			F_decay += F_decay_A[CxIdx] + F_decay_D[CxIdx];	
@@ -1269,30 +1273,30 @@ public:
 			
 			// nitrogen	
 				// immobilisation/mineralisation
-			F_ImMin_A[CxIdx]= WorCorN[CoAIdx + CxIdx] * (
+			F_ImMin_A[CxIdx]= WorCorN[CxAIdx] * (
 								std::max(
-								safeDivision(WorCorN[CoAIdx + CxIdx],(WorCorN[NoAIdx + CxIdx]+k_eps)) - k_CNobj, 0.)
+								safeDivision(WorCorN[CxAIdx],(WorCorN[NxAIdx]+k_eps)) - k_CNobj, 0.)
 								* f_Im * ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) 
 								+ std::min(
-								safeDivision(WorCorN[CoAIdx + CxIdx],(WorCorN[NoAIdx + CxIdx]+k_eps)) - k_CNobj, 0.)
-								* f_Min * ( WorCorN[NoAIdx + CxIdx]/ (WorCorN[NoAIdx + CxIdx] + K_rMin)) 
+								safeDivision(WorCorN[CxAIdx],(WorCorN[NxAIdx]+k_eps)) - k_CNobj, 0.)
+								* f_Min * ( WorCorN[NxAIdx]/ (WorCorN[NxAIdx] + K_rMin)) 
 								);
 
-			F_ImMin_D[CxIdx]=  beta[CxIdx] * WorCorN[CoAIdx + CxIdx + 1] * (
+			F_ImMin_D[CxIdx]=  beta[CxIdx] * WorCorN[CxDIdx] * (
 								std::max(
-								safeDivision(WorCorN[CoAIdx + CxIdx + 1],(WorCorN[NoAIdx + CxIdx + 1]+k_eps)) - k_CNobj, 0.)
+								safeDivision(WorCorN[CxDIdx],(WorCorN[NxDIdx]+k_eps)) - k_CNobj, 0.)
 								* f_Im * ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) 
 								+ std::min(
-								safeDivision(WorCorN[CoAIdx + CxIdx + 1],(WorCorN[NoAIdx + CxIdx + 1]+k_eps)) - k_CNobj, 0.)
-								* f_Min * ( WorCorN[NoAIdx + CxIdx + 1]/ (WorCorN[NoAIdx + CxIdx + 1] + K_rMin)) 
+								safeDivision(WorCorN[CxDIdx],(WorCorN[NxDIdx]+k_eps)) - k_CNobj, 0.)
+								* f_Min * ( WorCorN[NxDIdx]/ (WorCorN[NxDIdx] + K_rMin)) 
 								);
 			
 			F_ImMin += F_ImMin_A[CxIdx] + F_ImMin_D[CxIdx];
 			
 			F_NH4 += ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_NH4)) * v_maxNH4 
-						* k_MBtoNH4 * (beta[CxIdx] * WorCorN[CoAIdx + CxIdx + 1] + WorCorN[CoAIdx + CxIdx]);
+						* k_MBtoNH4 * (beta[CxIdx] * WorCorN[CxDIdx] + WorCorN[CxAIdx]);
 			F_NO3 += ( WorCorN[NO3Idx]/ (WorCorN[NO3Idx] + K_NO3)) * v_maxNO3 
-						* k_MBtoNO3 * (beta[CxIdx] * WorCorN[CoAIdx + CxIdx + 1] + WorCorN[CoAIdx + CxIdx]);
+						* k_MBtoNO3 * (beta[CxIdx] * WorCorN[CxDIdx] + WorCorN[CxAIdx]);
 			
 			
 			
