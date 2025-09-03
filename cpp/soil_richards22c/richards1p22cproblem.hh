@@ -1212,7 +1212,7 @@ public:
 		
 		double N_out = WorCorN[NsoluteIdx] + WorCorN[NCH_Idx] + WorCorN[NH4Idx] + WorCorN[NO3Idx];
 		double C_out = WorCorN[soluteIdx] + WorCorN[CH_Idx] + WorCorN[mucilIdx];
-		//int CoAIdx_ = 0; int CcAIdx_ = 1;
+		int CoAIdx_ = 0; int CcAIdx_ = 1;
 		 const auto safeDivision = [](const double nominator, const double denominator, const double defaultVal = 0.)
         {
 			if(denominator > 0.){
