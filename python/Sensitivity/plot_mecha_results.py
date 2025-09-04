@@ -42,7 +42,7 @@ def plot_index(ind):
 
 def main():
 
-    mecha_results_path = "/home/daniel/Dropbox/granar/mecha_results"
+    mecha_results_path = "/home/daniel/Dropbox/Code/granar/mecha_results"
 
     npy_ind = []
     npy_data = []
@@ -56,7 +56,8 @@ def main():
 
     print(npy_data[-1])  # kx, kr, a?
     npy_data = np.array(npy_data)
-    print(npy_data.shape)
+    print("Number of indices", npy_data.shape)
+    print()
 
     ykx_ = npy_data[:, 0, 0]
     ykr_ = npy_data[:, 0, 1]
@@ -84,7 +85,10 @@ def main():
     print("file saved")
     np.savez("mecha_results", kx = kx, kr = kr, a = a, ykx = ykx, ykr = ykr, ya = ya, aer_p = np.array(p), index = npy_ind)  # copy stable versions to data/
 
-    plt.hist(kr)
+    # plt.hist(kr)
+    plt.scatter(a, kr)
+    plt.xlabel("Root radius [cm]")
+    plt.ylabel("Raidial conductivity [1 day-1]")
     plt.show()
 
 

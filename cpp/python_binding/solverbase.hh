@@ -72,8 +72,10 @@ public:
     using VectorType = std::array<double, dim>;
     using NumEqVector = typename Problem::NumEqVector;
     using VelocityVector = std::vector<Dune::FieldVector<double, dim>>;
-
-    int numComp(){return nEV.size();}
+	using GlobalPosition = typename Problem::GlobalPosition; 
+	
+    int numComp(){return nEV.size();}    
+	int numFluidComp(){return Problem::FluidSystem::numComponents;}
     NumEqVector nEV;
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
@@ -179,7 +181,10 @@ public:
      */
     virtual void createGrid(std::string modelParamGroup = "") {
         std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", " ");
-        periodic = ((pstr.at(0)=='t') || (pstr.at(0)=='T')); // always x,y, not z
+        periodic = ((pstr.at(0)=='t') || (pstr.at(0)=='T')); // always x,y, not z: pstr = "true ..."
+        if ((!periodic) and (pstr.size()>4)) { // y = true
+            periodic =  (pstr.at(6)=='t') || (pstr.at(6)=='T'); // pstr = "false true false"
+        }
         GridManagerFix<Grid> gridManager;
         gridManager.init(modelParamGroup);
         grid = gridManager.gridPtr();
@@ -387,8 +392,8 @@ public:
         }
 		int nFaces = gridGeometry->numScvf();
         auto fvGeometry = Dumux::localView(*gridGeometry);
-		face2CellIdx = std::vector<int>(nFaces,-1);	// to sum face flow per cell	
-		 for (const auto& e : Dune::elements(gridGeometry->gridView(),Dune::Partitions::interior)) 
+		face2CellIdx = std::vector<int>(nFaces,-1);	// to sum face flow per cell
+		 for (const auto& e : Dune::elements(gridGeometry->gridView(),Dune::Partitions::interior))
         {
             fvGeometry.bindElement(e);
 			//int i = 0;
@@ -396,7 +401,7 @@ public:
             {
 				// local face to local cell indx
 				face2CellIdx.at(scvf.index()) = fvGeometry.scv(scvf.insideScvIdx()).dofIndex();
-            }			
+            }
         }
 		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
 		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
@@ -460,10 +465,10 @@ public:
     virtual void solve(double dt, bool doMPIsolve = true, bool saveInnerDumuxValues = false) {
         checkGridInitialized();
         using namespace Dumux;
-		
+
 		scvSources.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
 		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(gridGeometry->numScvf(), 0.));
-		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(gridGeometry->numScvf(), 0.)); 
+		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(gridGeometry->numScvf(), 0.));
 
         auto xOld = x;
 		xBackUp = x; saveInnerVals();  simTimeBackUp = simTime ;
@@ -502,7 +507,7 @@ public:
             if(saveInnerDumuxValues)
             {
 				getScvfFluxesAtT(timeLoop->timeStepSize(),dt) ;
-				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;					   
+				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;
             }
 
             gridVariables->advanceTimeStep();
@@ -525,6 +530,18 @@ public:
 		solve(dt, false, saveInnerDumuxValues);
     }
 
+    /**
+	 * Change the maximum step size of the time loop
+     */
+	void setMaxTimeStepSize(double maxDt)
+	{
+        checkGridInitialized();
+		maxDt_ = maxDt;
+		if(maxDt_ > 0.)
+		{
+			timeLoop->setMaxTimeStepSize(maxDt_);
+		}
+	}
     /**
      * Finds the steady state of the problem.
      *
@@ -790,8 +807,13 @@ public:
 			//elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
 
             for (const auto& scvf : scvfs(fvGeometry)) {
-                if (scvf.boundary()) {
-                    double n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+				if (scvf.boundary()) {
+					const auto& bcTypes = problem->boundaryTypes(e, scvf);
+					double n;
+					if (bcTypes.hasNeumann()){
+						n = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx];  // [ kg / (m2 s)]
+					}
+					
                     f = (std::abs(n) > std::abs(f)) ? n : f;
                 }
             }
@@ -830,42 +852,42 @@ public:
         }
         return fluxes;
     }
-	
-	
+
+
     /**
      * For a single mpi process. Gathering is done in Python
 	 * [ kg /m^3/s] or [ mol / m^3/s]
      */
     void getScvSourcesAtT(double dt, double outer_dt) {
 		checkGridInitialized();
-		
+
         auto fvGeometry = Dumux::localView(*gridGeometry);
-		
+
         auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-		
+
 
         for (const auto& e : elements(gridGeometry->gridView())) { //, Dune::Partitions::interior
 
             fvGeometry.bind(e);
-			
+
             elemVolVars.bind(e, fvGeometry, x);
-			
+
 			for (const auto& scv : scvs(fvGeometry))
             {
 				double pos0 = 1;
 				if(dimWorld == 1){
-					pos0 = scv.center()[0]; 
+					pos0 = scv.center()[0];
 				}
 				NumEqVector scvfSource_(0.0);
 				scvfSource_ = problem->source(e, fvGeometry, elemVolVars, scv); // [ kg / (m^3 \cdot s)] or [ mol / (m^3 \cdot s)]
-				
+
 				for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 				{
 					scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
 				}
 			}
 		}
-		
+
 	}
     /**
      * For a single mpi process. Gathering is done in Python
@@ -874,36 +896,36 @@ public:
     void getScvfFluxesAtT(double dt, double outer_dt) {
 
         checkGridInitialized();
-		
+
         auto fvGeometry = Dumux::localView(*gridGeometry);
-		
+
         auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
-		
-		auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());	
-		
+
+		auto elemFluxVarsCache = Dumux::localView(gridVariables->gridFluxVarsCache());
+
 		//localResidual = std::make_shared<assembler->localResidual()>;
 
 
         for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
 
             fvGeometry.bind(e);
-			
+
             elemVolVars.bind(e, fvGeometry, x);
             // std::cout << "f\n" << std::flush;
 
 
             elemFluxVarsCache.bind(e, fvGeometry, elemVolVars); // check workspace
             //std::cout << "g" << std::flush;
-			
-			//LocalAssembler localAssembler(assembler, e, x);	
+
+			//LocalAssembler localAssembler(assembler, e, x);
 			//std::make_shared<Assembler>
-			
+
             for (const auto& scvf : scvfs(fvGeometry))
             {
 				double pos0 = 1;
 				//double scvf_area = scvf.area();
 				if(dimWorld == 1){
-					pos0 = scvf.center()[0]; 
+					pos0 = scvf.center()[0];
 					//scvf_area = 2 * M_PI * pos0 * segLength;//m2 TODO handle 1D area?
 				}
 				NumEqVector scvfFlux_(0.0);
@@ -911,8 +933,8 @@ public:
 				{
 					const auto& bcTypes = problem->boundaryTypes(e, scvf);
 					if (bcTypes.hasNeumann()){
-						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);	
-					}						
+						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+					}
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
 						scvfBoundaryFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;
@@ -932,14 +954,14 @@ public:
 	std::vector<double> getFaceSurfaces() {
 
         checkGridInitialized();
-		
+
         auto fvGeometry = Dumux::localView(*gridGeometry);
 		std::vector<double> scvfSurface(gridGeometry->numScvf());
         for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
 
             fvGeometry.bind(e);
-			
-			
+
+
             for (const auto& scvf : scvfs(fvGeometry))
             {
 				scvfSurface[scvf.index()] = scvf.area();
@@ -951,14 +973,14 @@ public:
 	std::vector<double> getCylFaceCoordinates() {
 
         checkGridInitialized();
-		
+
         auto fvGeometry = Dumux::localView(*gridGeometry);
 		std::vector<double> scvfSurface(gridGeometry->numScvf());
         for (const auto& e : elements(gridGeometry->gridView(), Dune::Partitions::interior)) {
 
             fvGeometry.bind(e);
-			
-			
+
+
             for (const auto& scvf : scvfs(fvGeometry))
             {
 				scvfSurface[scvf.index()] = scvf.center()[0];
@@ -1044,7 +1066,7 @@ public:
         for (int i=0; i<dim; i++) {
             p[i] = pos[i];
         }
-        // std::cout << "point: " << pos[0]<<", "<< pos[1] <<","<< pos[2] << " in box "; // <<  getGridBounds();
+        // std::cout << "point: " << pos[0]<<", "<< pos[1] <<","<< pos[2] << " in box "<<  ", " << periodic << "\n";
         auto entities = Dumux::intersectingEntities(p, bBoxTree);
         int gIdx = -1;
         if (!entities.empty()) {
@@ -1121,7 +1143,7 @@ public:
     virtual std::vector<int> getLocal2globalPointIdx() {
         return globalPointIdx;
     }
-    
+
     virtual std::vector<int> getFace2CellIdx() {
         return face2CellIdx;
     }
@@ -1171,7 +1193,51 @@ public:
 	virtual void saveInnerVals() {}
     virtual void resetInnerValsManual() {}
     virtual void saveInnerValsManual() {}
+	
+	
+    /**
+	 * manually (re)create linear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createLinearSolver()
+	{
+		linearSolver = std::make_shared<LinearSolver>(gridGeometry->gridView(), gridGeometry->dofMapper());
+	}
+	
+    /**
+	 * manually (re)create nonlinear solver. 
+	 * useful to implement new solver parameters
+     */
+	void createNewtonSolver()
+	{
+		// also reset assembler?
+        nonLinearSolver = std::make_shared<NonLinearSolver>(assembler, linearSolver);
+        nonLinearSolver->setVerbosity(false);
+        nonLinearSolverNoMPI = std::make_shared<NonLinearSolverNoMPI>(assembler, linearSolver,
+								Dune::FakeMPIHelper::getCommunication());
+        nonLinearSolverNoMPI->setVerbosity(false);
+	}
 
+	//! true if on the point lies on the upper boundary
+	// TODO: use to get specific fluxes
+	bool onUpperBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] > this->gridGeometry->bBoxMax()[dimWorld - 1] - eps_;
+	}
+
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
+	}
+	
+	bool onUpperBoundary(std::vector<double> globalPos) const {
+		return globalPos[dimWorld - 1] > this->gridGeometry->bBoxMax()[dimWorld - 1] - eps_;
+	}
+
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary(std::vector<double> globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry->bBoxMin()[dimWorld - 1] + eps_;
+	}
+	static constexpr double eps_ = 1.e-7;
 
 protected:
 
@@ -1221,6 +1287,7 @@ void init_solverbase(py::module &m, std::string name) {
     using Solver = SolverBase<Problem, Assembler, LinearSolver, dim>; // choose your destiny
     py::class_<Solver>(m, name.c_str())
             .def(py::init<>()) // initialization
+			.def("numFluidComp",  &Solver::numFluidComp)
 			.def("numComp",  &Solver::numComp)
             .def("initialize", &Solver::initialize, py::arg("args_") = std::vector<std::string>(0),
 													py::arg("verbose") = true,py::arg("doMPI") = true)
@@ -1233,6 +1300,9 @@ void init_solverbase(py::module &m, std::string name) {
             .def("setParameter", &Solver::setParameter)
             .def("getParameter", &Solver::getParameter)
             .def("printParams", &Solver::printParams)
+			.def("setMaxTimeStepSize",&Solver::setMaxTimeStepSize)
+			.def("createLinearSolver",&Solver::createLinearSolver)
+			.def("createNewtonSolver",&Solver::createNewtonSolver)
             .def("initializeProblem", &Solver::initializeProblem, py::arg("maxDt") = -1)
             .def("setInitialCondition", &Solver::setInitialCondition, py::arg("init"), py::arg("eqIdx") = 0)
 			.def("reset", &Solver::reset)
@@ -1270,6 +1340,8 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getScvfBoundaryFluxes", &Solver::getScvfBoundaryFluxes)
             .def("getScvfInnerFluxes", &Solver::getScvfInnerFluxes)
             .def("getScvSources", &Solver::getScvSources)
+            .def("onUpperBoundary", &Solver::onUpperBoundary)
+            .def("onLowerBoundary", &Solver::onLowerBoundary)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
 			.def("useMoles",&Solver::useMoles)

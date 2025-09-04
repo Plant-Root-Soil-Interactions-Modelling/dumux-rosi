@@ -32,6 +32,10 @@ pick12 = [
 "soybean_all14_3a7d79c45a73e419323d343f07ee3bec6c631bac462622ac21a73c3823c740d0"
 ]
 envirotypes = ["0", "1", "5", "36", "59"]
+cluster_10_opt = [
+    "soybean_all14_3564a0f636e9f600fe68bf96ffca4124135106ae4787b9a3332334b04abcdf1a",  # 213
+    "soybean_all14_f7319dc5d83c72932fd39e4afbf6e50822c2f7bf13b27fc5749c1128642a95d2"  # 138
+    ]
 
 # str_ = "_sra0"
 # Kc = Kc_maize
@@ -46,6 +50,8 @@ name = "local_soybean_radii_1"
 name = "soybean_test_0"
 
 name = pick12[6] + "_36"  # node + envirotype
+name = cluster_10_opt[0] + "_1"
+
 str_ = ""
 Kc = Kc_soybean
 lai = evap.lai_soybean2
@@ -146,5 +152,6 @@ ax[1].set_xlabel("time [days]")
 print("range", np.min(data), np.max(data), "[cm]")
 print("final rs depth", depths[-1])
 plt.tight_layout()
+plt.savefig('soil' + name[-5:] + '.png')
 plt.show()
 

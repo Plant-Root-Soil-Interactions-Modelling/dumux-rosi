@@ -65,25 +65,25 @@ def solve(simtimes):
         if rank == 0:
             print("*****", "#", r, "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
-        Wvolbefore = s.getCellVolumes() * s.getWaterContent() # cm3
-        Smassbefore = s.getSolution(1) * (Wvolbefore / 1.e3 ) # kg
+        Wvolbefore  = s.getCellVolumes() * s.getWaterContent() # cm3
+        Smassbefore = s.getSolution(1)   * Wvolbefore # g
         
-        s.solve(dt)
+        s.solve(dt, saveInnerFluxes_ = True)
         
-        Wvolafter = s.getCellVolumes()*s.getWaterContent() # cm3
-        Smassafter = s.getSolution(1) * (Wvolafter / 1.e3 ) # kg
+        Wvolafter  = s.getCellVolumes() * s.getWaterContent() # cm3
+        Smassafter = s.getSolution(1)   * Wvolafter # kg
         
             
-        scvFluxes = s.getFluxesPerCell(0) * dt # cm3
-        scvFluxesS = s.getFluxesPerCell(1) * dt # kg
-        scvSources = s.getSource(0) * s.getCellVolumes() * dt # cm3
-        scvSourcesS = s.getSource(1) * s.getCellVolumes() * dt # kg
+        scvIntegratedFlows   = s.getFlowsPerCell(0) * dt # cm3
+        scvIntegratedFlowsS  = s.getFlowsPerCell(1) * dt # g
+        scvSources  = s.getSource(0) * s.getCellVolumes() * dt # cm3
+        scvSourcesS = s.getSource(1) * s.getCellVolumes() * dt # g
         
         if rank == 0:
             print('\tChange in water volume [cm3] per voxel:',Wvolafter-Wvolbefore)
-            print('\tChange in solute mass [kg] per voxel:',Smassafter-Smassbefore)
-            print('\n\n\tRMSE for water volume balance [cm3]:',np.mean(np.abs(scvFluxes+(Wvolafter-Wvolbefore)-scvSources)))
-            print('\tRMSE for solute mass balance [kg]:',np.mean(np.abs(scvFluxesS+(Smassafter-Smassbefore)-scvSourcesS)),'\n\n')
+            print('\tChange in solute mass [g] per voxel:',Smassafter-Smassbefore)
+            print('\n\n\tRMSE for water volume balance [cm3]:',np.mean(np.abs(scvIntegratedFlows+(Wvolafter-Wvolbefore)-scvSources)))
+            print('\tRMSE for solute mass balance [g]:',np.mean(np.abs(scvIntegratedFlowS+(Smassafter-Smassbefore)-scvSourcesS)),'\n\n')
 
 
 

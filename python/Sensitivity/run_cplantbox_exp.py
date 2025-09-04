@@ -23,7 +23,7 @@ def show_me_file(exp_name, folder_path, vis_hairs = True, mode = "interactive", 
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
     print(params)
-
+    dd
     """ open corresponding results """
     results = {}
     filename = params["exp_name"]
@@ -85,5 +85,6 @@ if __name__ == "__main__":
 
     folder_path = "results_cplantbox/"
     exp_name = "soybean_all14_64b677a63373c8db3267054d44828238b00525ebb83abca8c85930e130efaaa6"
-
+    exp_name = "soybean_all14_3564a0f636e9f600fe68bf96ffca4124135106ae4787b9a3332334b04abcdf1a"  # Number 213 from cluster (1,0) -> see analyze_transpiration_cluster.py
+    # exp_name = "soybean_all14_f7319dc5d83c72932fd39e4afbf6e50822c2f7bf13b27fc5749c1128642a95d2"  # Number 138 from cluster (1,0) -> see analyze_transpiration_cluster.py
     show_me_file(exp_name, folder_path)

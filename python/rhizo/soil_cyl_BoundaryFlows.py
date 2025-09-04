@@ -64,18 +64,18 @@ def solve(simtimes, N):
             print("*****", "#", r, "external time step", dt, " d, simulation time", s.simTime, "d, internal time step", s.ddt, "d")
 
         Wvolbefore = cellVolumes * s.getWaterContent() # cm3
-        Smassbefore = s.getSolution(1) * (Wvolbefore / 1.e3 ) # kg
+        Smassbefore = s.getSolution(1) * Wvolbefore # g
         
-        s.solve(dt)
+        s.solve(dt, saveInnerFluxes_ = True)
         
         Wvolafter = cellVolumes*s.getWaterContent() # cm3
-        Smassafter = s.getSolution(1) * (Wvolafter / 1.e3 ) # kg
+        Smassafter = s.getSolution(1) * Wvolafter # g
         
             
         rootSoilFluxes = s.getInnerFlow(0, length) * dt # cm3
-        rootSoilFluxesS = s.getInnerFlow(1, length) * dt # kg
+        rootSoilFluxesS = s.getInnerFlow(1, length) * dt # g
         soilSoilFluxes = s.getOuterFlow(0, length) * dt # cm3
-        soilSoilFluxesS = s.getOuterFlow(1, length) * dt # kg
+        soilSoilFluxesS = s.getOuterFlow(1, length) * dt # g
         
         # TODO: currently, setSource not properly implemented for richards and richards 2c
         # so left out of the mass balance.
@@ -84,9 +84,9 @@ def solve(simtimes, N):
         
         if rank == 0:
             print('\tChange in water volume [cm3] per voxel:',sum(Wvolafter-Wvolbefore))
-            print('\tChange in solute mass [kg] per voxel:',sum(Smassafter-Smassbefore))
+            print('\tChange in solute mass [g] per voxel:',sum(Smassafter-Smassbefore))
             print('\n\n\tRMSE for water volume balance [cm3]:',np.mean(np.abs(rootSoilFluxes+soilSoilFluxes+sum(Wvolafter-Wvolbefore))))
-            print('\tRMSE for solute mass balance [kg]:',np.mean(np.abs(rootSoilFluxesS+soilSoilFluxesS+sum(Smassafter-Smassbefore))),'\n\n')
+            print('\tRMSE for solute mass balance [g]:',np.mean(np.abs(rootSoilFluxesS+soilSoilFluxesS+sum(Smassafter-Smassbefore))),'\n\n')
             
 
        

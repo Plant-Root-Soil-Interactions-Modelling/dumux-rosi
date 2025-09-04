@@ -2,13 +2,13 @@
     Auxiliary functions for data analysis of high dimensional data, e.g. from global mutli-objective optimization
 """
 import sys
-
-from scipy import stats; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
+sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import os
 import json
 import numpy as np
+from scipy import stats
 from scipy.cluster.vq import vq, whiten, kmeans
 import matplotlib.pyplot as plt
 from matplotlib.patches import Polygon, RegularPolygon, Ellipse
