@@ -14,10 +14,10 @@ import functional.van_genuchten as vg
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-from plantbox import Perirhizal
+from functional.Perirhizal import PerirhizalPython
 
 
-class RhizoMappedSegments(Perirhizal):
+class RhizoMappedSegments(PerirhizalPython):
     """
         Adds 1-dimensional rhizosphere models to each root segment of a MappedSegments (or later MappedPlant)    
         
@@ -72,7 +72,7 @@ class RhizoMappedSegments(Perirhizal):
         if eidx is None:
             eidx = np.array(range(0, len(self.ms.radii)), np.int64)  # segment indices for process
         self.eidx = np.array(eidx, np.int64)
-        self.outer_radii = np.array(self.segOuterRadii(2) )  # not parallel yet
+        self.outer_radii = np.array(self.get_outer_radii("length") )  # not parallel yet
         # self.outer_radii = np.minimum(np.array(self.segOuterRadii()), 1.)  # not parallel yet
         self.seg_length = self.ms.segLength()
         self.soil = soil
@@ -287,9 +287,9 @@ class RhizoMappedSegments(Perirhizal):
                 except:
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
                     str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
-                    print("node ", self.nodes[self.segments[j].y])
-                    self.plot_cylinder(j)
-                    self.plot_cylinders()
+                    print("node ", i, self.ms.nodes[self.ms.segments[j].y])
+                    #self.plot_cylinder(j)
+                    #self.plot_cylinders()
                     raise Exception(str)
         elif self.mode == "dumux_dirichlet":
             rx = argv[0]
@@ -304,7 +304,7 @@ class RhizoMappedSegments(Perirhizal):
                 except:
                     # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
                     # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
-                    # print("node ", self.nodes[self.segments[j].y])
+                    # print("node ", self.ms.nodes[self.ms.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
                     raise Exception(str)
@@ -321,7 +321,7 @@ class RhizoMappedSegments(Perirhizal):
                 except:
                     # str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
                     # str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
-                    # print("node ", self.nodes[self.segments[j].y])
+                    # print("node ", self.ms.nodes[self.ms.segments[j].y])
                     self.plot_cylinder(j)
                     self.plot_cylinders()
                     raise Exception(str)
@@ -333,11 +333,11 @@ class RhizoMappedSegments(Perirhizal):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                seg_ct = self.nodeCTs[self.segments[j].y]
+                seg_ct = self.nodeCTs[self.ms.segments[j].y]
                 age = 1.  # self.seg_ages[j] + t  # age  = (maxCT -nodeCT[j]) + t = (maxCT+t) - nodeCT[j] = rs_sim_time - nodeCT[j]
                 type_ = self.subTypes[j]
-                x0 = rx[self.segments[j].x]
-                x1 = rx[self.segments[j].y]
+                x0 = rx[self.ms.segments[j].x]
+                x1 = rx[self.ms.segments[j].y]
                 kr = self.rs.kr_f(age, type_)
                 if len(soil_k) > 0:
                     kr = min(kr, soil_k[j])
@@ -372,11 +372,11 @@ class RhizoMappedSegments(Perirhizal):
             for i, cyl in enumerate(self.cyls):  # run cylindrical models
                 j = self.eidx[i]  # for one process j == i
                 l = self.seg_length[j]
-                seg_ct = self.nodeCTs[self.segments[j].y]
+                seg_ct = self.nodeCTs[self.ms.segments[j].y]
                 age = 1.  # self.seg_ages[j] + t  # age  = (maxCT -nodeCT[j]) + t = (maxCT+t) - nodeCT[j] = rs_sim_time - nodeCT[j]
                 type_ = self.subTypes[j]
-                x0 = rx[self.segments[j].x]
-                x1 = rx[self.segments[j].y]
+                x0 = rx[self.ms.segments[j].x]
+                x1 = rx[self.ms.segments[j].y]
                 #         rx_approx = 0.5 * (x0 + x1)
                 #         cyl.bc[(0, 0)] = ("rootsystem", [rx_approx, self.kr_f(age, type_)])
                 cyl.bc[(0, 0)] = ("rootsystem_exact", [x0, x1, self.rs.kr_f(age, type_), self.rs.kx_f(age, type_), self.ms.radii[j], l])
@@ -481,8 +481,8 @@ class RhizoMappedSegments(Perirhizal):
             y_ = cyl.getSolutionHead()
             inner.append(y_[0])
             outer.append(y_[-1])
-            j = self.segments[i].y
-            z = self.nodes[j].z
+            j = self.ms.segments[i].y
+            z = self.ms.nodes[j].z
             col_i = int(-z / zz * 255.)
             c_ = '#%02x%02x%02x' % (col_i, col_i, 64)
             plt.plot(x_, y_, alpha = 0.1, c = c_)
