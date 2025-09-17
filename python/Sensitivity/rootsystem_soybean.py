@@ -1,5 +1,10 @@
 """ 
-Analyse and choose (modify) soybean system parameters 
+    Pre-study:
+
+    Modify intial soybean system parameters (to fix final initial parametrisation) 
+    plots SUF & RLD vs. depth, and other macroscopic parameters after 87.5 days
+    
+    Daniel Leitner, 2025      
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -133,8 +138,8 @@ ax = [ax]
 ax[0].plot(rld, z_, "r", label = "RLD")
 ax2 = ax[0].twiny()
 ax2.plot(suf, z_, "g", label = "SUF")
-ax2.set_xlabel("Standard uptake fraction SUF [1]")
-ax[0].set_xlabel("Root length density RLD [cm/cm3]")
+ax2.set_xlabel("Standard uptake fraction SUF [1]", color = "green")
+ax[0].set_xlabel("Root length density RLD [cm/cm3]", color = "red")
 ax[0].set_ylabel("Depth [cm]")
 # ax[1].plot(rsd, z_)
 # ax[1].set_xlabel("root surface density [cm2 / cm3]")

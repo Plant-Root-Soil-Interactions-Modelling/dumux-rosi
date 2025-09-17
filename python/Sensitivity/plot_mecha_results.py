@@ -1,6 +1,12 @@
 """
-    shows the mecha and granar results 
+    Granar & Mecha
+
+    Plots mecha and granar results 
     see granar/ folder, see run_table_mecha.py (in granar folder)
+    
+    opens simulations that worked
+    
+    Daniel Leitner, 2025        
 """
 
 import os

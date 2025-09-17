@@ -1,6 +1,10 @@
 """
+    Dynamic:
+
     Creates a 4d look up table for root-soil interface potentials for specific van Genucthen parameters 
-    of the envirotypes 
+    of the envirotypes
+    
+    Daniel Leitner, 2025     
 """
 
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");

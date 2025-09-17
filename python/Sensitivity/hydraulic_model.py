@@ -1,8 +1,12 @@
 """ 
-    Helps to set up the root architecture or a single root (and applies possible modifications), and 
-    the root hydraulic model (RootHydraulicModel) 
+    Dynamic & Macroscopic:
+
+    Helps to set up the root architecture or a single root (and applies possible modifications), 
+    see RootHydraulicModel, PlantHydraulicParameters 
     
     TODO check if single root is still working 
+    
+    Daniel Leitner, 2025   
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -86,6 +90,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
         rs = pb.MappedPlant()
         rs.setSeed(seed)
+        rs.enableExtraNode()
         rs.readParameters(fname)
         print(fname)
 
@@ -101,7 +106,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
             apply_mods(mods, rs)
 
         rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
-        rs.initializeLB(4, 5)
+        rs.initializeLB()
 
         rs.simulate(initial_age, True)
 

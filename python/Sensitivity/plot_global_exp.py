@@ -1,8 +1,12 @@
 """
-    plots results from global root structure optimization (see global_optimization_cpantbox.py)
+    Macrcoscopic:
+
+    plots results from global root structure optimization (see global_optimization_cpantbox.py), script starts L155-
 
     Clustering with SOM or Kmeans (see global_optimization_tools) 
     to experiment on data analysis, plots, etc. 
+    
+    Daniel Leitner, 2025      
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

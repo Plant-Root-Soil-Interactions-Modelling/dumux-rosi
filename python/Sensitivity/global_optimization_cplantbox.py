@@ -1,5 +1,15 @@
 """
-    Bayesian optimization of the static root hydraulic model
+    Macroscopic:
+
+    Bayesian optimization of the static root hydraulic model:
+    
+    the choice of parameters is according to the bayesian model: 
+    * just sampled (comment L110-111), 
+    * based on result, see (uncomment L110-111, and get_objective(..) )
+        
+    each single simulation is started by calling: run_cplantbox.run_soybean(...)
+        
+    Daniel Leitner, 2025        
 """
 
 import sys; sys.path.append("../../../BayesianOptimization")
@@ -52,7 +62,7 @@ def start_objective(type_str, enviro_type, sim_time, initial, job):
 
 def finished_objective(type_str, enviro_type, sim_time, job):
     """ checks if the computation is finished """
-    file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))
+    file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))or 
     found = os.path.isfile("results_cplantbox/" + file_name + ".npz")
     return found
 

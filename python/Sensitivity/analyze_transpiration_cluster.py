@@ -1,5 +1,13 @@
 """
-    transpiration plot (one column, number of rows as number of filenames)
+    Macroscopic:
+
+    Mean performance plot (by envirotype)
+    (actual/potential transpiration) mean and sd over all files in list_filename of each envirotype 
+    
+    list_filename ... a list of the simulation results files to be considered
+    results files are = path + name + "_" + envirotype + ".npz", for envirotypes in ["0", "1", "5", "36", "59"]    
+    
+    Daniel Leitner, 2025
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

@@ -1,5 +1,13 @@
 """
-    Simulates water movement in soil without any roots 
+    Dynamic:
+
+    Simulates water movement in soil without any roots, 
+    for testing the soil part, i.e. BC net infiltration top, and water table or free drainage bottom
+    __main__ holds the simulation loop
+    
+    see also: soil_model.create_richards()
+    
+    Daniel Leitner, 2025  
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

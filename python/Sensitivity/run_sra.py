@@ -1,9 +1,18 @@
 """
-    Starts a single sra simulation (dynamic water movement with nonlinear conductivities in the perirhizal zone), by calling run_soybean() 
+    Dynamic
+
+    Starts a single dynamic simulation (dynamic water movement with nonlinear conductivities in the perirhizal zone), by calling run_soybean() 
         
-    __main__ takes arguments produced by run_SA.py (to run multiple simulations on the cluster)  
+    __main__ takes command line arguments, e.g. produced by run_SA.py (to run multiple simulations on the cluster)
+    interpretation of the arguments is based on type = sys.argv[1], 
+    and passed to run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False), 
+    where the dictionary mods holds most parameters
+    
+    see also sra_new.simulate_dynamic(..) for the simulation loop
         
-    see also run_cplantbox.py
+    see also run_cplantbox.py (for the macroscopic simulation)
+    
+    Daniel Leitner, 2025  
 """
 
 import sys

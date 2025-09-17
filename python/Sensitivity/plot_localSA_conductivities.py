@@ -1,6 +1,10 @@
 """
-    (depricated: kr and kx should not be considered indepently) 
+    Dynamic:
+    
     plots results of local sensitivity analysis
+    (depricated: kr and kx should not be considered indepently) 
+    
+    Daniel Leitner, 2025           
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

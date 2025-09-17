@@ -1,7 +1,14 @@
 """
-    Sensitivity Analysis by
-    starting multiple sra simulations of soybean or maize and distribute over MPI ranks, 
-    freezing fixed parameters, and passing parameters for steady state analysis
+    Dynamic:
+
+    Sensitivity Analysis,
+    starting multiple dynamic simulations of soybean or maize and distribute over MPI ranks,
+    see run_sra.py, 
+    see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
+    
+    TODO json parameter file, and passing the hash, would be nicer 
+
+    Daniel Leitner, 2025   
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -174,7 +181,7 @@ def local_soybean_new2():
     root_type = "soybean"
     file_name = "local_soybean_new2_"
     enviro_type = 0
-    sim_time = 87.5  # 87.5  # 87.5  # days
+    sim_time = 1  # 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
@@ -182,9 +189,9 @@ def local_soybean_new2():
                  [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
 
-    print("nubmer of jobs", len(jobs))
+    print("number of jobs", len(jobs))
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
 
 
 def local_soybean_conductivities():
@@ -223,7 +230,7 @@ def local_singleroot_conductivities():
     root_type = "soybean"
     file_name = "local_singleroot_conductivities64_"
     enviro_type = 0
-    sim_time = 1.  # 40  # 87.5  # days
+    sim_time = 87.5  # days
 
     kx = np.array([0.1]) / 16
     kx_old = np.array([0.35]) / 16 / 4
@@ -238,7 +245,7 @@ def local_singleroot_conductivities():
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_tropisms():

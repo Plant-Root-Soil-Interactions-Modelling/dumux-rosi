@@ -1,5 +1,11 @@
 """ 
+    Dynamic & Macroscopic:
+
     Functions to simplify setup of the scenarios for the INARI project
+    
+    e.g. set_conductivities, write_results, etc.
+    
+    Daniel Leitner, 2025    
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
