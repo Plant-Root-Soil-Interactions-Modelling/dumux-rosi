@@ -336,17 +336,17 @@ if __name__ == "__main__":
 
     if i == 1:
         local_soybean()
-    if i == 2:
+    elif i == 2:
         local_soybean_conductivities()
-    if i == 3:
+    elif i == 3:
         local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
-    if i == 4:
+    elif i == 4:
         local_soybean_radii()  # did not work, check plausibility
-    if i == 5:
+    elif i == 5:
         local_singleroot_conductivities()
-    if i == 6:
+    elif i == 6:
         simulate_list()
-    if i == 7:
+    elif i == 7:
         local_soybean_new2()
     else:
         raise("on no")
