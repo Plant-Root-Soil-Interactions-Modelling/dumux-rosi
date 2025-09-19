@@ -1,5 +1,9 @@
 """ 
+    Dynamic:
+
     Simulates dynamic water movement for a single fixed soybean scenario
+    
+    Daniel Leitner, 2025
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -34,12 +38,14 @@ file_path = os.path.join(folder_path, exp_name + "_mods.json")
 with open(file_path, 'r', encoding = 'utf-8') as file:
     params = json.load(file)
 print(params)
+
 enviro_type = params["enviro_type"]
 sim_time = params["sim_time"]
 assert exp_name == params["exp_name"], "wrong file name"
 params.pop("exp_name")
 params.pop("enviro_type")
 params.pop("sim_time")
+params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results"
 
 print(exp_name, enviro_type, sim_time)
 # sim_time = 1.
@@ -47,7 +53,6 @@ print(exp_name, enviro_type, sim_time)
 run_sra.run_soybean("dummy{:g}".format(envirotype), envirotype, sim_time, params, save_all = True)
 
 print("fin.")
-ddd
 
 # 1
 hairsZone = 1.7

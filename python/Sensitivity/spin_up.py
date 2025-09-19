@@ -1,6 +1,10 @@
 """ 
+    Dynamic:
+
     Functions for the spin up simulation to obtain realistic initial conditions    
     (only implemented for maize)
+    
+    Daniel Leitner, 2025    
 """
 
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
@@ -92,6 +96,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
         final soil matric potential [cm] 
         final nitrate concentration [kg/m3]
     """
+    wilting_point = -10000
     dt = 3600. / (24.*3600)
     z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
     v_ = 0 * np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
@@ -141,7 +146,6 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     print("sum net inf", np.sum(net_inf) / 2 * 10, "mm  = ", np.sum(net_inf) / 2 * 1 * 10, "l/m2")  # (cm m2)/m2 = 10 l / m2, (each value is twice)
     print()
 
-    wilting_point = -10000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
     s.ddt = 1e-4  # [day] initial Dumux time step
     c, h = [], []  # resulting solute concentration
