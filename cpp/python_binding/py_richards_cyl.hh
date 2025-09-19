@@ -1,9 +1,8 @@
 #ifndef PYTHON_RICHARDS_CYL_H_
 #define PYTHON_RICHARDS_CYL_H_
 
-#include "external/pybind11/include/pybind11/pybind11.h"
-#include "external/pybind11/include/pybind11/stl.h"
-
+#include "../../../external/pybind11/include/pybind11/pybind11.h"
+#include "../../../external/pybind11/include/pybind11/stl.h"
 namespace py = pybind11;
 
 #include <config.h> // configuration file
