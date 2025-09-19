@@ -119,7 +119,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#SBATCH --time=24:00:00\n")
                 fh.writelines("#SBATCH --mem=8G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
-                fh.writelines("module load openmpi/4.1.4\n")
+                # fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
