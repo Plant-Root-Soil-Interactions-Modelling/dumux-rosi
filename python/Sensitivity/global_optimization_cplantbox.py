@@ -62,7 +62,7 @@ def start_objective(type_str, enviro_type, sim_time, initial, job):
 
 def finished_objective(type_str, enviro_type, sim_time, job):
     """ checks if the computation is finished """
-    file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))or 
+    file_name = type_str + "_" + hash_(json.dumps(job, sort_keys = True))
     found = os.path.isfile("results_cplantbox/" + file_name + ".npz")
     return found
 
