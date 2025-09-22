@@ -334,7 +334,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 1
+    i = 7
 
     if i == 1:
         local_soybean()
