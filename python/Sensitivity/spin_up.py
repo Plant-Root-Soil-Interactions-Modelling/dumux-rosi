@@ -100,7 +100,7 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     dt = 3600. / (24.*3600)
     z_ = [0., -30., -30., -200.]  # initial nitrate: top soil layer of 30 cm
     v_ = 0 * np.array([2.6e-4, 2.6e-4, 0.75 * 2.6e-4, 0.75 * 2.6e-4])  #  initial nitrate concentrations: kg / m3 (~4.e-4)
-    f_time = 17  # initial fertilisation time: days before planting
+    f_time = 170  # initial fertilisation time: days before planting
     f1 = 4.08e-4  # initial fertilisation amount g/cm2
     nit_flux = 1.e-7 * (75 * 16 * 1)  # nitrification rate [g/day]
 
@@ -121,19 +121,27 @@ def create_initial_soil(soil_, min_b , max_b , cell_number, area, p_top, p_bot, 
     s.setLinearIC(p_top, p_bot)  # cm pressure head, equilibrium
     # BC
     times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
+
+    print("net_inf", np.sum(net_inf), np.shape(net_inf))
+    net_inf = net_inf + np.ones(net_inf.shape) * 150 / net_inf.shape[0]
+
     s.setVGParameters([soil_])
     s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
     # s.setTopBC("noflux")
+    # s.setBotBC("noflux")  # to approximate deep drainage
     # s.setBotBC("freeDrainage")
-    s.setBotBC("noflux")  # to approximate deep drainage
+    s.setBotBC("potential", 80)  # [cm]
+
     # hard coded initial fertilizer application
-    sol_times = np.array([0., sim_time - f_time, sim_time - f_time, sim_time - f_time + 1, sim_time - f_time + 1, 1.e3])
+    sol_times = np.array([0., sim_time - f_time, sim_time - f_time, sim_time - f_time + 5, sim_time - f_time + 1, 1.e3])
     sol_influx = -np.array([0., 0., f1, f1, 0., 0.])  # g/(cm2 day)
-    # s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
+    s.setTopBC_solute("managed", 0.5, [sol_times, sol_influx])
     # s.setBotBC_solute("outflow", 0.)
+    s.setBotBC_solute("constantConcentration", 0.)
+
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")  #############################
     s.setParameter("Component.MolarMass", "6.2e-2")
-    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")
+    s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-8")
     s.initializeProblem()
 
     print()
@@ -184,6 +192,7 @@ def plot_initial_soil(start_date, end_date):
     timedelta_ = end_date - start_date2
     sim_time = timedelta_.days  # = 191
     times, net_inf = evap.net_infiltration_table_beers_csv(start_date, sim_time, evap.lai_noroots, Kc = 1.)
+    net_inf = net_inf + np.ones(net_inf.shape) * 150 / net_inf.shape[0]
 
     h = np.load("data/initial_concentration.npy")
     print("mean initial", np.mean(h))
@@ -206,8 +215,7 @@ def plot_initial_soil(start_date, end_date):
     divider = make_axes_locatable(ax[1])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1.e3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    # vmin = -1000, vmax = 0,
+    im = ax[1].imshow(h, cmap = cmap_reversed, aspect = 'auto', vmin = -1.e3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest', vmin = -1000, vmax = 0,
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
     cb.set_label('soil matric potential [cm]', rotation = 270)
@@ -217,7 +225,7 @@ def plot_initial_soil(start_date, end_date):
     divider = make_axes_locatable(ax[2])
     cax = divider.append_axes('right', size = '5%', pad = 0.05)
     cmap_ = matplotlib.cm.get_cmap('jet')
-    im = ax[2].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 1.e-3, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
+    im = ax[2].imshow(c, cmap = cmap_, aspect = 'auto', vmin = 0., vmax = 5.e-4, extent = [0 , sim_time, -200., 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
     cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
     cb.ax.get_yaxis().labelpad = 30
     cb.set_label('nitrate concentration [g/cm$^3$]', rotation = 270)

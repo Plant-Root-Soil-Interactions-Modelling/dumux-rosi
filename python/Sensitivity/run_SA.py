@@ -119,7 +119,9 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#SBATCH --time=24:00:00\n")
                 fh.writelines("#SBATCH --mem=8G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
-                # fh.writelines("module load openmpi/4.1.4\n")
+                fh.writelines("source /etc/profile.d/modules.sh\n")
+                fh.writelines("module load openmpi/4.1.4\n")
+                fh.writelines("source myenv/bin/activate\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
@@ -317,7 +319,7 @@ def simulate_list():
     for line in lines:
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
-    sim_time = 87.5  # 87.5  # days
+    sim_time = 10  # 87.5  # 87.5  # days
     enviro_type = 0
     start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 1
