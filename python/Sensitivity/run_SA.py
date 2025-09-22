@@ -114,10 +114,10 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
-                fh.writelines("#SBATCH --cpus-per-task=1\n")
+                # fh.writelines("#SBATCH --cpus-per-task=1\n")
                 fh.writelines("#SBATCH --nodes=1\n")
                 fh.writelines("#SBATCH --time=24:00:00\n")
-                fh.writelines("#SBATCH --mem=8G\n")
+                fh.writelines("#SBATCH --mem=16G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
                 fh.writelines("source /etc/profile.d/modules.sh\n")
                 fh.writelines("module load openmpi/4.1.4\n")
@@ -321,7 +321,7 @@ def simulate_list():
 
     sim_time = 10  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, "list", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 1
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 5
