@@ -122,7 +122,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     # initialize root system
     # print("starting hydraulic model", flush = True)
     cdata = scenario.prepare_conductivities(mods)
-    r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Meunier")
+    r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Doussan")  # Meunier
     scenario.set_conductivities(params, mods, cdata)
     # print("***********************", "hydraulic model set\n", flush = True)
 

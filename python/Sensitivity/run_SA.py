@@ -73,7 +73,7 @@ def make_local(*args, ref = "mid"):
 
 
 def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
-    """starts the jobs calling run_sra.py with the agruments 
+    """starts the jobs calling run_sra.py with the arguments 
     type_str                 type of sensitivity analysis to let run_sra know how to interpet the data passed to it
     file_name                name of the sensitivity analysis, simulation number is added
     root_type                currently unused TODO to switch between soybean and maize
@@ -98,7 +98,8 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         except:  # in case of "file" the filename is passed in job[0]
             job_name = file_name + str(job[0])
 
-        print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
+        # print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
+        print("starting job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
             # print("len", len(job[1:]))
@@ -307,7 +308,6 @@ def local_soybean_radii():
 
 def simulate_list():
     print("simulate_list")
-    type_str = "file"
     root_type = "soybean"  # unused
     list_filename = "data/my_pick.txt"
 
@@ -316,12 +316,12 @@ def simulate_list():
     lines = [line.strip() for line in lines]
     print("number of lines in my_pick.txt:", len(lines))
     jobs = []
-    for line in lines:
+    for line in lines:  # line = experiment name
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
     sim_time = 10  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs(type_str, "list", root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = True)
     # enviro_type = 1
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 5
@@ -330,6 +330,10 @@ def simulate_list():
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 59
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+
+    # TODO
+    # run_experiment(exp_name, enviro_type, sim_time) using a params file
+    #
 
 
 if __name__ == "__main__":
