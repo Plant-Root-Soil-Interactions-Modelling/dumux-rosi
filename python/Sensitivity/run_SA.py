@@ -172,7 +172,7 @@ def local_soybean():
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_new2():
@@ -193,7 +193,7 @@ def local_soybean_new2():
 
     print("number of jobs", len(jobs))
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_conductivities():
@@ -334,7 +334,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 6
+    i = 1
 
     if i == 1:
         local_soybean()
