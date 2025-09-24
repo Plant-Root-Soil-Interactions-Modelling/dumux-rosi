@@ -1,7 +1,11 @@
 """
-    Starts a single root architecture simulation of soybean (indlucing Krs, SUF)
+    Macroscopic:
+    
+    Starts a single root architecture simulation of soybean (calculating Krs, and SUF),    
     
     see also run_sra.py (for the full dynamic simulation)
+    
+    Daniel Leitner, 2025        
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -155,7 +159,7 @@ if __name__ == "__main__":
 
     mods = {"output_times": [40],
             "conductivity_mode": "from_mecha",
-            "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
+            "mecha_path": "/home/daniel/Dropbox/Code/granar/mecha_results",
             'conductivity_index1': 1,
             'conductivity_index2': 30,
             'conductivity_index3': 100,

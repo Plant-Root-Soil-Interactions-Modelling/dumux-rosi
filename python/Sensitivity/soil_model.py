@@ -1,5 +1,9 @@
 """ 
-    Sets up the soil model 
+    Dynamic:
+     
+    Sets up the soil model (see create_richards)
+    
+    Daniel Leitner, 2025  
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -39,9 +43,9 @@ def create_richards(soil_, min_b , max_b , cell_number, times = None, net_inf = 
     s.setVGParameters([soil_])
     s.setParameter("Newton.EnableAbsoluteResidualCriterion", "True")
     s.setParameter("Soil.SourceSlope", "1000")  # turns regularisation of the source term on
-    if type == 2:
-        s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
-        s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
+    # if type_ == 2:
+    #     s.setParameter("Component.MolarMass", "6.2e-2")  # nitrate 62,0049 g/mol
+    #     s.setParameter("Component.LiquidDiffusionCoefficient", "1.7e-9")  # m2 s-1 # nitrate = 1700 um^2/sec
 
     s.setHomogeneousIC(initial_totalpotential, equilibrium = True)  # cm
 

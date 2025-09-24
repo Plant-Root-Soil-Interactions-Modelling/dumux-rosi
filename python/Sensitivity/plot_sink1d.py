@@ -1,5 +1,10 @@
 """
- TODO Sink plot (noon and midnight), of a 1d soil 
+    Dynamic:
+
+    Sink plot (noon and midnight), of a 1D soil
+    TODO where are the sinks written?
+    
+    Daniel Leitner, 2025  
 """
 import matplotlib.pyplot as plt
 import numpy as np
@@ -7,7 +12,7 @@ import numpy as np
 # maize_cyl 5% simtime, maize_sra 100% simtime
 
 name = "soybean"
-str_ = ["sra0d"]
+str_ = ["80"]
 
 days = 87.5  # soybean
 # days = 0.5 * 95  #  maize

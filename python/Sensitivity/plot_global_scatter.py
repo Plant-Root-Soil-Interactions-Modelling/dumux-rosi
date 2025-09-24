@@ -1,5 +1,9 @@
 """
-    scatter plots data from global static hydraulic model optimization 
+    Macroscopic:
+    
+    scatter plots data from global static hydraulic model optimization, script form L188-
+    
+    Daniel Leitner, 2025    
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

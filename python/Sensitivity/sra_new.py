@@ -1,6 +1,10 @@
 """
+    Dynamic:
+
     Dynamic water uptake simulation taking nonlinear rhizosphere resistance into account (takes long)
     (called by run_sra.py)    
+    
+    Daniel Leitner, 2025    
 """
 import numpy as np
 import timeit

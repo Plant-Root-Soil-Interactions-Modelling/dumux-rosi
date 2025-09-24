@@ -1,5 +1,9 @@
 """ 
-    Simulates water movement for a single fixed soybean scenario [TODO update to new conductivity parameters]
+    Dynamic:
+    
+    Simulates water movement for a single root (TODO what do we want to show?) 
+    
+    Daniel Leitner, 2025
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -43,16 +47,20 @@ kx_old[0] = p["kx_old"]
 # kr_old = np.array([5e-4, 0.0015])
 
 mods = {
-"filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-"initial_age": 1.,
-"initial_totalpotential":-100,
-"domain_size": [1., 1., 200.],
-"bot_bc": "noFlux"
+    "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+    "initial_age": 1.,
+    "initial_totalpotential":-100,
+    "domain_size": [1., 1., 200.],
+    "bot_bc": "noFlux",
+    "conductivity_mode": "scale",
+    "scale_kr": 1.,
+    "scale_kx": 1.,
+    "output_times": [40]
 }
 
-cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
+cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, save_all = True)
 
-print("cumulative utpake:", cu)
+print("cumulative uptake:", cu)
 
 # sim_time = 11.5  # 87.5  # 87.5  # 87.5  # [day]
 # envirotype = 0

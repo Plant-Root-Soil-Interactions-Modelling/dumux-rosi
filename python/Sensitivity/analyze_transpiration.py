@@ -1,5 +1,11 @@
 """
-    transpiration plot (one column, number of rows as number of filenames)
+    Macroscopic:
+    
+    prints actual, potential, and cumulative transpiration, and shows optimal file number indices
+    
+    list_filename ... a list of the simulation results files to be considered
+    
+    Daniel Leitner, 2025    
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -55,11 +61,11 @@ for i, name in enumerate(lines):
         pot_[i, j] = cum_pot[-1]
 
 per_ = np.divide(act_, pot_)
-print("\nactual")
+print("\nactual cumulative [mm]")
 print(act_)
-print("\npotential")
+print("\npotential cumulative [mm]")
 print(pot_)
-print("\npercent")
+print("\nperformance [1]")
 print(per_)
 
 print("\nbest performer")

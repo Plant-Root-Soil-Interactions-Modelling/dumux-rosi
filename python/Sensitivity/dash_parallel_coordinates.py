@@ -1,5 +1,11 @@
 """
+    Macroscopic: 
+
     Dash App - parallel coordinates plot (copy exp names to rerun simulations, or do full dynamic simulations)
+    
+    pick your simulation based on traits or target properties (filename right) 
+    
+    Daniel Leitner, 2025    
 """
 import os
 import json

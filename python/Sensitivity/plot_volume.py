@@ -1,5 +1,9 @@
 """
- TODO Plots volume, surface, depth plot 
+    Dynamic:
+        
+        Plots volume, surface, depth plot versus time
+        
+    Daniel Leitner, 2025          
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -14,7 +18,7 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 name = "soybean"
-str_ = ["_sra0d"]
+str_ = ["_80"]
 
 fnames_t = np.array(["transpiration_" + name + s for s in str_ ])
 fnames = np.array(["vol_" + name + s for s in str_ ])

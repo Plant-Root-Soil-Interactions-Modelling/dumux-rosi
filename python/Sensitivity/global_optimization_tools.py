@@ -1,5 +1,9 @@
 """
+    Macroscopic:
+
     Auxiliary functions for data analysis of high dimensional data, e.g. from global mutli-objective optimization
+    
+    Daniel Leitner, 2025      
 """
 import sys
 sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");

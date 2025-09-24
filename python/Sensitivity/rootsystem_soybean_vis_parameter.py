@@ -1,8 +1,11 @@
 """ 
-Shows how tap root length and branching density shapes the root system RLD  
+    Pre-study:
 
-3x3 plots first row unaltered; second row reduced lmax1, and r1; third row increased 50% increased ln
+    Shows how tap root length and branching density shapes the root system RLD  
+    
+    3x3 plots first row unaltered; second row reduced lmax1, and r1; third row increased 50% increased ln
 
+    Daniel Leitner, 2025   
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -43,15 +46,12 @@ def plot_(i, j, simtime, mods):  # i row, j column
     name = "Glycine_max_Moraes2020_opt2"
     s = soil_model.create_richards(soil_, min_b, max_b, cell_number)  # , times = x_, net_inf = y_
     xml_name = "data/" + name + "_modified" + ".xml"  # root growth model parameter file
+
     r, _ = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)  # pass parameter file for dynamic growth
     kr = 1.e-4
     kx = 1.e-3
     scenario.init_conductivities_const(r.params, kr, kx)
     rs = r.ms
-
-    rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, 200.))
-    rs.initialize()
-
     rs.simulate(simtime, True)
 
     ana = pb.SegmentAnalyser(rs)
@@ -64,7 +64,7 @@ def plot_(i, j, simtime, mods):  # i row, j column
     print("number of segments", len(ana.segments))
     print("volume", np.sum(ana.getParameter("volume")), "cm3")
     print("surface", np.sum(ana.getParameter("surface")), "cm2")
-    print("Krs", r.get_krs(simtime)[0], "cm2/day")
+    print("Krs", r.get_krs(simtime)[0], "cm2/day")  # TODO some bug???
 
     print("\nunconfined")
     print(ana.getMinBounds(), "-", ana.getMaxBounds())

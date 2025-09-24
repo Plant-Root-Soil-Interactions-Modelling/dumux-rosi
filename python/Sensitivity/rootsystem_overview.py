@@ -1,7 +1,10 @@
 """ 
-    Analyse and create root systems from CPlantBox database (in order to pick one for further analysis) 
+    Pre-study:
+
+    Analyse and create root systems from CPlantBox database (in order to pick one for further analysis)     
+    which root system do we pick? and what's the RLD, RSD in our simulation domain
     
-    which root system do we pick? and what's the RLD, RSD in our simulation domain 
+    Daniel Leitner, 2025  
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");

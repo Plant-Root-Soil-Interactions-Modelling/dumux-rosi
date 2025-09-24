@@ -1,5 +1,15 @@
 """
-    Bayesian optimization of the static root hydraulic model
+    Macroscopic:
+
+    Bayesian optimization of the static root hydraulic model:
+    
+    the choice of parameters is according to the bayesian model: 
+    * just sampled (comment L110-111), 
+    * based on result, see (uncomment L110-111, and get_objective(..) )
+        
+    each single simulation is started by calling: run_cplantbox.run_soybean(...)
+        
+    Daniel Leitner, 2025        
 """
 
 import sys; sys.path.append("../../../BayesianOptimization")

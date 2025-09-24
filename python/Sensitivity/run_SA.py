@@ -1,7 +1,14 @@
 """
-    Sensitivity Analysis by
-    starting multiple sra simulations of soybean or maize and distribute over MPI ranks, 
-    freezing fixed parameters, and passing parameters for steady state analysis
+    Dynamic:
+
+    Sensitivity Analysis,
+    starting multiple dynamic simulations of soybean or maize and distribute over MPI ranks,
+    see run_sra.py, 
+    see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
+    
+    TODO json parameter file, and passing the hash, would be nicer 
+
+    Daniel Leitner, 2025   
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -66,7 +73,7 @@ def make_local(*args, ref = "mid"):
 
 
 def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
-    """starts the jobs calling run_sra.py with the agruments 
+    """starts the jobs calling run_sra.py with the arguments 
     type_str                 type of sensitivity analysis to let run_sra know how to interpet the data passed to it
     file_name                name of the sensitivity analysis, simulation number is added
     root_type                currently unused TODO to switch between soybean and maize
@@ -91,7 +98,8 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         except:  # in case of "file" the filename is passed in job[0]
             job_name = file_name + str(job[0])
 
-        print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
+        # print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
+        print("starting job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
             # print("len", len(job[1:]))
@@ -107,12 +115,14 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
-                fh.writelines("#SBATCH --cpus-per-task=1\n")
+                # fh.writelines("#SBATCH --cpus-per-task=1\n")
                 fh.writelines("#SBATCH --nodes=1\n")
                 fh.writelines("#SBATCH --time=24:00:00\n")
-                fh.writelines("#SBATCH --mem=8G\n")
+                fh.writelines("#SBATCH --mem=16G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
+                fh.writelines("source /etc/profile.d/modules.sh\n")
                 fh.writelines("module load openmpi/4.1.4\n")
+                fh.writelines("source myenv/bin/activate\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
@@ -163,7 +173,7 @@ def local_soybean():
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_new2():
@@ -174,7 +184,7 @@ def local_soybean_new2():
     root_type = "soybean"
     file_name = "local_soybean_new2_"
     enviro_type = 0
-    sim_time = 87.5  # 87.5  # 87.5  # days
+    sim_time = 1  # 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
@@ -182,7 +192,7 @@ def local_soybean_new2():
                  [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
 
-    print("nubmer of jobs", len(jobs))
+    print("number of jobs", len(jobs))
 
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
@@ -223,7 +233,7 @@ def local_singleroot_conductivities():
     root_type = "soybean"
     file_name = "local_singleroot_conductivities64_"
     enviro_type = 0
-    sim_time = 1.  # 40  # 87.5  # days
+    sim_time = 87.5  # days
 
     kx = np.array([0.1]) / 16
     kx_old = np.array([0.35]) / 16 / 4
@@ -238,7 +248,7 @@ def local_singleroot_conductivities():
                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_tropisms():
@@ -298,7 +308,6 @@ def local_soybean_radii():
 
 def simulate_list():
     print("simulate_list")
-    type_str = "file"
     root_type = "soybean"  # unused
     list_filename = "data/my_pick.txt"
 
@@ -307,38 +316,43 @@ def simulate_list():
     lines = [line.strip() for line in lines]
     print("number of lines in my_pick.txt:", len(lines))
     jobs = []
-    for line in lines:
+    for line in lines:  # line = experiment name
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
-    sim_time = 87.5  # 87.5  # days
+
+    sim_time = 10  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    enviro_type = 1
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    enviro_type = 5
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    enviro_type = 36
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    enviro_type = 59
-    start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = True)
+    # enviro_type = 1
+    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    # enviro_type = 5
+    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    # enviro_type = 36
+    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+    # enviro_type = 59
+    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
+
+    # TODO
+    # run_experiment(exp_name, enviro_type, sim_time) using a params file
+    #
 
 
 if __name__ == "__main__":
 
-    i = 7
+    i = 6
 
     if i == 1:
         local_soybean()
-    if i == 2:
+    elif i == 2:
         local_soybean_conductivities()
-    if i == 3:
+    elif i == 3:
         local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
-    if i == 4:
+    elif i == 4:
         local_soybean_radii()  # did not work, check plausibility
-    if i == 5:
+    elif i == 5:
         local_singleroot_conductivities()
-    if i == 6:
+    elif i == 6:
         simulate_list()
-    if i == 7:
+    elif i == 7:
         local_soybean_new2()
     else:
         raise("on no")

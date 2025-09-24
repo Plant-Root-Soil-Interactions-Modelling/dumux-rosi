@@ -1,5 +1,10 @@
 """
-    transpiration plot (one column, number of rows as number of filenames)
+    Dynamic: 
+
+    Actual, potential and cumulative transpiration plot 
+    manually set area (to calculate [mL/plant] to [mm])
+    
+    Daniel Leitner, 2025  
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -129,7 +134,7 @@ if n == 1:
 
 for i in range(0, n):
     t = times
-    ax[i].plot(t, -10 * pot_trans / area, 'k', label = "potential transpiration")  # potential transpiration
+    ax[i].plot(t, -10 * pot_trans / area, 'k', label = "potential transpiration")  # potential transpiration, pot_trans [cm3/plant] * plant/cm2 * 10 == [mm]
     # y = np.maximum(y, 0)
     ax[i].plot(t, -10 * act_trans / area, 'g', label = "actual transpiration")  # actual transpiration  according to soil model
     # if data2 is not None:

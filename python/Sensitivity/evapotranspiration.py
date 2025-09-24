@@ -1,7 +1,12 @@
-"""
-this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
 
-using Beer's law, (assuming a predefined dynamic LAI)
+"""
+    Dynamic:
+    
+    this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
+    
+    using Beer's law, (assuming a predefined dynamic LAI)
+    
+    Daniel Leitner, 2025        
 """
 
 import pickle

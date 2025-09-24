@@ -1,6 +1,10 @@
 """
-    reruns an experiment from a json file as a root architecture simulation of soybean (indlucing Krs, SUF), 
-    using run_cplantbox
+    Macroscopic:
+
+    re-runs an experiment from a json file as a root architecture simulation of soybean using run_cplantbox,
+    if params["conductivity_mode"] == "from_mecha", set the mecha result path in L29
+    
+    Daniel Leitner, 2025       
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -22,8 +26,10 @@ def show_me_file(exp_name, folder_path, vis_hairs = True, mode = "interactive", 
     file_path = os.path.join(folder_path, exp_name + "_mods.json")
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
+    params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results"  # path changed
     print(params)
     dd
+
     """ open corresponding results """
     results = {}
     filename = params["exp_name"]

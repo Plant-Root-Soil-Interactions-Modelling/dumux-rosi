@@ -1,5 +1,11 @@
 """
-    2d image of soil matric potential or concentration vs time (of a 1d soil), withg net infiltration
+    Dynamic:
+
+    Plots net infiltration and 2D image of soil matric potential or concentration vs time (of a 1d soil)
+    in script pick name from L50-
+    manually set corresponding net infiltration by setting Kc and lai (see L113)
+
+    Daniel Leitner, 2025  
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
@@ -42,15 +48,15 @@ cluster_10_opt = [
 # lai = evap.lai_maize2
 # ylim_ = None  # -10
 
-name = "local_soybean_1"
-name = "soybean_testsingle_0"
-name = "local_singleroot_conductivities64_27"
-name = "singleroot_test"
-name = "local_soybean_radii_1"
-name = "soybean_test_0"
+# name = "local_soybean_1"
+# name = "soybean_testsingle_0"
+# name = "local_singleroot_conductivities64_27"
+# name = "singleroot_test"
+# name = "local_soybean_radii_1"
+# name = "soybean_test_0"
 
 name = pick12[6] + "_36"  # node + envirotype
-name = cluster_10_opt[0] + "_1"
+# name = cluster_10_opt[0] + "_1"
 
 str_ = ""
 Kc = Kc_soybean
@@ -124,6 +130,7 @@ data = data[:yy,:]
 """ soil plot """
 fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
 
+# Net infiltration
 bar = ax[0].bar(t_, 10 * np.array(y_), 1 / 24.)
 ax[0].set_ylabel("net inf [mm/day]")
 ax[0].set_xlim(times[0], times[-1])
@@ -133,6 +140,7 @@ divider = make_axes_locatable(ax[0])
 cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
 cax0.axis('off')
 
+# Soil
 divider = make_axes_locatable(ax[1])
 cax = divider.append_axes('right', size = '5%', pad = 0.05)
 cmap_reversed = matplotlib.cm.get_cmap('jet_r')
