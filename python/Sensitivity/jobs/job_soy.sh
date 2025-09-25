@@ -11,5 +11,7 @@
 #SBATCH --mail-user=d.leitner@fz-juelich.de
  
 cd ..
+source /etc/profile.d/modules.sh
 module load openmpi/4.1.4
-mpirun python3 soybean_water.py
+source myenv/bin/activate
+python3 soybean_water.py
