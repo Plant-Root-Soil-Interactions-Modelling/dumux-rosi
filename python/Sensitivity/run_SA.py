@@ -321,7 +321,9 @@ def simulate_list():
 
     sim_time = 10  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = True)
+    start_jobs("file", "", "", enviro_type, sim_time, jobs[0:2], run_local = True)
+    # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
+
     # enviro_type = 1
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 5

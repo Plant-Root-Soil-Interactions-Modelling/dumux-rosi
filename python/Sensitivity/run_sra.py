@@ -41,6 +41,23 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
+def run_soybean_exp(exp_name, enviro_type, sim_time, save_all = False):
+    """
+    reproduces a simulation with parameters given in file "soybean_all14.zip"
+    """
+    folder_path = "results_cplantbox/"
+    file_path = os.path.join(folder_path, exp_name + "_mods.json")
+    with open(file_path, 'r', encoding = 'utf-8') as file:
+        params = json.load(file)
+
+    params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip
+    assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
+    params.pop("exp_name")
+    params.pop("enviro_type")
+    params.pop("sim_time")
+    run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
+
+
 def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     """
         exp_name                experiment name (name for output files)
@@ -331,7 +348,7 @@ if __name__ == "__main__":
         #     params = json.load(file)
 
         params = all[exp_name]
-        params["mecha_path"] = "mecha_results"  # HACK for cluster
+        params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip
 
         assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
         params.pop("exp_name")
