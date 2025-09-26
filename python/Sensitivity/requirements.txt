@@ -1,0 +1,4 @@
+vtk
+matplotlib
+scipy
+pandas
