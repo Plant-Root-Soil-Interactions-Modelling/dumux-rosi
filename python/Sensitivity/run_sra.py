@@ -67,9 +67,12 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         save_all                ---
     """
 
-    if not (("conductivity_mode" in mods) and ("output_times" in mods)):
+    if not "conductivity_mode" in mods:
             print("run_sra.run_soybean() conductivity_mode and output_times must be defined in mods dictionary")
             raise()
+
+    if not "output_times" in mods:
+        mods["output_times"] = [sim_time / 2]  # add mid for now
 
     sim_params = {"exp_name": exp_name, "enviro_type": enviro_type, "sim_time":sim_time}
 

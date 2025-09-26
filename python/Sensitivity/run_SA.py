@@ -8,7 +8,7 @@
         
     On Cluster:
     source myenv/bin/activate
-    pyhton3 run_SA.py (make sure target directory is empty)
+    python3 run_SA.py (make sure target directory is empty)
     then use a bash file to send jobs to cluster (e.g. run_file.sh) 
         
     TODO json parameter file, and passing the hash, would be nicer 
