@@ -6,7 +6,7 @@
     see run_sra.py, 
     see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
         
-    On cluster:
+    On Cluster:
     source myenv/bin/activate
     pyhton3 run_SA.py (make sure target directory is empty)
     then use a bash file to send jobs to cluster (e.g. run_file.sh) 
@@ -94,7 +94,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         job_directory = os.path.join(os.getcwd(), file_name)
 
     if not run_local:
-        print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch")
+        print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
         mkdir_p(job_directory)
 
     for i, job in enumerate(jobs):
@@ -170,7 +170,7 @@ def local_soybean():
     root_type = "soybean"
     file_name = "local_soybean_new_"
     enviro_type = 0
-    sim_time = 1.  # 87.5  # 87.5  # days
+    sim_time = 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
@@ -215,7 +215,7 @@ def local_soybean_conductivities():
     enviro_type = 0
     sim_time = 87.5  # days
 
-    kx = np[0.1, 1.e-3, 1.e-3]
+    kx = [0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
 
     kr = [1.e-3, 4.e-3, 4.e-3]
@@ -347,7 +347,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 6
+    i = 1
 
     if i == 1:
         local_soybean()

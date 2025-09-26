@@ -354,6 +354,7 @@ if __name__ == "__main__":
         params.pop("exp_name")
         params.pop("enviro_type")
         params.pop("sim_time")
+
         run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
 
     else:
