@@ -2,10 +2,15 @@
     Dynamic:
 
     Sensitivity Analysis,
-    starting multiple dynamic simulations of soybean or maize and distribute over MPI ranks,
+    starting multiple dynamic simulations of soybean or maize, either running locally (crashes for many jobs), or creating slurm files for the cluster
     see run_sra.py, 
     see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
-    
+        
+    On Cluster:
+    source myenv/bin/activate
+    python3 run_SA.py (make sure target directory is empty)
+    then use a bash file to send jobs to cluster (e.g. run_file.sh) 
+        
     TODO json parameter file, and passing the hash, would be nicer 
 
     Daniel Leitner, 2025   
@@ -89,6 +94,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         job_directory = os.path.join(os.getcwd(), file_name)
 
     if not run_local:
+        print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
         mkdir_p(job_directory)
 
     for i, job in enumerate(jobs):
@@ -99,7 +105,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
             job_name = file_name + str(job[0])
 
         # print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
-        print("starting job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
+        print("creating job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
             # print("len", len(job[1:]))
@@ -115,18 +121,19 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#!/bin/bash\n")
                 fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
                 fh.writelines("#SBATCH --ntasks=1\n")
-                # fh.writelines("#SBATCH --cpus-per-task=1\n")
+                fh.writelines("#SBATCH --cpus-per-task=1\n")
                 fh.writelines("#SBATCH --nodes=1\n")
                 fh.writelines("#SBATCH --time=24:00:00\n")
                 fh.writelines("#SBATCH --mem=16G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
+                fh.writelines("\n")
+                fh.writelines("cd ..\n")
                 fh.writelines("source /etc/profile.d/modules.sh\n")
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("source myenv/bin/activate\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
-
-            os.system("sbatch {:s}".format(job_file))
+            # s.system("sbatch {:s}".format(job_file)) # DOES NOT WORK ANYMORE
 
 
 def write_ranges(file_name, names, ranges):
@@ -163,7 +170,7 @@ def local_soybean():
     root_type = "soybean"
     file_name = "local_soybean_new_"
     enviro_type = 0
-    sim_time = 1.  # 87.5  # 87.5  # days
+    sim_time = 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
@@ -208,7 +215,7 @@ def local_soybean_conductivities():
     enviro_type = 0
     sim_time = 87.5  # days
 
-    kx = np[0.1, 1.e-3, 1.e-3]
+    kx = [0.1, 1.e-3, 1.e-3]
     kx_old = [0.35, 0.015]
 
     kr = [1.e-3, 4.e-3, 4.e-3]
@@ -319,9 +326,11 @@ def simulate_list():
     for line in lines:  # line = experiment name
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
-    sim_time = 10  # 87.5  # 87.5  # days
+    sim_time = 87.5  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = True)
+    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = False)
+    # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
+
     # enviro_type = 1
     # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
     # enviro_type = 5
@@ -338,7 +347,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 6
+    i = 1
 
     if i == 1:
         local_soybean()

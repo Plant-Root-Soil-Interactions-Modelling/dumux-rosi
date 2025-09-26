@@ -3,6 +3,9 @@
 
     Simulates dynamic water movement for a single fixed soybean scenario
     
+    either reproduce a parameter set given by a json file (script top), 
+    or from scratch (script bot)
+    
     Daniel Leitner, 2025
 """
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
@@ -45,7 +48,8 @@ assert exp_name == params["exp_name"], "wrong file name"
 params.pop("exp_name")
 params.pop("enviro_type")
 params.pop("sim_time")
-params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results"
+# params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results" # local
+params["mecha_path"] = "mecha_results"  # for cluster
 
 print(exp_name, enviro_type, sim_time)
 # sim_time = 1.
@@ -80,52 +84,52 @@ hairsElongation = 0.3
 #         }
 #
 
-# # 3
-mods = {
-        "output_times": [40],
-
-        "conductivity_mode": "scale",
-        "scale_kr":1.,
-        "scale_kx":1.,
-
-        "a145": 0.2, "a2": 0.04, "a3": 0.04,
-        "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
-        "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
-        "hairsElongation": 0.3,
-
-        "dx": 0.1,
-
-        # "bot_bc": "noFlux",
-        }
-
-run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, save_all = True)
-
-# kr = np.zeros((3,))
-# kr_old = np.zeros((2,))
-# kx = np.zeros((3,))
-# kx_old = np.zeros((2,))
-#
-# kr[0] = 0.1
-# kr_old[0] = 0
-# kx[0] = 0.05
-# kx_old[0] = 0.1
-#
+# # # 3
 # mods = {
-# "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
-# "initial_age": 1.,
-# "initial_totalpotential":-500
-# }
+#         "output_times": [40],
 #
-# cu = run_sra.run_soybean("soybean_test_{:g}".format(1), envirotype, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
-
+#         "conductivity_mode": "scale",
+#         "scale_kr":1.,
+#         "scale_kx":1.,
 #
-# n = len(rs.radii)
-# radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
-# rs.radii = radii
+#         "a145": 0.2, "a2": 0.04, "a3": 0.04,
+#         "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
+#         "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
+#         "hairsElongation": 0.3,
 #
-# ana = pb.SegmentAnalyser(rs.mappedSegments())
-# ana.addData("distanceTip", rs.distanceTip)
-# ana.addAge(sim_time)
+#         "dx": 0.1,
 #
-# vp.plot_roots(ana, "distanceTip")
+#         # "bot_bc": "noFlux",
+#         }
+#
+# run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, save_all = True)
+#
+# # kr = np.zeros((3,))
+# # kr_old = np.zeros((2,))
+# # kx = np.zeros((3,))
+# # kx_old = np.zeros((2,))
+# #
+# # kr[0] = 0.1
+# # kr_old[0] = 0
+# # kx[0] = 0.05
+# # kx_old[0] = 0.1
+# #
+# # mods = {
+# # "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
+# # "initial_age": 1.,
+# # "initial_totalpotential":-500
+# # }
+# #
+# # cu = run_sra.run_soybean("soybean_test_{:g}".format(1), envirotype, sim_time, mods, kr, kx, kr_old, kx_old, save_all = True)
+#
+# #
+# # n = len(rs.radii)
+# # radii = np.array([rs.getEffectvieRadius(i) for i in range(0, n)])
+# # rs.radii = radii
+# #
+# # ana = pb.SegmentAnalyser(rs.mappedSegments())
+# # ana.addData("distanceTip", rs.distanceTip)
+# # ana.addAge(sim_time)
+# #
+# # vp.plot_roots(ana, "distanceTip")
 
