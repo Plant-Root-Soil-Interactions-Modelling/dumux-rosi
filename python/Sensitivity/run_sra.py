@@ -50,7 +50,7 @@ def run_soybean_exp(exp_name, enviro_type, sim_time, save_all = False):
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
 
-    params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip
+    params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip and results_cplantbox/
     assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
     params.pop("exp_name")
     params.pop("enviro_type")

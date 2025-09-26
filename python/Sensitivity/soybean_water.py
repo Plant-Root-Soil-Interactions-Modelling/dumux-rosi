@@ -45,7 +45,8 @@ assert exp_name == params["exp_name"], "wrong file name"
 params.pop("exp_name")
 params.pop("enviro_type")
 params.pop("sim_time")
-params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results"
+# params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results" # local
+params["mecha_path"] = "mecha_results"  # for cluster
 
 print(exp_name, enviro_type, sim_time)
 # sim_time = 1.
