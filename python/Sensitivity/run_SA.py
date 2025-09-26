@@ -5,6 +5,7 @@
     starting multiple dynamic simulations of soybean or maize and distribute over MPI ranks,
     see run_sra.py, 
     see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
+        
     
     TODO json parameter file, and passing the hash, would be nicer 
 
@@ -89,6 +90,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
         job_directory = os.path.join(os.getcwd(), file_name)
 
     if not run_local:
+        print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch")
         mkdir_p(job_directory)
 
     for i, job in enumerate(jobs):
@@ -99,7 +101,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
             job_name = file_name + str(job[0])
 
         # print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
-        print("starting job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
+        print("creating job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
             # print("len", len(job[1:]))
@@ -121,13 +123,14 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("#SBATCH --mem=16G\n")
                 fh.writelines("#SBATCH --partition=cpu256\n")
                 fh.writelines("\n")
+                fh.writelines("cd ..\n")
                 fh.writelines("source /etc/profile.d/modules.sh\n")
                 fh.writelines("module load openmpi/4.1.4\n")
                 fh.writelines("source myenv/bin/activate\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
-            os.system("sbatch {:s}".format(job_file))
+            # s.system("sbatch {:s}".format(job_file)) # DOES NOT WORK ANYMORE
 
 
 def write_ranges(file_name, names, ranges):

@@ -1,0 +1,4 @@
+cd file
+for f in *.job; do
+    sbatch "$f"
+done
