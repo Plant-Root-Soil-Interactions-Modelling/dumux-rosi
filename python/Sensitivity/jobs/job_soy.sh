@@ -3,7 +3,6 @@
 #SBATCH --job-name=single_soybean
 #SBATCH --ntasks=1
 #SBATCH --nodes=1
-#SBATCH --exclude=node02
 #SBATCH --partition=cpu256
 #SBATCH --time=24:00:00
 #SBATCH --mem=16G
