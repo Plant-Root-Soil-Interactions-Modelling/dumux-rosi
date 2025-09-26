@@ -2,11 +2,15 @@
     Dynamic:
 
     Sensitivity Analysis,
-    starting multiple dynamic simulations of soybean or maize and distribute over MPI ranks,
+    starting multiple dynamic simulations of soybean or maize, either running locally (crashes for many jobs), or creating slurm files for the cluster
     see run_sra.py, 
     see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters) 
         
-    
+    On cluster:
+    source myenv/bin/activate
+    pyhton3 run_SA.py (make sure target directory is empty)
+    then use a bash file to send jobs to cluster (e.g. run_file.sh) 
+        
     TODO json parameter file, and passing the hash, would be nicer 
 
     Daniel Leitner, 2025   
@@ -129,7 +133,6 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
                 fh.writelines("source myenv/bin/activate\n")
                 fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                               format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
-
             # s.system("sbatch {:s}".format(job_file)) # DOES NOT WORK ANYMORE
 
 
@@ -323,9 +326,9 @@ def simulate_list():
     for line in lines:  # line = experiment name
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
-    sim_time = 10  # 87.5  # 87.5  # days
+    sim_time = 87.5  # 87.5  # 87.5  # days
     enviro_type = 0
-    start_jobs("file", "", "", enviro_type, sim_time, jobs[0:2], run_local = False)
+    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = False)
     # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
 
     # enviro_type = 1
