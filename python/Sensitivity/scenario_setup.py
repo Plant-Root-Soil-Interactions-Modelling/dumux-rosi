@@ -7,8 +7,6 @@
     
     Daniel Leitner, 2025    
 """
-from plotly.validators.layout.yaxis import _ticklabelindexsrc
-from conda.core import index
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
