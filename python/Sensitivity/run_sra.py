@@ -58,7 +58,7 @@ def run_soybean_exp(exp_name, enviro_type, sim_time, save_all = False):
     run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
 
 
-def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
+def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     """
         exp_name                experiment name (name for output files)
         enviro_type             envirotype (number)
@@ -155,24 +155,11 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         for k, v in mods.items():
             print("key:", k)
         print("********************************************************************************\n")
-        # raise
-
-    # if kr_old is not None:
-    #     print("10 variable conductivity set up")  # ykr1, okr1, ykr2, okr2, kr3_, ykx1, okx1, kx2_, kx3_
-    #     # print(kr)
-    #     # print(kr_old)
-    #     # print(kr[0], kr[1])
-    #     scenario.init_lupine_conductivities_sa(r.params, kr[0], kr_old[0], kr[1], kr_old[1], kr[2], kx[0], kx_old[0], kx[1], kx_old[1], kx[2])
-    # else:
-    #     scenario.init_lupine_conductivities(r.params, kr, kx)
-
-    # params.plot_conductivities(False, lateral_ind = [2, 3])  #
-    # dd
-    # print("conductivities set\n", flush = True)
 
     """ sanity checks """
-    r.test()  # sanity checks
+    # r.test()  # sanity checks
     # print("sanity test done\n", flush = True)
+
     try:
         pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_ = sra_new.simulate_dynamic(
             s, r, table_name, sim_time, dt, trans_, initial_age = initial_age)
@@ -189,6 +176,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     else:
         pass
         # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
+
     with open("results/" + exp_name + "_" + str(enviro_type) + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
     r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
@@ -251,6 +239,8 @@ if __name__ == "__main__":
             "theta45": theta1,
             "src": src
             }
+        # mods["bot_bc"] = "freeDrainage"  # potential
+        # mods["water_table"] = 200
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
     elif type == "original_new2":
         print("running new2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
@@ -270,6 +260,8 @@ if __name__ == "__main__":
             "ln": ln, "ln145": ln145, "ln2": ln2,
             "a145":a145, "a2": a2, "a3": a3
             }
+        # mods["bot_bc"] = "freeDrainage"  # potential
+        # mods["water_table"] = 200
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
     elif type == "conductivities10":  # makes little sense to treat kr, kx independently
         print("running conductivities10", flush = True)

@@ -7,6 +7,8 @@
     
     Daniel Leitner, 2025    
 """
+from plotly.validators.layout.yaxis import _ticklabelindexsrc
+from conda.core import index
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
@@ -187,7 +189,7 @@ def prepare_conductivities(mods):
     return data
 
 
-def attach_conductivitis(params):
+def attach_conductivitis(mods):
     """ for conductivities from mecha, radii must be adjusted in a first step"""
     assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
     ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
@@ -306,10 +308,77 @@ def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_tran
              collar_pot = collar_pot_)
 
 
-def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, write_all = True):
+def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
     """  saves results from run_cplantbox in a npz file """
     if write_all:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_, RLD = RLD, SUF = SUF)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
+                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_, carbon = carbon, RLD = RLD, SUF = SUF)
     else:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth, RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_)
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
+                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, carbon = carbon, area = area_)
 
+
+def get_anatomy(index):
+    """ retrieves root anatomical information from the simulation index """
+    # Parameter space of the Granar & Mecha simukation
+    # Xylem
+    xylem_vessel_diameter = np.linspace(0.02, 0.1, num = 5)  # seq(0.02, 0.1, length.out=5)
+    xylem_vessel_diameter = xylem_vessel_diameter[1:4]  # skip first and last (Python slicing excludes last index)
+    xylem_number_of_poles = [4]
+    # Stele
+    stele_cell_diameter = [0.004]  # like c(0.004)
+    stele_diameter = np.linspace(0.07, 0.042, num = 5)  # seq(0.07, 0.042, length.out=5)
+    stele_diameter = stele_diameter[1:4]
+    # Cortex
+    cortex_cell_diameter = np.linspace(0.01, 0.06, num = 5)
+    cortex_cell_diameter = cortex_cell_diameter[1:4]
+    cortex_layers = np.linspace(1, 15, num = 8)
+    cortex_layers = cortex_layers[1:8]  # R 2:8 → Python slice 1:8
+    aerenchyma_number_of_areas = [1, 4, 8, 12]  # Aerenchyma
+    aerenchyma_percentage = [0., 0.07, 0.15, 0.22, 0.30]
+
+      # c = 0
+      # for (ap in aerenchyma_percentage) {
+      #     for (anoa in aerenchyma_number_of_areas) {
+      #       for (cl in cortex_layers) {
+      #         for (ccd in cortex_cell_diameter) {
+      #           for (sd in stele_diameter) {
+      #             for (scd in stele_cell_diameter) {
+      #               for (xnop in xylem_number_of_poles) {
+      #                 for (xvd in xylem_vessel_diameter) {
+      #                    c++
+    index = int(index)
+    n = len(aerenchyma_number_of_areas) * len(cortex_layers) * len(cortex_cell_diameter) * len(stele_diameter) * len(stele_cell_diameter) * len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+
+    aep_ind = index // n
+    index = index % n
+    n = len(cortex_layers) * len(cortex_cell_diameter) * len(stele_diameter) * len(stele_cell_diameter) * len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+    ana_ind = index // n
+    index = index % n
+    n = len(cortex_cell_diameter) * len(stele_diameter) * len(stele_cell_diameter) * len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+    cl_ind = index // n
+    index = index % n
+    n = len(stele_diameter) * len(stele_cell_diameter) * len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+    ccl_ind = index // n
+    index = index % n
+    n = len(stele_cell_diameter) * len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+    sd_ind = index // n
+    index = index % n
+    n = len(xylem_number_of_poles) * len(xylem_vessel_diameter)
+    scd_ind = index // n
+    index = index % n
+    n = len(xylem_vessel_diameter)
+    xnp_ind = index // n
+    index = index % n
+    xvd_ind = index
+
+    r = np.array([ aerenchyma_percentage[aep_ind], aerenchyma_number_of_areas[ana_ind],
+         cortex_layers[cl_ind], cortex_cell_diameter[ccl_ind],
+         stele_diameter[sd_ind], stele_cell_diameter[scd_ind],
+         xylem_number_of_poles[xnp_ind], xylem_vessel_diameter[xvd_ind]])
+
+    return r
+
+
+if __name__ == "__main__":
+    print(get_anatomy(3000))

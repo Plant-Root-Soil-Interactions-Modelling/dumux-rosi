@@ -79,7 +79,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 10000
+    iterations = 50000
     points_per_iteration = 15
 
     for i in range(0, iterations):
@@ -160,7 +160,7 @@ def cplantbox_all14():  # 30 parameters
 
     initial = {"output_times": [45, 50, 60],
               "conductivity_mode": "from_mecha",
-              "mecha_path": "/home/daniel/Dropbox/granar/mecha_results",
+              "mecha_path": "/home/daniel/Dropbox/Code/granar/mecha_results",
               'hairsElongation1_a': 1.,
               'hairsElongation2_a': 1.,
               'hairsElongation3_a': 1.,
