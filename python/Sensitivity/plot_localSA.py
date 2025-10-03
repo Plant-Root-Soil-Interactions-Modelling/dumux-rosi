@@ -24,8 +24,8 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-# file_name = "local_soybean_"
-file_name = "local_soybean_conductivities_"
+file_name = "local_soybean_new_"
+# file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 # file_name = "local_soybean_radii_"
 # file_name = "local_singleroot_conductivities64_"
@@ -51,7 +51,7 @@ print()
 # names[6] = "root radii scale"
 # names[7] = "seminal root count"
 
-alldata = np.load(path + file_name + "1" + ".npz")
+alldata = np.load(path + file_name + "1_0" + ".npz")
 trans_ = alldata["act_trans"]
 times = alldata["times"]
 print("Simulation time from", min(times), "to ", max(times), "days")
@@ -104,7 +104,7 @@ for lind in range(0, len(names)):
         for k in range(0, sa_len):
             try:
                 # trans_ = np.load(path + "transpiration_" + file_name + str(file_start_ind + k) + ".npy")
-                alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
+                alldata = np.load(path + file_name + str(file_start_ind + k) + "_0.npz")
                 trans_ = alldata["act_trans"]
                 trans[k] = -np.sum(np.multiply(trans_[:ind - 1], dt_))
                 # print("trans[k]", trans[k])

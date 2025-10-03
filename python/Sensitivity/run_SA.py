@@ -169,7 +169,7 @@ def local_soybean():
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_new_"
-    enviro_type = 0
+    enviro_type = 1
     sim_time = 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
@@ -191,7 +191,7 @@ def local_soybean_new2():
     root_type = "soybean"
     file_name = "local_soybean_new2_"
     enviro_type = 0
-    sim_time = 1  # 87.5  # 87.5  # 87.5  # days
+    sim_time = 87.5  # 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
