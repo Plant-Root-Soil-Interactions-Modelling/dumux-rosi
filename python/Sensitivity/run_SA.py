@@ -165,7 +165,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     """ constructs a local sensitivity analysis presented in the preproject for values 
         "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
-    print("local_soybean: envirotype", enviro_type, "Bot BC", bot)
+    print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str)
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_new_"
