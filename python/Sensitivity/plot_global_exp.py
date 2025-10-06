@@ -154,12 +154,11 @@ def exemplify_cluster_mean(all, node2sample, m_neurons, n_neurons, keys):
 
 """ 1 load everything & merge npz results into input parameter json"""
 folder_path = "results_cplantbox/"
-exp_name = "soybean_length14"
+# exp_name = "soybean_length14"
 exp_name = "soybean_all14"
 
 # all = got.load_json_files(exp_name, folder_path)  # open parameter files
 # got.merge_results(folder_path, all)  # add results
-#
 # all_json = {}
 # for a in all:
 #     all_json[a["exp_name"]] = a
@@ -178,14 +177,14 @@ all = list(all.values())
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 print("\nfiltered data")
-target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz"]
+target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz", "carbon"]
 d = got.fetch_features(target_names, all)
 got.print_info(d, target_names)  # filtered
 print(d.shape)
 # distortion_plot(all, target_names)  # to determine m and n
 
 """ 3 cluster the targets """
-cluster_targets = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
+cluster_targets = ["surface", "depth", "-carbon", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
 # distortion_plot(all, target_names)  # to determine m and n
 m_neurons = 3
 n_neurons = 4
@@ -214,13 +213,13 @@ for i in range(0, m_neurons * n_neurons):
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz"]
+target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
-target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz", "area"]
+target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz", "area"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 
 """ 5 pareto set - adds a pareto solution key to all dicts """
-target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]
+target_names = ["surface", "depth", "-carbon", "krs", "SUFz", "RLDz"]
 ind = got.pareto_list(all, target_names)
 pareto = []
 for i, a in enumerate(all):
@@ -264,7 +263,7 @@ for i in range(0, m_neurons * n_neurons):
 #
 """ 6 analyze single node """
 print("\nAnalyze (1,0)")
-node = (1, 0)  # interesting nodes:  (1, 0) = 1 (0,1) = 4, (0,0) = 0
+node = (1, 0)  # interesting nodes:  (1, 0) = 1 (0,1) = 4, (0,0) = 0 # THAT changed
 
 for node in [(0, 1)]:  # [(1, 0), (0, 1), (0, 0)]:
 
@@ -276,7 +275,7 @@ for node in [(0, 1)]:  # [(1, 0), (0, 1), (0, 0)]:
         if all[i]["pareto"]:
             pareto.append(all[i])
 
-    target_names = ["surface", "depth", "volume", "krs", "SUFz", "RLDz"]
+    target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz"]
     data_target = got.fetch_features(target_names, all)
     print("\nTargets node", node, data_target[ind].shape)
     got.print_info(data_target[ind], target_names)

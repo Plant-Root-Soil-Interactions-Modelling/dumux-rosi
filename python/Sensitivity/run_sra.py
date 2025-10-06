@@ -239,9 +239,12 @@ if __name__ == "__main__":
             "theta45": theta1,
             "src": src
             }
-        # mods["bot_bc"] = "freeDrainage"  # potential
-        # mods["water_table"] = 200
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        if "_free" in exp_name:
+            mods["bot_bc"] = "freeDrainage"  # otherwise potential
+        if "_200" in exp_name:
+            mods["water_table"] = 200  # otherwise 120
+        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)  # result filename = exp_name + _envirotype
+
     elif type == "original_new2":
         print("running new2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
         r = float(sys.argv[5])

@@ -140,8 +140,8 @@ def run_(r, sim_time, initial_age, area, out_times, params):
         SUF.append(suf)
         SUFz.append(suf.dot(z))
         depth.append(sa.getMinBounds().z)
-        domain = sa.getMaxBounds().minus(sa.getMinBounds())
-        area_.append(domain.x * domain.y)
+        bounds = sa.getMaxBounds().minus(sa.getMinBounds())
+        area_.append(bounds.x * bounds.y)
         n = len(r.ms.radii)
         radii = np.array([r.ms.getEffectiveRadius(i) for i in range(0, n)])  # length including root hairs
         lengths = np.array(r.ms.segLength())

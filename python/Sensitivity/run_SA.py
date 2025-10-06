@@ -161,15 +161,15 @@ def read_ranges(file_name):
     return names, ranges
 
 
-def local_soybean():
+def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or "200"
     """ constructs a local sensitivity analysis presented in the preproject for values 
         "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
-    print("local_soybean")
+    print("local_soybean: envirotype", enviro_type, "Bot BC", bot)
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_new_"
-    enviro_type = 1
+    file_name += bot_str
     sim_time = 87.5  # 87.5  # 87.5  # days
 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
@@ -180,7 +180,7 @@ def local_soybean():
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # file_name + counter + _envirotype
 
 
 def local_soybean_new2():
@@ -201,7 +201,7 @@ def local_soybean_new2():
 
     print("number of jobs", len(jobs))
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # file_name + counter + _envirotype
 
 
 def local_soybean_conductivities():
@@ -347,22 +347,29 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = 1
+    i = sys.argv[1]
+    # i = 1
 
-    if i == 1:
-        local_soybean()
+    if i == 0:
+        local_soybean(0)
+    elif i == 1:
+        local_soybean(1)
     elif i == 2:
-        local_soybean_conductivities()
+        local_soybean(0, "free")
     elif i == 3:
-        local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
-    elif i == 4:
-        local_soybean_radii()  # did not work, check plausibility
-    elif i == 5:
-        local_singleroot_conductivities()
-    elif i == 6:
-        simulate_list()
-    elif i == 7:
-        local_soybean_new2()
+        local_soybean(1, "free")
+    # elif i == 2:
+    #     local_soybean_conductivities()
+    # elif i == 3:
+    #     local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
+    # elif i == 4:
+    #     local_soybean_radii()  # did not work, check plausibility
+    # elif i == 5:
+    #     local_singleroot_conductivities()
+    # elif i == 6:
+    #     simulate_list()
+    # elif i == 7:
+    #     local_soybean_new2()
     else:
         raise("on no")
 
@@ -428,7 +435,7 @@ if __name__ == "__main__":
 #         jobs = None
 #
 #     jobs = comm.bcast(jobs, root = 0)
-#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)file_name
 #
 # def global1_soybean():
 #     root_type = "soybean"
