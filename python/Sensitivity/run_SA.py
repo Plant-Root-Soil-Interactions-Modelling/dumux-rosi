@@ -347,7 +347,7 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = sys.argv[1]
+    i = int(sys.argv[1])
     # i = 1
 
     if i == 0:
