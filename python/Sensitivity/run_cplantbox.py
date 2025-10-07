@@ -20,6 +20,7 @@ import matplotlib.pyplot as plt
 import plantbox as pb
 import scenario_setup as scenario
 import hydraulic_model
+import carbon_cost
 
 
 class NpEncoder(json.JSONEncoder):
@@ -32,14 +33,16 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
-def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
+def run_soybean(exp_name, enviro_type, sim_time, params, save_all = False):
     """
         exp_name                experiment name (name for output files)
         enviro_type             envirotype (number)
         sim_time                simulation time [days]
-        mods                    parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
+        params                  parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
         save_all                ---
     """
+
+    mods = params.copy()
 
     if not (("conductivity_mode" in mods) and ("output_times" in mods)):
             print("run_cplantbox.run_soybean() conductivity_mode and output_times must be defined in mods dictionary")
@@ -76,8 +79,8 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         mods.pop("domain_size")
 
     cdata = scenario.prepare_conductivities(mods)
-    r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, None, xml_name, stochastic = False, mods = mods, model = "Meunier")
-    scenario.set_conductivities(params, mods, cdata)
+    r, hydraulic_params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, None, xml_name, stochastic = False, mods = mods, model = "Meunier")
+    scenario.set_conductivities(hydraulic_params, mods, cdata)
 
     output_times = mods["output_times"]
     mods.pop("output_times")
@@ -90,11 +93,11 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
         print("********************************************************************************\n")
         # raise
 
-    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_ = run_(r, sim_time, initial_age, area, output_times)
+    length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon = run_(r, sim_time, initial_age, area, output_times, params)
 
     # results
     print("writing", exp_name)
-    scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, write_all = save_all)
+    scenario.write_cplantbox_results(exp_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = save_all)
     with open("results_cplantbox/" + exp_name + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
     # r.ms.writeParameters("results_cplantbox/" + exp_name + ".xml")  # corresponding xml parameter set
@@ -104,16 +107,15 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = False):
     return r
 
 
-def run_(r, sim_time, initial_age, area, out_times):
+def run_(r, sim_time, initial_age, area, out_times, params):
     """ starts a cplantbox simulation without dynamic soil """
-
     start_time = timeit.default_timer()
 
     out = out_times.copy()
     out.insert(0, 0.)
     out.append(sim_time)  # always export final simulation time
     dt_ = np.diff(out)
-    length, surface, volume, depth, area_, RLDmean, RLDz, krs, SUFz, RLD, SUF = [], [], [], [], [], [], [], [], [], [], []
+    length, surface, volume, depth, area_, RLDmean, RLDz, krs, SUFz, RLD, SUF, carbon = [], [], [], [], [], [], [], [], [], [], [], []
 
     print("dt_", dt_)
     t = initial_age
@@ -138,16 +140,18 @@ def run_(r, sim_time, initial_age, area, out_times):
         SUF.append(suf)
         SUFz.append(suf.dot(z))
         depth.append(sa.getMinBounds().z)
-        domain = sa.getMaxBounds().minus(sa.getMinBounds())
-        area_.append(domain.x * domain.y)
+        bounds = sa.getMaxBounds().minus(sa.getMinBounds())
+        area_.append(bounds.x * bounds.y)
         n = len(r.ms.radii)
         radii = np.array([r.ms.getEffectiveRadius(i) for i in range(0, n)])  # length including root hairs
         lengths = np.array(r.ms.segLength())
         surface.append(np.sum(2.*np.pi * np.multiply(radii, lengths)))
+        c = carbon_cost.carbon_cost(r.ms, params, model = "simple")
+        carbon.append(c)
 
     print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
 
-    return np.array(length), np.array(surface), np.array(volume), np.array(depth), np.array(RLDmean), np.array(RLDz), np.array(krs), np.array(SUFz), np.array(RLD), np.array(SUF), np.array(area_)
+    return np.array(length), np.array(surface), np.array(volume), np.array(depth), np.array(RLDmean), np.array(RLDz), np.array(krs), np.array(SUFz), np.array(RLD), np.array(SUF), np.array(area_), np.array(carbon)
 
 
 if __name__ == "__main__":
