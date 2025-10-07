@@ -79,7 +79,7 @@ def run_optimizer(optimizer, type_str, enviro_type, sim_time, initial):
     """
     starts the optimizer
     """
-    iterations = 50000
+    iterations = 10000
     points_per_iteration = 15
 
     for i in range(0, iterations):
