@@ -91,7 +91,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     if type_str == "file":
         job_directory = "file"
     else:
-        job_directory = os.path.join(os.getcwd(), file_name)
+        job_directory = os.path.join(os.getcwd(), file_name+ "_" + str(enviro_type) )
 
     if not run_local:
         print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
