@@ -26,8 +26,8 @@ import numpy as np
 import asyncio
 
 from bayes_opt import BayesianOptimization
-from bayes_opt.logger import JSONLogger
-from bayes_opt.event import Events
+#from bayes_opt.logger import JSONLogger
+#from bayes_opt.event import Events
 from bayes_opt import acquisition
 
 import run_cplantbox
@@ -214,8 +214,8 @@ def cplantbox_all14():  # 30 parameters
         random_state = 1,
     )
 
-    logger = JSONLogger(path = "results_cplantbox/" + type_str + ".log")
-    optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
+    # logger = JSONLogger(path = "results_cplantbox/" + type_str + ".log")
+    # optimizer.subscribe(Events.OPTIMIZATION_STEP, logger)
 
     # job = {}
     # start_objective(type_str, enviro_type, sim_time, initial, job, True)

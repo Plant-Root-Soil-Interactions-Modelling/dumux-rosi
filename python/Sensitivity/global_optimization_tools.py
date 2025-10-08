@@ -50,7 +50,6 @@ def load_json_files(exp_name, folder_path):
                     json_data_list.append(data)
             except (json.JSONDecodeError, IOError) as e:
                 print(f"Error loading {filename}: {e}")
-
     print("global_optimization_tools.load_json_files(): opened", len(json_data_list), "files")
     return json_data_list
 
@@ -120,11 +119,17 @@ def label_clusters(all, n_neurons, m_neurons, target_names, mode):
         data = scale_data(data)  # mean = 0, std = 1
         # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
         #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
+        print("running som")
         som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
                       topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
+        print("1")
+        print(data.shape)
         som.pca_weights_init(data)
+        print("2")
         som.train(data, 1000, verbose = False)  # random training
+        print("3")
         node2sample, sample2node = make_som_maps(som, data)
+        print("4")
     elif mode == "kmeans":
         data = whiten(data)  # mean 0
         centers, dist = kmeans(data, m_neurons * n_neurons, rng = 1)

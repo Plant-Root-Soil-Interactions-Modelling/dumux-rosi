@@ -147,6 +147,7 @@ def run_(r, sim_time, initial_age, area, out_times, params):
         lengths = np.array(r.ms.segLength())
         surface.append(np.sum(2.*np.pi * np.multiply(radii, lengths)))
         c = carbon_cost.carbon_cost(r.ms, params, model = "simple")
+        c = carbon_cost.carbon_cost(r.ms, params, model = "anatomical")
         carbon.append(c)
 
     print ("\nrun_cplantbox.run_(): Root architecture simulation solved in ", timeit.default_timer() - start_time, " s")
@@ -163,7 +164,8 @@ if __name__ == "__main__":
 
     mods = {"output_times": [40],
             "conductivity_mode": "from_mecha",
-            "mecha_path": "/home/daniel/Dropbox/Code/granar/mecha_results",
+            "mecha_path": "/home/d.leitner/Dropbox/Code/granar/mecha_results",
+            #"mecha_path": "~/Dropbox/Code/granar/mecha_results",
             'conductivity_index1': 1,
             'conductivity_index2': 30,
             'conductivity_index3': 100,

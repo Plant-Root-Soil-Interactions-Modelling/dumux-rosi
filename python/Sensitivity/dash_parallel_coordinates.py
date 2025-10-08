@@ -12,6 +12,7 @@ import json
 import zipfile
 import numpy as np
 import pandas as pd
+from scipy.cluster.hierarchy import linkage, leaves_list
 
 from dash import Dash, dcc, Input, Output, Patch, html
 import dash_ag_grid as dag
@@ -39,16 +40,24 @@ target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["lengt
 # got.merge_results(folder_path, all)  # add results
 
 # Read JSON data from the ZIP file
-with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
+with zipfile.ZipFile(exp_name + ".zip", "r") as zipf: # zip fuile contains a single json file 
     with zipf.open(exp_name + ".json", "r") as json_file:
         all = json.load(json_file)  # Deserialize JSON data
 all = list(all.values())
 
+print("openend", exp_name)
+
 """ 2 filter and add cluster index"""
+print("data", len(all))
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
+all = np.array(all)
+print("data after filtering", all.shape)
+all = all[::10]
+print("reduce factor 10", all.shape)
 m_neurons = 3
 n_neurons = 4
 node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
+print("clustering done")
 
 # # Plot Pareto solutions
 # ind = got.pareto_list(all, target_names)
@@ -107,10 +116,21 @@ target_names = ["node", "surface", "volume", "depth", "RLDz", "krs", "SUFz"]
 dims.extend(target_names)
 
 more_dims = dims.copy()
-more_dims.extend(["exp_name"])
+# more_dims.extend(["exp_name"])
 
 color_ = 'node'
-df = create_df(all, more_dims)
+df2 = create_df(all, more_dims)
+
+##
+## Correlation ordering
+##
+# corr = df2.corr().values
+# dist = 1 - np.abs(corr)  # distance = 1 - |correlation|
+# linkage_matrix = linkage(dist, method='average')
+# order = leaves_list(linkage_matrix)  # reordering of variables
+# ordered_columns = df2.columns[order]
+# df = df2[ordered_columns]
+df=df2
 
 app = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
@@ -177,4 +197,4 @@ def updateFilters(data):
 
 
 if __name__ == "__main__":
-    app.run_server(debug = True, dev_tools_hot_reload = False)
+    app.run(debug = True, dev_tools_hot_reload = False)

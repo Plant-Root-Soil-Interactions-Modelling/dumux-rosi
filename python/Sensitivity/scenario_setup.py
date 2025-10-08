@@ -161,19 +161,46 @@ def init_lupine_conductivities(r, skr = 1., skx = 1.):
     r.set_kx_age_dependent(kx1[:, 0], kx11, [2, 3])
 
 
-def prepare_conductivities(mods):
-    """ for conductivities from mecha, radii must be adjusted in a first step"""
-    data = []
+def sort_indices(mods):
+    """ converts the file number index to anatomy index and 
+    sorts according to radius to know which index applies to which subType"""
+    data, ana_ind = [], []
     cm = mods["conductivity_mode"]
     if cm == "from_mecha":
-        ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
+        ind_ = np.array([mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]])
         files = []
         for file in os.listdir(mods["mecha_path"]):
             if file.endswith(".npy"):  # Check if the file is a .npy file
                 files.append(file)
         for i in ind_:
             file = files[int(i)]
-            # ind = file.split("shiny")[1].split(".")[0]
+            file_path = os.path.join(mods["mecha_path"], file)
+            data.append(np.load(file_path))
+            ana_ind.append(file.split("shiny")[1].split(".")[0])
+    
+        data = np.array(data)
+        a_ = data[:, 2, 2]  # [cm] (see granar/functions.py)
+        a = np.array([float(x) for x in a_])
+        I = np.argsort(-a)  # descending regarding radius a
+        ana_ind = np.array(ana_ind)
+        return ana_ind[I]
+
+
+
+def prepare_conductivities(mods):
+    """ for conductivities from mecha, radii must be adjusted in a first step"""
+    data = []
+    cm = mods["conductivity_mode"]
+    if cm == "from_mecha":
+        ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
+        print("indices are", ind_)
+        files = []
+        for file in os.listdir(mods["mecha_path"]):
+            if file.endswith(".npy"):  # Check if the file is a .npy file
+                files.append(file)
+        print(files)
+        for i in ind_:
+            file = files[int(i)]
             file_path = os.path.join(mods["mecha_path"], file)
             data.append(np.load(file_path))
         data = np.array(data)
@@ -288,22 +315,69 @@ def set_conductivities(params, mods, data):
         raise "run_cplantbox.run_soybean() conductivity_mode unknown"
     mods.pop("conductivity_mode")
 
+def write_sa_numpy(file_name, sa):
+    """ saves a segment analyser using numpy arrays """
+    segs_ = sa.segments        
+    segs = np.array([[s.x, s.y] for s in segs_], dtype = np.int64)
+    nodes_ = sa.nodes
+    nodes = np.array([[n.x, n.y, n.z] for n in nodes_])
+    data = sa.data
+    data["segments"] = segs
+    data["nodes"] = nodes
+    np.savez_compressed(file_name, **data)
+    
+def open_sa_numpy(file_name):
+    """ opens a segment analyser (see write_sa_numpy) """    
+    data = np.load(file_name)
+    segs_ = data["segments"]
+    nodes_ = data["nodes"]
+    segCTs = data["creationTime"]
+    radii = data["radius"]
+    segs = [pb.Vector2i(s[0], s[1]) for s in segs_]
+    nodes = [pb.Vector3d(n[0],n[1],n[2]) for n in nodes_]
+    ana = pb.SegmentAnalyser()
+    ana.segments = segs # , nodes, segCTs, radii)        
+    ana.nodes = nodes
+    for key, value in data.items():
+        if not key in ['segments', 'nodes']:
+            # print("setting", key, len(value))        
+            ana.addData(key, value)    
+    return ana
 
-def write_results(file_name, pot_trans_, psi_x_, psi_i_, sink_, times_, act_trans_, psi_s_, vol_, surf_, krs_, depth_, collar_pot_):
+def write_results(file_name, r1, r2, r3 = None):
     """  saves results from run_sra numpy arrays in a npz file 
-    TODO eventually needs revisions, better naming and documentation"""
-    np.savez("results/" + file_name,
-             pot_trans = np.array(pot_trans_),
-             psi_x = psi_x_,
-             psi_rs = psi_i_,
-             sink = sink_,
-             times = times_,
-             act_trans = act_trans_,
-             psi_s = psi_s_,
-             vol = vol_, surf =
-             surf_, krs = krs_,
-             depth = depth_,
-             collar_pot = collar_pot_)
+    List 1 (r1)
+    times_                       times (simulation time plus initial age)
+    pot_trans_                   potential transpiration [cm3/day]
+    act_trans_                   actual transpiration [cm3/day]
+    collar_pot_                  root collar potential [cm]  
+
+    List 2 (r2) for each 10th time step
+    times_lr_                    times for the following arrays  
+    sink_                        water uptake (per cell)  
+    psi_s_                       soil matric potentials (per cell)   
+    net_change_                  net domain water change (including plant uptake)
+    vol_                         root system volume [cm3] per subType
+    surf_                        root system surface [cm2] per subType
+    depth_                       root system depth [cm] 
+    krs_                         root system hydraulic conductivity [cm2/day]
+
+    List 3 (r3) of defined output times
+    out_times_                   output times including start and final simulation time (plus initial age)
+    ana_                         list of segment analysers at the out_times      
+   """
+    if r3:
+        times_sa = r3[0]
+    else:
+        times_sa = []
+   
+    np.savez_compressed("results/" + file_name,
+             times = r1[0], pot_trans = r1[1], act_trans = r1[2], collar_pot = r1[3],
+             times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3], 
+             vol = r2[4], surf = r2[5], depth = r2[6], krs = r2[7], times_sa = times_sa)
+    if r3: 
+        for i,ana in enumerate(r3[1]):
+           write_sa_numpy("results/sa_" + file_name +"_"+str(i), ana) 
 
 
 def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
@@ -378,5 +452,9 @@ def get_anatomy(index):
     return r
 
 
+
+            
+        
+        
 if __name__ == "__main__":
     print(get_anatomy(3000))

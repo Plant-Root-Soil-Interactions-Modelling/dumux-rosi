@@ -146,7 +146,8 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     scenario.set_conductivities(params, mods, cdata)
     # print("***********************", "hydraulic model set\n", flush = True)
 
-    output_times = mods["output_times"]  # TODO what to do with it in a dynamic context
+    output_times = mods["output_times"]  
+    output_times.sort
     mods.pop("output_times")
 
     if mods:  # something unused in mods
@@ -161,8 +162,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     # print("sanity test done\n", flush = True)
 
     try:
-        pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_ = sra_new.simulate_dynamic(
-            s, r, table_name, sim_time, dt, trans_, initial_age = initial_age)
+        r1, r2, r3 = sra_new.simulate_dynamic(s, r, table_name, sim_time, dt, trans_, output_times, initial_age = initial_age)
     except:
         print("***********************")
         print("EXCEPTION run_soybean", exp_name, enviro_type, sim_time)
@@ -170,25 +170,30 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
         print("***********************", flush = True)
         raise
 
-    print("writing", exp_name + "_" + str(enviro_type))
-    if save_all:
-        scenario.write_results(exp_name + "_" + str(enviro_type), pot_trans, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, collar_pot_)
-    else:
-        pass
-        # scenario.write_results(exp_name, pot_trans, [], [], [], x_, y_, [], vol_, surf_, krs_, depth_)
+    water_end = s.getWaterVolume()
 
+    print("writing", exp_name + "_" + str(enviro_type))
+        
+    # write simulation results
+    if save_all:
+        scenario.write_results(exp_name + "_" + str(enviro_type), r1, r2, r3)
+    else:
+        scenario.write_results(exp_name + "_" + str(enviro_type), r1, r2, None)
+
+    # write corresponding input parameters 
     with open("results/" + exp_name + "_" + str(enviro_type) + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
     r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
 
+    # possible objective for optimization
+    times = r1[0]
+    act_trans = r1[2]
+    collar_pot = r1[3]
+    cu = scipy.integrate.simpson(act_trans, x = times)  # cumulative uptake
+    mean_pot = np.mean(collar_pot)  # mean collar potential
+
     print("finished " + exp_name)
-
-    cu = scipy.integrate.simpson(y_, x = x_)  # cumulative uptake
-    mean_pot = np.mean(collar_pot_)  # mean collar potential
-
-    water_end = s.getWaterVolume()
-
-    print("cumulative uptake is", cu, np.sum(np.multiply(y_[1:], np.diff(x_))))
+    print("cumulative uptake is", cu, np.sum(np.multiply(act_trans[1:], np.diff(times))))
     print("net water change is", water_end - water0)
 
     return cu
@@ -211,9 +216,10 @@ if __name__ == "__main__":
     #     "scale_kx":1.,
     #     }
     # run_soybean("test", enviro_type, sim_time, mods, save_all = True)
+    # dd
 
     type = sys.argv[1]
-    exp_name = sys.argv[2]
+    exp_name = sys.argv[2] # codes for bot BC "_free" and "_200"
     enviro_type = int(float(sys.argv[3]))
     sim_time = float(sys.argv[4])
 
@@ -358,34 +364,3 @@ if __name__ == "__main__":
     else:
 
         print("Unknown run sa type")
-
-# def run_maize(exp_name, enviro_type, sim_time, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, delaySB):
-#
-#     # parameters
-#     soil_, table_name, min_b, max_b, cell_number, area, Kc = scenario.maize(int(enviro_type))
-#     dt = 360 / (24 * 3600)  # time step [day]
-#
-#     start_date = '2021-05-10 00:00:00'  # INARI csv data
-#     x_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, evap.lai_maize2, Kc)
-#     trans_maize = evap.get_transpiration_beers_csvS(start_date, sim_time, area, evap.lai_maize2, Kc)
-#
-#     # initialize soil
-#     s, soil = scenario.create_soil_model(soil_, min_b, max_b, cell_number, type = 2, times = x_, net_inf = y_)
-#     # sra_table_lookup = sra.open_sra_lookup("data/" + table_name) ##############################
-#
-#     xml_name = "data/Zeamays_synMRI_modified.xml"  # root growth model parameter file
-#     mods = {"lmax145":lmax1, "lmax2":lmax2, "lmax3":lmax3, "theta45":theta1, "r145":lmax1, "r2":lmax2, "r3":lmax3, "a":a, "delaySB":delaySB}
-#     r = scenario.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods)
-#     # scenario.init_conductivities_const(r, kr, kx)
-#     # scenario.init_dynamic_simple_growth(r, kr, kr, kx, kx) # parametrisation of hydraulic conductivities
-#     # scenario.init_maize_conductivities2(r, kr, kx)
-#     # scenario.init_timing(r, kr0 = 1.e-4, kx0 = 1.e-2, dt = kr)
-#     scenario.init_maize_conductivities(r, kr, kx)
-#
-#     psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_ = sra.simulate_dynamic(
-#         s, r, soil, sim_time, dt, trans_maize, rs_age = 1., type_ = 2)  # soil, sra_table_lookup
-#     # scenario.write_files(exp_name, psi_x_, psi_s_, sink_, x_, y_, psi_s2_, vol_, surf_, krs_, depth_, soil_c_, c_)
-#     np.save('results/transpiration_' + exp_name, np.vstack((x_, -np.array(y_))))  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
-#     np.save('results/nitrate_' + exp_name, c_)  # time [day], transpiration [cm3/day]   <- water uptake for global analysis
-#
-#     print("finished " + exp_name)

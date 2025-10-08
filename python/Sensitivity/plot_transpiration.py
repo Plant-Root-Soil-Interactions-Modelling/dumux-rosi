@@ -47,9 +47,10 @@ name = "local_soybean_1"
 name = "singleroot_test"
 name = "soybean_test_1"
 name = "local_soybean_new_1"
+name = "soybean_test_0"
 
-name = pick12[6] + "_0"
-name = cluster_10_opt[0] + "_36"
+# name = pick12[6] + "_0"
+# name = cluster_10_opt[0] + "_36"
 str_ = [""]
 area = 76 * 3
 # start_date = '2021-05-10 00:00:00'  # INARI csv data

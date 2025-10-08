@@ -28,35 +28,35 @@ import run_sra
 
 import numpy as np
 
-sim_time = 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
 
-# rerun experiment from json
-folder_path = "results_cplantbox/"
-exp_name = "soybean_all14_e6ff06381be42906c846e6a7749fbaf2da9f29d01b8a6e04a85fa32e1b1cffd1"
-
-file_path = os.path.join(folder_path, exp_name + "_mods.json")
-with open(file_path, 'r', encoding = 'utf-8') as file:
-    params = json.load(file)
-print(params)
-
-enviro_type = params["enviro_type"]
-sim_time = params["sim_time"]
-assert exp_name == params["exp_name"], "wrong file name"
-params.pop("exp_name")
-params.pop("enviro_type")
-params.pop("sim_time")
-# params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results" # local
-params["mecha_path"] = "mecha_results"  # for cluster
-
-print(exp_name, enviro_type, sim_time)
-# sim_time = 1.
-
-run_sra.run_soybean("dummy{:g}".format(envirotype), envirotype, sim_time, params, save_all = True)
-
-print("fin.")
+# # rerun experiment from json
+# folder_path = "results_cplantbox/"
+# exp_name = "soybean_all14_e6ff06381be42906c846e6a7749fbaf2da9f29d01b8a6e04a85fa32e1b1cffd1"
+#
+# file_path = os.path.join(folder_path, exp_name + "_mods.json")
+# with open(file_path, 'r', encoding = 'utf-8') as file:
+#     params = json.load(file)
+# print(params)
+#
+# enviro_type = params["enviro_type"]
+# sim_time = params["sim_time"]
+# assert exp_name == params["exp_name"], "wrong file name"
+# params.pop("exp_name")
+# params.pop("enviro_type")
+# params.pop("sim_time")
+# # params["mecha_path"] = "/home/daniel/Dropbox/Code/granar/mecha_results" # local
+# params["mecha_path"] = "mecha_results"  # for cluster
+#
+# print(exp_name, enviro_type, sim_time)
+# # sim_time = 1.
+#
+# run_sra.run_soybean("dummy{:g}".format(envirotype), envirotype, sim_time, params, save_all = True)
+#
+# print("fin.")
 
 # 1
 hairsZone = 1.7
@@ -84,26 +84,26 @@ hairsElongation = 0.3
 #         }
 #
 
-# # # 3
-# mods = {
-#         "output_times": [40],
-#
-#         "conductivity_mode": "scale",
-#         "scale_kr":1.,
-#         "scale_kx":1.,
-#
-#         "a145": 0.2, "a2": 0.04, "a3": 0.04,
-#         "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
-#         "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
-#         "hairsElongation": 0.3,
-#
-#         "dx": 0.1,
-#
-#         # "bot_bc": "noFlux",
-#         }
-#
-# run_sra.run_soybean("soybean_test_{:g}".format(envirotype), envirotype, sim_time, mods, save_all = True)
-#
+# # 3
+mods = {
+        "output_times": [40, 60],
+
+        "conductivity_mode": "scale",
+        "scale_kr":1.,
+        "scale_kx":1.,
+
+        "a145": 0.2, "a2": 0.04, "a3": 0.04,
+        "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
+        "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
+        "hairsElongation": 0.3,
+
+        "dx": 0.1,
+
+        "bot_bc": "noFlux",
+        }
+
+run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, save_all = True)
+
 # # kr = np.zeros((3,))
 # # kr_old = np.zeros((2,))
 # # kx = np.zeros((3,))
