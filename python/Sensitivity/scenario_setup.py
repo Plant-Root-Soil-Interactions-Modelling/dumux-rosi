@@ -169,7 +169,7 @@ def sort_indices(mods):
     if cm == "from_mecha":
         ind_ = np.array([mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]])
         files = []
-        for file in os.listdir(mods["mecha_path"]):
+        for file in sorted(os.listdir(mods["mecha_path"])):
             if file.endswith(".npy"):  # Check if the file is a .npy file
                 files.append(file)
         for i in ind_:
@@ -184,6 +184,8 @@ def sort_indices(mods):
         I = np.argsort(-a)  # descending regarding radius a
         ana_ind = np.array(ana_ind)
         return ana_ind[I]
+    else:
+        raise Exception("scenario_setup.sort_indices(): undefined working for "+mods["conductivity_mode"])
 
 
 
@@ -195,10 +197,9 @@ def prepare_conductivities(mods):
         ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
         print("indices are", ind_)
         files = []
-        for file in os.listdir(mods["mecha_path"]):
+        for file in sorted(os.listdir(mods["mecha_path"])):
             if file.endswith(".npy"):  # Check if the file is a .npy file
                 files.append(file)
-        print(files)
         for i in ind_:
             file = files[int(i)]
             file_path = os.path.join(mods["mecha_path"], file)
@@ -211,7 +212,7 @@ def prepare_conductivities(mods):
         mods["a145_a"] = a[0]
         mods["a2_a"] = a[1]
         mods["a3_a"] = a[2]
-    return data
+        return data[I,:,:]
 
 
 def attach_conductivitis(mods):
@@ -219,7 +220,7 @@ def attach_conductivitis(mods):
     assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
     ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
     files = []
-    for file in os.listdir(mods["mecha_path"]):
+    for file in sorted(os.listdir(mods["mecha_path"])):
         if file.endswith(".npy"):  # Check if the file is a .npy file
             files.append(file)
     data = []
@@ -236,6 +237,7 @@ def attach_conductivitis(mods):
     mods["a145_a"] = a[0]
     mods["a2_a"] = a[1]
     mods["a3_a"] = a[2]
+    data = data[I,:,:]
     ykx_ = data[:, 0, 0]  # maturity level 0
     ykr_ = data[:, 0, 1]
     okx_ = data[:, 2, 0]  # maturity level 2
@@ -344,52 +346,6 @@ def open_sa_numpy(file_name):
             ana.addData(key, value)    
     return ana
 
-def write_results(file_name, r1, r2, r3 = None):
-    """  saves results from run_sra numpy arrays in a npz file 
-    List 1 (r1)
-    times_                       times (simulation time plus initial age)
-    pot_trans_                   potential transpiration [cm3/day]
-    act_trans_                   actual transpiration [cm3/day]
-    collar_pot_                  root collar potential [cm]  
-
-    List 2 (r2) for each 10th time step
-    times_lr_                    times for the following arrays  
-    sink_                        water uptake (per cell)  
-    psi_s_                       soil matric potentials (per cell)   
-    net_change_                  net domain water change (including plant uptake)
-    vol_                         root system volume [cm3] per subType
-    surf_                        root system surface [cm2] per subType
-    depth_                       root system depth [cm] 
-    krs_                         root system hydraulic conductivity [cm2/day]
-
-    List 3 (r3) of defined output times
-    out_times_                   output times including start and final simulation time (plus initial age)
-    ana_                         list of segment analysers at the out_times      
-   """
-    if r3:
-        times_sa = r3[0]
-    else:
-        times_sa = []
-   
-    np.savez_compressed("results/" + file_name,
-             times = r1[0], pot_trans = r1[1], act_trans = r1[2], collar_pot = r1[3],
-             times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3], 
-             vol = r2[4], surf = r2[5], depth = r2[6], krs = r2[7], times_sa = times_sa)
-    if r3: 
-        for i,ana in enumerate(r3[1]):
-           write_sa_numpy("results/sa_" + file_name +"_"+str(i), ana) 
-
-
-def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
-    """  saves results from run_cplantbox in a npz file """
-    if write_all:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
-                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_, carbon = carbon, RLD = RLD, SUF = SUF)
-    else:
-        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
-                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, carbon = carbon, area = area_)
-
-
 def get_anatomy(index):
     """ retrieves root anatomical information from the simulation index """
     # Parameter space of the Granar & Mecha simukation
@@ -450,6 +406,53 @@ def get_anatomy(index):
          xylem_number_of_poles[xnp_ind], xylem_vessel_diameter[xvd_ind]])
 
     return r
+
+def write_results(file_name, r1, r2, r3 = None):
+    """  saves results from run_sra numpy arrays in a npz file 
+    List 1 (r1):
+    times_                       times (simulation time plus initial age)
+    pot_trans_                   potential transpiration [cm3/day]
+    act_trans_                   actual transpiration [cm3/day]
+    collar_pot_                  root collar potential [cm]  
+
+    List 2 (r2): for each 10th time step
+    times_lr_                    times for the following arrays  
+    sink_                        water uptake (per cell)  
+    psi_s_                       soil matric potentials (per cell)   
+    net_change_                  net domain water change (including plant uptake)
+    len_                         root system length [cm] per subType
+    surf_                        root system surface [cm2] per subType
+    vol_                         root system volume [cm3] per subType
+    depth_                       root system depth [cm] 
+    krs_                         root system hydraulic conductivity [cm2/day]
+    carbon                       carbon cost [3 models]
+
+    List 3 (r3): of defined output times
+    out_times_                   output times including start and final simulation time (plus initial age)
+    ana_                         list of segment analysers at the out_times 
+    """
+    if r3:
+        times_sa = r3[0]
+    else:
+        times_sa = []
+   
+    np.savez_compressed("results/" + file_name,
+             times = r1[0], pot_trans = r1[1], act_trans = r1[2], collar_pot = r1[3],
+             times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3], 
+             len_ = r2[4], surf = r2[5], vol = r2[6], depth = r2[7], krs = r2[8], carbon = r2[9], times_sa = times_sa)
+    if r3: 
+        for i,ana in enumerate(r3[1]):
+           write_sa_numpy("results/sa_" + file_name +"_"+str(i), ana) 
+
+
+def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
+    """  saves results from run_cplantbox in a npz file """
+    if write_all:
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
+                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, area = area_, carbon = carbon, RLD = RLD, SUF = SUF)
+    else:
+        np.savez("results_cplantbox/" + file_name, length = length, surface = surface, volume = volume, depth = depth,
+                 RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, carbon = carbon, area = area_)
 
 
 

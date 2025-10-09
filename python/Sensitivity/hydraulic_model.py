@@ -174,6 +174,7 @@ def apply_mods(mods, plant):
     # for i, r in enumerate(rrp):
     #     print("Index", i)
     #     print("name", r.name)
+    #     print(r)
     mods_ = copy.deepcopy(mods)
     for key in mods_.keys():
 
@@ -295,6 +296,7 @@ def apply_mods(mods, plant):
                 rrp[i].dx = mods[key]
             mods.pop(key)
 
+        
 
 def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic = False, mods = None, model = "Meunier"):
     """ creates a mapped sinlge root"""

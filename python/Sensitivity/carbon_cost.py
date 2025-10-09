@@ -36,7 +36,7 @@ def carbon_cost_simple(vol, subType, ap145, ap2, ap3):
 
     return dry_mass * carbon_per_drymass
     
-def carbon_cost_anatomical(vol, subType, len, ana145, ana2, ana3, a145, a2, a3):
+def carbon_cost_anatomical(vol, subType, segLen, ana145, ana2, ana3, a145, a2, a3):
     """ returns the carbon cost as weighted sum with varying carbon dry masses for
         cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex
         see also carbon_()
@@ -44,11 +44,11 @@ def carbon_cost_anatomical(vol, subType, len, ana145, ana2, ana3, a145, a2, a3):
     c145 = carbon_(ana145, a145)
     c2 = carbon_(ana2, a2)
     c3 = carbon_(ana3, a3)
-    c = np.sum(np.multiply(c145 * np.equal(subType, 1), len))
-    c += np.sum(np.multiply(c145 * np.equal(subType, 4), len))
-    c += np.sum(np.multiply(c145 * np.equal(subType, 5), len))
-    c += np.sum(np.multiply(c2 * np.equal(subType, 2), len))
-    c += np.sum(np.multiply(c3 * np.equal(subType, 3), len))
+    c = np.sum(np.multiply(c145 * np.equal(subType, 1), segLen))
+    c += np.sum(np.multiply(c145 * np.equal(subType, 4), segLen))
+    c += np.sum(np.multiply(c145 * np.equal(subType, 5), segLen))
+    c += np.sum(np.multiply(c2 * np.equal(subType, 2), segLen))
+    c += np.sum(np.multiply(c3 * np.equal(subType, 3), segLen))
     return c
 
 def carbon_(anatomy, a):

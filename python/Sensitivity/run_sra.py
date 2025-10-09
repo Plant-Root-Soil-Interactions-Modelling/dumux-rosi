@@ -68,7 +68,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     """
 
     if not "conductivity_mode" in mods:
-            print("run_sra.run_soybean() conductivity_mode and output_times must be defined in mods dictionary")
+            print("run_sra.run_soybean() conductivity_mode must be defined in mods dictionary")
             raise()
 
     if not "output_times" in mods:
@@ -139,11 +139,23 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     water0 = s.getWaterVolume()
     # print("soil model set\n", flush = True)
 
+
+
     # initialize root system
     # print("starting hydraulic model", flush = True)
     cdata = scenario.prepare_conductivities(mods)
-    r, params = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Doussan")  # Meunier
-    scenario.set_conductivities(params, mods, cdata)
+    if mods["conductivity_mode"] == "from_mecha": # untested
+        anatomy_ind = scenario.sort_indices(mods)
+        anatomy = [scenario_setup.get_anatomy(ind[0]) for i in anatomy_ind]
+        radii =  [ mods["a145_a"], mods["a2_a"], mods["a3_a"] ]   
+        assert data[0,2,2] == radii[0], "radii failed for typ 145" # untested (can be removed later...)
+        assert data[1,2,2] == radii[1], "radii failed for typ 2"
+        assert data[2,2,2] == radii[2], "radii failed for typ 3"
+        cc_data = { "radii": radii, "anatomy": anatomy}
+    else: 
+        cc_data = None    
+    r, hparams = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Doussan")  # Meunier
+    scenario.set_conductivities(hparams, mods, cdata)
     # print("***********************", "hydraulic model set\n", flush = True)
 
     output_times = mods["output_times"]  
@@ -162,11 +174,11 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
     # print("sanity test done\n", flush = True)
 
     try:
-        r1, r2, r3 = sra_new.simulate_dynamic(s, r, table_name, sim_time, dt, trans_, output_times, initial_age = initial_age)
+        r1, r2, r3 = sra_new.simulate_dynamic(s, r, table_name, sim_time, dt, trans_, output_times, 
+                                              initial_age = initial_age, cc_data = cc_data)
     except:
         print("***********************")
         print("EXCEPTION run_soybean", exp_name, enviro_type, sim_time)
-        print(mods)
         print("***********************", flush = True)
         raise
 

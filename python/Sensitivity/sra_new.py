@@ -13,10 +13,11 @@ import plantbox as pb
 import visualisation.vtk_plot as vtk
 import functional.van_genuchten as vg
 from functional.Perirhizal import PerirhizalPython
+
 import evapotranspiration as evap
+import carbon_cost
 
-
-def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times, initial_age = 1.):
+def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times, initial_age = 1., cc_data = None):
     """     
     simulates the coupled scenario       
         
@@ -31,23 +32,25 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
     
     return:
 
-    List 1: for each time step 
+    List 1 (r1):
     times_                       times (simulation time plus initial age)
     pot_trans_                   potential transpiration [cm3/day]
     act_trans_                   actual transpiration [cm3/day]
     collar_pot_                  root collar potential [cm]  
 
-    List 2: for each 10th time step
+    List 2 (r2): for each 10th time step
     times_lr_                    times for the following arrays  
     sink_                        water uptake (per cell)  
     psi_s_                       soil matric potentials (per cell)   
     net_change_                  net domain water change (including plant uptake)
-    vol_                         root system volume [cm3] per subType
+    len_                         root system length [cm] per subType
     surf_                        root system surface [cm2] per subType
+    vol_                         root system volume [cm3] per subType
     depth_                       root system depth [cm] 
     krs_                         root system hydraulic conductivity [cm2/day]
+    carbon                       carbon cost [3 models]
 
-    List 3: of defined output times
+    List 3 (r3): of defined output times
     out_times_                   output times including start and final simulation time (plus initial age)
     ana_                         list of segment analysers at the out_times 
     """
@@ -65,9 +68,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
 
     times_, pot_trans_, act_trans_, collar_pot_, = [], [], [], [] # for all time steps
     times_lr_, sink_, psi_s_ = [],[], []
-    net_change_, depth_, krs_   = [], [], []    
+    net_change_, depth_, krs_ , carbon_  = [], [], [], []    
+    len_ = [[], [], [], [], [], []]
+    surf_ = [[], [], [], [], [], []]    
     vol_ = [[], [], [], [], [], []]
-    surf_ = [[], [], [], [], [], []]
     ana_ = []
    
     rs = r.ms
@@ -204,21 +208,39 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
 
             times_lr_.append(initial_age + t)
             
-            ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
-            for j in range(0, 6):  # root types
-                anac = pb.SegmentAnalyser(ana)
-                anac.filter("subType", j)
-                vol_[j].append(anac.getSummed("volume"))
-                surf_[j].append(anac.getSummed("surface"))
-            krs, _ = r.get_krs(initial_age + t)
-            krs_.append(krs)  # KRS
-            depth_.append(rs.getMinBounds().z)
-
             sink = np.zeros(sx.shape)
             for k, v in soil_fluxes.items():
                 sink[k] += v
             sink_.append(sink)  # cm3/day (per soil cell)
-            psi_s_.append(sx.copy())  # cm (per soil cell)
+            psi_s_.append(sx.copy())  # cm (per soil cell)           
+            
+            ana = pb.SegmentAnalyser(rs.mappedSegments())  # VOLUME and SURFACE
+            for j in range(0, 6):  # root types
+                anac = pb.SegmentAnalyser(ana)
+                anac.filter("subType", j)
+                len_[j].append(anac.getSummed("length"))
+                surf_[j].append(anac.getSummed("surface"))
+                vol_[j].append(anac.getSummed("volume"))
+            
+            vol = ana.getParameter("volume")
+            c1 = carbon_cost.carbon_cost_volume(vol)
+            if cc_data: # untested
+                subType = ana.getParameter("subType")
+                segLeng = ana.getParameter("length") 
+                r = cc_data["radii"]
+                a = cc_data["anatomy"]
+                c2 = carbon_cost.carbon_cost_simple(vol, subType, a[0][0], a[1][0], a[2][0])
+                c3 = carbon_cost.carbon_cost_anatomy(vol, subType, segLen, a[0], a[1], a[2], r[0], r[1], r[2])
+                carbon_.append([c1,c2,c3])
+            else:
+                carbon_.append([c1])    
+                
+                
+            depth_.append(rs.getMinBounds().z)                
+            krs, _ = r.get_krs(initial_age + t)
+            krs_.append(krs)  # KRS
+
+
 
         """ direct vtp output """
         if i in output_time_indices:
@@ -240,7 +262,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
     out_times_ = np.array(out_times_)+np.ones(output_time_indices.shape)*initial_age
 
     r1 = [times_, pot_trans_, act_trans_, collar_pot_] 
-    r2 = [times_lr_, sink_, psi_s_,net_change_, vol_, surf_, depth_, krs_]
+    r2 = [times_lr_, sink_, psi_s_,net_change_, len_, surf_, vol_, carbon_, depth_, krs_]
     r3 = [out_times_, ana_]
     
     return r1, r2, r3
@@ -256,10 +278,12 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
     sink_                        water uptake (per cell)  
     psi_s_                       soil matric potentials (per cell)   
     net_change_                  net domain water change (including plant uptake)
-    vol_                         root system volume [cm3] per subType
+    len_                         root system length [cm] per subType
     surf_                        root system surface [cm2] per subType
+    vol_                         root system volume [cm3] per subType
     depth_                       root system depth [cm] 
     krs_                         root system hydraulic conductivity [cm2/day]
+    carbon                       carbon cost [3 models]
 
     List 3 (r3): of defined output times
     out_times_                   output times including start and final simulation time (plus initial age)
