@@ -3,3 +3,4 @@ matplotlib
 scipy
 pandas
 mpi4py
+bayesian-optimization
