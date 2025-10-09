@@ -114,29 +114,23 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
             args.extend(job[1:])
             run_sra.run(args)
         else:
-            if type_str == "file":  # for "file" add an index to the file name, for all others job id is stored in job[0] and added in L89
-                job_file = os.path.join(job_directory, job_name + "_" + str(enviro_type) + ".job")
-            else:
-                job_file = os.path.join(job_directory, job_name + ".job")
-
+            job_file = os.path.join(job_directory, job_name + "_" + str(enviro_type) + ".job")
             with open(job_file, 'w') as fh:
-                fh.writelines("#!/bin/bash\n")
-                fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
-                fh.writelines("#SBATCH --ntasks=1\n")
-                fh.writelines("#SBATCH --cpus-per-task=1\n")
-                fh.writelines("#SBATCH --nodes=1\n")
-                fh.writelines("#SBATCH --time=24:00:00\n")
-                fh.writelines("#SBATCH --mem=16G\n")
-                fh.writelines("#SBATCH --partition=cpu256\n")
-                fh.writelines("\n")
-                fh.writelines("cd ..\n")
-                fh.writelines("source /etc/profile.d/modules.sh\n")
-                fh.writelines("module load openmpi/4.1.4\n")
-                fh.writelines("source myenv/bin/activate\n")
-                fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
-                              format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
-            # s.system("sbatch {:s}".format(job_file)) # DOES NOT WORK ANYMORE
-
+                  fh.writelines("#!/bin/bash\n")
+                  fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+                  fh.writelines("#SBATCH --ntasks=1\n")
+                  fh.writelines("#SBATCH --cpus-per-task=1\n")
+                  fh.writelines("#SBATCH --nodes=1\n")
+                  fh.writelines("#SBATCH --time=24:00:00\n")
+                  fh.writelines("#SBATCH --mem=16G\n")
+                  fh.writelines("#SBATCH --partition=cpu256\n")
+                  fh.writelines("\n")
+                  fh.writelines("cd ..\n")
+                  fh.writelines("source /etc/profile.d/modules.sh\n")
+                  fh.writelines("module load openmpi/4.1.4\n")
+                  fh.writelines("source myenv/bin/activate\n")
+                  fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
+                                format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
 def write_ranges(file_name, names, ranges):
     """ writes variable names and parameter ranges of the sensitivity analysis """
@@ -351,9 +345,9 @@ if __name__ == "__main__":
     # Make job files local sensitivty analysis
     local_soybean(0)
     local_soybean(1)
-    local_soybean(0, "free")
-    local_soybean(1, "free")
-    local_soybean(0, "200")
-    local_soybean(1, "200")
+    local_soybean(0, "free_")
+    local_soybean(1, "free_")
+    local_soybean(0, "200_")
+    local_soybean(1, "200_")
 
  
