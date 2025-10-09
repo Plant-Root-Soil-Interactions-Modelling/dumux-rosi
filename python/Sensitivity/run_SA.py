@@ -175,7 +175,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
     print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
-    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)  # result file neame: file_name + counter + _envirotype
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
 def local_soybean_new2():
@@ -342,12 +342,12 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    # Make job files local sensitivty analysis
-    local_soybean(0)
+    # Make job files for local sensitivty analysis
+    local_soybean(0) # default water table at 1.2m 
     local_soybean(1)
-    local_soybean(0, "free_")
+    local_soybean(0, "free_") # bot bc: free drainage
     local_soybean(1, "free_")
-    local_soybean(0, "200_")
-    local_soybean(1, "200_")
+    local_soybean(0, "200_") # bot bc water table at 2m 
+    local_soybean(1, "200_") 
 
  
