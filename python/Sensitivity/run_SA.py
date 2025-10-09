@@ -192,7 +192,7 @@ def local_soybean2(enviro_type = 0, bot_str = ""):
                  [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
     print("local_soybean2: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity analysis of the influence of tropisms
@@ -212,7 +212,7 @@ def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
                  [n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_])
 
     jobs = make_local(n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_, 0., 0.)  # currently we always pass 10 valeus to run_sra
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def local_soybean_radii(enviro_type = 0, bot_str = ""):
@@ -245,7 +245,7 @@ def local_soybean_radii(enviro_type = 0, bot_str = ""):
     jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0., ref = "left")  # currently we always pass 10 values to run_sra
     jobs = np.array(jobs)
 
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
 def simulate_list(enviro_type = 0):
@@ -262,7 +262,7 @@ def simulate_list(enviro_type = 0):
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
     sim_time = 87.5  # 87.5  # 87.5  # days
-    start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = False)
+    make_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = False)
     # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
 
     # enviro_type = 1
@@ -306,7 +306,13 @@ if __name__ == "__main__":
     local_soybean_tropisms(0, "200_") # bot bc water table at 2m 
     local_soybean_tropisms(1, "200_") 
 
- 
+      # Make job files for local sensitivty analysis
+    local_soybean_radii(0) # default water table at 1.2m 
+    local_soybean_radii(1)
+    local_soybean_radii(0, "free_") # bot bc: free drainage
+    local_soybean_radii(1, "free_")
+    local_soybean_radii(0, "200_") # bot bc water table at 2m 
+    local_soybean_radii(1, "200_") 
  
  
  
