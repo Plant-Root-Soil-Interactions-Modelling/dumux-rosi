@@ -178,82 +178,23 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
-def local_soybean_new2():
+def local_soybean2(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity  """
 
-    print("new local_soybean")
-    type_str = "original_new2"
+    type_str = "original2"
     root_type = "soybean"
-    file_name = "local_soybean_new2_"
-    enviro_type = 0
-    sim_time = 87.5  # 87.5  # 87.5  # 87.5  # days
-
+    file_name = "local_soybean2_"
+    file_name += bot_str
+    sim_time = 87.5  
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
                  ["r", "r145", "r2", "r3", "ln", "ln145", "ln2", "a145", "a2", "a3"],
                  [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
+    print("local_soybean2: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
+    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
-    print("number of jobs", len(jobs))
-
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # file_name + counter + _envirotype
-
-
-def local_soybean_conductivities():
-    """ constructs a local sensitivity analysis of hydraulic conductivities 
-       for young and old parts, dependent on root order (145, 2, 3)
-    """
-    print("local_soybean_conductivities")
-    type_str = "conductivities10"  # varying age dependent conductiviies
-    root_type = "soybean"
-    file_name = "local_soybean_conductivities_"
-    enviro_type = 0
-    sim_time = 87.5  # days
-
-    kx = [0.1, 1.e-3, 1.e-3]
-    kx_old = [0.35, 0.015]
-
-    kr = [1.e-3, 4.e-3, 4.e-3]
-    kr_old = [5e-4, 0.0015]
-
-    # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-    p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
-    write_ranges("results/" + file_name,
-                 ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
-                 [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
-    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
-
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
-
-
-def local_singleroot_conductivities():
-    """ constructs a local sensitivity analysis of hydraulic conductivities 
-       for young and old parts, dependent on root order (145, 2, 3)
-    """
-    print("local_singleroot_conductivities")
-    type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
-    root_type = "soybean"
-    file_name = "local_singleroot_conductivities64_"
-    enviro_type = 0
-    sim_time = 87.5  # days
-
-    kx = np.array([0.1]) / 16
-    kx_old = np.array([0.35]) / 16 / 4
-
-    kr = np.array([1.e-3]) * 16 * 4
-    kr_old = np.array([5e-4]) * 16 * 4
-
-    # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-    p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 35)])
-    write_ranges("results/" + file_name,
-                 ["ykr1", "okr1", "ykx1", "okx1"],
-                 [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
-    jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
-
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
-
-
-def local_soybean_tropisms():
+def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity analysis of the influence of tropisms
        alters number of trials n and mean alteration sigma, dependent on root order (145, 2, 3)
     """
@@ -261,21 +202,20 @@ def local_soybean_tropisms():
     type_str = "tropisms"
     root_type = "soybean"
     file_name = "local_soybean_tropisms_"
-    enviro_type = 0
+    file_name += bot_str
     sim_time = 87.5  # 87.5  # days
-
     sigma_ = np.linspace(0.1, 0.5, 5)
     n_ = np.linspace(0., 5., 9)
-
+    theta_ = np.linspace(0, np.pi / 2, 9)
     write_ranges("results/" + file_name,
-                 ["n145", "n2", "n3", "sigma145", "sigma2", "sigma3"],
-                 [n_, n_, n_, sigma_, sigma_, sigma_])
+                 ["n145", "n2", "n3", "sigma145", "sigma2", "sigma3", "theta2", "theta3"],
+                 [n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_])
 
-    jobs = make_local(n_, n_, n_, sigma_, sigma_, sigma_, 0., 0., 0., 0.)  # currently we always pass 10 valeus to run_sra
+    jobs = make_local(n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_, 0., 0.)  # currently we always pass 10 valeus to run_sra
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
-def local_soybean_radii():
+def local_soybean_radii(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity analysis of root radii and root hairs 
        radii, dependent on root order (145, 2, 3)
        root hair zone length, dependent on root order (145, 2, 3)
@@ -286,7 +226,7 @@ def local_soybean_radii():
     type_str = "radii"
     root_type = "soybean"
     file_name = "local_soybean_radii_"
-    enviro_type = 0
+    file_name += bot_str
     sim_time = 87.5  # 87.5  # days
 
     a145 = np.linspace(0.01, .5, 9)
@@ -308,7 +248,7 @@ def local_soybean_radii():
     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
-def simulate_list():
+def simulate_list(enviro_type = 0):
     print("simulate_list")
     root_type = "soybean"  # unused
     list_filename = "data/my_pick.txt"
@@ -322,7 +262,6 @@ def simulate_list():
         jobs.append([line, float(0.), 0., 0., 0., 0., 0., 0., 0., 0., 0., 0.])  # <- put lines here
 
     sim_time = 87.5  # 87.5  # 87.5  # days
-    enviro_type = 0
     start_jobs("file", "", "", enviro_type, sim_time, jobs, run_local = False)
     # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
 
@@ -342,7 +281,9 @@ def simulate_list():
 
 if __name__ == "__main__":
 
+    #
     # Make job files for local sensitivty analysis
+    #
     local_soybean(0) # default water table at 1.2m 
     local_soybean(1)
     local_soybean(0, "free_") # bot bc: free drainage
@@ -350,4 +291,74 @@ if __name__ == "__main__":
     local_soybean(0, "200_") # bot bc water table at 2m 
     local_soybean(1, "200_") 
 
+    local_soybean2(0) # default water table at 1.2m 
+    local_soybean2(1)
+    local_soybean2(0, "free_") # bot bc: free drainage
+    local_soybean2(1, "free_")
+    local_soybean2(0, "200_") # bot bc water table at 2m 
+    local_soybean2(1, "200_") 
+
+     # Make job files for local sensitivty analysis
+    local_soybean_tropisms(0) # default water table at 1.2m 
+    local_soybean_tropisms(1)
+    local_soybean_tropisms(0, "free_") # bot bc: free drainage
+    local_soybean_tropisms(1, "free_")
+    local_soybean_tropisms(0, "200_") # bot bc water table at 2m 
+    local_soybean_tropisms(1, "200_") 
+
  
+ 
+ 
+ 
+ # def local_soybean_conductivities():
+#     """ constructs a local sensitivity analysis of hydraulic conductivities 
+#        for young and old parts, dependent on root order (145, 2, 3)
+#     """
+#     print("local_soybean_conductivities")
+#     type_str = "conductivities10"  # varying age dependent conductiviies
+#     root_type = "soybean"
+#     file_name = "local_soybean_conductivities_"
+#     enviro_type = 0
+#     sim_time = 87.5  # days
+#
+#     kx = [0.1, 1.e-3, 1.e-3]
+#     kx_old = [0.35, 0.015]
+#
+#     kr = [1.e-3, 4.e-3, 4.e-3]
+#     kr_old = [5e-4, 0.0015]
+#
+#     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+#     p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
+#     write_ranges("results/" + file_name,
+#                  ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
+#                  [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
+#     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
+#
+#     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+#
+#
+# def local_singleroot_conductivities():
+#     """ constructs a local sensitivity analysis of hydraulic conductivities 
+#        for young and old parts, dependent on root order (145, 2, 3)
+#     """
+#     print("local_singleroot_conductivities")
+#     type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
+#     root_type = "soybean"
+#     file_name = "local_singleroot_conductivities64_"
+#     enviro_type = 0
+#     sim_time = 87.5  # days
+#
+#     kx = np.array([0.1]) / 16
+#     kx_old = np.array([0.35]) / 16 / 4
+#
+#     kr = np.array([1.e-3]) * 16 * 4
+#     kr_old = np.array([5e-4]) * 16 * 4
+#
+#     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+#     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 35)])
+#     write_ranges("results/" + file_name,
+#                  ["ykr1", "okr1", "ykx1", "okx1"],
+#                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
+#     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
+#
+#     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
