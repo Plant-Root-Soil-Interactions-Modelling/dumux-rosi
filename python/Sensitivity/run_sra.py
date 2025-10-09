@@ -198,43 +198,25 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
 
     return cu
 
+def run(argv):
 
-if __name__ == "__main__":
-
-    # enviro_type = 0
-    # sim_time = 1
-    # theta1 = None
-    # src = None
-    # # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
-    # # kx_old = [0.35, 0.015]
-    # # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
-    # # kr_old = [5e-4, 0.0015]
-    # mods = {
-    #     "output_times": [40],
-    #     "conductivity_mode": "scale",
-    #     "scale_kr":1.,
-    #     "scale_kx":1.,
-    #     }
-    # run_soybean("test", enviro_type, sim_time, mods, save_all = True)
-    # dd
-
-    type = sys.argv[1]
-    exp_name = sys.argv[2] # codes for bot BC "_free" and "_200"
-    enviro_type = int(float(sys.argv[3]))
-    sim_time = float(sys.argv[4])
+    type = argv[1]
+    exp_name = argv[2] # codes for bot BC "_free" and "_200"
+    enviro_type = int(float(argv[3]))
+    sim_time = float(argv[4])
 
     if type == "original":  # relevant parameters
         print("running original sa", flush = True)
-        kr = float(sys.argv[5])
-        kx = float(sys.argv[6])
-        lmax1 = float(sys.argv[7])
-        lmax2 = float(sys.argv[8])
-        lmax3 = float(sys.argv[9])
-        theta1 = float(sys.argv[10])
-        r1 = float(sys.argv[11])
-        r2 = float(sys.argv[12])
-        a = float(sys.argv[13])
-        src = int(float(sys.argv[14]))
+        kr = float(argv[5])
+        kx = float(argv[6])
+        lmax1 = float(argv[7])
+        lmax2 = float(argv[8])
+        lmax3 = float(argv[9])
+        theta1 = float(argv[10])
+        r1 = float(argv[11])
+        r2 = float(argv[12])
+        a = float(argv[13])
+        src = int(float(argv[14]))
         mods = {
             "conductivity_mode": "scale",
             "scale_kr": kr,
@@ -242,8 +224,8 @@ if __name__ == "__main__":
             "lmax145": lmax1, "lmax2": lmax2, "lmax3": lmax3,
             "r145": r1, "r2": r2, "r3": r2,
             "a":a,
-            "theta45": theta1,
-            "src": src
+            "theta45_a": theta1,
+            "src_a": src
             }
         if "_free" in exp_name:
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
@@ -253,16 +235,16 @@ if __name__ == "__main__":
 
     elif type == "original_new2":
         print("running new2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
-        r = float(sys.argv[5])
-        r145 = float(sys.argv[6])
-        r2 = float(sys.argv[7])
-        r3 = float(sys.argv[8])
-        ln = float(sys.argv[9])
-        ln145 = float(sys.argv[10])
-        ln2 = float(sys.argv[11])
-        a145 = float(sys.argv[12])
-        a2 = float(sys.argv[13])
-        a3 = int(float(sys.argv[14]))
+        r = float(argv[5])
+        r145 = float(argv[6])
+        r2 = float(argv[7])
+        r3 = float(argv[8])
+        ln = float(argv[9])
+        ln145 = float(argv[10])
+        ln2 = float(argv[11])
+        a145 = float(argv[12])
+        a2 = float(argv[13])
+        a3 = int(float(argv[14]))
         mods = {
             "conductivity_mode": "scale",
             "r": r, "r145": r145, "r2": r2, "r3": r3,
@@ -276,16 +258,16 @@ if __name__ == "__main__":
         print("running conductivities10", flush = True)
         mods = {
             "conductivity_mode": "age_dependent",
-            "kr_young1": float(sys.argv[5]),
-            "kr_old1": float(sys.argv[6]),
-            "kr_young2": float(sys.argv[7]),
-            "kr_old2": float(sys.argv[8]),
-            "kr3": float(sys.argv[9]),
-            "kx_young1": float(sys.argv[10]),
-            "kx_old1": float(sys.argv[11]),
-            "kx_young2": float(sys.argv[12]),
-            "kx_old2": float(sys.argv[13]),
-            "kx3": float(sys.argv[14])
+            "kr_young1": float(argv[5]),
+            "kr_old1": float(argv[6]),
+            "kr_young2": float(argv[7]),
+            "kr_old2": float(argv[8]),
+            "kr3": float(argv[9]),
+            "kx_young1": float(argv[10]),
+            "kx_old1": float(argv[11]),
+            "kx_young2": float(argv[12]),
+            "kx_old2": float(argv[13]),
+            "kx3": float(argv[14])
         }
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
@@ -293,16 +275,16 @@ if __name__ == "__main__":
         print("singleroot_conductivities10", flush = True)
         mods = {
             "conductivity_mode": "age_dependent",
-            "kr_young1": float(sys.argv[5]),
-            "kr_old1": float(sys.argv[6]),
-            "kr_young2": float(sys.argv[5]),
-            "kr_old2": float(sys.argv[6]),
-            "kr3": float(sys.argv[5]),
-            "kx_young1": float(sys.argv[7]),
-            "kx_old1": float(sys.argv[8]),
-            "kx_young2": float(sys.argv[7]),
-            "kx_old2": float(sys.argv[8]),
-            "kx3": float(sys.argv[7]),
+            "kr_young1": float(argv[5]),
+            "kr_old1": float(argv[6]),
+            "kr_young2": float(argv[5]),
+            "kr_old2": float(argv[6]),
+            "kr3": float(argv[5]),
+            "kx_young1": float(argv[7]),
+            "kx_old1": float(argv[8]),
+            "kx_young2": float(argv[7]),
+            "kx_old2": float(argv[8]),
+            "kx3": float(argv[7]),
             "filename": "data/Glycine_max_Moraes2020_singleroot.xml",
             "initial_age": 1.,
             "initial_totalpotential":-1000,
@@ -313,8 +295,8 @@ if __name__ == "__main__":
 
     elif type == "tropisms":
         print("running tropisms", flush = True)
-        n145, n2, n3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
-        s145, s2, s3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
+        n145, n2, n3 = float(argv[5]), float(argv[6]), float(argv[7])
+        s145, s2, s3 = float(argv[8]), float(argv[9]), float(argv[10])
         mods = {
                 "conductivity_mode": "scale",
                 "scale_kr":1.,
@@ -326,9 +308,9 @@ if __name__ == "__main__":
 
     elif type == "radii":
         print("running radii", flush = True)
-        a145, a2, a3 = float(sys.argv[5]), float(sys.argv[6]), float(sys.argv[7])
-        hairsZone145, hairsZone2, hairsZone3 = float(sys.argv[8]), float(sys.argv[9]), float(sys.argv[10])
-        hairsLength145, hairsLength2, hairsLength3 = float(sys.argv[11]), float(sys.argv[12]), float(sys.argv[13])
+        a145, a2, a3 = float(argv[5]), float(argv[6]), float(argv[7])
+        hairsZone145, hairsZone2, hairsZone3 = float(argv[8]), float(argv[9]), float(argv[10])
+        hairsLength145, hairsLength2, hairsLength3 = float(argv[11]), float(argv[12]), float(argv[13])
         mods = {
             "conductivity_mode": "scale",
             "scale_kr":1.,
@@ -363,4 +345,28 @@ if __name__ == "__main__":
 
     else:
 
-        print("Unknown run sa type")
+        print("Unknown run sa type", type)
+
+
+if __name__ == "__main__":
+    
+    # enviro_type = 0
+    # sim_time = 1
+    # theta1 = None
+    # src = None
+    # # kx = [0.1, 1.e-3, 1.e-3]  # cm3/day
+    # # kx_old = [0.35, 0.015]
+    # # kr = [1.e-3, 4.e-3, 4.e-3]  # 1/day
+    # # kr_old = [5e-4, 0.0015]
+    # mods = {
+    #     "output_times": [40],
+    #     "conductivity_mode": "scale",
+    #     "scale_kr":1.,
+    #     "scale_kx":1.,
+    #     }
+    # run_soybean("test", enviro_type, sim_time, mods, save_all = True)
+    # dd
+    
+    run(sys.argv)
+    
+    

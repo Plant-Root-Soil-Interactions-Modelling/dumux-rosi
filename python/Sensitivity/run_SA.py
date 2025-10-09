@@ -77,7 +77,7 @@ def make_local(*args, ref = "mid"):
     return np.array(jobs)
 
 
-def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
+def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local):
     """starts the jobs calling run_sra.py with the arguments 
     type_str                 type of sensitivity analysis to let run_sra know how to interpet the data passed to it
     file_name                name of the sensitivity analysis, simulation number is added
@@ -91,7 +91,7 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
     if type_str == "file":
         job_directory = "file"
     else:
-        job_directory = os.path.join(os.getcwd(), file_name+ "_" + str(enviro_type) )
+        job_directory = os.path.join(os.getcwd(), file_name)
 
     if not run_local:
         print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
@@ -109,8 +109,10 @@ def start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_
 
         if run_local:
             # print("len", len(job[1:]))
-            os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
-
+            # os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
+            args =  ["", str(type_str), str(job_name), int(enviro_type), float(sim_time)]
+            args.extend(job[1:])
+            run_sra.run(args)
         else:
             if type_str == "file":  # for "file" add an index to the file name, for all others job id is stored in job[0] and added in L89
                 job_file = os.path.join(job_directory, job_name + "_" + str(enviro_type) + ".job")
@@ -165,13 +167,12 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     """ constructs a local sensitivity analysis presented in the preproject for values 
         "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
-    print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str)
+    
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
-    file_name = "local_soybean_new_"
+    file_name = "local_soybean_"
     file_name += bot_str
-    sim_time = 87.5  # 87.5  # 87.5  # days
-
+    sim_time = 87.5 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
@@ -179,8 +180,8 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
-
-    start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # file_name + counter + _envirotype
+    print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
 def local_soybean_new2():
@@ -347,135 +348,12 @@ def simulate_list():
 
 if __name__ == "__main__":
 
-    i = int(sys.argv[1])
-    # i = 1
+    # Make job files local sensitivty analysis
+    local_soybean(0)
+    local_soybean(1)
+    local_soybean(0, "free")
+    local_soybean(1, "free")
+    local_soybean(0, "200")
+    local_soybean(1, "200")
 
-    if i == 0:
-        local_soybean(0)
-    elif i == 1:
-        local_soybean(1)
-    elif i == 2:
-        local_soybean(0, "free")
-    elif i == 3:
-        local_soybean(1, "free")
-    # elif i == 2:
-    #     local_soybean_conductivities()
-    # elif i == 3:
-    #     local_soybean_tropisms()  # did not work, try again with larger sigma? and insertion angles?
-    # elif i == 4:
-    #     local_soybean_radii()  # did not work, check plausibility
-    # elif i == 5:
-    #     local_singleroot_conductivities()
-    # elif i == 6:
-    #     simulate_list()
-    # elif i == 7:
-    #     local_soybean_new2()
-    else:
-        raise("on no")
-
-# def make_global(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_):
-#     """ creates the jobs for a global sensitivity analysis  """
-#
-#     kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_ = make_lists(kr_, kx_, lmax1_, lmax2_, lmax3_, theta1_, r1_, r2_, a_, src_)
-#
-#     # create global sa jobs
-#     jobs = []
-#     i = 1
-#     for kr in kr_:
-#         for kx in kx_:
-#             for lmax1 in lmax1_:
-#                 for lmax2 in lmax2_:
-#                     for lmax3 in lmax3_:
-#                         for theta1 in theta1_:
-#                             for r1 in r1_:
-#                                 for r2 in r2_:
-#                                     for a in a_:
-#                                         for src in src_:
-#                                             i += 1
-#                                             jobs.append([i, kr, kx, lmax1, lmax2, lmax3, theta1, r1, r2, a, src])
-#     return jobs
-
-# def local_maize():
-#     root_type = "maize"
-#     file_name = "local_maize"
-#     enviro_type = 0
-#     sim_time = 95
-#
-#     if rank == 0:
-#         p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-#         p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
-#         # p3 = np.array([1.* 2 ** x for x in np.linspace(-3., 3., 19)])
-#         theta_ = np.linspace(0, np.pi / 2, 9)
-#         write_ranges("results/" + file_name,
-#                      ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "delaySB"],
-#                      [p2, p2, p1, p1, p1, theta_, p1, p1])
-#         jobs = make_local(p2 , p2 , p1, p1, p1, theta_, 1., 1., p1, p1)
-#
-#     else:
-#         jobs = None
-#
-#     jobs = comm.bcast(jobs, root = 0)
-#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-
-# def local1_maize():
-#     root_type = "maize"
-#     file_name = "local_timing"
-#     enviro_type = 0
-#     sim_time = 30  # 95
-#
-#     if rank == 0:
-#         timings = np.linspace(1., 20., 20)
-#         theta_ = theta = 85. / 180 * np.pi
-#         write_ranges("results/" + file_name,
-#                      ["kr"],
-#                      [timings])
-#         jobs = make_local(timings , 1. , 1., 1., 1., theta_, 1., 1., 1., 1.)
-#
-#     else:
-#         jobs = None
-#
-#     jobs = comm.bcast(jobs, root = 0)
-#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)file_name
-#
-# def global1_soybean():
-#     root_type = "soybean"
-#     file_name = "global_soybean"
-#     enviro_type = 0
-#     sim_time = 30
-#
-#     if rank == 0:
-#         theta_ = theta = 85. / 180 * np.pi
-#         kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
-#         kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-#         # kx = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
-#         # kr = np.array([10 ** x for x in np.linspace(-2., 0., 25)])
-#         write_ranges("results/" + file_name,
-#                      ["kr", "kx"],
-#                      [ kr , kx ])
-#         jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
-#     else:
-#         jobs = None
-#     jobs = comm.bcast(jobs, root = 0)
-#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
-#
-#
-# def global1_maize():
-#     root_type = "maize"
-#     file_name = "global_maize_inc2"
-#     enviro_type = 0
-#     sim_time = 30
-#
-#     if rank == 0:
-#         theta_ = theta = 85. / 180 * np.pi
-#         # kx = np.array([10 ** x for x in np.linspace(-1., 1., 20)])
-#         # kr = np.array([10 ** x for x in np.linspace(-1., 1., 25)])
-#         kr = np.array([10 ** x for x in np.linspace(0., 4., 50)])
-#         kx = np.array([10 ** x for x in np.linspace(-1., 1., 10)])  # _inc
-#         write_ranges("results/" + file_name,
-#                      ["kr", "kx"],
-#                      [ kr , kx ])
-#         jobs = make_global(kr , kx , 1., 1., 1., theta_, 1., 1., 1., 1.)
-#     else:
-#         jobs = None
-#     jobs = comm.bcast(jobs, root = 0)
-#     run_jobs(file_name, root_type, enviro_type, sim_time, jobs)
+ 

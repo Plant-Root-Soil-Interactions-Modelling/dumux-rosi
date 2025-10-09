@@ -38,7 +38,7 @@ def carbon_cost_simple(vol, subType, ap145, ap2, ap3):
     
 def carbon_cost_anatomical(vol, subType, len, ana145, ana2, ana3, a145, a2, a3):
     """ returns the carbon cost as weighted sum with varying carbon dry masses for
-        cortex, stele, and epdiermis. Aarenchyma percentage is subtracted from the cortex
+        cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex
         see also carbon_()
     """ 
     c145 = carbon_(ana145, a145)

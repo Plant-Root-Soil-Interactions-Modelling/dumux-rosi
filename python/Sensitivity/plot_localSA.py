@@ -24,13 +24,13 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_new_"
+file_name = "local_soybean_new_free"
 # file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 # file_name = "local_soybean_radii_"
 # file_name = "local_singleroot_conductivities64_"
 
-env_str = "_1"
+env_str = "_0"
 
 path = "results/"
 # not_xlog = []
