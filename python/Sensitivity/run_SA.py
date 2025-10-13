@@ -166,7 +166,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     root_type = "soybean"
     file_name = "local_soybean_"
     file_name += bot_str
-    sim_time = 87.5 
+    sim_time =  87.5 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
@@ -174,6 +174,8 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
+    # jobs = make_local(1. , 1., 1., 1., 1., theta_, 1., 1., 1., 1.)  
+    #jobs = make_local(1. , 1., 1., 1., 1., 1., 1., 1., 1., [0, 1, 2, 3, 4, 5, 6])  
     print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
@@ -284,8 +286,8 @@ if __name__ == "__main__":
     #
     # Make job files for local sensitivty analysis
     #
-    local_soybean(0) # default water table at 1.2m 
-    # local_soybean(1)
+    # local_soybean(0) # default water table at 1.2m 
+    local_soybean(1)
     # local_soybean(0, "free_") # bot bc: free drainage
     # local_soybean(1, "free_")
     # local_soybean(0, "200_") # bot bc water table at 2m 
