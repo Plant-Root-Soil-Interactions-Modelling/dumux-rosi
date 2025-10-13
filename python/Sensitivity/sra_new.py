@@ -1,7 +1,7 @@
 """
     Dynamic:
 
-    Dynamic water uptake simulation taking nonlinear rhizosphere resistance into account (takes long)
+    Dynamic water uptake simulation taking nonlinear rhizosphere resistance into account 
     (called by run_sra.py)    
     
     Daniel Leitner, 2025    
@@ -29,6 +29,7 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
     trans_f                      potential transpiration function 
     output_times                 time points for additional vtp outputs
     initial_age                  initial root system age  
+    cc_data                      (optional) dict with "radii" and "anatomy" for carbon model 2 and 3   
     
     return:
 
@@ -91,8 +92,8 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
     out_times_ = output_times.copy()
     out_times_.append(sim_time)
     out_times_.insert(0,0.)
-    print("Starting simulation loop", flush = True)
-
+    print("Starting simulation loop",N, "iterations", flush = True)
+    
     """ simulation loop """
     for i in range(0, N):
 
@@ -147,7 +148,8 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
             """ xylem matric potential """
             wall_xylem = timeit.default_timer()
             rx = r.solve_again(initial_age + t, trans_f(t, dt), rsx, cells = False)
-            err_ = np.linalg.norm(rx - rx_) / np.sqrt(rx.shape[0])  # rmse
+            res_ = rx - rx_
+            err_ =  np.linalg.norm(res_)/ np.sqrt(rx.shape[0])  # rmse            
             wall_xylem = timeit.default_timer() - wall_xylem
 
             rx_ = rx.copy()
@@ -205,7 +207,8 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
             print("age {:g}".format(initial_age + t), "{:g}/{:g} {:g} iterations, rmse {:g}".format(i, N, c, err_), "; wall times {:g} {:g}".format(
                 wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem)),
                   "number of segments", rs.getNumberOfSegments(), "collar potential {:g}".format(rx[0]), flush = True)
-
+            # print("res_", np.argmax(np.abs(res_)), np.max(np.abs(res_)), err_)
+            
             times_lr_.append(initial_age + t)
             
             sink = np.zeros(sx.shape)
@@ -234,13 +237,10 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
                 carbon_.append([c1,c2,c3])
             else:
                 carbon_.append([c1])    
-                
-                
+                       
             depth_.append(rs.getMinBounds().z)                
             krs, _ = r.get_krs(initial_age + t)
             krs_.append(krs)  # KRS
-
-
 
         """ direct vtp output """
         if i in output_time_indices:

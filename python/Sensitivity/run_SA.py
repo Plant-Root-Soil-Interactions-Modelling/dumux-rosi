@@ -166,7 +166,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     root_type = "soybean"
     file_name = "local_soybean_"
     file_name += bot_str
-    sim_time = 87.5 
+    sim_time = 1. 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
@@ -175,7 +175,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
     print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
-    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
+    make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = True)  # result file neame: file_name + counter + _envirotype
 
 
 def local_soybean2(enviro_type = 0, bot_str = ""):
@@ -285,34 +285,34 @@ if __name__ == "__main__":
     # Make job files for local sensitivty analysis
     #
     local_soybean(0) # default water table at 1.2m 
-    local_soybean(1)
-    local_soybean(0, "free_") # bot bc: free drainage
-    local_soybean(1, "free_")
-    local_soybean(0, "200_") # bot bc water table at 2m 
-    local_soybean(1, "200_") 
-
-    local_soybean2(0) # default water table at 1.2m 
-    local_soybean2(1)
-    local_soybean2(0, "free_") # bot bc: free drainage
-    local_soybean2(1, "free_")
-    local_soybean2(0, "200_") # bot bc water table at 2m 
-    local_soybean2(1, "200_") 
-
-     # Make job files for local sensitivty analysis
-    local_soybean_tropisms(0) # default water table at 1.2m 
-    local_soybean_tropisms(1)
-    local_soybean_tropisms(0, "free_") # bot bc: free drainage
-    local_soybean_tropisms(1, "free_")
-    local_soybean_tropisms(0, "200_") # bot bc water table at 2m 
-    local_soybean_tropisms(1, "200_") 
-
-      # Make job files for local sensitivty analysis
-    local_soybean_radii(0) # default water table at 1.2m 
-    local_soybean_radii(1)
-    local_soybean_radii(0, "free_") # bot bc: free drainage
-    local_soybean_radii(1, "free_")
-    local_soybean_radii(0, "200_") # bot bc water table at 2m 
-    local_soybean_radii(1, "200_") 
+    # local_soybean(1)
+    # local_soybean(0, "free_") # bot bc: free drainage
+    # local_soybean(1, "free_")
+    # local_soybean(0, "200_") # bot bc water table at 2m 
+    # local_soybean(1, "200_") 
+    #
+    # local_soybean2(0) # default water table at 1.2m 
+    # local_soybean2(1)
+    # local_soybean2(0, "free_") # bot bc: free drainage
+    # local_soybean2(1, "free_")
+    # local_soybean2(0, "200_") # bot bc water table at 2m 
+    # local_soybean2(1, "200_") 
+    #
+    #  # Make job files for local sensitivty analysis
+    # local_soybean_tropisms(0) # default water table at 1.2m 
+    # local_soybean_tropisms(1)
+    # local_soybean_tropisms(0, "free_") # bot bc: free drainage
+    # local_soybean_tropisms(1, "free_")
+    # local_soybean_tropisms(0, "200_") # bot bc water table at 2m 
+    # local_soybean_tropisms(1, "200_") 
+    #
+    #   # Make job files for local sensitivty analysis
+    # local_soybean_radii(0) # default water table at 1.2m 
+    # local_soybean_radii(1)
+    # local_soybean_radii(0, "free_") # bot bc: free drainage
+    # local_soybean_radii(1, "free_")
+    # local_soybean_radii(0, "200_") # bot bc water table at 2m 
+    # local_soybean_radii(1, "200_") 
  
  
  

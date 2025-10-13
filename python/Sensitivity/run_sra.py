@@ -222,7 +222,7 @@ def run(argv):
         kr, kx = float(argv[5]), float(argv[6])         
         lmax1, lmax2, lmax3 = float(argv[7]), float(argv[8]), float(argv[9])
         theta1 = float(argv[10])
-        r1, r2 = float(argv[11]), float(argv[12])
+        r1, r2 = float(argv[11]), float(argv[12])  # 1., 1. -> moved to running original2
         a = float(argv[13])
         src = int(float(argv[14]))
         mods = {

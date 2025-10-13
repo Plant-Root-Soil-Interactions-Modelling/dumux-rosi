@@ -11,6 +11,7 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
+import cProfile
 import os
 import json
 
@@ -28,7 +29,7 @@ import run_sra
 
 import numpy as np
 
-sim_time = 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 5 # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 theta1 = None  # if none leave unmodified
 src = None  # if none leave unmodified
@@ -102,7 +103,22 @@ mods = {
         "bot_bc": "noFlux",
         }
 
+
+
+import pstats
+
+# Creating profile object
+ob = cProfile.Profile()
+
+ob.enable()
 run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, save_all = True)
+ob.disable()
+
+stats = pstats.Stats(ob)
+stats.sort_stats('tottime')
+stats.print_stats(20)
+
+
 
 # # kr = np.zeros((3,))
 # # kr_old = np.zeros((2,))

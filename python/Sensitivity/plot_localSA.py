@@ -24,7 +24,8 @@ def start_index(ind, ranges):
 
 
 """ def SA """
-file_name = "local_soybean_new_free"
+file_name = "local_soybean_"; not_xlog = [5,7]
+
 # file_name = "local_soybean_conductivities_"
 # file_name = "local_soybean_tropisms_"
 # file_name = "local_soybean_radii_"
@@ -33,7 +34,6 @@ file_name = "local_soybean_new_free"
 env_str = "_0"
 
 path = "results/"
-# not_xlog = []
 
 analysis_time = 87.5  # 87.5  # days  (day 60 is fine already)
 
@@ -109,10 +109,11 @@ for lind in range(0, len(names)):
                 alldata = np.load(path + file_name + str(file_start_ind + k) + env_str + ".npz")
                 trans_ = alldata["act_trans"]
                 trans[k] = -np.sum(np.multiply(trans_[:ind - 1], dt_))
+                print("open file", file_name + str(file_start_ind + k),trans[k])
                 # print("trans[k]", trans[k])
             except:
                 trans[k] = np.nan
-                print("skipping file", file_name + str(file_start_ind + k))
+                print("*** skipping file", file_name + str(file_start_ind + k))
             try:
                 # alldata = np.load(path + file_name + str(file_start_ind + k) + ".npz")
                 vol_ = alldata["vol"]
@@ -140,7 +141,8 @@ for lind in range(0, len(names)):
         krs = krs / krs[sa_len // 2]  # nondimensionalize
 
         ax.flat[ac].plot(np.array(ranges[lind]), trans, '*-', label = "water")  #  / ranges[lind][sa_len // 2]
-        print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]))
+        
+        print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]), trans)
 
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
         # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
@@ -156,9 +158,8 @@ for lind in range(0, len(names)):
         ax.flat[ac].set_title(names[lind])
         # ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
-        # if not lind in not_xlog:
-
-        ax.flat[ac].set_xscale('log', base = 2)
+        if not lind in not_xlog:
+            ax.flat[ac].set_xscale('log', base = 2)
         ac += 1
 
 plt.tight_layout(pad = 4.)
