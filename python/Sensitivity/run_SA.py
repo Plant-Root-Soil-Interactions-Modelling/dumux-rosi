@@ -166,7 +166,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     root_type = "soybean"
     file_name = "local_soybean_"
     file_name += bot_str
-    sim_time = 1. 
+    sim_time = 87.5 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
