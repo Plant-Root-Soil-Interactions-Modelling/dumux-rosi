@@ -95,26 +95,24 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
 
     if not run_local:
         print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
-        mkdir_p(job_directory)
+    
+    mkdir_p(job_directory) 
 
     for i, job in enumerate(jobs):
 
         try:
-            job_name = file_name + str(int(job[0]))
+            job_name = file_name +  "_{:03}".format(int(job[0])) 
         except:  # in case of "file" the filename is passed in job[0]
             job_name = file_name + str(job[0])
 
-        # print("starting job <{:s}>:".format(type_str), job_name, enviro_type, sim_time, *job[1:])
         print("creating job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
-            # print("len", len(job[1:]))
-            # os.system("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} & \n".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
             args =  ["", str(type_str), str(job_name), int(enviro_type), float(sim_time)]
             args.extend(job[1:])
             run_sra.run(args)
         else:
-            job_file = os.path.join(job_directory, job_name + "_" + str(enviro_type) + ".job")
+            job_file = os.path.join(job_directory, job_name + ".job")
             with open(job_file, 'w') as fh:
                   fh.writelines("#!/bin/bash\n")
                   fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
@@ -133,9 +131,12 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
                                 format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
 def write_ranges(file_name, names, ranges):
-    """ writes variable names and parameter ranges of the sensitivity analysis """
+    """ writes variable names and parameter ranges of the sensitivity analysis (todo use json) """
     assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
-    with open(file_name + "_range", 'w') as file:
+    job_directory = os.path.join(os.getcwd(), file_name)
+    mkdir_p(job_directory)    
+    job_file = os.path.join(job_directory, "range")
+    with open(job_file, 'w') as file:
         for i in range(0, len(ranges)):
             l = [str(r) for r in ranges[i]]
             range_ = ', '.join(l)
@@ -143,9 +144,11 @@ def write_ranges(file_name, names, ranges):
 
 
 def read_ranges(file_name):
-    """ reads variable names and parameter ranges of the sensitivity analysis """
+    """ reads variable names and parameter ranges of the sensitivity analysis  (todo use json)"""
+    job_directory = os.path.join(os.getcwd(), file_name)
+    job_file = os.path.join(job_directory, "range")        
     names, ranges = [], []
-    with open(file_name + "_range", 'r') as file:
+    with open(job_file, 'r') as file:
        for line in file:
             entries = line.rstrip().split(", ")
             names.append(entries[0])
@@ -165,18 +168,16 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_"
-    file_name += bot_str
+    file_name += (bot_str + str(enviro_type))
     sim_time =  87.5 
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
-    write_ranges("results/" + file_name,
+    write_ranges(file_name,
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
-    # jobs = make_local(1. , 1., 1., 1., 1., theta_, 1., 1., 1., 1.)  
-    #jobs = make_local(1. , 1., 1., 1., 1., 1., 1., 1., 1., [0, 1, 2, 3, 4, 5, 6])  
-    print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
+    #print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
@@ -186,7 +187,7 @@ def local_soybean2(enviro_type = 0, bot_str = ""):
     type_str = "original2"
     root_type = "soybean"
     file_name = "local_soybean2_"
-    file_name += bot_str
+    file_name += (bot_str + str(enviro_type))
     sim_time = 87.5  
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
@@ -204,7 +205,7 @@ def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     type_str = "tropisms"
     root_type = "soybean"
     file_name = "local_soybean_tropisms_"
-    file_name += bot_str
+    file_name += (bot_str + str(enviro_type))
     sim_time = 87.5  # 87.5  # days
     sigma_ = np.linspace(0.1, 0.5, 5)
     n_ = np.linspace(0., 5., 9)
@@ -228,7 +229,7 @@ def local_soybean_radii(enviro_type = 0, bot_str = ""):
     type_str = "radii"
     root_type = "soybean"
     file_name = "local_soybean_radii_"
-    file_name += bot_str
+    file_name += (bot_str + str(enviro_type))
     sim_time = 87.5  # 87.5  # days
 
     a145 = np.linspace(0.01, .5, 9)
@@ -241,7 +242,7 @@ def local_soybean_radii(enviro_type = 0, bot_str = ""):
     hl = np.linspace(0.01, 0.99, 9)
     hairsLength145, hairsLength2, hairsLength3 = hl, hl, hl
 
-    write_ranges("results/" + file_name,
+    write_ranges(file_name,
                  ["a145", "a2", "a3", "hairsZone145", "hairsZone2", "hairsZone3", "hairsLength145", "hairsLength2", "hairsLength3"],
                  [a145, a2, a3, hz, hz, hz, hl, hl, hl])
     jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0., ref = "left")  # currently we always pass 10 values to run_sra
@@ -286,8 +287,8 @@ if __name__ == "__main__":
     #
     # Make job files for local sensitivty analysis
     #
-    # local_soybean(0) # default water table at 1.2m 
-    local_soybean(1)
+    local_soybean(0) # default water table at 1.2m 
+    # local_soybean(1)
     # local_soybean(0, "free_") # bot bc: free drainage
     # local_soybean(1, "free_")
     # local_soybean(0, "200_") # bot bc water table at 2m 

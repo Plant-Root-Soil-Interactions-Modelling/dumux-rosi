@@ -130,9 +130,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 def get_indices(key, max_st):
     """ parses names for subTypes, and '_a' for absolute value or '_s' for scaling (default is scaling)"""
 
-    ind_indices = [list(range(0, max_st)), [1, 4], [2, 3], [1], [2], [3], [4], [4]]
-    if max_st < 5:
-        ind_indices[1] = [1, 4]
+    ind_indices = [list(range(0, max_st)), [1, 4], [2, 3], [1], [2], [3], [4], [4]] # no type 5 for soybean
     ind_names = ["", "145", "23", "1", "2", "3", "4", "45"]
 
     abs_ = False  # default

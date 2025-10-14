@@ -31,11 +31,11 @@ file_name = "local_soybean_"; not_xlog = [5,7]
 # file_name = "local_soybean_radii_"
 # file_name = "local_singleroot_conductivities64_"
 
-env_str = "_0"
+env_str = "_1"
 
 path = "results/"
 
-analysis_time = 87.5  # 87.5  # days  (day 60 is fine already)
+analysis_time = 40  #87.5 # 87.5  # 87.5  # days  (day 60 is fine already)
 
 names, ranges = sa.read_ranges(path + file_name)
 
@@ -87,7 +87,9 @@ plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
 plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 
 """ make plots """
-fig, ax = plt.subplots(3, 4, figsize = (16, 16))
+n = len(names)
+m = int(np.ceil(np.sqrt(n)))
+fig, ax = plt.subplots(int(np.ceil(n/m)), m, figsize = (16, 16))
 final = []
 finaln = []
 
@@ -124,7 +126,7 @@ for lind in range(0, len(names)):
                 vol[k] = np.nan
             try:
                 # krs_ = np.load(path + "krs_" + file_name + str(file_start_ind + k) + ".npy")
-                krs_ = alldata["krs"]
+                krs_ = alldata["carbon"]########################################
                 krs[k] = krs_[ind10]
             except:
                 krs[k] = np.nan
@@ -145,9 +147,9 @@ for lind in range(0, len(names)):
         print("ranging", np.min(ranges[lind]), np.max(ranges[lind]), len(ranges[lind]), trans)
 
         # ax.flat[ac].plot(ranges[lind], nitrate, '*-', label = "nitrate")
-        # ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
-        # ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
-
+        ax.flat[ac].plot(ranges[lind], vol, '-.', label = "volume")
+        ax.flat[ac].plot(ranges[lind], krs, ':', label = "krs")
+        ax.flat[ac].legend()
         final.append(trans[-1] / vol[-1])
         finaln.append(nitrate[-1] / vol[-1])
 
@@ -156,7 +158,7 @@ for lind in range(0, len(names)):
         ax.flat[ac].plot([x], [1.], 'r*')
 
         ax.flat[ac].set_title(names[lind])
-        # ax.flat[ac].set_ylim(0.8, 1.2)
+        ax.flat[ac].set_ylim(0.8, 1.2)
         # ax.flat[ac].set_yscale('log', base = 2)
         if not lind in not_xlog:
             ax.flat[ac].set_xscale('log', base = 2)

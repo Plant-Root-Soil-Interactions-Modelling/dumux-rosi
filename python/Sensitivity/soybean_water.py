@@ -11,7 +11,6 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-import cProfile
 import os
 import json
 
@@ -105,13 +104,16 @@ mods = {
 
 
 
+import cProfile
 import pstats
 
-# Creating profile object
+
 ob = cProfile.Profile()
 
 ob.enable()
+
 run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, save_all = True)
+
 ob.disable()
 
 stats = pstats.Stats(ob)

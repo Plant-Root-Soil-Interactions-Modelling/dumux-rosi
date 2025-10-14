@@ -188,14 +188,14 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
         
     # write simulation results
     if save_all:
-        scenario.write_results(exp_name + "_" + str(enviro_type), r1, r2, r3)
+        scenario.write_results(exp_name, r1, r2, r3)
     else:
-        scenario.write_results(exp_name + "_" + str(enviro_type), r1, r2, None)
+        scenario.write_results(exp_name, r1, r2, None)
 
     # write corresponding input parameters 
-    with open("results/" + exp_name + "_" + str(enviro_type) + "_mods.json", "w+") as f:
+    with open(exp_name[:-4]+ "/" + exp_name + "_mods.json", "w+") as f:
         json.dump(mods_copy, f, cls = NpEncoder)
-    r.ms.writeParameters("results/" + exp_name + ".xml")  # corresponding xml parameter set
+    r.ms.writeParameters(exp_name[:-4]+ "/" + exp_name + ".xml")  # corresponding xml parameter set
 
     # possible objective for optimization
     times = r1[0]

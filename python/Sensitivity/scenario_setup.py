@@ -436,13 +436,13 @@ def write_results(file_name, r1, r2, r3 = None):
     else:
         times_sa = []
    
-    np.savez_compressed("results/" + file_name,
+    np.savez_compressed(file_name[:-4] + "/" + file_name,
              times = r1[0], pot_trans = r1[1], act_trans = r1[2], collar_pot = r1[3],
              times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3], 
              len_ = r2[4], surf = r2[5], vol = r2[6], depth = r2[7], krs = r2[8], carbon = r2[9], times_sa = times_sa)
     if r3: 
         for i,ana in enumerate(r3[1]):
-           write_sa_numpy("results/sa_" + file_name +"_"+str(i), ana) 
+           write_sa_numpy(file_name[:-4] + "/" + "sa_"+ file_name +"_"+str(i), ana) 
 
 
 def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
