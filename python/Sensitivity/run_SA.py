@@ -288,11 +288,11 @@ if __name__ == "__main__":
     # Make job files for local sensitivty analysis
     #
     local_soybean(0) # default water table at 1.2m 
-    # local_soybean(1)
-    # local_soybean(0, "free_") # bot bc: free drainage
-    # local_soybean(1, "free_")
-    # local_soybean(0, "200_") # bot bc water table at 2m 
-    # local_soybean(1, "200_") 
+    local_soybean(1)
+    local_soybean(0, "free_") # bot bc: free drainage
+    local_soybean(1, "free_")
+    local_soybean(0, "200_") # bot bc water table at 2m 
+    local_soybean(1, "200_") 
     #
     # local_soybean2(0) # default water table at 1.2m 
     # local_soybean2(1)
