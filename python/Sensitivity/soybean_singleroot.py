@@ -58,7 +58,7 @@ mods = {
     "output_times": [40]
 }
 
-cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, save_all = True)
+cu = run_sra.run_soybean(file_name, enviro_type, sim_time, mods, "results/", save_all = True)
 
 print("cumulative uptake:", cu)
 

@@ -204,9 +204,9 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
 
         if i % skip == 0:
             
-            # print("age {:g}".format(initial_age + t), "{:g}/{:g} {:g} iterations, rmse {:g}".format(i, N, c, err_), "; wall times {:g} {:g}".format(
-            #     wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem)),
-            #       "number of segments", rs.getNumberOfSegments(), "collar potential {:g}".format(rx[0]), flush = True)
+            print("age {:g}".format(initial_age + t), "{:g}/{:g} {:g} iterations, rmse {:g}".format(i, N, c, err_), "; wall times {:g} {:g}".format(
+                wall_interpolation / (wall_interpolation + wall_xylem), wall_xylem / (wall_interpolation + wall_xylem)),
+                  "number of segments", rs.getNumberOfSegments(), "collar potential {:g}".format(rx[0]), flush = True)
             # print("res_", np.argmax(np.abs(res_)), np.max(np.abs(res_)), err_)
             
             times_lr_.append(initial_age + t)

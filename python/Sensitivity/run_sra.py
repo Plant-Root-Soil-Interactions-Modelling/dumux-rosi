@@ -41,7 +41,7 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
-def run_soybean_exp(exp_name, enviro_type, sim_time, save_all = False):
+def run_soybean_exp(exp_name, enviro_type, sim_time, result_path, save_all = True):
     """
     reproduces a simulation with parameters given in file "soybean_all14.zip"
     """
@@ -49,21 +49,22 @@ def run_soybean_exp(exp_name, enviro_type, sim_time, save_all = False):
     file_path = os.path.join(folder_path, exp_name + "_mods.json")
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
-
+        
     params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip and results_cplantbox/
     assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
     params.pop("exp_name")
     params.pop("enviro_type")
     params.pop("sim_time")
-    run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
+    run_soybean(exp_name, enviro_type, sim_time, params, result_path, save_all)
 
 
-def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
+def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = True):
     """
         exp_name                experiment name (name for output files)
         enviro_type             envirotype (number)
         sim_time                simulation time [days]
         mods                    parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
+        result_path             path folder for exporting results
         save_all                ---
     """
 
@@ -184,18 +185,21 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True):
 
     water_end = s.getWaterVolume()
 
-    print("writing", exp_name + "_" + str(enviro_type))
-        
     # write simulation results
+    print("writing", exp_name + "_" + str(enviro_type))
+    
+    if not os.path.exists(result_path):
+        os.mkdir(result_path)    
+        
     if save_all:
-        scenario.write_results(exp_name, r1, r2, r3)
+        scenario.write_results(result_path + exp_name, r1, r2, r3)
     else:
-        scenario.write_results(exp_name, r1, r2, None)
+        scenario.write_results(result_path + exp_name, r1, r2, None)
 
-    # write corresponding input parameters 
-    with open(exp_name[:-4]+ "/" + exp_name + "_mods.json", "w+") as f:
+    with open(result_path + exp_name + "_mods.json", "w+") as f: # write corresponding input parameters 
         json.dump(mods_copy, f, cls = NpEncoder)
-    r.ms.writeParameters(exp_name[:-4]+ "/" + exp_name + ".xml")  # corresponding xml parameter set
+    
+    r.ms.writeParameters(result_path + exp_name + ".xml")  # corresponding xml parameter set
 
     # possible objective for optimization
     times = r1[0]
@@ -238,7 +242,7 @@ def run(argv):
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)  # result filename = exp_name + _envirotype
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)  # result filename = exp_name + _envirotype
 
     elif type == "original2":
         print("running original2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
@@ -256,7 +260,7 @@ def run(argv):
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)
     elif type == "tropisms":
         print("running tropisms", flush = True)
         n145, n2, n3 = float(argv[5]), float(argv[6]), float(argv[7])
@@ -291,7 +295,7 @@ def run(argv):
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120    
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/",save_all = True)
 
     elif type == "file":
 
@@ -312,7 +316,7 @@ def run(argv):
         params.pop("enviro_type")
         params.pop("sim_time")
 
-        run_soybean(exp_name, enviro_type, sim_time, params, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, params, exp_name[:-4] + "/", save_all = True)
 
     else:
 
@@ -333,15 +337,6 @@ if __name__ == "__main__":
     # dd
     
     run(sys.argv)
-    
-    
-    
-    
-    
-    
-    
-    
-    
     
     # elif type == "conductivities10":  # makes little sense to treat kr, kx independently
     #     print("running conductivities10", flush = True)

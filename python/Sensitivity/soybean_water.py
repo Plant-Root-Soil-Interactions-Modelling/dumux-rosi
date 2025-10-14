@@ -112,7 +112,7 @@ ob = cProfile.Profile()
 
 ob.enable()
 
-run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, save_all = True)
+run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, "results/", save_all = True)
 
 ob.disable()
 
