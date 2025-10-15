@@ -65,7 +65,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
         sim_time                simulation time [days]
         mods                    parameters that are adjusted from the base parametrization (default: data/Glycine_max_Moraes2020_opt2_modified.xml)
         result_path             path folder for exporting results
-        save_all                ---
+        save_all                additionally saves all root geometry and hydraulic data at start and end of simulation, and at time defined in mods["output_times"]
     """
 
     if not "conductivity_mode" in mods:

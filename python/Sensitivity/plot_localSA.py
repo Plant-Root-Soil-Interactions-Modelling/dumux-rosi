@@ -24,7 +24,9 @@ def start_index(ind, ranges):
     return s
 
 
-def plot_local_SA(file_name, env_str, analysis_time, not_xlog):
+def plot_local_SA(file_name, env_str, analysis_time, not_xlog, show = True):
+
+    exp_name = file_name + env_str + "_time_{:g}".format(analysis_time)
 
     path = file_name+ env_str+"/"
     
@@ -132,7 +134,7 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog):
             x = ranges[lind][sa_len // 2]
             ax.flat[ac].plot([x], [1.], 'r*')# center red dot         
             ax.flat[ac].set_title(names[lind])
-            #ax.flat[ac].set_ylim(0.8, 1.2)
+            ax.flat[ac].set_ylim(0.8, 1.2)
             # ax.flat[ac].set_yscale('log', base = 2)
             if not lind in not_xlog:
                 ax.flat[ac].set_xscale('log', base = 2)
@@ -156,9 +158,11 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog):
                         
             ac += 1
     
-    plt.tight_layout() # pad = 4.
-    plt.show()
-    
+    plt.tight_layout(pad = 4.)  
+    fig.suptitle(exp_name) 
+    plt.savefig(exp_name+".png", dpi=300, bbox_inches='tight')
+    if show:
+        plt.show()
     
     df = pd.DataFrame([final_nd, final, final_trans, final_collar], columns = final_names, 
                       index = ["trans/carbon","trans/carbon", "trans", "leaf pot"])
@@ -184,6 +188,8 @@ if __name__ == "__main__":
 
     
     # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 40., not_xlog = [5,7])
-    plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87, not_xlog = [5,7])        
+    # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87., not_xlog = [5,7])
+    #plot_local_SA("local_soybean", env_str = "_1", analysis_time = 40, not_xlog = [5,7])        
+    plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5,7])        
 
     
