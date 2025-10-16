@@ -115,7 +115,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
             job_file = os.path.join(job_directory, job_name + ".job")
             with open(job_file, 'w') as fh:
                   fh.writelines("#!/bin/bash\n")
-                  fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name))
+                  fh.writelines("#SBATCH --job-name={:s}.job\n".format(job_name[14:]))
                   fh.writelines("#SBATCH --ntasks=1\n")
                   fh.writelines("#SBATCH --cpus-per-task=1\n")
                   fh.writelines("#SBATCH --nodes=1\n")
@@ -177,7 +177,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
-    #print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
+    print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
@@ -200,7 +200,6 @@ def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity analysis of the influence of tropisms
        alters number of trials n and mean alteration sigma, dependent on root order (145, 2, 3)
     """
-    print("local_soybean_tropisms")
     type_str = "tropisms"
     root_type = "soybean"
     file_name = "local_soybean_tropisms_"
@@ -214,6 +213,7 @@ def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
                  [n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_])
 
     jobs = make_local(n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_, 0., 0.)  # currently we always pass 10 valeus to run_sra
+    print("local_soybean_tropisms: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 
@@ -224,7 +224,6 @@ def local_soybean_radii(enviro_type = 0, bot_str = ""):
        root hair length, dependent on root order (145, 2, 3)
        root elongation zone is fixed to 0.5
     """
-    print("local_soybean_radii")
     type_str = "radii"
     root_type = "soybean"
     file_name = "local_soybean_radii_"
@@ -246,7 +245,7 @@ def local_soybean_radii(enviro_type = 0, bot_str = ""):
                  [a145, a2, a3, hz, hz, hz, hl, hl, hl])
     jobs = make_local(a145, a2, a3, hz, hz, hz, hl, hl, hl, 0., ref = "left")  # currently we always pass 10 values to run_sra
     jobs = np.array(jobs)
-
+    print("local_soybean_radii: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
 
 

@@ -278,7 +278,7 @@ def run(argv):
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120        
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)
 
     elif type == "radii":
         print("running radii", flush = True)
