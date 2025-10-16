@@ -190,6 +190,7 @@ if __name__ == "__main__":
     # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 40., not_xlog = [5,7])
     # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87., not_xlog = [5,7])
     #plot_local_SA("local_soybean", env_str = "_1", analysis_time = 40, not_xlog = [5,7])        
-    plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5,7])        
+    # plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5,7])        
 
+    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87, not_xlog = [5,7])        
     

@@ -189,7 +189,7 @@ def local_soybean2(enviro_type = 0, bot_str = ""):
     file_name += (bot_str + str(enviro_type))
     sim_time = 87.5  
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-    write_ranges("results/" + file_name,
+    write_ranges(file_name,
                  ["r", "r145", "r2", "r3", "ln", "ln145", "ln2", "a145", "a2", "a3"],
                  [p1, p1, p1, p1, p1, p1, p1, p1, p1, p1])
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
@@ -208,7 +208,7 @@ def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     sigma_ = np.linspace(0.1, 0.5, 5)
     n_ = np.linspace(0., 5., 9)
     theta_ = np.linspace(0, np.pi / 2, 9)
-    write_ranges("results/" + file_name,
+    write_ranges(file_name,
                  ["n145", "n2", "n3", "sigma145", "sigma2", "sigma3", "theta2", "theta3"],
                  [n_, n_, n_, sigma_, sigma_, sigma_, theta_, theta_])
 
