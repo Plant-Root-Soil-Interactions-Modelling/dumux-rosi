@@ -18,8 +18,8 @@
 import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
 sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-import numpy as np
 import os
+import numpy as np
 import random
 
 import run_sra
@@ -37,12 +37,6 @@ def make_lists(*args):
         if isinstance(v, float):
             l[i] = [v]
     return (*l,)
-
-
-def mkdir_p(dir):
-    '''make a directory (dir) if it doesn't exist'''
-    if not os.path.exists(dir):
-        os.mkdir(dir)
 
 
 def make_local(*args, ref = "mid"):
@@ -95,20 +89,21 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
 
     if not run_local:
         print("Creating job files in folder:", job_directory, ", use bash script to send jobs to cluster with sbatch (e.g. run_file.sh)")
-    
-    mkdir_p(job_directory) 
+
+    if not os.path.exists(job_directory):
+        os.mkdir(job_directory)
 
     for i, job in enumerate(jobs):
 
         try:
-            job_name = file_name +  "_{:03}".format(int(job[0])) 
+            job_name = file_name + "_{:03}".format(int(job[0]))
         except:  # in case of "file" the filename is passed in job[0]
             job_name = file_name + str(job[0])
 
         print("creating job <{:s}>:".format(type_str), "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}".format(type_str, job_name, enviro_type, float(sim_time), *job[1:]))  # , sim_time)  #
 
         if run_local:
-            args =  ["", str(type_str), str(job_name), int(enviro_type), float(sim_time)]
+            args = ["", str(type_str), str(job_name), int(enviro_type), float(sim_time)]
             args.extend(job[1:])
             run_sra.run(args)
         else:
@@ -130,11 +125,12 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
                   fh.writelines("python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".
                                 format(str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]))
 
+
 def write_ranges(file_name, names, ranges):
     """ writes variable names and parameter ranges of the sensitivity analysis (todo use json) """
     assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
     job_directory = os.path.join(os.getcwd(), file_name)
-    mkdir_p(job_directory)    
+    mkdir_p(job_directory)
     job_file = os.path.join(job_directory, "range")
     with open(job_file, 'w') as file:
         for i in range(0, len(ranges)):
@@ -146,7 +142,7 @@ def write_ranges(file_name, names, ranges):
 def read_ranges(file_name):
     """ reads variable names and parameter ranges of the sensitivity analysis  (todo use json)"""
     job_directory = os.path.join(os.getcwd(), file_name)
-    job_file = os.path.join(job_directory, "range")        
+    job_file = os.path.join(job_directory, "range")
     names, ranges = [], []
     with open(job_file, 'r') as file:
        for line in file:
@@ -164,12 +160,12 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
     """ constructs a local sensitivity analysis presented in the preproject for values 
         "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
-    
+
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_"
     file_name += (bot_str + str(enviro_type))
-    sim_time =  87.5 
+    sim_time = 87.5
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 9)])
     theta_ = np.linspace(0, np.pi / 2, 9)
@@ -177,7 +173,7 @@ def local_soybean(enviro_type = 0, bot_str = ""):  # bot_str = "", or "free", or
                  ["kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"],
                  [p2, p2, p1, p1, p1, theta_, p1, [2., 3, 4, 5]])
     jobs = make_local(p2 , p2, p1, p1, p1, theta_, 1., 1., p1, [2., 3, 4, 5])  #
-    #print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
+    # print("local_soybean: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
 
 
@@ -188,7 +184,7 @@ def local_soybean2(enviro_type = 0, bot_str = ""):
     root_type = "soybean"
     file_name = "local_soybean2_"
     file_name += (bot_str + str(enviro_type))
-    sim_time = 87.5  
+    sim_time = 87.5
     p1 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
     write_ranges("results/" + file_name,
                  ["r", "r145", "r2", "r3", "ln", "ln145", "ln2", "a145", "a2", "a3"],
@@ -196,6 +192,7 @@ def local_soybean2(enviro_type = 0, bot_str = ""):
     jobs = make_local(p1, p1, p1, p1, p1, p1, p1, p1, p1, p1)
     print("local_soybean2: envirotype", enviro_type, "Bot BC", bot_str, len(jobs), "jobs")
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)  # result file neame: file_name + counter + _envirotype
+
 
 def local_soybean_tropisms(enviro_type = 0, bot_str = ""):
     """ constructs a local sensitivity analysis of the influence of tropisms
@@ -287,40 +284,38 @@ if __name__ == "__main__":
     #
     # Make job files for local sensitivty analysis
     #
-    local_soybean(0) # default water table at 1.2m 
+    local_soybean(0)  # default water table at 1.2m
     local_soybean(1)
-    local_soybean(0, "free_") # bot bc: free drainage
+    local_soybean(0, "free_")  # bot bc: free drainage
     local_soybean(1, "free_")
-    local_soybean(0, "200_") # bot bc water table at 2m 
-    local_soybean(1, "200_") 
+    local_soybean(0, "200_")  # bot bc water table at 2m
+    local_soybean(1, "200_")
     #
-    # local_soybean2(0) # default water table at 1.2m 
+    # local_soybean2(0) # default water table at 1.2m
     # local_soybean2(1)
     # local_soybean2(0, "free_") # bot bc: free drainage
     # local_soybean2(1, "free_")
-    # local_soybean2(0, "200_") # bot bc water table at 2m 
-    # local_soybean2(1, "200_") 
+    # local_soybean2(0, "200_") # bot bc water table at 2m
+    # local_soybean2(1, "200_")
     #
     #  # Make job files for local sensitivty analysis
-    # local_soybean_tropisms(0) # default water table at 1.2m 
+    # local_soybean_tropisms(0) # default water table at 1.2m
     # local_soybean_tropisms(1)
     # local_soybean_tropisms(0, "free_") # bot bc: free drainage
     # local_soybean_tropisms(1, "free_")
-    # local_soybean_tropisms(0, "200_") # bot bc water table at 2m 
-    # local_soybean_tropisms(1, "200_") 
+    # local_soybean_tropisms(0, "200_") # bot bc water table at 2m
+    # local_soybean_tropisms(1, "200_")
     #
     #   # Make job files for local sensitivty analysis
-    # local_soybean_radii(0) # default water table at 1.2m 
+    # local_soybean_radii(0) # default water table at 1.2m
     # local_soybean_radii(1)
     # local_soybean_radii(0, "free_") # bot bc: free drainage
     # local_soybean_radii(1, "free_")
-    # local_soybean_radii(0, "200_") # bot bc water table at 2m 
-    # local_soybean_radii(1, "200_") 
- 
- 
- 
+    # local_soybean_radii(0, "200_") # bot bc water table at 2m
+    # local_soybean_radii(1, "200_")
+
  # def local_soybean_conductivities():
-#     """ constructs a local sensitivity analysis of hydraulic conductivities 
+#     """ constructs a local sensitivity analysis of hydraulic conductivities
 #        for young and old parts, dependent on root order (145, 2, 3)
 #     """
 #     print("local_soybean_conductivities")
@@ -347,7 +342,7 @@ if __name__ == "__main__":
 #
 #
 # def local_singleroot_conductivities():
-#     """ constructs a local sensitivity analysis of hydraulic conductivities 
+#     """ constructs a local sensitivity analysis of hydraulic conductivities
 #        for young and old parts, dependent on root order (145, 2, 3)
 #     """
 #     print("local_singleroot_conductivities")

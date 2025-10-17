@@ -49,7 +49,7 @@ def run_soybean_exp(exp_name, enviro_type, sim_time, result_path, save_all = Tru
     file_path = os.path.join(folder_path, exp_name + "_mods.json")
     with open(file_path, 'r', encoding = 'utf-8') as file:
         params = json.load(file)
-        
+
     params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip and results_cplantbox/
     assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
     params.pop("exp_name")
@@ -140,26 +140,24 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
     water0 = s.getWaterVolume()
     # print("soil model set\n", flush = True)
 
-
-
     # initialize root system
     # print("starting hydraulic model", flush = True)
     cdata = scenario.prepare_conductivities(mods)
-    if mods["conductivity_mode"] == "from_mecha": # untested
+    if mods["conductivity_mode"] == "from_mecha":  # untested
         anatomy_ind = scenario.sort_indices(mods)
         anatomy = [scenario_setup.get_anatomy(ind[0]) for i in anatomy_ind]
-        radii =  [ mods["a145_a"], mods["a2_a"], mods["a3_a"] ]   
-        assert data[0,2,2] == radii[0], "radii failed for typ 145" # untested (can be removed later...)
-        assert data[1,2,2] == radii[1], "radii failed for typ 2"
-        assert data[2,2,2] == radii[2], "radii failed for typ 3"
+        radii = [ mods["a145_a"], mods["a2_a"], mods["a3_a"] ]
+        assert data[0, 2, 2] == radii[0], "radii failed for typ 145"  # untested (can be removed later...)
+        assert data[1, 2, 2] == radii[1], "radii failed for typ 2"
+        assert data[2, 2, 2] == radii[2], "radii failed for typ 3"
         cc_data = { "radii": radii, "anatomy": anatomy}
-    else: 
-        cc_data = None    
+    else:
+        cc_data = None
     r, hparams = hydraulic_model.create_mapped_rootsystem(min_b, max_b, cell_number, s, xml_name, stochastic = False, mods = mods, model = "Doussan")  # Meunier
     scenario.set_conductivities(hparams, mods, cdata)
     # print("***********************", "hydraulic model set\n", flush = True)
 
-    output_times = mods["output_times"]  
+    output_times = mods["output_times"]
     output_times.sort
     mods.pop("output_times")
 
@@ -175,7 +173,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
     # print("sanity test done\n", flush = True)
 
     try:
-        r1, r2, r3 = sra_new.simulate_dynamic(s, r, table_name, sim_time, dt, trans_, output_times, 
+        r1, r2, r3 = sra_new.simulate_dynamic(s, r, table_name, sim_time, dt, trans_, output_times,
                                               initial_age = initial_age, cc_data = cc_data)
     except:
         print("***********************")
@@ -187,18 +185,18 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
 
     # write simulation results
     print("writing", exp_name + "_" + str(enviro_type))
-    
+
     if not os.path.exists(result_path):
-        os.mkdir(result_path)    
-        
+        os.mkdir(result_path)
+
     if save_all:
         scenario.write_results(result_path + exp_name, r1, r2, r3)
     else:
         scenario.write_results(result_path + exp_name, r1, r2, None)
 
-    with open(result_path + exp_name + "_mods.json", "w+") as f: # write corresponding input parameters 
+    with open(result_path + exp_name + "_mods.json", "w+") as f:  # write corresponding input parameters
         json.dump(mods_copy, f, cls = NpEncoder)
-    
+
     r.ms.writeParameters(result_path + exp_name + ".xml")  # corresponding xml parameter set
 
     # possible objective for optimization
@@ -214,16 +212,17 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
 
     return cu
 
+
 def run(argv):
 
     type = argv[1]
-    exp_name = argv[2] # codes for bot BC "_free" and "_200"
+    exp_name = argv[2]  # codes for bot BC "_free" and "_200"
     enviro_type = int(float(argv[3]))
     sim_time = float(argv[4])
 
     if type == "original":  # relevant parameters
         print("running original sa", flush = True)
-        kr, kx = float(argv[5]), float(argv[6])         
+        kr, kx = float(argv[5]), float(argv[6])
         lmax1, lmax2, lmax3 = float(argv[7]), float(argv[8]), float(argv[9])
         theta1 = float(argv[10])
         r1, r2 = float(argv[11]), float(argv[12])  # 1., 1. -> moved to running original2
@@ -235,7 +234,7 @@ def run(argv):
             "lmax145": lmax1, "lmax2": lmax2, "lmax3": lmax3,
             "theta45_a": theta1,
             "r145": r1, "r2": r2, "r3": r2,
-            "a":a,            
+            "a":a,
             "src_a": src
             }
         if "_free" in exp_name:
@@ -246,12 +245,12 @@ def run(argv):
 
     elif type == "original2":
         print("running original2", flush = True)  # ["r", "r145", "r2", "r3", "ln", "ln145", "ln2",  "a145", "a2", "a3"]
-        r, r145, r2, r3 = float(argv[5]),float(argv[6]),float(argv[7]),float(argv[8])
-        ln, ln145, ln2  = float(argv[9]),float(argv[10]),float(argv[11])
-        a145, a2, a3 = float(argv[12]), float(argv[13]),float(argv[14])
+        r, r145, r2, r3 = float(argv[5]), float(argv[6]), float(argv[7]), float(argv[8])
+        ln, ln145, ln2 = float(argv[9]), float(argv[10]), float(argv[11])
+        a145, a2, a3 = float(argv[12]), float(argv[13]), float(argv[14])
         mods = {
             "conductivity_mode": "scale",
-            "scale_kr":1., "scale_kx":1., 
+            "scale_kr":1., "scale_kx":1.,
             "r": r, "r145": r145, "r2": r2, "r3": r3,
             "ln": ln, "ln145": ln145, "ln2": ln2,
             "a145":a145, "a2": a2, "a3": a3
@@ -268,7 +267,7 @@ def run(argv):
         theta2, theta3 = float(argv[11]), float(argv[12])
         mods = {
                 "conductivity_mode": "scale",
-                "scale_kr":1., "scale_kx":1.,                
+                "scale_kr":1., "scale_kx":1.,
                 "tropismN145_a":n145, "tropismN2_a":n2, "tropismN3_a":n3,
                 "tropismS145_a":s145, "tropismS2_a":s2, "tropismS3_a":s3,
                 "theta2_a": theta2, "theta3_a": theta3
@@ -276,7 +275,7 @@ def run(argv):
         if "_free" in exp_name:
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
-            mods["water_table"] = 200  # otherwise 120        
+            mods["water_table"] = 200  # otherwise 120
         run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
 
     elif type == "radii":
@@ -294,8 +293,8 @@ def run(argv):
         if "_free" in exp_name:
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
-            mods["water_table"] = 200  # otherwise 120    
-        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/",save_all = True)
+            mods["water_table"] = 200  # otherwise 120
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)
 
     elif type == "file":
 
@@ -324,7 +323,7 @@ def run(argv):
 
 
 if __name__ == "__main__":
-    
+
     # enviro_type = 0
     # sim_time = 1
     # mods = {
@@ -335,9 +334,9 @@ if __name__ == "__main__":
     #     }
     # run_soybean("test", enviro_type, sim_time, mods, save_all = True)
     # dd
-    
+
     run(sys.argv)
-    
+
     # elif type == "conductivities10":  # makes little sense to treat kr, kx independently
     #     print("running conductivities10", flush = True)
     #     mods = {
@@ -376,4 +375,3 @@ if __name__ == "__main__":
     #         "bot_bc": "noFlux",
     #     }
     #     run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
-    
