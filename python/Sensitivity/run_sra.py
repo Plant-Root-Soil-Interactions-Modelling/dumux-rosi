@@ -260,6 +260,7 @@ def run(argv):
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120
         run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)
+
     elif type == "tropisms":
         print("running tropisms", flush = True)
         n145, n2, n3 = float(argv[5]), float(argv[6]), float(argv[7])
@@ -276,7 +277,7 @@ def run(argv):
             mods["bot_bc"] = "freeDrainage"  # otherwise potential
         if "_200" in exp_name:
             mods["water_table"] = 200  # otherwise 120
-        run_soybean(exp_name, enviro_type, sim_time, mods, save_all = True)
+        run_soybean(exp_name, enviro_type, sim_time, mods, exp_name[:-4] + "/", save_all = True)
 
     elif type == "radii":
         print("running radii", flush = True)
@@ -286,7 +287,7 @@ def run(argv):
         mods = {
             "conductivity_mode": "scale",
             "scale_kr":1., "scale_kx":1.,
-            "a145_a":a145, "a":a2, "a3":a3,
+            "a145_a":a145, "a2_a":a2, "a3_a":a3,
             "hairsZone145_a":hairsZone145, "hairsZone2_a":hairsZone145, "hairsZone3_a":hairsZone145,
             "hairsLength145_a":hairsLength145, "hairsLength2_a":hairsLength2, "hairsLength3_a":hairsLength3
             }
