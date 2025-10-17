@@ -24,7 +24,7 @@ def start_index(ind, ranges):
     return s
 
 
-def plot_local_SA(file_name, env_str, analysis_time, not_xlog, show = True):
+def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True):
 
     exp_name = file_name + env_str + "_time_{:g}".format(analysis_time)
 
@@ -126,7 +126,7 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog, show = True):
         
             ax.flat[ac].plot(ranges[lind], trans_nd, '*-', label = "Water")  #  / ranges[lind][sa_len // 2]
             ax.flat[ac].plot(ranges[lind], collar_nd, '-.', label = "Leaf potential")        
-            print(names[lind], collar)
+            # print(names[lind], collar)
             # ax.flat[ac].plot(ranges[lind], vol_nd, '-.', label = "volume")
             ax.flat[ac].plot(ranges[lind], carbon_nd, '-.', label = "Carbon")
             #ax.flat[ac].plot(ranges[lind], krs_nd, ':', label = "$K_{rs}$")
@@ -134,7 +134,8 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog, show = True):
             x = ranges[lind][sa_len // 2]
             ax.flat[ac].plot([x], [1.], 'r*')# center red dot         
             ax.flat[ac].set_title(names[lind])
-            ax.flat[ac].set_ylim(0.8, 1.2)
+            # ax.flat[ac].set_ylim(0.8, 1.2)
+            ax.flat[ac].set_ylim(0.9, 1.1)
             # ax.flat[ac].set_yscale('log', base = 2)
             if not lind in not_xlog:
                 ax.flat[ac].set_xscale('log', base = 2)
@@ -192,5 +193,5 @@ if __name__ == "__main__":
     #plot_local_SA("local_soybean", env_str = "_1", analysis_time = 40, not_xlog = [5,7])        
     # plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5,7])        
 
-    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87, not_xlog = [5,7])        
+    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)        
     
