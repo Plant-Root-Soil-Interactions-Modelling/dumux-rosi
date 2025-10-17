@@ -130,7 +130,8 @@ def write_ranges(file_name, names, ranges):
     """ writes variable names and parameter ranges of the sensitivity analysis (todo use json) """
     assert len(names) == len(ranges), "run_SA.write_ranges(): len(names) != len(ranges) {:g}, {:g}".format(len(names), len(ranges))
     job_directory = os.path.join(os.getcwd(), file_name)
-    mkdir_p(job_directory)
+    if not os.path.exists(job_directory):
+        os.mkdir(job_directory)
     job_file = os.path.join(job_directory, "range")
     with open(job_file, 'w') as file:
         for i in range(0, len(ranges)):
@@ -290,31 +291,26 @@ if __name__ == "__main__":
     # local_soybean(0, "200_") # bot bc water table at 2m
     # local_soybean(1, "200_")
 
-    local_soybean2(0)
-    local_soybean_radii(0)
-    local_soybean_tropisms(0)
-
-    #
-    # local_soybean2(0) # default water table at 1.2m
-    # local_soybean2(1)
-    # local_soybean2(0, "free_") # bot bc: free drainage
-    # local_soybean2(1, "free_")
+    local_soybean2(0)  # default water table at 1.2m
+    local_soybean2(1)
+    local_soybean2(0, "free_")  # bot bc: free drainage
+    local_soybean2(1, "free_")
     # local_soybean2(0, "200_") # bot bc water table at 2m
     # local_soybean2(1, "200_")
-    #
-    #  # Make job files for local sensitivty analysis
-    # local_soybean_tropisms(0) # default water table at 1.2m
-    # local_soybean_tropisms(1)
-    # local_soybean_tropisms(0, "free_") # bot bc: free drainage
-    # local_soybean_tropisms(1, "free_")
+
+     # Make job files for local sensitivty analysis
+    local_soybean_tropisms(0)  # default water table at 1.2m
+    local_soybean_tropisms(1)
+    local_soybean_tropisms(0, "free_")  # bot bc: free drainage
+    local_soybean_tropisms(1, "free_")
     # local_soybean_tropisms(0, "200_") # bot bc water table at 2m
     # local_soybean_tropisms(1, "200_")
-    #
-    #   # Make job files for local sensitivty analysis
-    # local_soybean_radii(0) # default water table at 1.2m
-    # local_soybean_radii(1)
-    # local_soybean_radii(0, "free_") # bot bc: free drainage
-    # local_soybean_radii(1, "free_")
+
+      # Make job files for local sensitivty analysis
+    local_soybean_radii(0)  # default water table at 1.2m
+    local_soybean_radii(1)
+    local_soybean_radii(0, "free_")  # bot bc: free drainage
+    local_soybean_radii(1, "free_")
     # local_soybean_radii(0, "200_") # bot bc water table at 2m
     # local_soybean_radii(1, "200_")
 

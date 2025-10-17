@@ -203,7 +203,9 @@ if __name__ == "__main__":
     # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87, not_xlog = [5, 7])
     # plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
     # plot_local_SA("local_soybean_free", env_str = "_0", analysis_time = 87, not_xlog = [5, 7])
-    plot_local_SA("local_soybean_free", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
+    # plot_local_SA("local_soybean_free", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
 
-    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)
+    # lot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)
+    # plot_local_SA("local_soybean_tropisms", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_radii", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
 
