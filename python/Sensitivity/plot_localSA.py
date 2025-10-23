@@ -155,33 +155,50 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True)
     if show:
         plt.show()
 
-    df = pd.DataFrame([final_nd, final, final_trans, final_collar], columns = final_names,
-                      index = ["trans/carbon", "trans/carbon", "trans", "leaf pot"])
-    df = df.round(3)
-    print()
-    print(df.to_string(index = True, justify = 'center'))
+    print(exp_name)
+    sort_parameters(final_names, final_nd, final_trans, final_collar)
 
-    I0 = np.argsort(final_nd)[::-1]
-    I1 = np.argsort(final)[::-1]  # proportional to I0
-    I2 = np.argsort(final_trans)[::-1]
-    I3 = np.argsort(final_collar)[::-1]
+    return final_names, final_nd, final_trans, final_collar
 
-    print("\nSorted", exp_name)
+
+def sort_parameters(final_names, final_nd, final_trans, final_collar):
+    """ ddd """
+
+    final_names = np.array(final_names)
     final_nd = np.array(final_nd)
-    final = np.array(final)
     final_trans = np.array(final_trans)
     final_collar = np.array(final_collar)
-    df = pd.DataFrame([final_nd[I0], final_trans[I2], final_collar[I3]], index = ["trans/carbon", "trans", "leaf pot"])
-    print(df.to_string(index = True, justify = 'left'))
+
+    df = pd.DataFrame([final_nd, final_trans, final_collar], columns = final_names,
+                      index = ["trans/carbon", "trans", "leaf pot"])
+    df = df.round(4)
+    print(df.to_string(index = True, justify = 'center'))
+
+    I0 = np.argsort(final_nd)[::-1]  # descending
+    I2 = np.argsort(final_trans)[::-1]  # descending
+    I3 = np.argsort(final_collar)  # ascending
 
     print("")
-    final_names = np.array(final_names)
-    df = pd.DataFrame([final_names[I0], final_names[I2], final_names[I3]], index = ["trans/carbon", "trans", "leaf pot"])
-    print(df.to_string(index = True, justify = 'left'))
+    df = pd.DataFrame([final_nd[I0], final_trans[I2], final_collar[I3]], index = ["trans/carbon", "trans", "leaf pot"])
+    df = df.round(4)
+    print(df.to_string(header = False, index = True, justify = 'left'))
+    # Open the file in append mode ('a') and write the DataFrame
+    # with open("figures/out.txt", 'a', encoding = 'utf-8') as f:
+    #     f.write("Sorted" + exp_name)
+    #     f.write(df.to_string(index = True, justify = 'left') + '\n')  # Add spacing between appends
+
     print("")
+    df = pd.DataFrame([final_names[I0], final_names[I2], final_names[I3]], index = ["trans/carbon", "trans", "leaf pot"])
+    print(df.to_string(header = False, index = True, justify = 'left'))
+    print("")
+    # with open("results/out.txt", 'a', encoding = 'utf-8') as f:
+    #     f.write("Sorted " + exp_name + "\n")
+    #     f.write(df.to_string(header = False, index = True, justify = 'left') + '\n\n')  # Add spacing between appends
 
 
 if __name__ == "__main__":
+
+    show = False
 
     # # make png for everything
     # for env in ["_0", "_1"]:
@@ -189,23 +206,30 @@ if __name__ == "__main__":
     #         for at in [10, 20, 30, 40, 50, 60, 80]:
     #             plot_local_SA("local_soybean" + bc, env_str = env, analysis_time = at, not_xlog = [5, 7], show = False)
 
-    # plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87, not_xlog = [5, 7])
-    # plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
-    # plot_local_SA("local_soybean_free", env_str = "_0", analysis_time = 87, not_xlog = [5, 7])
-    # plot_local_SA("local_soybean_free", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
+    names0, final0, trans0, collar0 = plot_local_SA("local_soybean", env_str = "_0", analysis_time = 87, not_xlog = [5, 7], show = show)
+    names1, final1, trans1, collar1 = plot_local_SA("local_soybean", env_str = "_1", analysis_time = 87, not_xlog = [5, 7], show = show)
+    names0_f, final0_f, trans0_f, collar0_f = plot_local_SA("local_soybean_free", env_str = "_0", analysis_time = 87, not_xlog = [5, 7], show = show)
+    names1_f, final1_f, trans1_f, collar1_f = plot_local_SA("local_soybean_free", env_str = "_1", analysis_time = 87, not_xlog = [5, 7], show = show)
 
-    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)
-    plot_local_SA("local_soybean2", env_str = "_1", analysis_time = 87)
-    plot_local_SA("local_soybean2_free", env_str = "_0", analysis_time = 87)
-    plot_local_SA("local_soybean2_free", env_str = "_1", analysis_time = 87)
+    names20, final20, trans20, collar20 = plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87, show = show)
+    names21, final21, trans21, collar21 = plot_local_SA("local_soybean2", env_str = "_1", analysis_time = 87, show = show)
+    names20_f, final20_f, trans20_f, collar20_f = plot_local_SA("local_soybean2_free", env_str = "_0", analysis_time = 87, show = show)
+    names21_f, final21_f, trans21_f, collar21_f = plot_local_SA("local_soybean2_free", env_str = "_1", analysis_time = 87, show = show)
 
-    # plot_local_SA("local_soybean_radii", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_radii", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_radii_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_radii_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
+    namesR0, finalR0, transR0, collarR0 = plot_local_SA("local_soybean_radii", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesR1, finalR1, transR1, collarR1 = plot_local_SA("local_soybean_radii", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesR0_f, finalR0_f, transR0_f, collarR0_f = plot_local_SA("local_soybean_radii_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesR1_f, finalR1_f, transR1_f, collarR1_f = plot_local_SA("local_soybean_radii_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9), show = show)
 
-    # plot_local_SA("local_soybean_tropisms", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_tropisms", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_tropisms_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
-    # plot_local_SA("local_soybean_tropisms_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
+    namesT0, finalT0, transT0, collarT0 = plot_local_SA("local_soybean_tropisms", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesT1, finalT1, transT1, collarT1 = plot_local_SA("local_soybean_tropisms", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesT0_f, finalT0_f, transT0_f, collarT0_f = plot_local_SA("local_soybean_tropisms_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9), show = show)
+    namesT1_f, finalT1_f, transT1_f, collarT1_f = plot_local_SA("local_soybean_tropisms_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9), show = show)
+
+    """ the overall sorting """
+    print("Everything togehter: \n")
+    sort_parameters(names0 + names20 + namesR0 + namesT0,
+                    final0 + final20 + finalR0 + finalT0,
+                    trans0 + trans20 + transR0 + transT0,
+                    collar0 + collar20 + collarR0 + collarT0)
 
