@@ -93,6 +93,7 @@ def plot_soil(path, name, show = True):
     print("Soil ranges from", np.min(data), "to", np.max(data), "[cm] matric potential")
     print("Final rs depth", depths[-1])
 
+    fig.suptitle(path[:-1])
     plt.tight_layout()
     if not os.path.exists("figures"):
         os.mkdir("figures")
@@ -126,17 +127,17 @@ if __name__ == "__main__":
 
     # name = pick12[6] + "_36"  # node + envirotype
 
-    # path = "local_soybean_0/"
-    # name = "local_soybean_0_001"
-    # plot_soil(path, name)
+    path = "local_soybean_0/"
+    name = "local_soybean_0_001"
+    plot_soil(path, name)
 
-    # path = "local_soybean_1/"
-    # name = "local_soybean_1_001"
-    # plot_soil(path, name)
+    path = "local_soybean_1/"
+    name = "local_soybean_1_001"
+    plot_soil(path, name)
 
-    # path = "local_soybean_free_0/"
-    # name = "local_soybean_free_0_001"
-    # plot_soil(path, name)
+    path = "local_soybean_free_0/"
+    name = "local_soybean_free_0_001"
+    plot_soil(path, name)
 
     path = "local_soybean_free_1/"
     name = "local_soybean_free_1_001"

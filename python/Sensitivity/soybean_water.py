@@ -28,10 +28,8 @@ import run_sra
 
 import numpy as np
 
-sim_time = 5 # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 5  # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
-theta1 = None  # if none leave unmodified
-src = None  # if none leave unmodified
 
 # # rerun experiment from json
 # folder_path = "results_cplantbox/"
@@ -102,11 +100,8 @@ mods = {
         "bot_bc": "noFlux",
         }
 
-
-
 import cProfile
 import pstats
-
 
 ob = cProfile.Profile()
 
@@ -119,8 +114,6 @@ ob.disable()
 stats = pstats.Stats(ob)
 stats.sort_stats('tottime')
 stats.print_stats(20)
-
-
 
 # # kr = np.zeros((3,))
 # # kr_old = np.zeros((2,))

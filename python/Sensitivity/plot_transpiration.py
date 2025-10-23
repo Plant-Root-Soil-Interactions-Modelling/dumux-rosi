@@ -55,7 +55,7 @@ def plot_transpiration(path, name, area = 76 * 3):
         print("Cumulative plant water uptake", cup[-1], "cm", -10 * np.sum(np.multiply(act_trans[:-1], dt)) / area)
 
     ax[i].set_xlabel("time [day]")
-
+    fig.suptitle(path[:-1])
     plt.tight_layout()
     if not os.path.exists("figures"):
         os.mkdir("figures")

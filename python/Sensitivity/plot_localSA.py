@@ -55,18 +55,6 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True)
     print("Plotting for day", times[ind])
     dt_ = np.diff(times[:ind])
 
-    """ font sizes """
-    SMALL_SIZE = 12
-    MEDIUM_SIZE = 16
-    BIGGER_SIZE = 16
-    plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
-    plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
-    plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
-    plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-    plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-    plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
-    plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
-
     """ make plots """
     final_nd, final, final_trans, final_collar, final_names = [], [], [], [], []
 
@@ -178,7 +166,7 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True)
     I2 = np.argsort(final_trans)[::-1]
     I3 = np.argsort(final_collar)[::-1]
 
-    print("\nSorted")
+    print("\nSorted", exp_name)
     final_nd = np.array(final_nd)
     final = np.array(final)
     final_trans = np.array(final_trans)
@@ -186,10 +174,11 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True)
     df = pd.DataFrame([final_nd[I0], final_trans[I2], final_collar[I3]], index = ["trans/carbon", "trans", "leaf pot"])
     print(df.to_string(index = True, justify = 'left'))
 
-    print("parameters")
+    print("")
     final_names = np.array(final_names)
     df = pd.DataFrame([final_names[I0], final_names[I2], final_names[I3]], index = ["trans/carbon", "trans", "leaf pot"])
     print(df.to_string(index = True, justify = 'left'))
+    print("")
 
 
 if __name__ == "__main__":
@@ -205,7 +194,18 @@ if __name__ == "__main__":
     # plot_local_SA("local_soybean_free", env_str = "_0", analysis_time = 87, not_xlog = [5, 7])
     # plot_local_SA("local_soybean_free", env_str = "_1", analysis_time = 87, not_xlog = [5, 7])
 
-    # lot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)
-    # plot_local_SA("local_soybean_tropisms", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    plot_local_SA("local_soybean2", env_str = "_0", analysis_time = 87)
+    plot_local_SA("local_soybean2", env_str = "_1", analysis_time = 87)
+    plot_local_SA("local_soybean2_free", env_str = "_0", analysis_time = 87)
+    plot_local_SA("local_soybean2_free", env_str = "_1", analysis_time = 87)
+
     # plot_local_SA("local_soybean_radii", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_radii", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_radii_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_radii_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
+
+    # plot_local_SA("local_soybean_tropisms", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_tropisms", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_tropisms_free", env_str = "_0", analysis_time = 87, not_xlog = range(0, 9))
+    # plot_local_SA("local_soybean_tropisms_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9))
 

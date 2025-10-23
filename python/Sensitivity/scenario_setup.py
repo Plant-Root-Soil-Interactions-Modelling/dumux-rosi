@@ -177,7 +177,7 @@ def sort_indices(mods):
             file_path = os.path.join(mods["mecha_path"], file)
             data.append(np.load(file_path))
             ana_ind.append(file.split("shiny")[1].split(".")[0])
-    
+
         data = np.array(data)
         a_ = data[:, 2, 2]  # [cm] (see granar/functions.py)
         a = np.array([float(x) for x in a_])
@@ -185,8 +185,7 @@ def sort_indices(mods):
         ana_ind = np.array(ana_ind)
         return ana_ind[I]
     else:
-        raise Exception("scenario_setup.sort_indices(): undefined working for "+mods["conductivity_mode"])
-
+        raise Exception("scenario_setup.sort_indices(): undefined working for " + mods["conductivity_mode"])
 
 
 def prepare_conductivities(mods):
@@ -216,7 +215,7 @@ def prepare_conductivities(mods):
 
 
 def attach_conductivitis(mods):
-    """ for conductivities from mecha, radii must be adjusted in a first step"""
+    """ attaches the values form mecha to the parameters (for alnalysis) """
     assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
     ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
     files = []
@@ -317,9 +316,10 @@ def set_conductivities(params, mods, data):
         raise "run_cplantbox.run_soybean() conductivity_mode unknown"
     mods.pop("conductivity_mode")
 
+
 def write_sa_numpy(file_name, sa):
     """ saves a segment analyser using numpy arrays """
-    segs_ = sa.segments        
+    segs_ = sa.segments
     segs = np.array([[s.x, s.y] for s in segs_], dtype = np.int64)
     nodes_ = sa.nodes
     nodes = np.array([[n.x, n.y, n.z] for n in nodes_])
@@ -327,24 +327,26 @@ def write_sa_numpy(file_name, sa):
     data["segments"] = segs
     data["nodes"] = nodes
     np.savez_compressed(file_name, **data)
-    
+
+
 def open_sa_numpy(file_name):
-    """ opens a segment analyser (see write_sa_numpy) """    
+    """ opens a segment analyser (see write_sa_numpy) """
     data = np.load(file_name)
     segs_ = data["segments"]
     nodes_ = data["nodes"]
     segCTs = data["creationTime"]
     radii = data["radius"]
     segs = [pb.Vector2i(s[0], s[1]) for s in segs_]
-    nodes = [pb.Vector3d(n[0],n[1],n[2]) for n in nodes_]
+    nodes = [pb.Vector3d(n[0], n[1], n[2]) for n in nodes_]
     ana = pb.SegmentAnalyser()
-    ana.segments = segs # , nodes, segCTs, radii)        
+    ana.segments = segs  # , nodes, segCTs, radii)
     ana.nodes = nodes
     for key, value in data.items():
         if not key in ['segments', 'nodes']:
-            # print("setting", key, len(value))        
-            ana.addData(key, value)    
+            # print("setting", key, len(value))
+            ana.addData(key, value)
     return ana
+
 
 def get_anatomy(index):
     """ retrieves root anatomical information from the simulation index """
@@ -407,6 +409,7 @@ def get_anatomy(index):
 
     return r
 
+
 def write_results(file_name, r1, r2, r3 = None):
     """  saves results from run_sra numpy arrays in a npz file 
     List 1 (r1):
@@ -435,18 +438,18 @@ def write_results(file_name, r1, r2, r3 = None):
         times_sa = r3[0]
     else:
         times_sa = []
-   
+
     np.savez_compressed(file_name,
              times = r1[0], pot_trans = r1[1], act_trans = r1[2], collar_pot = r1[3],
-             times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3], 
+             times_lr = r2[0], sink = r2[1], psi_s = r2[2], net_change = r2[3],
              len_ = r2[4], surf = r2[5], vol = r2[6], depth = r2[7], krs = r2[8], carbon = r2[9], times_sa = times_sa)
-    if r3: 
-        for i,ana in enumerate(r3[1]):
+    if r3:
+        for i, ana in enumerate(r3[1]):
             dir_name = os.path.dirname(file_name)
             base_name = os.path.basename(file_name)
             new_file_name = "sa_" + base_name
-            new_path = os.path.join(dir_name, new_file_name) if dir_name else new_file_name                        
-            write_sa_numpy(new_path+ "_"+str(i), ana) 
+            new_path = os.path.join(dir_name, new_file_name) if dir_name else new_file_name
+            write_sa_numpy(new_path + "_" + str(i), ana)
 
 
 def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, RLDz, krs, SUFz, RLD, SUF, area_, carbon, write_all = True):
@@ -459,9 +462,5 @@ def write_cplantbox_results(file_name, length, surface, volume, depth, RLDmean, 
                  RLDmean = RLDmean, RLDz = RLDz, krs = krs, SUFz = SUFz, carbon = carbon, area = area_)
 
 
-
-            
-        
-        
 if __name__ == "__main__":
     print(get_anatomy(3000))
