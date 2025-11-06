@@ -1463,10 +1463,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             print("RhizoMappedSegments.initialize_dumux_: Warning, segment {:g} might not be in domain, radii [{:g}, {:g}] cm".format(gId, a_in, a_out))
             raise Exception
             return []
-        
+                 
     def get_inner_heads(self,  weather:dict={}):#        
         """ matric potential at the root surface interface [cm]"""
-        if ('RH' in weather.keys()) and ('TairC' in weather.keys()):
+        if ('RH' in weather.keys()) and ('Tair' in weather.keys() or 'TairC' in weather.keys()):
             RH = weather['RH'] if 'RH' in weather.keys() else weather["ea"]/weather["es"]
             TairC = weather['TairC'] if 'TairC' in weather.keys() else weather["Tair"]
             rsx = np.array([
