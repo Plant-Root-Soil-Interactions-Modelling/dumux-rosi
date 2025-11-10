@@ -1,13 +1,12 @@
 import sys;
 #os.chdir('experimental/fixedPointIter2/scripts')
 sys.path.append("../modules/");
-sys.path.append("../inputDataPuptake/");
+sys.path.append("../inputDataExudate/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 sys.path.append("../../../build-cmake/cpp/python_binding/");
 
 import matplotlib; matplotlib.use('agg')
-
 import numpy as np
 from numpy import array
 import os
@@ -69,7 +68,11 @@ s = scenario_setup.create_soil_model(usemoles = usemoles,
 
 
 print('s.numSoluteComp',s.numSoluteComp)
+print('solution head before solve',s.getSolutionHead())
 
 s.solve(dt_inner_init)
 print('solution head after solve',s.getSolutionHead())
 
+outer_R_bc = s.getFlux_10c() # < 0 means net sink, > 0 means net source
+bulkSoil_sources = s.getSource_10c() # < 0 means net sink, > 0 means net source
+print('outer_R_bc0',outer_R_bc[0])# [cm3] )

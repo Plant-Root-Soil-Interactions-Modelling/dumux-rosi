@@ -15,7 +15,7 @@ from helpfull import sinusoidal3
 from air_modelsPlant import AirSegment
 
     
-def weather(simDuration, dt, spellData, hp:float=1):
+def weather(simDuration, dt, spellData = None, hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 

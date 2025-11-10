@@ -36,6 +36,11 @@ import evapotranspiration as evap
     
 
 def XcGrowth(simMax,scenarioData): 
+    '''
+        at each shape change of the RS, we need to update manually the soil
+        csw and css content, increases the risk of missing systematic errors occuring at each time step.
+    '''
+    
     
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
@@ -76,8 +81,6 @@ def XcGrowth(simMax,scenarioData):
     # ATT: for short ismulations only
     doMinimumPrint =  True
     debugMode = False
-    # use moles (mol) and not mass (g) in dumux
-    usemoles = True
     
     rsiCompMethod = 0
     # 0 : mean(allvals) after 4 iteration
@@ -96,7 +99,7 @@ def XcGrowth(simMax,scenarioData):
                     
     """ initialize """
 
-    s = scenario_setup.create_soil_model(simMax, usemoles = usemoles,
+    s = scenario_setup.create_soil_model(simMax,
                                             results_dir = results_dir,
                                             soil_=soil_type,
                                             noAds = noAds, 
@@ -110,13 +113,13 @@ def XcGrowth(simMax,scenarioData):
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax,s, xml_name,
                                             path, soil_type,
-                                            static_plant = static_plant,
-                                            usemoles = usemoles,
                                             limErr1d3d = 5e-12)  
 
     # store parameters
     #plantModel.maxTranspiration = maxTranspiration
     #plantModel.maxTranspirationAge = maxTranspirationAge
+    
+    perirhizalModel.static_plant = static_plant
     perirhizalModel.debugMode = debugMode
     
     perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
@@ -168,7 +171,6 @@ def XcGrowth(simMax,scenarioData):
     printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
                             datas=[], datasName=[],initPrint=True)
     
-    
     while rs_age < simMax:
 
         rs_age += dt
@@ -178,7 +180,7 @@ def XcGrowth(simMax,scenarioData):
         if perirhizalModel.doPhloemFlow:
             phloemData.setNtbu()
         elif perirhizalModel.doExudation:
-            exudateData.setNtbu()
+            exudateData.setNcbu()
         
         if (rank == 0) and (not static_plant) :
             
@@ -194,7 +196,7 @@ def XcGrowth(simMax,scenarioData):
             else:
                 printData.printRSShape(perirhizalModel.ms,plantModel, results_dir)
             
-        perirhizalModel.update()#fpit_Helper) # update shape data in the rhizosphere model
+        perirhizalModel.update() # update shape data in the rhizosphere model
         
         if start: # for first loop, do extra printing to have initial error
             #fpit_Helper
@@ -230,7 +232,7 @@ def XcGrowth(simMax,scenarioData):
                           exudateData.Q_Mucil_i_seg]
             else:
                 Q_plant_=[[],[]]
-
+                
             net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
                                                     plantModel, 
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
@@ -289,7 +291,7 @@ def XcGrowth(simMax,scenarioData):
         if ((not static_plant) or (rs_age == dt)) and doPhloemFlow:
             phloemData.computePhloemFlow(rs_age, dt)   
             
-        if ((not static_plant) or (rs_age == dt)) and doExudation:
+        if doExudation:
             exudateData.computeExudateFlow(rs_age, dt)    
             
         plantModel.time_plant_cumulS += (timeit.default_timer() - plantModel.time_start_plant)
