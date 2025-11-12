@@ -1,7 +1,7 @@
 """ 
     Pre-study:
 
-    Modify intial soybean system parameters (to fix final initial parametrisation) 
+    Modify initial soybean system parameters (to fix final initial parametrisation) 
     plots SUF & RLD vs. depth, and other macroscopic parameters after 87.5 days
     
     Daniel Leitner, 2025      

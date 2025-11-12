@@ -41,23 +41,6 @@ class NpEncoder(json.JSONEncoder):
         return super(NpEncoder, self).default(obj)
 
 
-def run_soybean_exp(exp_name, enviro_type, sim_time, result_path, save_all = True):
-    """
-    reproduces a simulation with parameters given in file "soybean_all14.zip"
-    """
-    folder_path = "results_cplantbox/"
-    file_path = os.path.join(folder_path, exp_name + "_mods.json")
-    with open(file_path, 'r', encoding = 'utf-8') as file:
-        params = json.load(file)
-
-    params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip and results_cplantbox/
-    assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
-    params.pop("exp_name")
-    params.pop("enviro_type")
-    params.pop("sim_time")
-    run_soybean(exp_name, enviro_type, sim_time, params, result_path, save_all)
-
-
 def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = True):
     """
         exp_name                experiment name (name for output files)
@@ -213,7 +196,30 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
     return cu
 
 
+def run_soybean_exp(exp_name, enviro_type, sim_time, result_path, save_all = True):
+    """
+    Creates a full dynamic simulation from a macroscopic one with parameters given in file "soybean_all14.zip"
+    """
+    folder_path = "results_cplantbox/"
+    file_path = os.path.join(folder_path, exp_name + "_mods.json")
+    with open(file_path, 'r', encoding = 'utf-8') as file:
+        params = json.load(file)
+
+    params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip and results_cplantbox/
+    assert exp_name == params["exp_name"], "run_sra() type == 'file': something is wrong with exp_name"
+    params.pop("exp_name")
+    params.pop("enviro_type")
+    params.pop("sim_time")
+    run_soybean(exp_name, enviro_type, sim_time, params, result_path, save_all)
+
+
 def run(argv):
+    """ 
+    runs a simulation based on command line arguments (passed by scripts set up with run_SA)
+    
+    interpretation of the arguments is dependent on the first argument 
+    (type = argv[1], i.e.  "original", "tropisms", etc.)
+    """
 
     type = argv[1]
     exp_name = argv[2]  # codes for bot BC "_free" and "_200"

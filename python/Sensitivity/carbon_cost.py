@@ -1,5 +1,13 @@
 """ 
-    Carbon cost
+    Carbon cost models
+        
+    carbon_cost(plant, params, model) calls one of the models below:
+        
+    carbon(...)                    proportional to volume
+    carbon_cost_simple(...)        carbon cost proportional to the plant volume subtracting arenchymna percentage
+    carbon_cost_anatomical(...)    carbon cost as weighted sum with varying carbon dry masses 
+        for cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex, see also carbon_()
+    
     
     Daniel Leitner, 2025  
 """
@@ -11,8 +19,9 @@ import numpy as np
 import plantbox as pb
 import scenario_setup
 
-def carbon_cost_volume(vol):
-    """ returns the carbon cost propotional to the plant volume """    
+
+def carbon(vol):
+    """ returns the carbon cost propotional to the plant volume """
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
     carbon_per_drymass = 0.45  # 45% (40-45%)
@@ -21,12 +30,13 @@ def carbon_cost_volume(vol):
     dry_mass = vol_ * fresh_density * dry_matter_content
     return dry_mass * carbon_per_drymass
 
+
 def carbon_cost_simple(vol, subType, ap145, ap2, ap3):
-    """ returns the carbon cost propotional to the plant volume subtracting arenchymna percentage """
+    """ returns the carbon cost proportional to the plant volume subtracting arenchymna percentage """
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
     carbon_per_drymass = 0.45  # 45% (40-45%)
-    
+
     v = np.sum(np.multiply((1. - ap145) * np.equal(subType, 1), vol))
     v += np.sum(np.multiply((1. - ap145) * np.equal(subType, 4), vol))
     v += np.sum(np.multiply((1. - ap145) * np.equal(subType, 5), vol))
@@ -35,12 +45,13 @@ def carbon_cost_simple(vol, subType, ap145, ap2, ap3):
     dry_mass = v * fresh_density * dry_matter_content
 
     return dry_mass * carbon_per_drymass
-    
+
+
 def carbon_cost_anatomical(vol, subType, segLen, ana145, ana2, ana3, a145, a2, a3):
     """ returns the carbon cost as weighted sum with varying carbon dry masses for
         cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex
         see also carbon_()
-    """ 
+    """
     c145 = carbon_(ana145, a145)
     c2 = carbon_(ana2, a2)
     c3 = carbon_(ana3, a3)
@@ -50,6 +61,7 @@ def carbon_cost_anatomical(vol, subType, segLen, ana145, ana2, ana3, a145, a2, a
     c += np.sum(np.multiply(c2 * np.equal(subType, 2), segLen))
     c += np.sum(np.multiply(c3 * np.equal(subType, 3), segLen))
     return c
+
 
 def carbon_(anatomy, a):
     """ carbon per length [g/cm] of model 'anatomical' """
@@ -80,8 +92,8 @@ def carbon_cost(plant, params, model):
 
     ana = pb.SegmentAnalyser(plant)
     vol = ana.getParameter("volume")
-    
-    if model == "volume":    
+
+    if model == "volume":
         return carbon_cost_volume(vol)
 
     elif model == "simple":  # only arenchymna percentage is substracted from total volume

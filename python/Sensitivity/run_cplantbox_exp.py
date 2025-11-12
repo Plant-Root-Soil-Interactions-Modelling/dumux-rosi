@@ -2,7 +2,7 @@
     Macroscopic:
 
     re-runs an experiment from a json file as a root architecture simulation of soybean using run_cplantbox,
-    if params["conductivity_mode"] == "from_mecha", set the mecha result path in L29
+    if params["conductivity_mode"] == "from_mecha", set the mecha result path in L31
     
     Daniel Leitner, 2025       
 """
@@ -133,6 +133,7 @@ def compare(exp1_name, exp2_name, folder_path):
     print()
     print("depth", np.abs(results1_["depth"][-1]), np.abs(results2_["depth"][-1]))
     print("volume", np.abs(results1_["volume"][-1]), np.abs(results2_["volume"][-1]))
+    print("carbon", np.abs(results1_["carbon"][-1]), np.abs(results2_["carbon"][-1]))
 
 
 if __name__ == "__main__":
@@ -142,5 +143,5 @@ if __name__ == "__main__":
     exp_name1 = "soybean_all14_3564a0f636e9f600fe68bf96ffca4124135106ae4787b9a3332334b04abcdf1a"  # Number 213 from cluster (1,0) -> see analyze_transpiration_cluster.py
     exp_name2 = "soybean_all14_f7319dc5d83c72932fd39e4afbf6e50822c2f7bf13b27fc5749c1128642a95d2"  # Number 138 from cluster (1,0) -> see analyze_transpiration_cluster.py
     show_me_file(exp_name2, folder_path)
-    # compare(exp_name1, exp_name2, folder_path)
+    compare(exp_name1, exp_name2, folder_path)
 

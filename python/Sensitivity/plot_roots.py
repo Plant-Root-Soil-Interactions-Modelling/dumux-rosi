@@ -22,7 +22,7 @@ import run_SA
 
 def plot_sa(path, name, param = "kr", output_index = 2):
     """
-    param              "rx" (root matric potential), "rsx" (potential at root soil interfacee), "age", "kr", "kx", "axial_flux", "radial_flux"
+    param              "rx" (root matric potential), "rsx" (potential at root soil interface), "age", "kr", "kx", "axial_flux", "radial_flux"
     """
 
     ana = scenario.open_sa_numpy(path + "sa_" + name + f"_{output_index}" + ".npz")

@@ -26,6 +26,15 @@ def start_index(ind, ranges):
 
 
 def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True):
+    """
+        Opens a sensitivity analysis and summarizes results to the console, and optionally plots a figure
+    
+        file_name         base name of the sensitivity analysis
+        env_str           envirotpye (e.g. "_0", or "_1")
+        analysis_time     time of analysis 
+        not_xlog          x axis is a log plot per default (state axis that are not)  
+        show              show the matlibplots, always writes png to "exp_name = file_name + env_str + "_time_{:g}".format(analysis_time)"      
+    """
 
     exp_name = file_name + env_str + "_time_{:g}".format(analysis_time)
 
@@ -162,7 +171,13 @@ def plot_local_SA(file_name, env_str, analysis_time, not_xlog = [], show = True)
 
 
 def sort_parameters(final_names, final_nd, final_trans, final_collar):
-    """ ddd """
+    """ Summarizes the results (printing the sorted values to the console, file output is hard coded) 
+    
+    final_names             list of names
+    final_nd                transpiration per carbon cost (non dimensionalized)
+    final_trans             transpiration  (non dimensionalized)
+    final_collar            collar potential (as approximation for the leaf area potential) 
+    """
 
     final_names = np.array(final_names)
     final_nd = np.array(final_nd)
@@ -178,22 +193,24 @@ def sort_parameters(final_names, final_nd, final_trans, final_collar):
     I2 = np.argsort(final_trans)[::-1]  # descending
     I3 = np.argsort(final_collar)  # ascending
 
-    print("")
-    df = pd.DataFrame([final_nd[I0], final_trans[I2], final_collar[I3]], index = ["trans/carbon", "trans", "leaf pot"])
-    df = df.round(4)
-    print(df.to_string(header = False, index = True, justify = 'left'))
+    df1 = pd.DataFrame([final_nd[I0], final_trans[I2], final_collar[I3]], index = ["trans/carbon", "trans", "leaf pot"])
+    df1 = df1.round(4)
+    # print(df1.to_string(header = False, index = True, justify = 'left'))
     # Open the file in append mode ('a') and write the DataFrame
     # with open("figures/out.txt", 'a', encoding = 'utf-8') as f:
     #     f.write("Sorted" + exp_name)
     #     f.write(df.to_string(index = True, justify = 'left') + '\n')  # Add spacing between appends
 
-    print("")
-    df = pd.DataFrame([final_names[I0], final_names[I2], final_names[I3]], index = ["trans/carbon", "trans", "leaf pot"])
-    print(df.to_string(header = False, index = True, justify = 'left'))
-    print("")
+    df2 = pd.DataFrame([final_names[I0], final_names[I2], final_names[I3]], index = ["trans/carbon", "trans", "leaf pot"])
+    # print(df2.to_string(header = False, index = True, justify = 'left'))
+    # print("")
     # with open("results/out.txt", 'a', encoding = 'utf-8') as f:
     #     f.write("Sorted " + exp_name + "\n")
     #     f.write(df.to_string(header = False, index = True, justify = 'left') + '\n\n')  # Add spacing between appends
+
+    print("\nsorted (descending):")
+    df_combined = pd.concat([df1, df2])
+    print(df_combined.to_string(header = False, index = True, justify = 'left'))
 
 
 if __name__ == "__main__":
@@ -227,9 +244,27 @@ if __name__ == "__main__":
     namesT1_f, finalT1_f, transT1_f, collarT1_f = plot_local_SA("local_soybean_tropisms_free", env_str = "_1", analysis_time = 87, not_xlog = range(0, 9), show = show)
 
     """ the overall sorting """
-    print("Everything togehter: \n")
+    print("\n***Everything togehter (envirotyp 0, -120 cm watertalbe):")
     sort_parameters(names0 + names20 + namesR0 + namesT0,
                     final0 + final20 + finalR0 + finalT0,
                     trans0 + trans20 + transR0 + transT0,
                     collar0 + collar20 + collarR0 + collarT0)
+
+    print("\n***Everything togehter (envirotyp 1, -120 cm watertalbe):")
+    sort_parameters(names1 + names21 + namesR1 + namesT1,
+                    final1 + final21 + finalR1 + finalT1,
+                    trans1 + trans21 + transR1 + transT1,
+                    collar1 + collar21 + collarR1 + collarT1)
+
+    print("\n***Everything togehter (envirotyp 0, free drainage):")
+    sort_parameters(names0_f + names20_f + namesR0_f + namesT0_f,
+                    final0_f + final20_f + finalR0_f + finalT0_f,
+                    trans0_f + trans20_f + transR0_f + transT0_f,
+                    collar0_f + collar20_f + collarR0_f + collarT0_f)
+
+    print("\n***Everything togehter (envirotyp 1, free drainage):")
+    sort_parameters(names1_f + names21_f + namesR1_f + namesT1_f,
+                    final1_f + final21_f + finalR1_f + finalT1_f,
+                    trans1_f + trans21_f + transR1_f + transT1_f,
+                    collar1_f + collar21_f + collarR1_f + collarT1_f)
 

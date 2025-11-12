@@ -164,8 +164,9 @@ if __name__ == "__main__":
 
     mods = {"output_times": [40],
             "conductivity_mode": "from_mecha",
-            "mecha_path": "/home/d.leitner/Dropbox/Code/granar/mecha_results",
-            #"mecha_path": "~/Dropbox/Code/granar/mecha_results",
+            "mecha_path": "/home/daniel/Dropbox/Code/granar/mecha_results",
+            # "mecha_path": "/home/d.leitner/Dropbox/Code/granar/mecha_results",
+            # "mecha_path": "~/Dropbox/Code/granar/mecha_results",
             'conductivity_index1': 1,
             'conductivity_index2': 30,
             'conductivity_index3': 100,
