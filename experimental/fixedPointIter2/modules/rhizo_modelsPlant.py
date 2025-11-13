@@ -1483,8 +1483,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
                 
-                cyl.setParameter("Soil.Vmax", str(self.soilModel.Vmax)) #mol C / m^3 scv / s
-                cyl.setParameter("Soil.Km", str(self.soilModel.Km)) #mol C / m^3 scv
+                cyl.setParameter("Soil.Vmax_decay", str(self.soilModel.Vmax_decay)) #mol C / m^3 scv / s
+                cyl.setParameter("Soil.Km_decay", str(self.soilModel.Km_decay)) #mol C / m^3 scv
 
             
             for j in range( 1, self.numSoluteComp):
