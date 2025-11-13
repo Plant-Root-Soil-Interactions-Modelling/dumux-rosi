@@ -43,8 +43,8 @@ def getBiochemParam(s,soil_type):
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
-    s.Vmax = 7.32e-5 #mol C / m^3 scv / s
-    s.Km = 10.5 #mol C / m^3 scv
+    s.Vmax_decay = 7.32e-5 #mol C / m^3 scv / s #decay rate from Nideggen et al. 
+    s.Km_decay = 10.5 #mol C / m^3 scv
     
     if s.noAds:
         s.CSSmax = 0.
@@ -76,13 +76,15 @@ def setBiochemParam(s):
     s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
     
     #decay
-    s.setParameter("Soil.Vmax", str(s.Vmax)) #m^2/s
-    s.setParameter("Soil.Km", str(s.Km)) #m^2/s
+    s.setParameter("Soil.Vmax_decay", str(s.Vmax_decay)) #mol C / m^3 scv / s #decay rate from Nideggen et al. 
+    s.setParameter("Soil.Km_decay", str(s.Km_decay)) #mol C / m^3 scv
+   
 
     #sorption
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3] 
     s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol]
     s.setParameter("Soil.kdes", str(s.kdes)) #[-]
+    
     
     if s.dimWorld == 3:
         # 1 == True
@@ -232,14 +234,14 @@ def getSoilTextureAndShape(soil_= "loam"):
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    min_b = np.array([-3./2, -3./2, -5.]) # np.array( [5, 5, 0.] )
-    max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
-    area = 3*3
-    #min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
-    #max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
-    #cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
-    #area = 20 * 45  # cm2
+    # min_b = np.array([-3./2, -3./2, -5.]) # np.array( [5, 5, 0.] )
+    # max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
+    # cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
+    # area = 3*3
+    min_b = np.array([-20/2, -45/2, -75.]) # np.array( [5, 5, 0.] )
+    max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
+    cell_number = np.array([4,9,15]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
+    area = 20 * 45  # cm2 45
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -424,8 +426,7 @@ def setupOther(s, soil_type, simMax):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type,
-                stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -434,25 +435,19 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
     
-    if fname.endswith(".rsml"):
-        plantModel = XylemFluxPython(fname)
-        
-        perirhizalModel = RhizoMappedSegments(  mode, soil_model, seedNum = seed, 
-                                 limErr1d3dAbs = limErr1d3d)
-    elif fname.endswith(".xml"):
-        seed = 1
-        perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
-                                 ms = pb.MappedRootSystem(),
-                                 limErr1d3dAbs = limErr1d3d, 
-                                 RichardsNCCylFoam = Richards4CCylFoam)
+    seed = 1
+    perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
+                             ms = pb.MappedRootSystem(),
+                             limErr1d3dAbs = limErr1d3d, 
+                             RichardsNCCylFoam = Richards4CCylFoam)
 
-        perirhizalModel.ms.setSeed(seed)
-        perirhizalModel.ms.readParameters(path + fname)
-        
-        perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
-        perirhizalModel.ms.initializeLB(5,4)
-        perirhizalModel.ms.simulate(initSim,verbose= False) #initsim
-        plantModel = XylemFluxPython(perirhizalModel.ms)
+    perirhizalModel.ms.setSeed(seed)
+    perirhizalModel.ms.readParameters(path + fname)
+    
+    perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
+    perirhizalModel.ms.initializeLB(5,4)
+    perirhizalModel.ms.simulate(initSim,verbose= False) #initsim
+    plantModel = XylemFluxPython(perirhizalModel.ms)
             
     #perirhizalModel.ms.constantLoc = True
     plantModel.rs.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), 
