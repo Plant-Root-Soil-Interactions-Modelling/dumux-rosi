@@ -46,10 +46,10 @@ def XcGrowth(simMax,scenarioData):
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
     xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
-    #xml_name = "Faba_synMRI.xml"
+    # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
-    initsim = 5 #initial simulation time 
+    initsim = 50 #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
@@ -100,12 +100,12 @@ def XcGrowth(simMax,scenarioData):
     """ initialize """
 
     s = scenario_setup.create_soil_model(simMax,
-                                            results_dir = results_dir,
-                                            soil_=soil_type,
-                                            noAds = noAds, 
-                                            doSoluteFlow = doSoluteFlow, 
-                                            doBioChemicalReaction = doBioChemicalReaction,
-                                        MaxRelativeShift = MaxRelativeShift)
+                                         results_dir = results_dir,
+                                         soil_=soil_type,
+                                         noAds = noAds, 
+                                         doSoluteFlow = doSoluteFlow, 
+                                         doBioChemicalReaction = doBioChemicalReaction,
+                                         MaxRelativeShift = MaxRelativeShift)
 
     
 
@@ -309,20 +309,8 @@ def XcGrowth(simMax,scenarioData):
         if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
-                         plantModel.psiXyl, exudateData.Q_Exud_i
-                         #phloemData.C_ST, phloemData.C_S_ST, 
-                         #phloemData.C_meso, phloemData.C_S_meso, 
-                         #phloemData.Q_Exud_i, phloemData.Q_Mucil_i, 
-                         #phloemData.Q_Gr_i,phloemData.Q_Rm_i
-                        ]
-                datasName = [ "psiXyl","Q_Exud"
-                             #"C_ST", "C_S_ST", 
-                             #"C_meso", "C_S_meso", 
-                             #"Q_Exud", "Q_Mucil",
-                             #"Q_Gr","Q_Rm",
-                             #"Q_Exud_i","Q_Mucil_i" ,
-                             #"Q_Gr_i","Q_Rm_i"
-                            ]
+                         plantModel.psiXyl, exudateData.Q_Exud]
+                datasName = [ "psiXyl","Q_Exud"]
             else:
                 datas = []
                 datasName = []
