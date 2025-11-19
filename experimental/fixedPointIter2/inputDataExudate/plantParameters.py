@@ -55,17 +55,17 @@ def prescribed_exudation(soil_type, ifexu):
     
     times = [0, 42, 63, 98, 154]
     
-    if soil_type == 'loam':
-        exu_prop = np.array([0.001,0.001,0.00055,0.00039,0.00045])#[kg/(m2 day)]
-        
-    elif soil_type == 'sand':
-        exu_prop = np.array([0.0011,0.0011,0.0005,0.0003,0.00033]) #[kg/(m2 day)]
-        
-    else:
-        print('No exudate properties found')
-
-    if not ifexu: 
+    if ifexu == "True": 
+        if soil_type == 'loam':
+            exu_prop = np.array([0.001,0.001,0.00055,0.00039,0.00045])#[kg/(m2 day)]
+            
+        elif soil_type == 'sand':
+            exu_prop = np.array([0.0011,0.0011,0.0005,0.0003,0.00033]) #[kg/(m2 day)]
+        else:
+            print('No exudate properties found')
+    else: 
         exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
+
     f = interpolate.interp1d(times, exu_prop)  
     
     return f     

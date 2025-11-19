@@ -457,6 +457,10 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, fname, path, so
 
     perirhizalModel.ms.setSeed(seed)
     perirhizalModel.ms.readParameters(path + fname)
+    params = perirhizalModel.ms.getOrganRandomParameter(pb.root)
+    for i in range(0, len(params)): 
+            params[i].dx = 1
+            params[i].dxMin = 0.05
     
     perirhizalModel.ms.setGeometry(pb.SDF_PlantBox( max_b[0]-min_b[0],  max_b[1]-min_b[1], max_b[2]-min_b[2]))
     perirhizalModel.ms.initializeLB(5,4)
