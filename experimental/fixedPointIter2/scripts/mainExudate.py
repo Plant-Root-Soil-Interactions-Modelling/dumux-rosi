@@ -8,6 +8,7 @@ import os
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 import timeit
 import numpy as np
+import argparse
 
 sys.path.append("../modules/");
 sys.path.append("../inputDataExudate/");
@@ -337,7 +338,23 @@ def XcGrowth(scenarioData):
     # memory leak?
     return results_dir
 
-        
+if __name__ == "__main__":
+
+    parser = argparse.ArgumentParser(description = 'Simulation options')
+    parser.add_argument('soil_type', type = str, help = 'loam or sand')
+    parser.add_argument('res', type = str, help = '1,4,5')
+    parser.add_argument('simMax', type = str, help = 'whatever')
+    parser.add_argument('exudate', type = str, help = 'True or False')
+
+    args = parser.parse_args()
+    
+    name = args.soil_type + "_" + args.res + "_" + args.simMax+'_'+args.exudate
+    print()
+    print(name, "\n")
+    
+    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simMax' : args.simMax, 'exudate': args.exudate}
+    XcGrowth(scenarioData)
+   
 
 # if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the solving object.
     # # python3 XcGrowth.py 9 10 0 customDry 9.02 0.02
