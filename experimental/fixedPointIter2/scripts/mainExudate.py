@@ -53,7 +53,7 @@ def XcGrowth(scenarioData):
     # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
-    initsim = 50 #initial simulation time 
+    initsim = 10 #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
@@ -355,4 +355,4 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simMax' : args.simMax, 'exudate': args.exudate}
     XcGrowth(scenarioData)
    
-    #python3 XcGrowth loam 5 60 False
+    #mpiexec -n 1 python3 mainExudate.py loam 5 60 True
