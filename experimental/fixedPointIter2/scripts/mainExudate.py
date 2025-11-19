@@ -92,7 +92,7 @@ def XcGrowth(scenarioData):
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type)
     
-    if ifexu: 
+    if ifexu == "True":
         results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu/"
     else: 
         results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_noexu/"
