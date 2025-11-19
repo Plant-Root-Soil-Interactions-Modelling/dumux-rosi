@@ -16,7 +16,7 @@ from scenario_setup import setDefault
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size(); size = comm.Get_size()
-import psutil
+#import psutil
 from air_modelsPlant import AirSegment
 from scipy import sparse
 import scipy.sparse.linalg as LA
