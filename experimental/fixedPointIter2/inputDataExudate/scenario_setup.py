@@ -230,7 +230,7 @@ def vg_SPP(i = int(1)):
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
 
-def getSoilTextureAndShape(soil_= "loam"):  
+def getSoilTextureAndShape(soil_= "loam", res = 5):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
@@ -238,10 +238,24 @@ def getSoilTextureAndShape(soil_= "loam"):
     # max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
     # cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
     # area = 3*3
-    min_b = np.array([-20/2, -45/2, -75.]) # np.array( [5, 5, 0.] )
-    max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
-    cell_number = np.array([4,9,15]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
-    area = 20 * 45  # cm2 45
+    if res == 1: 
+        min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
+        max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
+        cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
+        area = 20 * 45  # cm2 45
+    elif res == 4: 
+        min_b = np.array([-20/2, -44/2, -72.])
+        max_b =np.array( [20/2, 44/2, 0.]) 
+        cell_number = np.array([5,11,18]) 
+        area = 20 * 44  # cm2 45        
+    elif res == 5: 
+        min_b = np.array([-20/2, -45/2, -75.])
+        max_b =np.array( [20/2, 45/2, 0.]) 
+        cell_number = np.array([4,9,15])
+        area = 20 * 45  # cm2 45
+    else: 
+        print('Wrong resolution chosen') 
+    
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -307,7 +321,7 @@ def create_soil_model3D(  results_dir ,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
-def create_soil_model(simMax, results_dir , soil_='loam',
+def create_soil_model(simMax, res, results_dir , soil_='loam',
                      noAds = False, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, 
                      MaxRelativeShift = 1e-8):
@@ -332,7 +346,7 @@ def create_soil_model(simMax, results_dir , soil_='loam',
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
     s.MaxRelativeShift_1DS = MaxRelativeShift / 10.
     
-    soilTextureAndShape = getSoilTextureAndShape(soil_type) 
+    soilTextureAndShape = getSoilTextureAndShape(soil_type, res) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']

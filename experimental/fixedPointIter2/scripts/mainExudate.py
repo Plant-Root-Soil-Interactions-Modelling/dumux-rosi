@@ -35,7 +35,7 @@ import FPItHelper
 import evapotranspiration as evap
     
 
-def XcGrowth(simMax,scenarioData): 
+def XcGrowth(scenarioData): 
     '''
         at each shape change of the RS, we need to update manually the soil
         csw and css content, increases the risk of missing systematic errors occuring at each time step.
@@ -45,6 +45,8 @@ def XcGrowth(simMax,scenarioData):
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
+    simMax = int(scenarioData['simMax'])
+    res = int(scenarioData['res'])
     xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
     # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
@@ -88,7 +90,7 @@ def XcGrowth(simMax,scenarioData):
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type)
     
-    results_dir="./results/Exudate/"+soil_type+"/"
+    results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"/"
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -99,7 +101,7 @@ def XcGrowth(simMax,scenarioData):
                     
     """ initialize """
 
-    s = scenario_setup.create_soil_model(simMax,
+    s = scenario_setup.create_soil_model(simMax,res,
                                          results_dir = results_dir,
                                          soil_=soil_type,
                                          noAds = noAds, 
