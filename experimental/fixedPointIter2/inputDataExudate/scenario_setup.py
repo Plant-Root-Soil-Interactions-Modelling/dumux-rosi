@@ -440,7 +440,7 @@ def setupOther(s, soil_type, simMax):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -476,7 +476,7 @@ def create_mapped_rootsystem(initSim, simMax, soil_model, fname, path, soil_type
     plantModel.rs.setSoilGrid(picker)
     
     plantModel.wilting_point = -15000.
-    plantModel.exudf = plantParameters.prescribed_exudation(soil_type)
+    plantModel.exudf = plantParameters.prescribed_exudation(soil_type, ifexu)
     plantModel.exudation_rates = plantParameters.exudation_rates
     plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
     # set kr and kx for root system or plant

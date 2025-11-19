@@ -51,7 +51,7 @@ def init_conductivities(r, skr = 1., skx = 1.):
     return r
     
     
-def prescribed_exudation(soil_type):
+def prescribed_exudation(soil_type, ifexu):
     
     times = [0, 42, 63, 98, 154]
     
@@ -64,6 +64,8 @@ def prescribed_exudation(soil_type):
     else:
         print('No exudate properties found')
 
+    if not ifexu: 
+        exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
     f = interpolate.interp1d(times, exu_prop)  
     
     return f     

@@ -47,6 +47,7 @@ def XcGrowth(scenarioData):
     soil_type = scenarioData['soil_type']
     simMax = int(scenarioData['simMax'])
     res = int(scenarioData['res'])
+    ifexu = scenarioData['exudate']
     xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
     # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
@@ -90,7 +91,10 @@ def XcGrowth(scenarioData):
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type)
     
-    results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"/"
+    if ifexu: 
+        results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu/"
+    else: 
+        results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_noexu/"
     
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -113,7 +117,7 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax,s, xml_name,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax,ifexu, s, xml_name,
                                             path, soil_type,
                                             limErr1d3d = 5e-12)  
 
