@@ -342,7 +342,7 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('soil_type', type = str, help = 'loam or sand')
-    parser.add_argument('res', type = str, help = '1,4,5')
+    parser.add_argument('res', type = str, help = '1,2,4,5')
     parser.add_argument('simMax', type = str, help = 'whatever')
     parser.add_argument('exudate', type = str, help = 'True or False')
 
