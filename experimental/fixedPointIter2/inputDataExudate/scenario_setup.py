@@ -230,7 +230,7 @@ def vg_SPP(i = int(1)):
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
 
-def getSoilTextureAndShape(soil_= "loam", res = 5):  
+def getSoilTextureAndShape(soil_= "loam", res = 1):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
@@ -243,6 +243,11 @@ def getSoilTextureAndShape(soil_= "loam", res = 5):
         max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
         cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
         area = 20 * 45  # cm2 45
+    elif res == 2: 
+        min_b = np.array([-20/2, -44/2, -74.])
+        max_b =np.array( [20/2, 44/2, 0.]) 
+        cell_number = np.array([10,22,37]) 
+        area = 20 * 44  # cm2 45 
     elif res == 4: 
         min_b = np.array([-20/2, -44/2, -72.])
         max_b =np.array( [20/2, 44/2, 0.]) 
