@@ -28,7 +28,7 @@ import run_sra
 
 import numpy as np
 
-sim_time = 5  # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 87.5  # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
 envirotype = 0
 
 # # rerun experiment from json

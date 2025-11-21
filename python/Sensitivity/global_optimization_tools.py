@@ -76,6 +76,7 @@ def merge_results(folder_path, json_data_list, i = -1):
             data["area"] = np.abs(results["area"][i])
             data["carbon"] = results["carbon"][i]
             data["-carbon"] = -results["carbon"][i]
+
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading {filename}: {e}")
 

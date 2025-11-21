@@ -215,7 +215,7 @@ def prepare_conductivities(mods):
 
 
 def attach_conductivitis(mods):
-    """ attaches the values form mecha to the parameters (for alnalysis) """
+    """ attaches the values form mecha to the parameters (for analysis) """
     assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
     ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
     files = []
@@ -257,6 +257,7 @@ def attach_conductivitis(mods):
     mods["kx_old145"] = okx[0]
     mods["kx_old2"] = okx[1]
     mods["kx_old3"] = okx[2]
+
     return data
 
 
@@ -349,7 +350,11 @@ def open_sa_numpy(file_name):
 
 
 def get_anatomy(index):
-    """ retrieves root anatomical information from the simulation index """
+    """ retrieves root anatomical information from the simulation index 
+    returns a numpy array with:
+            aerenchyma_percentage, aerenchyma_number_of_areas, cortex_layers, cortex_cell_diameter,
+            stele_diameter, stele_cell_diameter, xylem_number_of_poles, xylem_vessel_diameter    
+    """
     # Parameter space of the Granar & Mecha simukation
     # Xylem
     xylem_vessel_diameter = np.linspace(0.02, 0.1, num = 5)  # seq(0.02, 0.1, length.out=5)

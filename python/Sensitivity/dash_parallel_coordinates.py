@@ -40,7 +40,7 @@ target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["lengt
 # got.merge_results(folder_path, all)  # add results
 
 # Read JSON data from the ZIP file
-with zipfile.ZipFile(exp_name + ".zip", "r") as zipf: # zip fuile contains a single json file 
+with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:  # zip fuile contains a single json file
     with zipf.open(exp_name + ".json", "r") as json_file:
         all = json.load(json_file)  # Deserialize JSON data
 all = list(all.values())
@@ -121,16 +121,16 @@ more_dims = dims.copy()
 color_ = 'node'
 df2 = create_df(all, more_dims)
 
-##
-## Correlation ordering
-##
+# #
+# # Correlation ordering
+# #
 # corr = df2.corr().values
 # dist = 1 - np.abs(corr)  # distance = 1 - |correlation|
 # linkage_matrix = linkage(dist, method='average')
 # order = leaves_list(linkage_matrix)  # reordering of variables
 # ordered_columns = df2.columns[order]
 # df = df2[ordered_columns]
-df=df2
+df = df2
 
 app = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
@@ -197,4 +197,5 @@ def updateFilters(data):
 
 
 if __name__ == "__main__":
+
     app.run(debug = True, dev_tools_hot_reload = False)

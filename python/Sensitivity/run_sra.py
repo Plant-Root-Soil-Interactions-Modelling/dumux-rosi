@@ -130,7 +130,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all = T
         anatomy_ind = scenario.sort_indices(mods)
         anatomy = [scenario_setup.get_anatomy(ind[0]) for i in anatomy_ind]
         radii = [ mods["a145_a"], mods["a2_a"], mods["a3_a"] ]
-        assert data[0, 2, 2] == radii[0], "radii failed for typ 145"  # untested (can be removed later...)
+        assert data[0, 2, 2] == radii[0], "radii failed for typ 145"  # to test (can be removed later...)
         assert data[1, 2, 2] == radii[1], "radii failed for typ 2"
         assert data[2, 2, 2] == radii[2], "radii failed for typ 3"
         cc_data = { "radii": radii, "anatomy": anatomy}
