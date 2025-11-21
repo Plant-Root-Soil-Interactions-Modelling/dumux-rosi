@@ -20,7 +20,7 @@ import plantbox as pb
 import scenario_setup
 
 
-def carbon(vol):
+def carbon_cost_volume(vol):
     """ returns the carbon cost propotional to the plant volume """
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
