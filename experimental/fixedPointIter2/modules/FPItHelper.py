@@ -13,6 +13,7 @@ from helpfull import write_file_array, write_file_float, div0, div0f
 import PhloemPhotosynthesis
 import helpfull
 import printData
+import functional.van_genuchten as vg
 
 
 
@@ -162,6 +163,51 @@ def storeNewMassData3d(s,perirhizalModel):
             print("perirhizalModel.soil_water3dAfter",perirhizalModel.soil_water3dAfter)
 
 
+def fix1d3dData(s,perirhizalModel):
+
+    cellIds= perirhizalModel.getCellIds()
+    pheadinit_Pa = s.getSolution(0 )
+    pheadinit_Pabu = pheadinit_Pa.copy()
+    if rank == 0:
+        soil_W1d_perVoxelAfter = perirhizalModel.soil_W1d_perVoxelAfter #comm.bcast(, root = 0)
+        water_content1d =soil_W1d_perVoxelAfter/ s.CellVolumes[cellIds]
+        vg_soils = [s.getVGParameter_fromid(cid) for cid in cellIds]
+        pheadinit1d_cm = np.array( [vg.pressure_head(water_content1d[i], vg_soils[i]) for i in range(len(cellIds))]   )  
+        #print('pheadinit_PaA',pheadinit_Pa[cellIds])
+        pheadinit_Pa[cellIds] = s.to_pa(pheadinit1d_cm)
+        #print('pheadinit_PaB',pheadinit_Pa[cellIds])
+    else:
+        pheadinit_Pa = None
+    
+    pheadinit_Pa = comm.bcast(pheadinit_Pa, root = 0)
+    s.base.setSolution(pheadinit_Pa,0 )
+    perirhizalModel.updateCSS1AfterRSGrowth(cellIds)
+    '''
+    pheadinit_Pa = s.getSolution(0 )
+    
+    newTheta = s.getWaterContent()
+    nc_molFr = [s.getSolution(nc ) for nc in range(1, s.numComp)]
+
+    if rank == 0:
+        newWatMol = ((newTheta * s.CellVolumes) * (1/1e6) * s.molarDensityWat_m3)[cellIds]  
+        soilMol = (s.CellVolumes* (1/1e6) * s.solidMolDensity)[cellIds]
+        solute1d = perirhizalModel.soil_solute1d_perVoxelAfter# comm.bcast(perirhizalModel.soil_solute1d_perVoxelAfter, root = 0)
+            
+        nc_molFr1d = np.array([
+                                solute1d[nc - 1] / newWatMol if nc <= s.numDissolvedSoluteComp
+                                else solute1d[nc - 1] / soilMol
+                                for nc in range(1, s.numComp)
+                            ])
+        print('solute1d[2]',solute1d[2], soilMol)
+        for nc in range(1, s.numComp):
+            print('nc_molFrB',nc_molFr[nc - 1][cellIds])
+            nc_molFr[nc - 1][cellIds]  = nc_molFr1d[nc - 1]
+            print('nc_molFrA',nc_molFr[nc - 1][cellIds])
+    raise Exception
+    nc_molFr = comm.bcast(nc_molFr,root = 0)
+    for nc in range(1, s.numComp):
+        s.base.setSolution(nc_molFr[nc - 1],nc )
+    '''
 
 
 class fixedPointIterationHelper():
@@ -206,10 +252,9 @@ class fixedPointIterationHelper():
         self.proposed_outer_sol_fluxes_old = np.zeros(self.s.numDissolvedSoluteComp) # 3d to 1d small solute flux (1st dissolved component)
         self.seg_fluxes = seg_fluxes #.copy()
         self.outer_R_bc_wat_old =  0 # inter-cell water flux in 3d soil model
-        self.outer_R_bc_sol_old =  np.zeros(self.s.numDissolvedSoluteComp)  # inter-cell solute flux in 3d soil model
+        self.outer_R_bc_sol_old =  np.zeros((self.s.numDissolvedSoluteComp, self.s.numberOfCellsTot))  # inter-cell solute flux in 3d soil model
         self.outer_R_bc_wat =  outer_R_bc_wat #.copy() # inter-cell water flux in 3d soil model
         self.outer_R_bc_sol = outer_R_bc_sol #.copy() # inter-cell solute flux in 3d soil model
-        
         self.thetaCylOld = self.perirhizalModel.getWaterVolumesCyl(doSum = False, reOrder = True, verbose=False)/self.cylVol # cm3/cm3
         
         
@@ -218,7 +263,7 @@ class fixedPointIterationHelper():
         
         # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
         if True: #if self.s.doSimpleReaction < 1:
-            self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
+            self.rsx_init  = self.perirhizalModel.get_inner_heads()#weather=self.perirhizalModel.weatherX) # store value at beginning time step
         else: 
             # does not account for air segments.
             self.rsx_init  = self.perirhizalModel.get_inner_heads_RS() # ???? what is correct??? from transpiration data?  store value at beginning time step    
@@ -329,7 +374,7 @@ class fixedPointIterationHelper():
             if len(perirhizalModel.airSegs) > 0:
                 rhizoWAfter_eachCyl4splitVals[perirhizalModel.airSegs]=1. # to avoind division by 0.
     
-            proposed_outer_sol_fluxes = np.full((self.s.numDissolvedSoluteComp, self.numSegs), 0.)
+            proposed_outer_sol_fluxes = np.full((self.s.numSoluteComp, self.numSegs), 0.)
             for jj in range(self.s.numDissolvedSoluteComp):
                 if max(abs(outer_R_bc_sol[jj] )) > 0:
                     proposed_outer_sol_fluxes[jj] = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[jj] / dt, 
@@ -374,8 +419,8 @@ class fixedPointIterationHelper():
             #because of unlimited flow (seg_fluxes_root + perirhizalModel.flow1d1d_w), might get values out of the [theta_r, theta_s] bounds
             self.thetaCyl_4splitSoilVals = np.maximum(np.minimum(
                                                     self.thetaCyl_4splitSoilVals, 
-                                                      perirhizalModel.vg_soil.theta_S),
-                                                     perirhizalModel.theta_wilting_point)
+                                                      perirhizalModel.cyl_theta_S),
+                                                     perirhizalModel.cyl_theta_wilting_points)
             if len(perirhizalModel.airSegs) > 0:
                 self.thetaCyl_4splitSoilVals[perirhizalModel.airSegs]  = 0.
                     
@@ -487,16 +532,21 @@ class fixedPointIterationHelper():
             # get changes in colute content not caused by flow [mol/day]
             # todo: get it directly from dumux
             sources_sol_from1d = np.full( (self.perirhizalModel.numSoluteComp, self.s.numberOfCellsTot),0. )
-            for nc in range(self.perirhizalModel.numSoluteComp):
+            for nc in range(self.perirhizalModel.numDissolvedSoluteComp):
                 sources_sol_from1d[nc][cellIds] = np.array(
                     perirhizalModel.soil_solute1d_perVoxelAfter[nc] - perirhizalModel.soil_solute1d_perVoxelBefore[nc] - self.outer_R_bc_sol[nc][cellIds]
                 )/dt
+            for nc in range(self.perirhizalModel.numDissolvedSoluteComp,self.perirhizalModel.numSoluteComp):
+                sources_sol_from1d[nc][cellIds] = np.array(
+                    perirhizalModel.soil_solute1d_perVoxelAfter[nc] - perirhizalModel.soil_solute1d_perVoxelBefore[nc]
+                )/dt
+                
             #sources_sol_from1d = sources_sol_from1d  
             
             assert sources_sol_from1d.shape == (self.perirhizalModel.numSoluteComp, self.s.numberOfCellsTot)
             
             # store error
-            self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time
+            self.s.errSoil_source_sol_abs = 0.#sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time
 
             if perirhizalModel.debugMode:
                 print("self.s.errSoil_source_sol_abs",self.s.errSoil_source_sol_abs,"(sum(self.Q_Exud_i) + sum(self.Q_mucil_i))",
@@ -563,7 +613,6 @@ class fixedPointIterationHelper():
         # of the time step + max(net incoming flow, 0.) 
         # to get the maximum potential value of content that can be
         # in the voxel if needed
-        
         for idComp in range(s.numComp):#cm3/day, mol/day
             if rank == 0:
                 SSL = soil_sources_limited[idComp].copy()
@@ -572,10 +621,12 @@ class fixedPointIterationHelper():
                 if idComp == 0:
                     maxPotentialAvailable = (np.array(perirhizalModel.soil_water3dBefore) +
                                          np.maximum(self.outer_R_bc_wat, self.outer_R_bc_wat*0 ))
-                else:
+                elif idComp < self.perirhizalModel.numDissolvedSoluteComp:
                     maxPotentialAvailable = (perirhizalModel.totC3dBefore_eachVoxeleachComp[idComp-1] +
                                              np.maximum(self.outer_R_bc_sol[idComp-1],
                                                          self.outer_R_bc_sol[idComp-1]*0 ) )
+                else:
+                    maxPotentialAvailable = (perirhizalModel.totC3dBefore_eachVoxeleachComp[idComp-1])
 
                 if (max(abs(SSL)) != 0.):
                     SSL = np.maximum(SSL, -maxPotentialAvailable/dt)
@@ -600,10 +651,11 @@ class fixedPointIterationHelper():
                                      directory_=results_dir, fileType=".csv")
             else:
                 SSL = None
-                                 
             self.sendSource2dumux(SSL, idComp)
+               
             
-           
+            
+            
     def sendSource2dumux(self, SSL, idComp):
         s = self.s
         perirhizalModel=self.perirhizalModel
@@ -728,7 +780,7 @@ class fixedPointIterationHelper():
         
         # convergence wat. pot. at root-soil interface
         if True :#s.doSimpleReaction<1: 
-            rsx = perirhizalModel.get_inner_heads(weather=perirhizalModel.weatherX)
+            rsx = perirhizalModel.get_inner_heads()#weather=perirhizalModel.weatherX)
         else: 
             rsx = perirhizalModel.get_inner_heads_RS()
 
@@ -746,6 +798,10 @@ class fixedPointIterationHelper():
                 (rsx - self.rsx_input) / rsx_divide) * 100.
             perirhizalModel.errWrsiRealInputs[abs(rsx - self.rsx_input) <= 5] = 0.
             perirhizalModel.errWrsiRealInput = max(perirhizalModel.errWrsiRealInputs)
+            
+            
+            #print('computeConvergence2, perirhizalModel.errWrsiRealInputs', perirhizalModel.errWrsiRealInputs)
+            #print('rsx , self.rsx_input',rsx ,self.rsx_input)
             
             rsx_divide = np.where(rsx != 0., rsx, 1.)
             perirhizalModel.errWrsis = abs((rsx - self.rsx_old) / rsx_divide) * 100.  # max()
@@ -768,6 +824,7 @@ class fixedPointIterationHelper():
                                                  perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
                                    perirhizalModel.rhizoMassWError_rel,
                                    perirhizalModel.rhizoMassCError_rel)
+            
                             
 
     def computeConvergence(self):
@@ -834,6 +891,7 @@ class fixedPointIterationHelper():
                                     s.bulkMassErrorWater_rel, 
                                    s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
                             )
+            
             # one array to do printing
             perirhizalModel.errs =np.array([
                             # non-convergence metrics
@@ -923,7 +981,7 @@ class fixedPointIterationHelper():
 
             print(f'\t\trelative error balance soil 1d (%)?\n\t\t\t\tfrom PWU: {perirhizalModel.rhizoMassWError_rel:.2e}, from PWU-limited: {perirhizalModel.rhizoMassWError_relLim:.2e}, from PCU: {perirhizalModel.rhizoMassCError_rel:.2e}, from PCU-limited: {perirhizalModel.rhizoMassCError_relLim:.2e}'
                 )
-
+           
 
 
     def massBalanceError3d(self,dt):
@@ -963,17 +1021,20 @@ class fixedPointIterationHelper():
                 )
             if perirhizalModel.debugMode:
                 print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i) + sum(self.Q_mucil_i)",sum(self.Q_Exud_i) + sum(self.Q_mucil_i)," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
-                
+            
             ### for each voxel
             s.bulkMassErrorWaterAll_abs = abs(perirhizalModel.soil_water3dAfter - (perirhizalModel.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
             s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /perirhizalModel.soil_water3dAfter )*100
 
 
 
-            ## inner mass balance error 
-
-            s.bulkMassCError1dsAll_abs = abs(perirhizalModel.totC3dAfter_eachVoxeleachComp - (perirhizalModel.totC3dBefore_eachVoxeleachComp + 
-                                                        self.sources_sol_from3d + self.outer_R_bc_sol))
+            ## inner mass balance error  numDissolvedSoluteComp
+            s.bulkMassCError1dsAll_abs = np.zeros(perirhizalModel.totC3dAfter_eachVoxeleachComp.shape )
+            s.bulkMassCError1dsAll_abs[:s.numDissolvedSoluteComp,:] = abs(perirhizalModel.totC3dAfter_eachVoxeleachComp[:s.numDissolvedSoluteComp,:] - (perirhizalModel.totC3dBefore_eachVoxeleachComp[:s.numDissolvedSoluteComp,:] + 
+                                                        self.sources_sol_from3d[:s.numDissolvedSoluteComp,:] + self.outer_R_bc_sol))
+            
+            s.bulkMassCError1dsAll_abs[s.numDissolvedSoluteComp:,:] = abs(perirhizalModel.totC3dAfter_eachVoxeleachComp[s.numDissolvedSoluteComp:,:] - (perirhizalModel.totC3dBefore_eachVoxeleachComp[s.numDissolvedSoluteComp:,:] + 
+                                                        self.sources_sol_from3d[s.numDissolvedSoluteComp:,:]))
 
 
             totC3dAfter_eachVoxeleachCompTemp = np.where(perirhizalModel.totC3dAfter_eachVoxeleachComp != 0,

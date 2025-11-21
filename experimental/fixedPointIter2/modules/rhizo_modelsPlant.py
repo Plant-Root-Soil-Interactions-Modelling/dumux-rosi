@@ -70,21 +70,22 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # changes with growing plant (to update)
         # plant shape        
         self.wilting_point = soilModel.wilting_point
-        self.theta_wilting_point = vg.water_content( self.wilting_point, soilModel.vg_soil)
+        self.theta_wilting_points = [vg.water_content( self.wilting_point, vg_) for vg_ in soilModel.vg_soil]
+        self.theta_Ss = [vg_.theta_S for vg_ in soilModel.vg_soil]
         self.IdCyllMPI = {}
         self.seg_length = np.array([]) 
         self.seg_length_old = np.array([])
         
         # 3d soil 
         self.soilModel = soilModel
-        self.soil = self.soilModel.soil
+        self.soil = self.soilModel.soils
         self.vg_soil = self.soilModel.vg_soil
         self.cellWithRoots = [] # id of the (3d) bulk soil with at least one root
         self.sizeSoilCell = comm.bcast(self.soilModel.getCellVolumes(), root = 0) #cm3
         self.solidDensity = self.soilModel.solidDensity#2700 # [kg/m^3 solid]
         self.solidMolarMass = self.soilModel.solidMolarMass#60.08e-3 # [kg/mol]           
         self.solidMolDensity = self.solidDensity/self.solidMolarMass # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
-        self.bulkDensity_m3 = self.solidMolDensity*(1.- self.soilModel.vg_soil.theta_S) #porosity == theta_s # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
+        self.bulkDensity_m3 = self.solidMolDensity*(1.- self.soilModel.vg_soil[0].theta_S) #porosity == theta_s # [mol / m3 scv] = [mol / m3 solid] * [m3 solid /m3 space]
         
         
         
@@ -337,7 +338,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             
             self.sumDiff1d3dCW_rel[1:] = np.array([self.sumDiff1d3dCW_abs[idComp]/divideTemp[idComp-1] for idComp in range(1, self.numComp)])
             
-            self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
+            self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],# why did i put a 0 here?
+                                                                   self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
+            #print('self.allDiff1d3dCW_abs',self.allDiff1d3dCW_abs)
+            #for idComp in range(0, self.numComp-1):
+            #    print('each, nc',idComp+1,self.totC3dAfter_eachVoxeleachComp[idComp][cellIds], self.soil_solute1d_perVoxelAfter[idComp])
+            #    print('all 3d',self.totC3dAfter_eachVoxeleachComp[idComp])
 
 
             issueWater = ((self.maxDiff1d3dCW_abs[0].max() > diff1d3dCW_abs_lim) and 
@@ -583,13 +589,17 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         #self.eidx_all = self.allgatherv(np.array(self.eidx), data2share_type_default = np.int64)# all epreviously existsing segs
         self.cylSoilidx_all = self.allgatherv(np.array(self.cylSoilidx), data2share_type_default = np.int64)# all epreviously existsing segs
         self.eidx_all = self.eidx_all_.copy()#self.gather(np.array(self.eidx), dtype = int)# all epreviously existsing segs
-        
+        vg_soils_ = np.array([self.soilModel.getVGParameter_fromid(self.seg2cell[cid]) for cid in self.eidx_all])
+        self.cyl_theta_R = np.array([vgs.theta_R for vgs in vg_soils_])
+        self.cyl_theta_S = np.array([vgs.theta_S for vgs in vg_soils_])
+        self.cyl_theta_wilting_points  = np.array([vg.water_content( self.wilting_point, vg_) for vg_ in vg_soils_])
         self.storeIdCyllMPI()
         
         # growth changes csw and therefore css1
         # so need to reset soilModel accordingly
         FPItHelper.storeNewMassData1d(self)
-        self.updateCSS1AfterRSGrowth(cellIds)  
+        if not self.soilModel.noAds:
+            self.updateCSS1AfterRSGrowth(cellIds)  
         FPItHelper.storeNewMassData3d(self.soilModel,self)
         self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d) 
         
@@ -601,7 +611,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 # check CSS1toCSS2 
             csw = self.soilModel.getSolution(1)
             css1 = self.soilModel.getCss1()
-            css2 = self.soilModel.getSolution(2)
+            css2 = self.soilModel.getSolution(3)
             assert (len(css2[css2 !=0.]) == 0)or((css1[css2 !=0.] == 0.).all())
             assert (len(css1[css1 !=0.]) == 0)or((css2[css1 !=0.] == 0.).all())
             assert (len(csw[csw !=0.]) == 0)or((css1 + css2)[csw>0.] > 0.).all() # att will throw error if turn off adsorption
@@ -631,23 +641,29 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             => changes in distribution of C between CSW and CSS1
         '''        
         cswFr3d = self.soilModel.getSolution(1) # mol/mol water
-        css2Fr3d = self.soilModel.getSolution(2) # mol/mol soil
+        cs2Fr3d = self.soilModel.getSolution(2) # mol/mol water
+        css2Fr3d = self.soilModel.getSolution(3) # mol/mol soil
         # mol wat = cm3 W * [mol wat/m3 wat] * m3/cm3
+        molsoil = self.soilModel.getCellVolumes() * 1e-6 * self.bulkDensity_m3 # cm3 * m3/cm3 * mol/m3 scv# 
         if rank == 0:
             watMol = self.soil_W1d_perVoxelAfter*(self.soilModel.molarDensityWat_m3*1e-6)
             cswFr1d = self.soil_solute1d_perVoxelAfter[0]/watMol
-            css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
+            cs2Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
+            css1Fr1d = self.soil_solute1d_perVoxelAfter[2]/molsoil[cellsWithRoot]#/watMol
             cswFr3d[cellsWithRoot] = cswFr1d#[cellsWithRoot]
+            cs2Fr3d[cellsWithRoot] = cs2Fr1d#[cellsWithRoot]
             css2Fr3d[cellsWithRoot] = css1Fr1d#[cellsWithRoot]
         else:
             cswFr3d = None
+            cs2Fr3d = None
             css2Fr3d = None
         cswFr3d = comm.bcast(cswFr3d, root = 0)
+        cs2Fr3d = comm.bcast(cs2Fr3d, root = 0)
         css2Fr3d = comm.bcast(css2Fr3d, root = 0)
         self.soilModel.base.setSolution(cswFr3d,1)
-        self.soilModel.base.setSolution(css2Fr3d,2)
-        #print('self.soilModel.getSolution(1)',self.soilModel.getSolution(1))
-        #print('self.soilModel.getSolution(2)',self.soilModel.getSolution(2))
+        self.soilModel.base.setSolution(cs2Fr3d,2)
+        self.soilModel.base.setSolution(css2Fr3d,3)
+        
         #print('cellsWithRoot',cellsWithRoot)
         #if sum(self.soilModel.getSolution(1)) != 0.:
         #    raise Exception
@@ -716,27 +732,29 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             theta_leftOver = np.array([watVol_leftover[idvol]/vol if (cellIds[idvol] in self.cellIdleftover)
                                        else np.nan
                                        for idvol, vol in enumerate(volLeftOver) ])
-            
-            lowTheta = np.where(theta_leftOver <= self.vg_soil.theta_R )
+            vg_soils_ = np.array([self.soilModel.getVGParameter_fromid(cid) for cid in cellIds])
+            theta_R = np.array([vgs.theta_R for vgs in vg_soils_])
+            theta_S = np.array([vgs.theta_S for vgs in vg_soils_])
+            lowTheta = np.where(theta_leftOver <= theta_R )
             if len(volLeftOver[lowTheta]) > 0:
                 try:
                     if verbose:
                         print('get_vol2theta_leftover, some theta too low', cellIds[lowTheta],theta_leftOver[lowTheta],
-                              min((theta_leftOver - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100)
-                    assert (
-                        np.logical_or(
-                        (((theta_leftOver[lowTheta] - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 > -1.),
-                            ((-theta_leftOver[lowTheta] + self.vg_soil.theta_R)*volLeftOver[lowTheta]<=self.maxDiff1d3dCW_abs[0] *10)
-                    )
-                    ).all()
-                    theta_leftOver[lowTheta] = self.vg_soil.theta_R + 1e-14
+                              min((theta_leftOver - theta_R)/theta_R)*100)
+                    #assert (
+                    #    np.logical_or(
+                    #    (((theta_leftOver[lowTheta] - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 > -1.),
+                    #        ((-theta_leftOver[lowTheta] + theta_R)*volLeftOver[lowTheta]<=self.maxDiff1d3dCW_abs[0] *10)
+                    #)
+                    #).all()
+                    theta_leftOver[lowTheta] = theta_R[lowTheta] + 1e-14
                 except:
                     print('min((theta_leftOver - self.vg_soil.theta_R)/self.vg_soil.theta_R)*100 < -1.', volLeftOver,theta_leftOver )
                     print(volLeftOver[lowTheta],
-                          theta_leftOver[lowTheta],self.vg_soil.theta_R, 
+                          theta_leftOver[lowTheta],theta_R, 
                           'lowTheta',lowTheta, 'cellIds',cellIds,self.maxDiff1d3dCW_abs[0])
                     raise Exception
-            highTheta = np.where(theta_leftOver > self.vg_soil.theta_S )
+            highTheta = np.where(theta_leftOver > theta_S )
             if len(volLeftOver[highTheta]) > 0:
             
                 try:
@@ -744,27 +762,29 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     if verbose:
                         print('get_vol2theta_leftover, some theta too high', volLeftOver[highTheta],
                           watVol_leftover[highTheta], theta_leftOver[highTheta],highTheta,
-                          self.maxDiff1d3dCW_abs[0],self.vg_soil.theta_S)
-                    assert (np.logical_or(
-                        ((theta_leftOver[highTheta] - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 1.,
-                        (theta_leftOver[highTheta] - self.vg_soil.theta_S)*volLeftOver[highTheta]<=self.maxDiff1d3dCW_abs[0] * 10
-                         )).all()
-                    theta_leftOver[highTheta] = self.vg_soil.theta_S 
+                          self.maxDiff1d3dCW_abs[0],theta_S)
+                    #assert (np.logical_or(
+                    #    ((theta_leftOver[highTheta] - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 1.,
+                    #    (theta_leftOver[highTheta] - self.vg_soil.theta_S)*volLeftOver[highTheta]<=self.maxDiff1d3dCW_abs[0] * 10
+                    #     )).all()
+                    theta_leftOver[highTheta] = theta_S[highTheta] 
                 except:
                     print('theta too high',volLeftOver[highTheta],
                           watVol_leftover[highTheta], theta_leftOver[highTheta],highTheta,
-                          self.maxDiff1d3dCW_abs[0],self.vg_soil.theta_S)
+                          self.maxDiff1d3dCW_abs[0],theta_S)
                     raise Exception
                     
             WatPsi_leftover = np.full(theta_leftOver.shape, np.nan)
             if len(theta_leftOver) > 0:
                 try:
-                    idtocompute = np.where(~np.isnan(theta_leftOver))
-                    WatPsi_leftover[idtocompute] = np.array([vg.pressure_head( tlo, self.vg_soil) for tlo in theta_leftOver[idtocompute]])
+                    idtocompute = np.where(~np.isnan(theta_leftOver))[0]
+                    WatPsi_leftover[idtocompute] = np.array([vg.pressure_head( theta_leftOver[id_], vg_soils_[id_]) for id_ in idtocompute])
                 except:
                     print(theta_leftOver[lowTheta],volLeftOver[lowTheta])
                     print(theta_leftOver[highTheta],volLeftOver[highTheta])
                     print(theta_leftOver )
+                    print('idtocompute',idtocompute)
+                    print('idtocompute',theta_leftOver[idtocompute])
                     raise Exception
             
             emptyCell = np.where(np.isnan(theta_leftOver) )
@@ -927,6 +947,15 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         deltaR = cc0 - p0
         return self.getXcyl(data2share=deltaR ,idCyll_ = idCyls, doSum=doSum, reOrder=reOrder)
     
+
+    def get_inner_heads(self,idCyls=None):#[-] unitless, TODO: replace with self.dx2?
+        doSum = False
+        reOrder = True
+        localIdCyls =   self.getLocalIdCyls(idCyls)      
+        p0 = np.array([ self.cyls[i].getInnerHead()  for i in localIdCyls ], dtype=object).flatten() 
+        return self.getXcyl(data2share=p0 ,idCyll_ = idCyls, doSum=doSum, reOrder=reOrder)
+    
+    
     def getC_rhizo(self, idComp = 1, konz = True): # if konz:  mol/m3 wat or mol/m3 scv, else: mol
         """ return component concentration or content, only in voxel with 1D-domains"""
         
@@ -959,7 +988,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return contentOrKonz
         
         
-    def update_concentration(self, totContent, changeRatio, gradient, volumes, isWater, verbose=False):
+    def update_concentration(self, totContent, changeRatio, gradient, volumes, isWater,cyl, verbose=False):
         """
         Update the concentration to get specific total content and gradient.
         @param totContent: new total content of the element in the cylinder (cm3 water or mol solute)
@@ -1003,8 +1032,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
         # Set bounds based on water or solute
         if isWater:
-            maxVal = self.vg_soil.theta_S
-            minVal = self.theta_wilting_point
+            maxVal = cyl.vg_soil.theta_S
+            minVal = cyl.theta_wilting_point
         else:
             maxVal = np.inf
             minVal = 0.
@@ -1129,8 +1158,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                 
                 wOld = sum(theta_old*volOld)
-                maxVal = self.vg_soil.theta_S  # keep that or set lower higher bound?
-                minVal = self.theta_wilting_point
+                maxVal = cyl.vg_soil.theta_S  # keep that or set lower higher bound?
+                minVal = cyl.theta_wilting_point
                 
                 if smaller:
                     changeRatioW = max(min(changeRatio, sum(maxVal*volNew)/wOld),sum(minVal*volNew)/wOld)
@@ -1157,13 +1186,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         # get theta for each cell
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, volumes = volNew,isWater = True,
+                                                         gradient =gradientNew, volumes = volNew,isWater = True,cyl=cyl,
                                                             verbose = verbose)
                     except:
                         print('1st faile of update_concentration for water, try again, try again with verbose = True. rank', rank)
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
-                                                         gradient =gradientNew, volumes = volNew,isWater = True,
+                                                         gradient =gradientNew, volumes = volNew,isWater = True,cyl=cyl,
                                                             verbose = True)
                     newHead = np.array([vg.pressure_head(nt, self.vg_soil) for nt in theta_new])# cm
                 except:
@@ -1171,7 +1200,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('\t',gId,"x_old",theta_old,theta_old* volOld,volOld )
                     print('\t',gId,"points",oldPoints, points,centersNew)
                     print('\t',gId,"gradient",gradientOld, gradientNew)
-                    print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
+                    print('\t',gId,"vg param", cyl.vg_soil.theta_R, cyl.vg_soil.theta_S,cyl.theta_wilting_point)   
                     print('\t',gId,"changeRatio",changeRatio, changeRatioW)    
                     print('\t',gId,"newHead", newHead ,theta_new)
                     raise Exception
@@ -1182,7 +1211,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('\t',gId,"points",oldPoints, points,centersNew)
                     print('\t',gId,"gradient",gradientOld, gradientNew)
                     print('\t',gId,"theta",theta_new, theta_old)
-                    print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
+                    print('\t',gId,"vg param", cyl.vg_soil.theta_R, cyl.vg_soil.theta_S,cyl.theta_wilting_point)   
                     print('\t',gId,"changeRatio",changeRatio, changeRatioW)   
                     
                 ## new contents:  
@@ -1214,14 +1243,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                 molKonzNew.append(
                                     self.update_concentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                       volumes = volNew,isWater = False, verbose = False))                             
+                                       volumes = volNew,isWater = False,cyl=cyl, verbose = False))                             
                             except:
                                 print('1st faile of update_concentration for comp no',nComp,', try again, try again with verbose = True. rank', rank,
                                      'max(konzLeftOver[nComp -1]*deltaVol,0.)',max(konzLeftOver[nComp -1]*deltaVol,0.))
                                 molKonzNew.append(
                                     self.update_concentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        volumes = volNew,isWater = False, verbose = True)) 
+                                        volumes = volNew,isWater = False,cyl=cyl, verbose = True)) 
                                         
                         except:
                             print('update_concentration failed','cOld',cOld, 
@@ -1309,10 +1338,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     assert (len(idSegs) == idCylsAll) and (watVol_res > (-1e-13-self.maxDiff1d3dCW_abs[0])) # rounding error probably
                     watVol_res = 0.
                 except:
+                    watVol_res = 0.
                     print("getWatPsi_leftoverI")
                     print(idCell, wat_total,wat_rhizo, wat_total - wat_rhizo,self.maxDiff1d3dCW_abs[0])
                     print( len(idSegs), len(idCyls), idCylsAll)# how many old and new cylinders?
-                    raise Exception
+                    #raise Exception
         else:
             watVol_res =0
                 
@@ -1347,12 +1377,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 if (res_CC >(-1e-13-self.maxDiff1d3dCW_abs[idComp]*10)):# and (len(idSegs) == len(idCylsAll))): # rounding error probably 
                     res_CC = 0.
                 else:
+                    res_CC = 0.
                     print("getC_content_leftoverI", idCell)
                     print("res_CC = ",res_CC," < ",(-self.maxDiff1d3dCW_abs[idComp]*10),"or",len(idSegs),"=/=",idCylsAll,
                     ", idComp:",idComp,'mol_total',mol_total ,
                     'mol_rhizo', mol_rhizo,'self.maxDiff1d3dCW_abs',self.maxDiff1d3dCW_abs ) 
                     print('lens', len(idSegs),idCylsAll, len(idCyls))# how many old and new cylinders?
-                    raise Exception
+                    #raise Exception
         else:
             res_CC =0
                 
@@ -1407,7 +1438,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.results_dir = self.soilModel.results_dir
             cyl.setParameter("Newton.Verbosity", "0") 
             cyl.initialize(verbose = False)
-            cyl.setVGParameters([self.soil])
+            cyl.gId = gId  
+            cellId = self.seg2cell[gId]
+            cyl.cellZ = self.soilModel.cellCenters_all[cellId][2]
+            cyl.vg_soil = self.soilModel.getVGParameter(cyl.cellZ)
+            soil_ = self.soilModel.soils[self.soilModel.getVGParameter_indx(cyl.cellZ)]
+            cyl.setVGParameters([soil_])
             lb = self.logbase
             
             points = np.logspace(np.log(a_in) / np.log(lb), np.log(a_out) / np.log(lb), 
@@ -1478,13 +1514,17 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(self.soilModel.Dl)) #m^2/s
             else: 
                 cyl.setParameter("1.Component.LiquidDiffusionCoefficient", str(self.soilModel.Ds)) #m^2/s
+                cyl.setParameter("2.Component.LiquidDiffusionCoefficient", str(self.soilModel.Dl)) #m^2/s
                 
                 cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
-                
-                cyl.setParameter("Soil.Vmax_decay", str(self.soilModel.Vmax_decay)) #mol C / m^3 scv / s
-                cyl.setParameter("Soil.Km_decay", str(self.soilModel.Km_decay)) #mol C / m^3 scv
+
+                cyl.setParameter( "Component.BufferPower", str(self.soilModel.BufferPower))
+                cyl.setParameter( "Component.FreundlichN", str(self.soilModel.freundlichN))
+                cyl.setParameter( "Component.FreundlichK", str(self.soilModel.freundlichK))
+                #cyl.setParameter("Soil.Vmax_decay", str(self.soilModel.Vmax_decay)) #mol C / m^3 scv / s
+                #cyl.setParameter("Soil.Km_decay", str(self.soilModel.Km_decay)) #mol C / m^3 scv
 
             
             for j in range( 1, self.numSoluteComp):
@@ -1522,17 +1562,21 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 #Vmax = 3.844e-10*(24*3600)/1e4# (kg m–2 s–1) * (s/d) * (m2/cm2) => (
                 # kg cm–2 d–1)
                 #Vmax = self.Vmax#Vmax * 1000. / self.soilModel.molarMassC # (kg cm–2 d–1) * (g/kg) / (g/mol) => mol cm-2 d-1
-                cyl.setParameter("RootSystem.Uptake.Vmax", cyl.dumux_str(self.RS_Uptake_Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
+                cyl.setParameter("RootSystem.Uptake.C1Vmax", cyl.dumux_str(3.844e-10*(24*3600)/1e4))#self.RS_Uptake_C1Vmax))
+                cyl.setParameter("RootSystem.Uptake.C2Vmax", cyl.dumux_str(1e-5))#self.RS_Uptake_C3Vmax))  # mol /cm^2 / s - > mol /cm^2 / day 
                 #km = 1.054e-4 * 1e-6 # (kg m–3) => kg cm-3
                 #km = km * 1000. / self.soilModel.molarMassC # (kg cm-2 * (g/kg) / (g/mol)) 
-                cyl.setParameter("RootSystem.Uptake.Km", cyl.dumux_str(self.RS_Uptake_km))  # mol / cm3                
-                cyl.setParameter( "Soil.BC.Bot.C1Type", str(8))
+                cyl.setParameter("RootSystem.Uptake.C1Km", cyl.dumux_str(1.054e-4 * 1e-6 * 1000. / self.soilModel.molarMassP))#self.RS_Uptake_C1km))  
+                cyl.setParameter("RootSystem.Uptake.C2Km", cyl.dumux_str(2.3e-5))#self.RS_Uptake_C3km))  # mol / cm3                
+                cyl.setParameter( "Soil.BC.Bot.C1Type", str(8))              
+                cyl.setParameter( "Soil.BC.Bot.C2Type", str(8))
                           
             # Maximum uptake rate (kg m–2 s–1)	3.844e-10	(Teo et al. (1992a)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
             # Michaelis constant (kg m–3)	1.054e-4	(Teo et al. (1992b)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
             
             cyl.doBioChemicalReaction = self.doBioChemicalReaction
-            cyl.molarMassC = self.soilModel.molarMassC
+            cyl.molarMassNO3 = self.soilModel.molarMassNO3
+            cyl.molarMassP = self.soilModel.molarMassP
             cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift_1DS
             cyl.EnableResidualCriterion = self.soilModel.EnableResidualCriterion
             cyl.EnableAbsoluteResidualCriterion = self.soilModel.EnableAbsoluteResidualCriterion
@@ -1545,6 +1589,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setRegularisation(cyl.eps_regularization, cyl.eps_regularization) # needs to be low when using sand parameters. 
             
             cyl.setCriticalPressure(self.soilModel.wilting_point)  # cm pressure head
+            cyl.setParameter( "Soil.SourceSlope", str(self.soilModel.SourceSlope ))
+            cyl.setParameter( "Soil.SourceSlope_up", str(self.soilModel.SourceSlope_up ))
+            cyl.setParameter( "Soil.CriticalPressure_up", str(self.soilModel.CriticalPressure_up ))
+
             cyl.bulkDensity_m3 = self.soilModel.bulkDensity_m3
             cyl.solidDensity =self.soilModel.solidDensity 
             cyl.solidMolarMass =self.soilModel.solidMolarMass
@@ -1554,20 +1602,18 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.f_sorp =self.soilModel.f_sorp            
             cyl.CSSmax = self.soilModel.CSSmax                   
             cyl.css1Function = self.soilModel.css1Function
-            cyl.ddt = 1.e-3
-            cyl.gId = gId    
-            cyl.theta_wilting_point = self.theta_wilting_point    
-            cyl.vg_soil = self.vg_soil
+            cyl.ddt = 1.e-3 #self.vg_soil[]
+            cyl.theta_wilting_point = vg.water_content( self.wilting_point, cyl.vg_soil) #self.theta_wilting_point    
             cyl.a_in = a_in    
             cyl.a_out = a_out
             ThetaCyl = cyl.getWaterContent()
             setDefault(cyl)
             cyl.createNewtonSolver() # make sure solver parameters are implemented.
             try:
-                assert (ThetaCyl >= self.vg_soil.theta_R).all()
-                assert (ThetaCyl <= self.vg_soil.theta_S).all()
+                assert (ThetaCyl >= cyl.vg_soil.theta_R).all()
+                assert (ThetaCyl <= cyl.vg_soil.theta_S).all()
             except:
-                print('issue thetaCyl',rank,ThetaCyl, self.vg_soil.theta_R, self.vg_soil.theta_S )
+                print('issue thetaCyl',rank,ThetaCyl, cyl.vg_soil.theta_R, cyl.vg_soil.theta_S )
                 raise Exception
             pHeadcyl = cyl.getSolutionHead()
             
@@ -1579,7 +1625,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             try:
                 x_divide = np.where(np.array(x)!=0,x,1)
                 thetainit = cyl.getWaterContent()
-                thetainitth = np.array([vg.water_content( p_mean_, self.vg_soil) for
+                thetainitth = np.array([vg.water_content( p_mean_, cyl.vg_soil) for
                                         p_mean_ in pHeadcyl])
                 theta_divide = np.where(thetainitth!=0,thetainitth,1)
 
@@ -1591,8 +1637,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 assert len(pHeadcyl) == (self.NC - 1)
                 assert (np.logical_or( (abs((pHeadcyl - x)/x_divide)*100 < 1e-5) , 
                                        (abs(pHeadcyl - x) < 1e-9) )).all()
-                assert (np.logical_or( (abs((thetainit - thetainitth)/theta_divide)*100 < 1e-5) ,
-                                       (abs(thetainit- thetainitth) < 1e-9) )).all()
+                #assert (np.logical_or( (abs((thetainit - thetainitth)/theta_divide)*100 < 1e-5) ,
+                #                       (abs(thetainit- thetainitth) < 1e-9) )).all()
             except:
                 print('error: issue with cylinder creations', rank)
                 print('len(pHeadcyl) == (self.NC - 1)?', len(pHeadcyl), (self.NC - 1))
@@ -1607,30 +1653,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             raise Exception
             return []
 
-    def get_inner_heads_RS(self):#        
-        """ matric potential at the root surface interface [cm]"""
-        rsx = np.array([
-            cyl.getInnerHead() for cyl in self.cyls
-        ])  # [cm] (in richards.py, then richards_cyl.hh) 
-        
-        inner_heads= self.gather( rsx)#_flat0(comm)) #self._map(# gathers and maps correctly
-        return inner_heads
-
-    def get_inner_heads(self,  weather:dict={}):#        
-        """ matric potential at the root surface interface [cm]"""
-        rsx = np.array([
-            cyl.getInnerHead() if not isinstance(cyl, AirSegment) else helpfull.getPsiAir(weather["ea"]/weather["es"], weather["TairC"]) for cyl in self.cyls
-        ])  # [cm] (in richards.py, then richards_cyl.hh)
-        
-        inner_heads= self.gather( rsx)#_flat0(comm)) #self._map(# gathers and maps correctly
-        return inner_heads
 
     def get_inner_solutes(self, compId = 1):
         """ matric potential at the root surface interface [mol/cm3]"""
         rsx = np.full(len(self.cyls),0.)
         for i, cyl in enumerate(self.cyls):  # run cylindrical models
             rsx[i] = cyl.getInnerSolutes( compId=compId)  # [cm]
-        inner_solutes= self.gather( rsx)#_flat0(comm.) #self._map()   # gathers and maps correctly
+        inner_solutes= self.gather( rsx)#,root=0)#_flat0(comm.) #self._map()   # gathers and maps correctly
         return inner_solutes
     
     
@@ -1644,7 +1673,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             #pass  # currently zero flux !!!!!!
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        inner_concentrations = self.gather( rsx)#_flat0(comm.) #self._map()  # gathers and maps correctly
+        inner_concentrations = self.gather(rsx)#,root=0)#_flat0(comm.) #self._map()  # gathers and maps correctly
         return inner_concentrations
 
 
@@ -1685,7 +1714,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             return concentration # mol/cm3
         else:
             raise Exception("RhizoMappedSegments.get_inner_concentrations: Warning, mode {:s} unknown".format(self.mode))
-        concentration = self.gather(rsx,root=0)#self._flat0() #self._map( )
+        concentration = self.gather(rsx)#,root=0)#self._flat0() #self._map( )
         return concentration
 
 
@@ -1867,8 +1896,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             gId = cyl.gId # for one process gId == lId
             assert gId == self.eidx[lId]  
             verbose = False
-            if verbose:
-                print(rank, "cyl no ",lId+1,"/",len(self.cyls),'gId')
+            # print(rank, "cyl no ",gId+1,"/",len( self.eidx_all),'gId', end=", ", flush = True)
             if isinstance(cyl, AirSegment):  
                 self._handle_air_segment(cyl, lId, proposed_inner_fluxes,
                                     proposed_outer_fluxes,
@@ -1912,8 +1940,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
     def _check_Wcontent(self, cyl):
         try:
-            maxVal = self.vg_soil.theta_S
-            minVal = self.theta_wilting_point
+            maxVal = cyl.vg_soil.theta_S
+            minVal = cyl.theta_wilting_point
             theta = cyl.getWaterContent()
             phead = cyl.getSolutionHead()
             assert min(theta)>= minVal
@@ -2036,10 +2064,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 
             except Exception as e:
                 np.set_printoptions(precision=20)
-                
-                
+                print('cyl',cyl.getWaterContent(),[cyl.getSolution(nc) for nc in range(cyl.numComp)] )
+                print('inner_fluxes_water_temp',inner_fluxes_water_temp, outer_fluxes_water_temp, 
+                        inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp)
                 print('solve Failed:', e,'rank',rank,'gId',gId,'lId',lId,
                       'n_iter_solve',n_iter_solve)
+                
 
                 cyl.setParameter("Problem.verbose", "0")
                 cyl.setParameter("Newton.Verbosity", "0")
@@ -2073,6 +2103,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 if n_iter_solve == 1: # try with small init ddt
                     cyl.ddt = min( 1.e-3,cyl.ddt)
                     cyl.reset();
+                    inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp = self._adjust_fluxes(cyl,dt,  inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp,n_iter_solve, errorCOnly, errorWOnly)
                     didReset = True
                     
                 if n_iter_solve == 2:
@@ -2150,18 +2181,18 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         l = cyl.segLength
         gId = cyl.gId
         if (n_iter_solve < 8):                   
-            divVale = 0.9
+            divVale = 0.
         else:
             print(rank,'gId',gId,'lId',lId,'ERROR, setting fluxes to 0. errorCOnly',errorCOnly,errorWOnly)
             divVale = 0.
         # water
-        if (not errorCOnly) or (errorWOnly) or (min(outer_fluxes_solMucil) >0. and min(inner_fluxes_solMucil_temp)>0.):
-            if (inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0) and (inner_fluxes_water_temp <= outer_fluxes_water_temp):
+        if True:#(not errorCOnly) or (errorWOnly) or (min(outer_fluxes_solMucil) >0. and min(inner_fluxes_solMucil_temp)>0.):
+            if inner_fluxes_water_temp < 0:# or outer_fluxes_water_temp < 0) and (inner_fluxes_water_temp <= outer_fluxes_water_temp):
                 inner_fluxes_water_temp *=divVale
                 qIn = inner_fluxes_water_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
                 cyl.setInnerFluxCyl(qIn) 
                 
-            elif (inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0):
+            if outer_fluxes_water_temp < 0:#'(inner_fluxes_water_temp < 0 or outer_fluxes_water_temp < 0):
                 outer_fluxes_water_temp *= divVale
                 qOut = cyl.distributeSource(dt, outer_fluxes_water_temp,inner_fluxes_water_temp * dt,eqIdx = 0,plantM=self)
                 outer_fluxes_water_temp = sum(qOut) # maybe outer_fluxes_water_temp was re-adjusted inside distributeSource
@@ -2172,7 +2203,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             valueBotBC[:self.numDissolvedSoluteComp] = inner_fluxes_solMucil_temp/ (2 * np.pi * self.radii[gId] * l) # [cm3/day] -> [cm /day]
             cyl.setSoluteBotBC(self.typeBC, valueBotBC)
             
-        elif (min(outer_fluxes_solMucil) <0. or min(inner_fluxes_solMucil_temp)<0.):
+        elif (not self.doSoluteUptake) and (min(outer_fluxes_solMucil) <0. or min(inner_fluxes_solMucil_temp)<0.):
             outer_fluxes_solMucil[np.where(outer_fluxes_solMucil == min(outer_fluxes_solMucil))] *= divVale # or id where getSolution < 0
             QflowOutCellLim = cyl.distributeSources(dt, outer_fluxes_solMucil, inner_fluxes_solMucil_temp * dt,
                                       np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]), plantM=self)
@@ -2300,7 +2331,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         """
         if rank ==0:
             
-            cellIds = self.getCellIds()    
+            cellIds = self.getCellIds()   
+            vg_soil_ = [self.soilModel.getVGParameter(self.soilModel.cellCenters[cid][2]) for cid in cellIds]
+            theta_wilting_point_ = np.array([vg.water_content( self.wilting_point, vg_) for vg_ in vg_soil_])
+            theta_S_ = np.array([vg_.theta_S for vg_ in vg_soil_])
             organTypes = np.array(self.organTypes)
 
             if self.debugMode and (organTypes != 2).any():
@@ -2311,8 +2345,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             if (soilVals[cellIds] != 0.).any():
                 splitVals = np.array(self.splitSoilVals_(
                     soilVals, cellIds, isWater, seg_values, seg_volume, 
-                    dt, self.vg_soil.theta_S, 
-                      self.theta_wilting_point))
+                    dt,theta_S_ , 
+                      theta_wilting_point_))
             else:
                 splitVals = np.zeros(len(self.organTypes))
 

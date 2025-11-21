@@ -15,12 +15,12 @@ from helpfull import sinusoidal3
 from air_modelsPlant import AirSegment
 
     
-def weather(simDuration, dt, spellData, hp:float=1):
+def weather(simDuration, dt,  hp:float=1):
         if simDuration == 0.:
             raise Exception
         Qnigh = 0; Qday = 960e-6 
         
-        if  ((spellData['condition'] == "wet") or (simDuration <= spellData['spellStart']) or (simDuration > spellData['spellEnd'])):
+        if  True:#((spellData['condition'] == "wet") or (simDuration <= spellData['spellStart']) or (simDuration > spellData['spellEnd'])):
             Tnigh = 15.8; Tday = 22
             RHday = 0.6; RHnigh = 0.88
             Pair = 1010.00 #hPa

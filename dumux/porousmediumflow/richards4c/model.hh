@@ -51,7 +51,7 @@
 #include <dumux/material/components/soil.hh>
 #include <dumux/material/components/constant.hh>
 #include <dumux/material/components/solidConstant.hh>
-#include <dumux/material/fluidsystems/liquidphase2c.hh>
+#include <dumux/material/fluidsystems/liquidphase3c.hh>
 #include <dumux/material/fluidstates/compositionalnc.hh>
 
 //actially this works for any number of components.
@@ -217,8 +217,9 @@ template<class TypeTag>
 struct FluidSystem<TypeTag, TTag::Richards4C>
 {
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = FluidSystems::LiquidPhaseTwoC<Scalar, Components::SimpleH2O<Scalar>, 
-														 Components::Constant<1, Scalar>>;
+    using type = FluidSystems::LiquidPhaseThreeC<Scalar, Components::SimpleH2O<Scalar>, 
+														 Components::Constant<1, Scalar>,
+                                                         Components::Constant<2, Scalar>>;
 };
 
 /*!

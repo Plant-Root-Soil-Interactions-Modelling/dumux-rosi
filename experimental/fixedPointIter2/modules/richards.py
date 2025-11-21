@@ -39,6 +39,38 @@ class RichardsWrapper(SolverWrapper):
                 s += " " + str(l_)
             return s[1:]
 
+    def getVGParameter_fromid(self, cid):
+        z = self.cellCenters_all[cid][2]
+        for i in range(len(self.layers_z) - 1):
+            z_min = min(self.layers_z[i], self.layers_z[i + 1])
+            z_max = max(self.layers_z[i], self.layers_z[i + 1])
+            if z_min <= z <= z_max:
+                return self.vg_soil[self.layer_numbers[i]-1]
+        raise Exception
+        return self.vg_soil[len(self.layer_numbers)]
+    
+    def getVGParameter_indx(self, z):
+        for i in range(len(self.layers_z) - 1):
+            z_min = min(self.layers_z[i], self.layers_z[i + 1])
+            z_max = max(self.layers_z[i], self.layers_z[i + 1])
+            if z_min <= z <= z_max:
+                #print('getVGParameter',z,self.layers_z,i,self.layer_numbers )
+                return self.layer_numbers[i]-1
+        print('getVGParameter',z,self.layers_z)
+        raise Exception
+        return self.vg_soil[len(self.layer_numbers)]
+    
+    def getVGParameter(self, z):
+        for i in range(len(self.layers_z) - 1):
+            z_min = min(self.layers_z[i], self.layers_z[i + 1])
+            z_max = max(self.layers_z[i], self.layers_z[i + 1])
+            if z_min <= z <= z_max:
+                #print('getVGParameter',z,self.layers_z,i,self.layer_numbers )
+                return self.vg_soil[self.layer_numbers[i]-1]
+        print('getVGParameter',z,self.layers_z)
+        raise Exception
+        return self.vg_soil[len(self.layer_numbers)]
+
     def setVGParameters(self, soils:list):
         """ Sets a list of vg parameter lists, 5 values per soil 
             set before creating the problem with SolverBase.initializeProblem 
@@ -72,6 +104,8 @@ class RichardsWrapper(SolverWrapper):
         @param number     list of layer numbers at the z-positions (if given), or per soil layer, [cm] pressure head.      
         @param z          list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
+        self.layer_numbers = number
+        self.layers_z = z
         self.setParameter(self.param_group + "Layer.Number", self.dumux_str(number))
         if z:
             assert len(number) == len(z), "setLayersZ: sample point values and z coordinates have unequal length"
@@ -88,7 +122,7 @@ class RichardsWrapper(SolverWrapper):
             assert(len(p) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.Z", self.dumux_str(np.array(z) / 100.))
 
-    def setICZ_solute(self, c:list, z:list = []):
+    def setICZ_solute(self, c:list, z:list = [], idComp =1):
         """ sets depth dependent initial condtions for solutes 
         
         @param p     list of concentrations at the z-positions (if given), or per soil layer, [g/cm3].      
@@ -96,10 +130,10 @@ class RichardsWrapper(SolverWrapper):
         """
         if isinstance(c, float):
             c = [float(c)]
-        self.setParameter(self.param_group + "IC.C", self.dumux_str(c))
+        self.setParameter(self.param_group + "IC.C" + str(idComp), self.dumux_str(c))
         if z:
             assert(len(c) == len(z))  # sample points
-            self.setParameter(self.param_group + "IC.CZ", self.dumux_str(np.array(z) / 100.))
+            self.setParameter(self.param_group + "IC.C" + str(idComp) + "Z", self.dumux_str(np.array(z) / 100.))
 
     def setHomogeneousIC(self, p:float, equilibrium = False):
         """ sets homogeneous initial condions 
@@ -413,37 +447,25 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         theta= self._map(self._flat0(self.gather(self.base.getWaterContent())), 2)
         
-        try:
-            if len(theta) > 0:
-                assert min(theta) >= self.qr[0]
-                assert max(theta) <= self.qs[0]
-        except:
-            print('getting out of range theta')
-            print(repr(theta), 'miin and max', min(theta), max(theta))
-            #sat = self.getSaturation_()
-            #print('saturation', repr(sat), min(sat), max(sat))
-            phead = self.getSolutionHead_()
-            print('phead', repr(self.getSolutionHead_()), min(phead), max(phead))
-            #write_file_array('thetaerror',theta, directory_ =self.results_dir, fileType = '.csv')
-            raise Exception
+        #try:
+        #    if len(theta) > 0:
+        #        assert min(theta) >= self.qr[0]
+        #        assert max(theta) <= self.qs[0]
+        #except:
+        #    print('getting out of range theta')
+        #    print(repr(theta), 'miin and max', min(theta), max(theta))
+        #    #sat = self.getSaturation_()
+        #    #print('saturation', repr(sat), min(sat), max(sat))
+        #    phead = self.getSolutionHead_()
+        #    print('phead', repr(self.getSolutionHead_()), min(phead), max(phead))
+        #    #write_file_array('thetaerror',theta, directory_ =self.results_dir, fileType = '.csv')
+        #    raise Exception
         return theta
 
     def getWaterContent_(self):
         """no mpi version of getWaterContent() """
         self.checkGridInitialized()
         theta = np.array(self.base.getWaterContent())
-        try:
-            if len(theta) > 0:
-                assert min(theta) >= self.qr[0]
-                assert max(theta) <= self.qs[0]
-        except:
-            print('getting out of range theta', rank)
-            print(repr(theta), 'min and max', min(theta), max(theta))
-            #sat = self.getSaturation_()
-            #print('saturation', repr(sat), min(sat), max(sat))
-            phead = self.getSolutionHead_()
-            print('phead', repr(self.getSolutionHead_()), min(phead), max(phead))
-            raise Exception
         return theta
 
     def getWaterVolume(self):
@@ -489,7 +511,7 @@ class RichardsWrapper(SolverWrapper):
             todo: update
         '''
         C_S_W = self.getConcentration_(1)
-        C_S_S2 = self.getSolution_(2)
+        C_S_S2 = self.getSolution_(3)
         css1 = np.array([self.base.computeCSS1(self.bulkDensity_m3,C_S_W[i]*1e6, i) for i, idx in enumerate(self.getCellIndices_())])*1e-6
         css1[C_S_S2>0] = 0.
         return css1
@@ -507,11 +529,10 @@ class RichardsWrapper(SolverWrapper):
         vols = self.getCellVolumes() 
         css1 = self.getCss1() * vols
         idTemps = css1 != 0
-        totC[1][idTemps] = css1[idTemps]
-        #if self.dimWorld==1:
+        totC[2][idTemps] = css1[idTemps]
+
         #    assert totC[1].sum() == 0.
         #    totC[1] = self.getCss1() * vols
-        
         if rank == 0:
             try:
                 assert np.array(totC).shape == (self.numSoluteComp,self.numberOfCellsTot)

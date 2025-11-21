@@ -12,7 +12,7 @@ if doProfile:
     pr = cProfile.Profile()
     pr.enable()
 spellData = {'scenario': 'none', 'spellStart': 92, 'spellEnd': 93,'condition': 'wet'}
-results_dir = mainTillage.XcGrowth(9.5, 26.5,0,spellData ,doProfile=doProfile)
+results_dir = mainTillage.XcGrowth(6.5, 26.5,0,spellData ,doProfile=doProfile)
 if doProfile:
     pr.disable()
     filename = results_dir+'profile'+str(rank)+'.prof' 

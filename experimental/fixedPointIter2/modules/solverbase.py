@@ -316,6 +316,7 @@ class SolverWrapper():
         self.pointCoords = self._map(self._flat0(self.gather(self.base.getPoints())), 1) * 100.  # m -> cm
         self.cellCenters = self._map(self._flat0(self.gather(self.base.getCellCenters())), 2) * 100.  # m -> cm
         self.dofCoordinates = self._map(self._flat0(self.gather(self.base.getDofCoordinates())), 0) * 100.  # m -> cm
+        self.cellCenters_all = comm.bcast(self.cellCenters, root = 0)
 
         #self.cellSurfacesCyl = self._map(self._flat0(self.gather(self.base.getCellSurfacesCyl())), 2) * 1.e4  # m2 -> cm2
 

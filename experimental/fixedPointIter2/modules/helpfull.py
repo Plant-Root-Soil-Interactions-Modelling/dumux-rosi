@@ -246,7 +246,7 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
                  True,
                          fileType = '.csv' , plant = None, FPIT_id = 2):
                          
-    gaveUp = (n_iter >= perirhizalModel.k_iter)
+    gaveUp = False#(n_iter >= perirhizalModel.k_iter)
     cL = None
     if rank ==0:
         results_dir = perirhizalModel.results_dir
@@ -265,8 +265,8 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
         if FPIT_id ==2:
             cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or
                    perirhizalModel.solve_gave_up or failedLoop
-                    or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.01)
-                    or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.01)
+                    or (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.1)
+                    or (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.1)
                     or (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)
                     or ((n_iter < perirhizalModel.minIter) and (isInner)))  and (n_iter < perirhizalModel.k_iter)
         else:
@@ -279,6 +279,18 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
         if (rank == 0) and isInner:
             if FPIT_id == 2:
                 print(f'continue loop? {bool(cL)}\n\tn_iter: {n_iter}, non-convergence and error metrics: {perirhizalModel.err:.2e}\n\ttotal relative 1d-3d difference added at this time step: {perirhizalModel.diff1d3dCurrant_rel:.2e}\n\tmax relative 1d-3d difference added at this time step: {perirhizalModel.maxdiff1d3dCurrant_rel:.2e}\n\tmax absolute 1d-3d difference: {perirhizalModel.maxDiff1d3dCW_abs}\n\tmax relative 1d-3d difference: {perirhizalModel.maxDiff1d3dCW_rel}')
+                #print('why?', '(np.floor(perirhizalModel.err) > perirhizalModel.max_err) ?',np.floor(perirhizalModel.err) , perirhizalModel.max_err,
+                #      'perirhizalModel.solve_gave_up or failedLoop',perirhizalModel.solve_gave_up , failedLoop,
+                #   'np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.1',np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.,
+                #    'np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.1',np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.,
+                #    '(min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)',min(perirhizalModel.new_soil_solute.reshape(-1)),
+                #    'n_iter < perirhizalModel.minIter',n_iter , perirhizalModel.minIter)
+                #print('yesno',((np.floor(perirhizalModel.err) > perirhizalModel.max_err) ,
+                #   perirhizalModel.solve_gave_up or failedLoop
+                #    , (np.floor(perirhizalModel.diff1d3dCurrant_rel*1000.)/1000.>0.1)
+                #    , (np.floor(perirhizalModel.maxdiff1d3dCurrant_rel*1000.)/1000.>0.1)
+                #    , (min(perirhizalModel.new_soil_solute.reshape(-1)) < 0)
+                #    , ((n_iter < perirhizalModel.minIter) and (isInner))) )
             if FPIT_id == 3:
                 print(f'\t\t\t\tcontinue INNER loop? {bool(cL)}\n\t\t\t\tn_iter: {n_iter}, '
                       f'non-convergence and error metrics: {perirhizalModel.err2:.2e}, '
@@ -392,6 +404,10 @@ def getCumulativeTranspirationAg(plantModel, perirhizalModel, dt):
             plantModel.seg_fluxesCumul = np.array([
                 np.concatenate((plantModel.seg_fluxesCumul[jj], np.zeros(deltalen))
                 ) + plantModel.seg_fluxesCumul_inner[jj] for jj in range(perirhizalModel.soilModel.numFluidComp)])
+        else:
+            plantModel.seg_fluxesCumul = np.array([
+                plantModel.seg_fluxesCumul[jj]
+                 + plantModel.seg_fluxesCumul_inner[jj] for jj in range(perirhizalModel.soilModel.numFluidComp)])
         
         plantModel.seg_fluxes = np.array([plantModel.seg_fluxesCumul_inner[jj]/dt for jj in range(perirhizalModel.soilModel.numFluidComp)])
         

@@ -400,10 +400,12 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
         else:
             n_iter_ = fpit_Helper.n_iter
         if  perirhizalModel.rsiCompMethod == 0:
-            if n_iter_ < 4:
+            if ((n_iter_ < 4)):#|(perirhizalModel.errWrsiRealInput <= perirhizalModel.max_err )):
                 fpit_Helper.rsx_input = fpit_Helper.rsx_old
             else:
-                fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds).mean(0)
+                # use [3:] to not have sharp change. also we assume that the first guesses are not great
+                fpit_Helper.rsx_input = np.array(fpit_Helper.rsx_olds[3:]).mean(0) 
+                print('fpit_Helper.rsx_input', len(fpit_Helper.rsx_olds[3:]))
         elif  perirhizalModel.rsiCompMethod == 1:        
             if n_iter_ < 20:
                 fpit_Helper.rsx_input = computeAnalysticalRSI()
@@ -412,21 +414,12 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
         else:
             raise Exception
         
-        
-        soilKIn =np.divide(vg.hydraulic_conductivity(fpit_Helper.rsx_input, 
-                                                     perirhizalModel.vg_soil),
+        vg_soils_ = np.array([perirhizalModel.soilModel.getVGParameter_fromid(perirhizalModel.seg2cell[cylid]) for cylid in perirhizalModel.eidx_all_])
+        soilKIn =np.divide(np.array([vg.hydraulic_conductivity(fpit_Helper.rsx_input[cylid], 
+                                                     vg_soils_[cylid]) for cylid in perirhizalModel.eidx_all_]),
                            dist_factor) # if water enters the root
-        if False:
-            soilKIn_old =np.divide(vg.hydraulic_conductivity(fpit_Helper.rsx_old, 
-                                                         perirhizalModel.vg_soil),
-                               dist_factor) # if water enters the root
-                               
-            soilKIn_init =np.divide(vg.hydraulic_conductivity(fpit_Helper.rsx_init, 
-                                                         perirhizalModel.vg_soil),
-                               dist_factor) # if water enters the root
-            soilKIn = soilKIn_old * ( perirhizalModel.rsiCompMethod) + soilKIn_init * (1. - perirhizalModel.rsiCompMethod)
-            
-        soilKOut = s.vg_soil.Ksat  /dist_factor# if water leaves the root # [cm/d]  / [cm]  = day-1
+             
+        soilKOut = np.array([vg_soils_[cylid].Ksat  for cylid in perirhizalModel.eidx_all_]) /dist_factor# if water leaves the root # [cm/d]  / [cm]  = day-1
         
         fpit_Helper.soilK =  soilKIn 
         if( len(seg_fluxes) > 0.):# and not (perirhizalModel.beforeAtNight and (perirhizalModel.weatherX["Qlight"] == 0.)):
@@ -445,7 +438,12 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
             seg_fluxes = None
     else: # just xylem flow
         if (rank == 0):
-            transpiration = plantModel.transpiration(rs_age_i_dt,dt)
+            #transpiration = sinusoidal3(rs_age_i_dt,dt)*plantModel.maxTranspiration*(plantModel.maxTranspirationAge)#plantModel.transpiration(rs_age_i_dt,dt)
+            transpiration = plantModel.maxTranspiration * min(rs_age_i_dt/plantModel.maxTranspirationAge,1.) *sinusoidal2(rs_age_i_dt, dt)
+            
+            #print('fpit_Helper.rsx_input', fpit_Helper.rsx_input)
+            #print('fpit_Helper.soilK', fpit_Helper.soilK)
+            #print('input transpiration', rs_age_i_dt,-transpiration , fpit_Helper.rsx_input[0], plantModel.wilting_point)
             
             rx = plantModel.solve(rs_age_i_dt, 
                          [-transpiration],
@@ -455,6 +453,10 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                          wilting_point = plantModel.wilting_point,
                           soil_k = fpit_Helper.soilK)
             plantModel.psiXyl = rx
+            
+            print('transpiration', transpiration, plantModel.maxTranspiration, min(rs_age_i_dt/plantModel.maxTranspirationAge,1.), 
+                  sinusoidal2(rs_age_i_dt, dt), min(plantModel.psiXyl), 'sx',fpit_Helper.rsx_input[0], min(fpit_Helper.rsx_input))
+            
 
             if s.doSimpleReaction < 1:
                 if (perirhizalModel.spellData['scenario'] == 'none') or ((perirhizalModel.spellData['scenario'] != 'baseline') and (rs_age_i_dt > perirhizalModel.spellData['spellStart']) and (rs_age_i_dt <= perirhizalModel.spellData['spellEnd'])):
@@ -465,10 +467,14 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
                 else:
                     seg_fluxes = np.full((len(plantModel.psiXyl)-1),0.)
             elif s.doSimpleReaction == 1:
-                    seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
+                seg_fluxes = np.array(plantModel.segFluxes(simTime = rs_age_i_dt, 
                             rx = list(rx), sx= list(fpit_Helper.rsx_input), 
                                                approx=False, cells=False, #approx, cells
                                                soil_k = list(fpit_Helper.soilK)))  #    [cm3 day-1] radial volumetric flow rate
+                results_dir = perirhizalModel.results_dir
+                write_file_array("fpit_seg_fluxes0", seg_fluxes , directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_rx", plantModel.psiXyl , directory_ =results_dir, fileType = '.csv')
+                write_file_array("fpit_sxx", fpit_Helper.rsx_input , directory_ =results_dir, fileType = '.csv')
             else:
                 seg_fluxes = np.full((len(plantModel.psiXyl)-1),0.)
 

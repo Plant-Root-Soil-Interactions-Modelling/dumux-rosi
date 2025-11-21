@@ -32,28 +32,28 @@ import printData
 import FPItHelper
     
 
-def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
+def XcGrowth(initsim, simMax,trans,paramIndx_,spellData,doProfile):
 
     doNestedFixedPointIter = False
-    xml_name = "wheat_1997_for_australia_dxmin.xml"  # root growth model parameter
+    xml_name = "spring_barley_CF12.xml"  # _dxMin root growth model parameter
     # file
     dx = 0.2 # todo implement
     dxMin = 0.25
     MaxRelativeShift = 1e-8 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
-    dt_inner_init =  dt #1/60/24 #
+    dt_inner_init =  1/60/24 #
     dt_inner2_init = dt_inner_init
     # min, max, objective number of iteration for the fixed-point iteration
-    minIter = 4 # empirical minimum number of loop to reduce error
+    minIter = 3 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 100 # max num of iteration for loops
-    targetIter= 90# target n_iter for adjusting time step of inner loop
+    k_iter = 4 # max num of iteration for loops
+    targetIter= 4# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
-    doSoluteFlow = False # only water (False) or with solutes (True)
+    doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = False
-    doSoluteUptake = False # active uptake?
-    noAds = True # stop adsorption?
+    doSoluteUptake = True # active uptake?
+    noAds = False # stop adsorption?
     doPhloemFlow = False
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
     # when there is no transpiration, we use the plant wat. pot.
@@ -61,7 +61,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     do1d1dFlow = False
     beforeAtNight = False #True  
     # static or growing organism
-    static_plant = False
+    static_plant = True
     # print debug messages in cyl3plant faile
     mpiVerbose = False
     # print debug messages in rhizo_mappedPlant
@@ -79,18 +79,18 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     
     # @see PhloemPhotosynthesis::computeWaterFlow().
     # TODO: make weather dependent?
-    maxTranspiration = 12 # 6. # cm3/day, used if not doPhotosynthesis 
+    maxTranspiration = trans # 12. # cm3/day, used if not doPhotosynthesis 
     maxTranspirationAge = 25. # day, age at which trans = maxTRans
     
     # get initial variables and parameters for plant and soil setup
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape()
-    weatherInit = weatherFunctions.weather(1.,dt, spellData)
+    weatherInit = weatherFunctions.weather(1.,dt)
     doProfileSTR = ""
     if doProfile:
         doProfileSTR = "doProfile"
     
     # directory where the results will be printed #+"_"+str(paramIndx_)\
-    results_dir=("./results/tillage/"+doProfileSTR+str(rsiCompMethod)+str(int(doNestedFixedPointIter))+str(spellData['scenario'])
+    results_dir=("./results/tillage/krkx"+str(int(maxTranspiration))+"tr"+doProfileSTR
                  +"_"+str(int(np.prod(soilTextureAndShape['cell_number']))) 
                     +"_"+str(int(initsim))+"to"+str(int(simMax))
                     +"_"+str(int(dt_inner_init*24*60))+"mn_"
@@ -125,6 +125,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
                                             usemoles = usemoles,
                                             limErr1d3d = 5e-12, spellData = spellData)  
 
+    
     # store parameters
     plantModel.maxTranspiration = maxTranspiration
     plantModel.maxTranspirationAge = maxTranspirationAge
@@ -133,6 +134,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
     perirhizalModel.doBioChemicalReaction = doBioChemicalReaction  
     perirhizalModel.doSoluteUptake = doSoluteUptake 
     perirhizalModel.do1d1dFlow = do1d1dFlow
+    perirhizalModel.static_plant = static_plant
     perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape 
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
@@ -201,8 +203,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
             printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             
         perirhizalModel.update() # update shape data in the rhizosphere model
-                
-
+        #raise Exception
+        
+        FPItHelper.fix1d3dData(s,perirhizalModel)
         
         if start :#and perirhizalModel.debugMode :
             FPItHelper.storeNewMassData1d(perirhizalModel)
@@ -212,9 +215,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
             start = False
         # print differences between 1d and 3d soil models
         # and content in 1d and 3d
+        printData.printDiff1d3d(perirhizalModel, s)    
         
-        printData.printDiff1d3d(perirhizalModel, s)             
-
         if perirhizalModel.doPhloemFlow:
             # go from current to cumulative exudation and mucilage release
             phloemData.Q_Exud_cumul += sum(phloemData.Q_Exud_i_seg); 
@@ -242,8 +244,8 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
                                                     outer_R_bc_wat = net_flux,
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
-            
-            keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
+            FPItHelper.fix1d3dData(s,perirhizalModel)
+            keepGoing = perirhizalModel.solve_gave_up #(failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
             
             perirhizalModel.n_iter += 1
             
@@ -259,7 +261,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
                 raise Exception
                 
                 
-            perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, failedLoop, perirhizalModel, n_iter_inner_max)
+            # perirhizalModel.dt_inner = max(1/60/24,suggestNumStepsChange(dt, perirhizalModel.dt_inner, failedLoop, perirhizalModel, n_iter_inner_max))
             
             if keepGoing:
                 
@@ -272,9 +274,9 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
         
-        if failedLoop:
-            print("None convergence error: only left the loop because reached the max number of iteration.")
-            raise Exception  
+        #if failedLoop:
+        #    print("None convergence error: only left the loop because reached the max number of iteration.")
+        #    raise Exception  
         
         printData.printTimeAndError(perirhizalModel, rs_age)
         
@@ -294,7 +296,7 @@ def XcGrowth(initsim, simMax,paramIndx_,spellData,doProfile):
             phloemData.bcastData()
 
 
-        if (rank == 0):
+        if True:#(rank == 0):
             printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             
         
@@ -357,55 +359,18 @@ if __name__ == '__main__': #TODO. find a way to reset maxDt after creating the s
     simMax = initsim + 3.
     if len(sys.argv)>2:
         simMax = float(sys.argv[2])
-    paramIndx_base = 0
-    if len(sys.argv)>3:
-        paramIndx_base = int(sys.argv[3])
-        
     
-    doProfile = False
+    trans = float(sys.argv[3])
     
-    scenario = "none"
-    if len(sys.argv)>4:
-        scenario = sys.argv[4]
-    
-    if scenario == "none":
-        spellStart = 0 #not used
-        condition = "wet"
-        spellDuration =  np.Inf
-    elif scenario == "baseline":
-        spellStart = np.Inf
-        condition = "wet"
-        spellDuration =   7
-    elif scenario == "earlyDry":
-        spellStart = 11 
-        condition = "dry"
-        spellDuration =   7
-    elif scenario == "lateDry":
-        spellStart = 18
-        condition = "dry"
-        spellDuration =   7
-    elif scenario == "customDry":
-        spellStart = float(sys.argv[5])
-        condition = "dry"
-        spellDuration =   float(sys.argv[6])
-    elif scenario == "customWet":
-        spellStart = float(sys.argv[5])
-        condition = "wet"
-        spellDuration =   float(sys.argv[6])
-    else :
-        print("scenario", scenario,"not recognised")
-        raise Exception
-        
-    spellEnd = spellStart + spellDuration
-    spellData = {'scenario':scenario,'spellStart':spellStart,'spellEnd':spellEnd, 'condition':condition}
-    
+    doProfile =  False
     if doProfile:
         import cProfile
         import pstats, io
         pr = cProfile.Profile()
         pr.enable()
         
-    results_dir = XcGrowth(initsim, simMax,paramIndx_base,spellData,doProfile = doProfile )
+    spellData = {'scenario': 'none', 'spellStart': 92, 'spellEnd': 93,'condition': 'wet'}
+    results_dir = XcGrowth(initsim, simMax,trans,0,spellData ,doProfile=doProfile )
     if doProfile:
         pr.disable()
         filename = results_dir+'profile'+str(rank)+'.prof' 

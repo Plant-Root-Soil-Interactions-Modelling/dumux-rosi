@@ -86,7 +86,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
             plantModel.time_start_rhizo = timeit.default_timer()
 
             
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+            if rank == 0:#(perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
                     print("\t\tsolve all 1d soils ")
 
             perirhizalModel.solve(dt, 
@@ -97,8 +97,8 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                                   # solute 2
                                   # fpit_Helper.n_iter
                                  ) # cm3/day or mol/day
-
-            if (perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
+            comm.Barrier()
+            if rank == 0:#(perirhizalModel.mpiVerbose or (max_rank == 1)) and rank == 0:
                     print("\t\tsolve all 1d soils finished")
                     
             plantModel.time_rhizo_i += (timeit.default_timer() - plantModel.time_start_rhizo)
@@ -247,7 +247,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
     # first loop: create array of 0
     if(len(outer_R_bc_sol[0]) == 0):
-        outer_R_bc_sol = np.full((perirhizalModel.numSoluteComp,s.numberOfCellsTot), 0.)  
+        outer_R_bc_sol = np.full((perirhizalModel.numDissolvedSoluteComp,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
         outer_R_bc_wat = np.full(cell_volumes.shape, 0.)     
         
@@ -408,7 +408,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             
             # get flux and source data directly from dumux. 
             # TODO: do the same to get directly change rate of 1d model
-            outer_R_bc = -np.array([s.getFluxesPerCell(nc) * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
+            outer_R_bc = -np.array([s.getFluxesPerCell(nc) * dt for nc in range(s.numFluidComp)]) # < 0 means net sink, > 0 means net source
             bulkSoil_sources = np.array([s.getSource(nc) * s.getCellVolumes() * dt for nc in range(s.numComp)]) # < 0 means net sink, > 0 means net source
             
             if rank == 0:
@@ -417,7 +417,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
 
                 fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
                 fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
-                assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)
+                assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numDissolvedSoluteComp, s.numberOfCellsTot)
             ##
             # 3.6 mass or content balance error 3d 
             ##
@@ -441,12 +441,12 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
             # 3.5.B set 1DS outer BC to 0 where needed
             ##
             
-            for nc in range(perirhizalModel.numDissolvedSoluteComp, perirhizalModel.numSoluteComp):
-                fpit_Helper.outer_R_bc_sol[nc][:] = 0.# to not have balance error as 3d flux
-                # all changes in cellIds for 3D soil is cause by biochemical reactions computed in 1D models.
-                # thus, for elements which do not flow (range(perirhizalModel.numDissolvedSoluteComp, perirhizalModel.numSoluteComp)), 
-                # there are no changes
-                # except those prescribed by the 1d model.
+            #for nc in range(perirhizalModel.numDissolvedSoluteComp, perirhizalModel.numSoluteComp):
+            #    fpit_Helper.outer_R_bc_sol[nc][:] = 0.# to not have balance error as 3d flux
+            #    # all changes in cellIds for 3D soil is cause by biochemical reactions computed in 1D models.
+            #    # thus, for elements which do not flow (range(perirhizalModel.numDissolvedSoluteComp, perirhizalModel.numSoluteComp)), 
+            #    # there are no changes
+            #    # except those prescribed by the 1d model.
             
              
 
@@ -498,10 +498,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
         
         
         # did we leave the inner loop because n_iter == k_iter (failedLoop = True)?
-        if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
-            if rank == 0:
-                print('Failed, no need to go on, leave inner loop now and reset lower time step')
-            break
+        #if (failedLoop):# no need to go on, leave inner loop now and reset lower time step
+        #    if rank == 0:
+        #        print('Failed, no need to go on, leave inner loop now and reset lower time step')
+        #    break
         # end outer loop
             
     

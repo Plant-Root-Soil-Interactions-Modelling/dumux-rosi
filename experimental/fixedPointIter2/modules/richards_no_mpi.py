@@ -352,7 +352,8 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         
         seg_values_perVol_[0] += inner_flux/cylVol[0] # add root water release or uptake
         
-        
+        theta_Ss = self.vg_soil.theta_S #np.full(len(seg_values_perVol_), self.vg_soil.theta_S)
+        theta_wilting_points = self.theta_wilting_point #np.full(len(seg_values_perVol_), self.theta_wilting_point)
         return np.array( plantM.distributeValWater_(seg_values_perVol_.copy(), cylVol.copy(), source, dt, 
-                                            self.vg_soil.theta_S, self.theta_wilting_point))
+                                            theta_Ss, theta_wilting_points))
         

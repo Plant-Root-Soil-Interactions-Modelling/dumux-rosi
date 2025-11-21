@@ -268,7 +268,7 @@ public:
 				};
 				
 
-                if ((eqIdx != replaceCompEqIdx)&&(compIdx != problem.mucilIdx))//&&(problem.doSoluteFlow))
+                if ((eqIdx != replaceCompEqIdx))//&&(compIdx != problem.mucilIdx))//&&(problem.doSoluteFlow))
 				{
 					
 					// see @dumux/porousmediumflow/fluxvariables.hh (advectiveFlux())

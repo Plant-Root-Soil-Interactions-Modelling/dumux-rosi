@@ -88,10 +88,10 @@ public:
 		h2OIdx = FluidSystem::liquidPhaseIdx, // fluid index
 		
 		//in W phase
-		soluteIdx = 1, // 1st solute index
+		soluteIdx = 1, // 1st solute index, P
 		//in solid phase
-		CSS2Idx = 2,//adsorbed C
-		mucilIdx = 3,//not used for now. no advection for eqIdx == mucilIdx
+		NO3Idx = 2,//not used for now. no advection for eqIdx == NO3Idx
+		CSS2Idx = 3,//adsorbed P
 				
 		//don t think EqIndx != pvdIdx when we have just 1 phase
 		conti0EqIdx = pressureIdx, // indices of the equations
@@ -155,9 +155,6 @@ public:
 		
 		
 		// Uptake params
-		vMax =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
-		km = getParam<Scalar>("RootSystem.Uptake.Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
-		
 		for(int i = 0; i < numComponents_; i++)//all components except h2o
 		{
 			//std::cout<<"PorousMediumFlowProblem ID"<<i<<" ";
@@ -202,6 +199,9 @@ public:
 			}
 			
 			
+		vMax.at(i) =  getParam<Scalar>("RootSystem.Uptake.C"+std::to_string(i)+"Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
+		km.at(i) = getParam<Scalar>("RootSystem.Uptake.C"+std::to_string(i)+"Km", 3.1e-9 /1e6 )*1e6;  // [mol cm-3] -> [mol m-3]
+		
 			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			Scalar g2kg = 1/1000 ;
 			Scalar m2_2_cm2 = 10000;
@@ -211,8 +211,10 @@ public:
 		}
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
+		criticalPressure_up = getParam<double>("Soil.CriticalPressure_up", 0); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
 		sourceSlope = getParam<double>("Soil.SourceSlope", -1.); // cm, negative value disables regularisation
+		sourceSlope_up = getParam<double>("Soil.SourceSlope_up", -1.); // cm, negative value disables regularisation
 		
 		double m3_2_cm3 = 1e6;// cm3/m3
 		f_sorp = getParam<double>("Soil.f_sorp", f_sorp);//[-]
@@ -388,14 +390,14 @@ public:
 	double getFreundlichK_(const VolumeVariables& volVars, int dofIndex) const 
 	{
 		double Css = massOrMoleFraction(volVars,0, 0, false);
-		if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))) { return 0.;}
+		if ((Css > 0.)||((source_[CSS2Idx] != nullptr)&&(source_[CSS2Idx]->at(dofIndex) != 0.))) { return 0.;}
 		else{return freundlichK_;}
 	}
 	
 	double getB_(const VolumeVariables& volVars, int dofIndex) const 
 	{
 		double Css = massOrMoleFraction(volVars,0, 0, false);
-		if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))) { return 0.;}
+		if ((Css > 0.)||((source_[CSS2Idx] != nullptr)&&(source_[CSS2Idx]->at(dofIndex) != 0.))) { return 0.;}
 		else{return b_;}
 	}
 
@@ -420,16 +422,18 @@ public:
 	
 		//double Css = massOrMoleFraction(volVars,0, 0, false);
 		//if ((Css > 0.)||((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.)) { return 0.;}
-		if (((source_[2] != nullptr)&&(source_[2]->at(dofIndex) != 0.))||(C_S_W <= 0)) { return 0.;}
+		if (((source_[CSS2Idx] != nullptr)&&(source_[CSS2Idx]->at(dofIndex) != 0.))||(C_S_W <= 0)) { return 0.;}
 		switch(css1Function) {
 		  case 0:
 			return 0.;//none
 		  case 1:
 			return CSSmax*C_S_W/(k_sorp+C_S_W);//langumuir
 		  case 2:
-			// [mol/m3] = [mol/m3] * [cm^{3*n}/mol^n] * [mol^n/cm^{3*n}]
+          // mg0.6 kg–1 L0.4 * (mol/mg)**0.6 * kgsoil/molsoil => mol0.6 mol-1 L0.4
+          // mol0.6 mol-1 L0.4 * [mol/cm3]**0.4 = mol/ mol soil
+			// [mol/m3] = [mol/m3] * [cm^{3*n} * mol^(1 - n)/ mol soil] * [mol^n/cm^{3*n}]
 			// see DeBauw et al. 2020 supplementary, Eq. 2
-			// to do: re-check
+            
 			return bulkSoilDensity * freundlichK_*std::pow(C_S_W, freundlichN_);  // freundlich
 		  case 4:
 			return b_*C_S_W;
@@ -817,11 +821,11 @@ public:
 				}
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
-					flux[i] = vMax * std::max(massOrMolFraction,0.)*rhoW/(km + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] = vMax.at(i) * std::max(massOrMolFraction,0.)*rhoW/(km.at(i) + std::max(massOrMolFraction,0.)*rhoW)*pos0;
 						if (verbose)
 						{
-							std::cout<<"onUpperBoundary_michaelisMenten, vMax: "<<vMax<<" massOrMolFraction "<<
-                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km<<" pos0 "<<pos0<<std::endl;
+							std::cout<<"onUpperBoundary_michaelisMenten, vMax: "<<vMax.at(i)<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km.at(i)<<" pos0 "<<pos0<<std::endl;
 						}
 					break;
 				}
@@ -886,11 +890,11 @@ public:
 				}
 				case michaelisMenten: {	
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
-					flux[i] = vMax * std::max(massOrMolFraction,0.)*rhoW/(km + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] = vMax.at(i) * std::max(massOrMolFraction,0.)*rhoW/(km.at(i) + std::max(massOrMolFraction,0.)*rhoW)*pos0;
 						if (verbose)
 						{
-							std::cout<<"onLowerBoundary_michaelisMenten, vMax: "<<vMax<<" massOrMolFraction "<<
-                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km<<" pos0 "<<pos0<<std::endl;
+							std::cout<<"onLowerBoundary_michaelisMenten, vMax: "<<vMax.at(i)<<" massOrMolFraction "<<
+                            massOrMolFraction<<", rhoW: "<<rhoW<<" km "<<km.at(i)<<" pos0 "<<pos0<<std::endl;
 						}
 					break;
 				}
@@ -941,12 +945,22 @@ public:
                 if(i == h2OIdx)
                 {
                 
-                    if (sourceSlope>=0.) {
+                    if ((sourceSlope>=0.) && (source_[i]->at(eIdx) < 0.)) {
                         Scalar h = volVars.pressureHead(0);// cm
                         if (h<criticalPressure_) {
                             source[i] = 0.;
                         } else if (h<=criticalPressure_+sourceSlope) { //  h in [crit, crit+slope]
                             double ratio = (h - criticalPressure_)/sourceSlope;
+                            // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
+                            source[i] = ratio * source_[i]->at(eIdx)/svc_volume * pos0;
+                        } 
+                    }
+                    if ((sourceSlope_up >=0.) && (source_[i]->at(eIdx) > 0.)) {
+                        Scalar h = volVars.pressureHead(0);// cm
+                        if (h>criticalPressure_up) {
+                            source[i] = 0.;
+                        } else if (h>=criticalPressure_up+sourceSlope) { //  h in [crit, crit+slope]
+                            double ratio = std::abs((h - criticalPressure_up)/sourceSlope);
                             // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
                             source[i] = ratio * source_[i]->at(eIdx)/svc_volume * pos0;
                         } 
@@ -1290,6 +1304,7 @@ private:
 	//InputFileFunction precipitation_;
 	std::vector<InputFileFunction> componentInput_ = std::vector<InputFileFunction>(numComponents_);
 	Scalar criticalPressure_; // cm
+	Scalar criticalPressure_up; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;
 
@@ -1329,10 +1344,11 @@ private:
 	double freundlichK_;// [mol^(1-n)*cm^{3*(n-1)}]
 	double freundlichN_;// [-]
 	Scalar sourceSlope = -1.; // slope for regularization, negative values disables regularisation
+	Scalar sourceSlope_up = -1.; 
 	
 	// active root solute uptake
-	Scalar vMax; // Michaelis Menten Parameter [mol m-2 s-1]
-	Scalar km;  // Michaelis Menten Parameter  [mol m-3]
+	std::vector<double> vMax = std::vector<double>(numComponents_); // Michaelis Menten Parameter [mol m-2 s-1]
+	std::vector<double> km = std::vector<double>(numComponents_);  // Michaelis Menten Parameter  [mol m-3]
 	
 	std::vector<double>  C_aLim ; //[mol C/m3] Minimum concentraiton of activated organisme (to be able to restart from a solute concentration of 0)
 	
