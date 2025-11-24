@@ -21,6 +21,8 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 
 from minisom import MiniSom
 
+from scenario_setup import attach_conductivities
+
 """
 file io                load_json_files, merge_results                
 clustering             make_som_maps, make_kmeans_maps, scale_data, label_clusters
@@ -79,6 +81,8 @@ def merge_results(folder_path, json_data_list, i = -1):
 
         except (json.JSONDecodeError, IOError) as e:
             print(f"Error loading {filename}: {e}")
+
+        attach_conductivities(data)  # for anatomical data, e.g. scenario_setup.get_anatomy(data["anatomy_index145"])
 
 
 def make_som_maps(som, data):

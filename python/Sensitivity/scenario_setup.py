@@ -214,20 +214,22 @@ def prepare_conductivities(mods):
         return data[I,:,:]
 
 
-def attach_conductivitis(mods):
-    """ attaches the values form mecha to the parameters (for analysis) """
-    assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivitis() conductivity_mode must be 'from_mecha'"
+def attach_conductivities(mods):
+    """ attaches the mecha conductivity parameters to mods (for analysis) """
+    assert mods["conductivity_mode"] == "from_mecha", "scenario_setup.attach_conductivities() conductivity_mode must be 'from_mecha'"
     ind_ = [mods["conductivity_index1"], mods["conductivity_index2"], mods["conductivity_index3"]]
     files = []
     for file in sorted(os.listdir(mods["mecha_path"])):
         if file.endswith(".npy"):  # Check if the file is a .npy file
             files.append(file)
     data = []
+    i_ = []
     for i in ind_:
         file = files[int(i)]
-        # ind = file.split("shiny")[1].split(".")[0]
+        ind = file.split("shiny")[1].split(".")[0]
         file_path = os.path.join(mods["mecha_path"], file)
         data.append(np.load(file_path))
+        i_.append(ind)
     data = np.array(data)
     a_ = data[:, 2, 2]  # [cm] (see granar/functions.py)
     a = np.array([float(x) for x in a_])
@@ -236,6 +238,11 @@ def attach_conductivitis(mods):
     mods["a145_a"] = a[0]
     mods["a2_a"] = a[1]
     mods["a3_a"] = a[2]
+    ind_ = np.array(ind_)
+    ind_ = ind_[I]
+    mods["anatomy_index145"] = ind_[0]
+    mods["anatomy_index2"] = ind_[1]
+    mods["anatomy_index3"] = ind_[2]
     data = data[I,:,:]
     ykx_ = data[:, 0, 0]  # maturity level 0
     ykr_ = data[:, 0, 1]

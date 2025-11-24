@@ -105,7 +105,7 @@ def carbon_cost(plant, params, model):
         return carbon_cost_simple(vol, subType, ana145[0], ana2[0], ana3[0])
 
     elif model == "anatomical":  # stele, cortex and epidermis
-        scenario_setup.attach_conductivitis(params)
+        scenario_setup.attach_conductivities(params)
         ind = scenario_setup.sort_indices(params)
         ana145 = scenario_setup.get_anatomy(ind[0])
         ana2 = scenario_setup.get_anatomy(ind[1])
