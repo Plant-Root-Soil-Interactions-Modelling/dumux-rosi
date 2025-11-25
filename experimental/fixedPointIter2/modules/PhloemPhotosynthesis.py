@@ -235,14 +235,15 @@ class exudateDataStorage():
             if self.soil_type == 0 and rs_age > 98: #RS stops growing after DAS 98 in loam 
                 stopgr = True 
             else: 
-                stopgr = False
-                    
+                stopgr = False                 
+            
             kexu = self.plantModel.exudation_rates(self.plantModel.exudf, rs_age) #[kg/(m2 day)]
-            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr)
+            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr) #per segment, mol/seg /dt 
+
             Nc_shoot = len(self.perirhizalModel.ms.getShootSegments())
             Q_Exud_i_seg_shoot = np.zeros(Nc_shoot)
             #exud_ = np.full(len(exud[0]),1.)
-            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud[0]) )   #per segment, mol/seg ,
+            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud) )   #per segment, mol/seg /dt 
             airSegsId = self.perirhizalModel.airSegs
             if len(airSegsId)>0:
                 self.Q_Exud_i_seg[airSegsId] = 0.
@@ -373,7 +374,7 @@ def computeAnalysticalRSI(perirhizalModel):
     raise Exception
     
     
-def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
+def computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
     """
         
         do plant water flow
@@ -446,10 +447,10 @@ def computeWaterFlow( fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt)
     else: # just xylem flow
         if (rank == 0):
             transpiration = plantModel.transpiration(rs_age_i_dt,dt)
-            
+            before_shoot = len(perirhizalModel.ms.getShootSegments())
             rx = plantModel.solve(rs_age_i_dt, 
                          [-transpiration],
-                         sx= fpit_Helper.rsx_input[0], 
+                         sx= fpit_Helper.rsx_input[before_shoot], 
                          sxx= fpit_Helper.rsx_input, 
                          cells = False, 
                          wilting_point = plantModel.wilting_point,

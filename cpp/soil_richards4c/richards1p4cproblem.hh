@@ -152,7 +152,7 @@ public:
 		reactionExclusive=   getParam<bool>("Problem.reactionExclusive",(dimWorld > 1));
 				dzScaling = getParam<int>("Soil.BC.dzScaling", 2); 
 		dobioChemicalReaction_ = getParam<bool>("Problem.dobioChemicalReaction",true);
-		
+		doDecay_ = getParam<bool>("Problem.doDecay",true);
 		
 		// Uptake params
 		vMax =  getParam<Scalar>("RootSystem.Uptake.Vmax", 6.2e-11/1e4*(24.*3600.))*1e4/(24.*3600.); //  [mol cm-2 day-1] -> [mol m-2 s-1]
@@ -222,6 +222,8 @@ public:
 		//alpha = getParam<double>("Soil.alpha", alpha)/(24.*60.*60.);//[d-1] => [s-1]
 		kads = getParam<double>("Soil.kads", kads)  /m3_2_cm3;//[cm3/mol] => [m3/mol] 
 		kdes = getParam<double>("Soil.kdes", kdes);//[-] => [s-1]  
+		vmax_decay = getParam<double>("Soil.vmax_decay", vmax_decay);//#[mol C / m^3 scv / s]
+		km_decay = getParam<double>("Soil.km_decay", km_decay);//[mol C / m^3 scv] 
 		
 		// Buffer power
 		b_ = getParam<Scalar>("Component.BufferPower", 0.);
@@ -1000,9 +1002,10 @@ public:
 		double solVolFr = (1. - volVars.porosity());
 		// (mol soil / m3 scv) = (mol Soil / m3 soil)  * ([m3 space - m3 pores]/m3 scv)
 		double bulkSoilDensity = solidDensity * solVolFr;
-
+		bool doDecay = doDecay_; //by default, do decay
         double svc_volume;
         int dofIndex = scv.dofIndex();
+		
 		if (dimWorld == 1)//1daxissymmetric model
 		{
             svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
@@ -1031,7 +1034,15 @@ public:
 		}
 		
 		//[mol solute / m3 scv/s] 
-		q[soluteIdx] += 0* pos0 ;
+		if (doDecay)
+		{
+			//std::cout<<WorCorN[soluteIdx]<<"WorCorN";
+			q[soluteIdx] += -vmax_decay * WorCorN[soluteIdx]/(km_decay + WorCorN[soluteIdx])*pos0; //0* pos0 ; 
+			
+		}else{
+			//std::cout<<"noDecay";
+			q[soluteIdx] += 0* pos0;
+		}
 		q[CSS2Idx] +=  0 * pos0 ;
 			
 	}
@@ -1283,6 +1294,7 @@ private:
 
 	bool gravityOn_;
 	bool dobioChemicalReaction_;
+	bool doDecay_;
 	// Source
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
@@ -1325,6 +1337,8 @@ private:
 	double alpha = 0.1; //[d-1]
     double kads = 23265;//[cm3/mol]
     double kdes=4;//[-]
+	double vmax_decay=7.32e-5;//[mol C / m^3 scv / s]
+	double km_decay=10.5;//[mol C / m^3 scv]
 	Scalar b_; // buffer power
 	double freundlichK_;// [mol^(1-n)*cm^{3*(n-1)}]
 	double freundlichN_;// [-]

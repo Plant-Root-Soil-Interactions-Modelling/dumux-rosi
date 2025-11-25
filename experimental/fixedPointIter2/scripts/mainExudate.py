@@ -53,7 +53,7 @@ def XcGrowth(scenarioData):
     # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
-    initsim = 10 #initial simulation time 
+    initsim = int(scenarioData['simInit']) #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24
     dt_inner_init =  dt # 1/60/24 #
@@ -66,6 +66,7 @@ def XcGrowth(scenarioData):
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
+    doDecay_ = scenarioData['decay']
     doSoluteUptake = False # active uptake?
     noAds = False # stop adsorption?
     doPhloemFlow = False
@@ -92,11 +93,19 @@ def XcGrowth(scenarioData):
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type)
     
+    if doDecay_ == "True": 
+        doDecay = True
+    else: 
+        doDecay = False
+        
     if ifexu == "True":
-        results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu/"
+        if doDecay:
+            results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay/"
+        else: 
+            results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay/"
     else: 
         results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_noexu/"
-    
+
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
         print('results_dir',results_dir, flush = True)
@@ -112,6 +121,7 @@ def XcGrowth(scenarioData):
                                          noAds = noAds, 
                                          doSoluteFlow = doSoluteFlow, 
                                          doBioChemicalReaction = doBioChemicalReaction,
+                                         doDecay = doDecay,
                                          MaxRelativeShift = MaxRelativeShift)
 
     
@@ -131,6 +141,7 @@ def XcGrowth(scenarioData):
     
     perirhizalModel.doNestedFixedPointIter = doNestedFixedPointIter
     perirhizalModel.doBioChemicalReaction = doBioChemicalReaction
+    perirhizalModel.doDecay = doDecay
     perirhizalModel.doSoluteUptake = doSoluteUptake
     
     perirhizalModel.plant_or_RS = plant_or_RS
@@ -343,16 +354,18 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('soil_type', type = str, help = 'loam or sand')
     parser.add_argument('res', type = str, help = '1,2,4,5')
-    parser.add_argument('simMax', type = str, help = 'whatever')
+    parser.add_argument('simInit', type = str, help = 'whatever, must be smaller than simMax')
+    parser.add_argument('simMax', type = str, help = 'whatever, must be larger than simInit')
     parser.add_argument('exudate', type = str, help = 'True or False')
+    parser.add_argument('decay', type = str, help = 'True or False')
 
     args = parser.parse_args()
     
-    name = args.soil_type + "_" + args.res + "_" + args.simMax+'_'+args.exudate
+    name = args.soil_type + "_" + args.res + "_" + args.simInit+ "_" + args.simMax+'_'+args.exudate + "_" + args.decay
     print()
     print(name, "\n")
     
-    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simMax' : args.simMax, 'exudate': args.exudate}
+    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'decay': args.decay}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 5 60 True
+    #mpiexec -n 1 python3 mainExudate.py loam 5 10 60 True True

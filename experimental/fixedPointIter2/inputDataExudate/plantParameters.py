@@ -39,7 +39,8 @@ def init_conductivities(r, skr = 1., skx = 1.):
 
     kr01 = np.minimum(skr * kr0[:, 1], 1.)
     kr11 = np.minimum(skr * kr1[:, 1], 1.)
-    r.setKrTables([kr001, kr01, kr11, kr11, kr01, kr01],
+    
+    r.setKr([kr001, kr01, kr11, kr11, kr01, kr01],
                   [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
@@ -57,10 +58,9 @@ def prescribed_exudation(soil_type, ifexu):
     
     if ifexu == "True": 
         if soil_type == 'loam':
-            exu_prop = np.array([0.001,0.001,0.00055,0.00039,0.00045])#[kg/(m2 day)]
-            
+            exu_prop = np.array([0.001,0.001,0.00055,0.00039,0.00045])#[kg C/(m2 root surface  day)] 
         elif soil_type == 'sand':
-            exu_prop = np.array([0.0011,0.0011,0.0005,0.0003,0.00033]) #[kg/(m2 day)]
+            exu_prop = np.array([0.0011,0.0011,0.0005,0.0003,0.00033]) #[kg C/(m2 root surface day)] 
         else:
             print('No exudate properties found')
     else: 

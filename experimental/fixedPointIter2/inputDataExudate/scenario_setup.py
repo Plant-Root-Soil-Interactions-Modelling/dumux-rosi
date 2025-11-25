@@ -43,15 +43,15 @@ def getBiochemParam(s,soil_type):
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
-    s.Vmax_decay = 7.32e-5 #mol C / m^3 scv / s #decay rate from Nideggen et al. 
-    s.Km_decay = 10.5 #mol C / m^3 scv
+    s.vmax_decay = 7.32e-5 #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
+    s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
     if s.noAds:
         s.CSSmax = 0.
         s.alpha = 0.
     else:
         
-        s.kads = 10**2 # cm3/mol # ATT: can create 1d-3d converging error if kads is too high
+        s.kads = 10**2 # cm3 scv /mol C / d# ATT: can create 1d-3d converging error if kads is too high
         s.kdes = 1.# -
         s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
@@ -76,8 +76,8 @@ def setBiochemParam(s):
     s.setParameter("1.Component.LiquidDiffusionCoefficient", str(s.Ds)) #m^2/s
     
     #decay
-    s.setParameter("Soil.Vmax_decay", str(s.Vmax_decay)) #mol C / m^3 scv / s #decay rate from Nideggen et al. 
-    s.setParameter("Soil.Km_decay", str(s.Km_decay)) #mol C / m^3 scv
+    s.setParameter("Soil.vmax_decay", str(s.vmax_decay)) #mol C / m^3 scv / s 
+    s.setParameter("Soil.km_decay", str(s.km_decay)) #mol C / m^3 scv
    
 
     #sorption
@@ -95,7 +95,7 @@ def setBiochemParam(s):
     
     return s
 
-
+    
 def getCSS(s, CSW):
     """ @return concentration of adsobed carbon in the soil
         according to @param CSW [mol C / cm3 water], the concentration
@@ -190,6 +190,7 @@ def setDefault(s):
 
     # low MaxRelativeShift == higher precision in dumux
     s.setParameter("Problem.dobioChemicalReaction",str(s.doBioChemicalReaction))
+    s.setParameter("Problem.doDecay",str(s.doDecay))
     s.setParameter("Problem.verbose", "0")
     s.setParameter("Newton.Verbosity", "0") 
     
@@ -328,7 +329,7 @@ def create_soil_model3D(  results_dir ,
 
 def create_soil_model(simMax, res, results_dir , soil_='loam',
                      noAds = False, ICcc = None, doSoluteFlow = True,
-                     doBioChemicalReaction=True, 
+                     doBioChemicalReaction=True, doDecay=True, 
                      MaxRelativeShift = 1e-8):
     """
         Creates a soil domain from @param min_b to @param max_b with resolution @param cell_number
@@ -360,6 +361,7 @@ def create_soil_model(simMax, res, results_dir , soil_='loam',
     s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
     s.doBioChemicalReaction = doBioChemicalReaction
+    s.doDecay = doDecay
     
     s.setParameter("Newton.Verbosity", "0") 
     s.initialize() 
