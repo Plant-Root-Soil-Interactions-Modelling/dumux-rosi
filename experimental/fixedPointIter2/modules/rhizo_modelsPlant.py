@@ -1483,8 +1483,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
                 
-                cyl.setParameter("Soil.Vmax_decay", str(self.soilModel.Vmax_decay)) #mol C / m^3 scv / s
-                cyl.setParameter("Soil.Km_decay", str(self.soilModel.Km_decay)) #mol C / m^3 scv
+                cyl.setParameter("Soil.vmax_decay", str(self.soilModel.vmax_decay)) #mol C / m^3 scv / s
+                cyl.setParameter("Soil.km_decay", str(self.soilModel.km_decay)) #mol C / m^3 scv
 
             
             for j in range( 1, self.numSoluteComp):
@@ -1532,6 +1532,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             # Michaelis constant (kg m–3)	1.054e-4	(Teo et al. (1992b)), from https://www.ncbi.nlm.nih.gov/pmc/articles/PMC7489101/
             
             cyl.doBioChemicalReaction = self.doBioChemicalReaction
+            cyl.doDecay = self.doDecay
             cyl.molarMassC = self.soilModel.molarMassC
             cyl.MaxRelativeShift = self.soilModel.MaxRelativeShift_1DS
             cyl.EnableResidualCriterion = self.soilModel.EnableResidualCriterion
