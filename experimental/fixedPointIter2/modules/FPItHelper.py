@@ -217,11 +217,12 @@ class fixedPointIterationHelper():
         #self.comp2contentOld = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
         
         # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
-        if True: #if self.s.doSimpleReaction < 1:
-            self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
-        else: 
-            # does not account for air segments.
-            self.rsx_init  = self.perirhizalModel.get_inner_heads_RS() # ???? what is correct??? from transpiration data?  store value at beginning time step    
+        # if True: #if self.s.doSimpleReaction < 1:
+            # self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
+        # else: 
+            # # does not account for air segments.
+            # self.rsx_init  = self.perirhizalModel.get_inner_heads_RS() # ???? what is correct??? from transpiration data?  store value at beginning time step    
+        self.rsx_init  = self.perirhizalModel.get_inner_heads_RS()
         self.rsx_input = self.rsx_init # rsx used as input
         self.rsx_old = self.rsx_input.copy() # rsx used to compute convergence rate
         self.rsx_olds = []#[self.rsx_input.copy()] # rsx used to compute convergence rate
