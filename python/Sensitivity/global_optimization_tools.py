@@ -57,8 +57,9 @@ def load_json_files(exp_name, folder_path):
 
 
 def merge_results(folder_path, json_data_list, i = -1):
-    """ Merges the json_data (list of dict of input parameters) 
-        with simulation results given within .npz with corresponding name """
+    """ Merges the json_data (list of dict of input parameters),
+        and adds concuctivity input parameters from mecha simulations (see scenario_setup.attach_conductivities() ),
+        and simulation results given within .npz with corresponding name """
     for data in json_data_list:
 
         filename = data["exp_name"]

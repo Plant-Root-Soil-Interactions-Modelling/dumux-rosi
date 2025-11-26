@@ -43,21 +43,24 @@ target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["lengt
 with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:  # zip fuile contains a single json file
     with zipf.open(exp_name + ".json", "r") as json_file:
         all = json.load(json_file)  # Deserialize JSON data
-all = list(all.values())
 
-print("openend", exp_name)
+all = list(all.values())  # 
+
 
 """ 2 filter and add cluster index"""
 print("data", len(all))
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 all = np.array(all)
 print("data after filtering", all.shape)
-all = all[::10]
-print("reduce factor 10", all.shape)
+# all = all[::10]
+# print("reduce factor 10", all.shape)
 m_neurons = 3
 n_neurons = 4
-node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som")
+node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som") # add key "node" to all
 print("clustering done")
+
+# print(all[0]["node"])
+# dd
 
 # # Plot Pareto solutions
 # ind = got.pareto_list(all, target_names)
@@ -132,6 +135,10 @@ df2 = create_df(all, more_dims)
 # df = df2[ordered_columns]
 df = df2
 
+print("hallo")
+print(df.to_dict("records"))
+dd
+
 app = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
 fig = px.parallel_coordinates(
@@ -192,10 +199,10 @@ def updateFilters(data):
         col = dims[int(key.split("[")[1].split("]")[0])]
         newData = Patch()
         newData[col] = data[0][key]
-        return newData
+        return {} # newData
     return {}
 
 
 if __name__ == "__main__":
 
-    app.run(debug = True, dev_tools_hot_reload = False)
+    app.run(debug = True)
