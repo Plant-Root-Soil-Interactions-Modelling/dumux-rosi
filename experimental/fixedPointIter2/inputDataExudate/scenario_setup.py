@@ -51,7 +51,7 @@ def getBiochemParam(s,soil_type):
         s.alpha = 0.
     else:
         
-        s.kads = 10**2 # cm3 scv /mol C / d# ATT: can create 1d-3d converging error if kads is too high
+        s.kads = 10**2 # cm3 scv /mol C # ATT: can create 1d-3d converging error if kads is too high
         s.kdes = 1.# -
         s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
