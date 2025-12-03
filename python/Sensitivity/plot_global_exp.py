@@ -159,14 +159,6 @@ exp_name = "soybean_all14"
 
 # all = got.load_json_files(exp_name, folder_path)  # open parameter files
 # got.merge_results(folder_path, all)  # add results
-# all_json = {}
-# for a in all:
-#     all_json[a["exp_name"]] = a
-#
-# # Write all JSON data to a zip file
-# with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
-#     with zipf.open(exp_name + ".json", "w") as json_file:
-#         json_file.write(json.dumps(all_json, indent = 4).encode("utf-8"))
 
 # Read JSON data from the ZIP file
 with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:
@@ -177,14 +169,9 @@ all = list(all.values())
 """ 2 filter """
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 print("\nfiltered data")
-target_names = ["surface", "volume", "depth", "RLDz", "krs", "SUFz", "carbon"]
-d = got.fetch_features(target_names, all)
-got.print_info(d, target_names)  # filtered
-print(d.shape)
-# distortion_plot(all, target_names)  # to determine m and n
 
 """ 3 cluster the targets """
-cluster_targets = ["surface", "depth", "-carbon", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
+cluster_targets = ["carbon", "surface", "krs", "SUFz", "RLDz"]  # nutrients, low carbon, reach water table,
 # distortion_plot(all, target_names)  # to determine m and n
 m_neurons = 3
 n_neurons = 4
@@ -213,13 +200,12 @@ for i in range(0, m_neurons * n_neurons):
 # plt.show()
 
 """ 4 plot target clusters """
-target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz"]
+target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz", "length"]  # ["surface", "depth", "carbon", "krs", "SUFz", "RLDz"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "hexagon")  # hexagon, rose
-target_names = ["surface", "depth", "carbon", "krs", "SUFz", "RLDz", "area"]
 got.plot_targets(all, target_names, m_neurons, n_neurons, node2sample, sample2node, "rose")  # hexagon, rose
 
 """ 5 pareto set - adds a pareto solution key to all dicts """
-target_names = ["surface", "depth", "-carbon", "krs", "SUFz", "RLDz"]
+target_names = ["-carbon", "surface", "depth", "krs", "SUFz", "RLDz"]  # ["surface", "depth", "-carbon", "krs", "SUFz", "RLDz"]
 ind = got.pareto_list(all, target_names)
 pareto = []
 for i, a in enumerate(all):
@@ -231,7 +217,7 @@ print("\nNumber of pareto solutions: ", np.sum(ind), len(pareto))
 pareto_nodes = []
 for p in pareto:
     pareto_nodes.append(p["node"])
-print("Pareto solutions are located in nodes", set(pareto_nodes))
+# print("Pareto solutions are located in nodes", set(pareto_nodes))
 pareto_nodes = np.array(pareto_nodes, dtype = np.int64)
 for i in range(0, m_neurons * n_neurons):
     print("Node {:g} = ({:g},{:g})".format(i, i % n_neurons, i // n_neurons), "has", len(pareto_nodes[pareto_nodes == i]), "solutions")

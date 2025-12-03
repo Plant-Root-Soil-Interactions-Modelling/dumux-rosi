@@ -122,21 +122,17 @@ def label_clusters(all, n_neurons, m_neurons, target_names, mode):
     som = None
     data = fetch_features(target_names, all)
     if mode == "som":
+        print("running som")
         data = scale_data(data)  # mean = 0, std = 1
         # som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .5,
         #               neighborhood_function = 'gaussian', random_seed = 0, topology = 'rectangular')
-        print("running som")
         som = MiniSom(n_neurons, m_neurons, data.shape[1], sigma = 1.5, learning_rate = .7, activation_distance = 'euclidean',
                       topology = 'hexagonal', neighborhood_function = 'gaussian', random_seed = 10)
-        print("1")
-        print(data.shape)
         som.pca_weights_init(data)
-        print("2")
         som.train(data, 1000, verbose = False)  # random training
-        print("3")
         node2sample, sample2node = make_som_maps(som, data)
-        print("4")
     elif mode == "kmeans":
+        print("running kmeans")
         data = whiten(data)  # mean 0
         centers, dist = kmeans(data, m_neurons * n_neurons, rng = 1)
         node2sample, sample2node, _ = make_kmeans_maps(data, centers, n_neurons)
@@ -145,7 +141,6 @@ def label_clusters(all, n_neurons, m_neurons, target_names, mode):
 
     for k, point in enumerate(all):  # add results to all
         j, i = sample2node[k]
-        # print(j, i, n_neurons, m_neurons)
         point["node"] = i * n_neurons + j
 
     return node2sample, sample2node, som
@@ -265,7 +260,7 @@ def plot_1D(nameX, nameY, all):
     plt.show()
 
 
-def scatter_1D(nameX, nameY, all, nameC = None, scale = False):
+def scatter_1D(nameX, nameY, all, nameC = None, scale = False, show = True):
     """ scatter plots one or multiple pairs of nameX vs nameY """
     if isinstance(nameX, str):
         nameX = [nameX]
@@ -274,7 +269,7 @@ def scatter_1D(nameX, nameY, all, nameC = None, scale = False):
     assert len(nameX) == len(nameY), "oh no"
 
     n = np.ceil(np.sqrt(len(nameX)))
-    print(n, np.sqrt(len(nameX)))
+    # print(n, np.sqrt(len(nameX)))
     # fig, ax = plt.subplots(int(len(nameX) // n) + 1, int(n), figsize = (16, 16))
     fig, ax = plt.subplots(int(len(nameX) // n + 1 * (len(nameX) % n > 0)), int(n), figsize = (16, 16))
     if n == 1:
@@ -298,14 +293,15 @@ def scatter_1D(nameX, nameY, all, nameC = None, scale = False):
         res = stats.linregress(x[I], y[I])
         ax_[i].plot(x[I], res.intercept + res.slope * x[I], 'k:', label = 'fitted')
 
-        print(nameX[i], "slope", res.slope)
+        # print(nameX[i], "slope", res.slope)
         slopes.append(res.slope)
 
         ax_[i].set_xlabel(nameX[i])
         ax_[i].set_ylabel(nameY[i])
 
     plt.tight_layout()
-    plt.show()
+    if show:
+        plt.show()
     return slopes
 
 

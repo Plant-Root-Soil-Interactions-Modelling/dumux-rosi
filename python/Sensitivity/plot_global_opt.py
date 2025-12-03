@@ -90,4 +90,4 @@ scatter_1D(["r145_a", "ln145_a"], ["length", "volume"], all)
 
 # scatter_1D("hairsLength_a", "krs", all,  "lmax1_a")
 # scatter_1D("hairsZone_a", "krs", all,  "lmax1_a")
-
+plt.show()

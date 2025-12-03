@@ -31,11 +31,18 @@ def create_df(all, dims):
 
 
 folder_path = "results_cplantbox/"
-# exp_name = "soybean_length14"
 exp_name = "soybean_all14"
-target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["length", "surface",
 
-""" 1 load everything & merge npz results into input parameter json"""
+cluster_targets = ["carbon", "surface", "krs", "SUFz", "RLDz"]  # node (=cluster index) is added accordingly
+pareto_targets = ["-carbon", "surface", "depth", "krs", "SUFz", "RLDz"]
+target_names_parcord = ["node", "carbon", "krs", "SUFz", "RLDz", "depth"]
+
+sort_ = True  # use correlation-based sorting
+reduce10_ = False  # take every 10th solution
+pareto_ = True  # reduce solutions to pareto solutions (
+
+# ### 1 load everything & merge npz results into input parameter json
+
 # all = got.load_json_files(exp_name, folder_path)  # open parameter files
 # got.merge_results(folder_path, all)  # add results
 
@@ -43,35 +50,33 @@ target_names = ["surface", "depth", "-volume", "krs", "SUFz", "RLDz"]  # ["lengt
 with zipfile.ZipFile(exp_name + ".zip", "r") as zipf:  # zip fuile contains a single json file
     with zipf.open(exp_name + ".json", "r") as json_file:
         all = json.load(json_file)  # Deserialize JSON data
+all = list(all.values())  #
 
-all = list(all.values())  # 
-
-
-""" 2 filter and add cluster index"""
+# ###  2 filter and cluster index, and (optionally) restrict to pareto solutions
 print("data", len(all))
 all = got.filter_list(all, "length", 200., 30000)  # 76 * 3  *100 * 0.6 = 13680 cm;
 all = np.array(all)
 print("data after filtering", all.shape)
-# all = all[::10]
-# print("reduce factor 10", all.shape)
+if reduce10_:
+    all = all[::10]
+    print("reduce factor 10", all.shape)
+
 m_neurons = 3
 n_neurons = 4
-node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, target_names, "som") # add key "node" to all
+node2sample, sample2node, som = got.label_clusters(all, n_neurons, m_neurons, cluster_targets, "som")  # add key "node" to all
 print("clustering done")
 
-# print(all[0]["node"])
-# dd
+if pareto_:  # restrict to Pareto solutions
+    ind = got.pareto_list(all, pareto_targets)
+    all_new = []
+    for i, a in enumerate(all):
+        if ind[i] == True:
+            all_new.append(a)
+    all = all_new
+    print("number of pareto solutions: ", np.sum(ind))
 
-# # Plot Pareto solutions
-# ind = got.pareto_list(all, target_names)
-# all_new = []
-# for i, a in enumerate(all):
-#     if ind[i] == True:
-#         all_new.append(a)
-# all = all_new
-# print("number of pareto solutions: ", np.sum(ind))
+####  3 parameters
 
-""" 3 parameter space regarding nodes """
 pbounds = {
     'src_a': (3, 11),
     'src_delay_a': (3, 14),
@@ -84,67 +89,72 @@ pbounds = {
     'r2_a': (0.2, 7.),
     'r3_a': (0.2, 7.),
     }
-# pbounds = {
-#     "conductivity_age1": (1, 21),
-#     "conductivity_age2": (1, 21),
-#     "conductivity_age3": (1, 21),
-#     # 'src_a': (3, 11),
-#     # 'src_first_a': (3, 14),
-#     # 'src_delay_a': (3, 14),
-#     # 'lmax145_a': (50, 150),
-#     # 'ln145_a': (0.5, 10.),
-#     # 'r145_a': (0.2, 7.),
-#     # 'theta145_a': (np.pi / 8., np.pi / 2.),
-#     # 'tropismN145_a': (0., 3.5),
-#     'hairsLength145_a': (0., 0.1),
-#     'hairsZone145_a': (0., 5.),
-#     # 'lmax2_a': (5., 50.),
-#     # 'ln2_a': (0.5, 10.),
-#     # 'r2_a': (0.2, 7.),
-#     # 'theta2_a': (np.pi / 8., np.pi / 2.),
-#     # 'tropismN2_a': (0., 3.5),
-#     'hairsLength2_a': (0., 0.1),
-#     'hairsZone2_a': (0., 10.),
-#     # 'lmax3_a': (0.5, 50.),
-#     # 'r3_a': (0.2, 7.),
-#     # 'theta3_a': (np.pi / 8., np.pi / 2.),
-#     # 'tropismN3_a': (0., 3.5),
-#     'hairsLength3_a': (0., 0.1),
-#     'hairsZone3_a': (0., 10.)
-# }
 
-dims = list(pbounds.keys())  # for the parallel coordinates
-# dims = ['r145_a', 'r2_a', 'r3_a', 'lmax145_a', 'lmax2_a', 'lmax3_a', 'node' ]
-target_names = ["node", "surface", "volume", "depth", "RLDz", "krs", "SUFz"]
-dims.extend(target_names)
+params_conductivity = {
+    "anatomy_index145":0, "anatomy_index2":0, "anatomy_index3":0,
+    "kr_young145":0, "kr_young2":0, "kr_young3":0,
+    "kr_old145":0, "kr_old145":0, "kr_old145":0,
+    "kx_young145":0, "kx_young2":0, "kx_young3":0,
+    "kx_old145":0, "kx_old2":0, "kx_old3":0,
+    "conductivity_age1": (1, 21),
+    "conductivity_age2": (1, 21),
+    "conductivity_age3": (1, 21),
+             }
+params_more = {
+    'src_a': (3, 11),
+    # 'src_first_a': (3, 14),
+    'src_delay_a': (3, 14),
+    'lmax145_a': (50, 150),
+    'ln145_a': (0.5, 10.),
+    'r145_a': (0.2, 7.),
+    # 'theta145_a': (np.pi / 8., np.pi / 2.),
+    # 'tropismN145_a': (0., 3.5),
+    # 'hairsLength145_a': (0., 0.1),
+    # 'hairsZone145_a': (0., 5.),
+    'lmax2_a': (5., 50.),
+    # 'ln2_a': (0.5, 10.),
+    # 'r2_a': (0.2, 7.),
+    # 'theta2_a': (np.pi / 8., np.pi / 2.),
+    # 'tropismN2_a': (0., 3.5),
+    # 'hairsLength2_a': (0., 0.1),
+    # 'hairsZone2_a': (0., 10.),
+    'lmax3_a': (0.5, 50.),
+    # 'r3_a': (0.2, 7.),
+    # 'theta3_a': (np.pi / 8., np.pi / 2.),
+    # 'tropismN3_a': (0., 3.5),
+    # 'hairsLength3_a': (0., 0.1),
+    # 'hairsZone3_a': (0., 10.)
+    'anatomy_index145': (0., 0.)
+}
+
+dims = list(params_more.keys())  # for the parallel coordinates
+dims.extend(target_names_parcord)
 
 more_dims = dims.copy()
-# more_dims.extend(["exp_name"])
+if not sort_:
+    more_dims.extend(["exp_name"])  # breaks sorting
 
 color_ = 'node'
 df2 = create_df(all, more_dims)
 
-# #
-# # Correlation ordering
-# #
-# corr = df2.corr().values
-# dist = 1 - np.abs(corr)  # distance = 1 - |correlation|
-# linkage_matrix = linkage(dist, method='average')
-# order = leaves_list(linkage_matrix)  # reordering of variables
-# ordered_columns = df2.columns[order]
-# df = df2[ordered_columns]
-df = df2
+if sort_:  # ## Correlation ordering
+    corr = df2.corr().values
+    dist = 1 - np.abs(corr)  # distance = 1 - |correlation|
+    linkage_matrix = linkage(dist, method = 'average')
+    order = leaves_list(linkage_matrix)  # reordering of variables
+    ordered_columns = df2.columns[order]
+    df = df2[ordered_columns]
+else:
+    df = df2
 
-print("hallo")
-print(df.to_dict("records"))
-dd
+# ## START DASH
 
 app = Dash(__name__, external_stylesheets = [dbc.themes.BOOTSTRAP])
 
 fig = px.parallel_coordinates(
     df,
-    color = color_ ,
-    dimensions = dims,
+    color = color_,
+    dimensions = df.columns,
     color_continuous_scale = px.colors.diverging.Spectral,  # Tealrose
     color_continuous_midpoint = 2,
 )
@@ -199,7 +209,7 @@ def updateFilters(data):
         col = dims[int(key.split("[")[1].split("]")[0])]
         newData = Patch()
         newData[col] = data[0][key]
-        return {} # newData
+        return {}  # newData
     return {}
 
 
