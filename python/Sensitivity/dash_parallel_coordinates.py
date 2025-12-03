@@ -37,7 +37,7 @@ cluster_targets = ["carbon", "surface", "krs", "SUFz", "RLDz"]  # node (=cluster
 pareto_targets = ["-carbon", "surface", "depth", "krs", "SUFz", "RLDz"]
 target_names_parcord = ["node", "carbon", "krs", "SUFz", "RLDz", "depth"]
 
-sort_ = True  # use correlation-based sorting
+sort_ = False  # use correlation-based sorting
 reduce10_ = False  # take every 10th solution
 pareto_ = True  # reduce solutions to pareto solutions (
 

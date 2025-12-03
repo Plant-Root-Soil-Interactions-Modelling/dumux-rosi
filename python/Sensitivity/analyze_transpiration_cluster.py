@@ -36,7 +36,7 @@ Kc_maize = 1.2
 Kc_soybean = 1.15
 
 list_filename = "data/my_pick_(1,0).txt"
-path = "results/"
+path = "results (2)/"  # from results.zip
 
 with open(list_filename, "r", encoding = "utf-8") as file:
     lines = file.readlines()
@@ -46,8 +46,6 @@ print(len(lines))
 print(lines)
 
 area = 76 * 3
-
-path = "results/"
 
 pot_ = np.zeros((len(lines), len(["0", "1", "5", "36", "59"])))
 act_ = np.zeros((len(lines), len(["0", "1", "5", "36", "59"])))
