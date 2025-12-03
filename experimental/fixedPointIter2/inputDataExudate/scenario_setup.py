@@ -39,7 +39,6 @@ def getBiochemParam(s,soil_type):
         
     """
     s.doSimpleReaction = 1 #only diffusion, decay, sorption and not Mona's complete model 
-    
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
@@ -50,16 +49,29 @@ def getBiochemParam(s,soil_type):
         s.CSSmax = 0.
         s.alpha = 0.
     else:
+        kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
+        kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
+        k_clay_silt = {}
+        k_clay_silt[0] = 0.67
+        k_clay_silt[1] = 0.082
+        yr_per_d = 1/365 # [yr/d]
+        m3_per_cm3 = 1e-6; # m3/cm3
+        cm3_per_m3 = 1e6; # cm3/m3
         
-        s.kads = 10**2 # cm3 scv /mol C # ATT: can create 1d-3d converging error if kads is too high
-        s.kdes = 1.# -
-        s.Qmmax = 0.45 * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
+        # [kg/g] * [g/mol] = kg/mol
+        kgC_per_mol = (1/1000) * s.molarMassC
+        # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
+        s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol
+        s.kdes = kdes * yr_per_d
+        s.Qmmax = k_clay_silt[soil_type] * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
         
     s.css1Function = 5 # current adsorption function implemented.
+
+
 
     
     
