@@ -555,6 +555,22 @@ class RichardsWrapper(SolverWrapper):
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange     
         
+    def getReactions(self, eqIdx = 0):
+        """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
+        self.checkGridInitialized()
+        return self._map(self._flat0(comm.gather(self.getReactions_(eqIdx), root = 0)), 2) 
+
+    def getReactions_(self, eqIdx = 0):
+        """nompi version of """
+        self.checkGridInitialized()
+        unitChange = 24 * 3600 / 1e6 # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
+        if eqIdx == 0:
+            if self.useMoles:
+                unitChange *=  self.molarMassWat # [mol/cm3/day -> cm3/cm3/day]
+            else:
+                unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
+        return np.array(self.base.getScvReactions()[eqIdx]) * unitChange
+    
     def getFluxesPerCell(self, eqIdx = 0, length = None):
         """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
         self.checkGridInitialized()

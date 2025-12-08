@@ -398,6 +398,7 @@ public:
 		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
 		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
 		scvSources.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
+		scvReactions.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
 		
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
         for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
@@ -494,6 +495,7 @@ public:
             {
 				getScvfFluxesAtT(timeLoop->timeStepSize(),dt) ;
 				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;	
+				getScvReactionsAtT(timeLoop->timeStepSize(),dt) ;	
             }
 			
             gridVariables->advanceTimeStep();
@@ -864,6 +866,40 @@ public:
         return fluxes;
     }
 	
+    
+    
+    void getScvReactionsAtT(double dt, double outer_dt) {
+		checkGridInitialized();
+		
+        auto fvGeometry = Dumux::localView(*gridGeometry);
+		
+        auto elemVolVars = Dumux::localView(gridVariables->curGridVolVars());
+		
+        for (const auto& e : elements(gridGeometry->gridView())) { //, Dune::Partitions::interior
+
+            fvGeometry.bind(e);
+			
+            elemVolVars.bind(e, fvGeometry, x);
+			
+			for (const auto& scv : scvs(fvGeometry))
+            {
+				double pos0 = 1;
+				if(dimWorld == 1){
+					pos0 = scv.center()[0]; 
+				}
+				NumEqVector scvReactions_(0.0);
+                const auto& volVars = elemVolVars[scv];
+				problem->bioChemicalReaction(e, scvReactions_, volVars, pos0, scv); // [ kg / (m^3 \cdot s)] or [ mol / (m^3 \cdot s)]
+				
+				for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
+				{
+					scvReactions[eqIdx][scv.dofIndex()] += scvReactions_[eqIdx]/pos0*dt/outer_dt;
+				}
+			}
+		}
+		
+	}
+    
     /**
      * For a single mpi process. Gathering is done in Python
 	 * [ kg /m^3/s] or [ mol / m^3/s]
@@ -1173,6 +1209,10 @@ public:
         return scvSources;
     }
     
+    virtual std::vector<std::vector<double>> getScvReactions() {
+        return scvReactions;
+    }
+    
 	// reset to value before the last call to solve()
     virtual void reset() {
         checkGridInitialized();
@@ -1234,6 +1274,7 @@ protected:
     std::vector<std::vector<double>> scvfBoundaryFluxes;
     std::vector<std::vector<double>> scvfInnerFluxes;
     std::vector<std::vector<double>> scvSources;
+    std::vector<std::vector<double>> scvReactions;
 
     SolutionVector x;
 	SolutionVector xBackUp;
@@ -1319,6 +1360,7 @@ void init_solverbase(py::module &m, std::string name) {
             .def("getScvfBoundaryFluxes", &Solver::getScvfBoundaryFluxes)
             .def("getScvfInnerFluxes", &Solver::getScvfInnerFluxes)
             .def("getScvSources", &Solver::getScvSources)
+            .def("getScvReactions", &Solver::getScvReactions)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
 			.def("useMoles",&Solver::useMoles)
