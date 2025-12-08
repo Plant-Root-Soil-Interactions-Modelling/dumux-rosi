@@ -262,6 +262,7 @@ def XcGrowth(scenarioData):
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
             
+            
             keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
             perirhizalModel.n_iter += 1
 

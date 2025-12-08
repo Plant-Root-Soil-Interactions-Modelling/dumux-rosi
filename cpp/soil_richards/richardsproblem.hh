@@ -409,6 +409,17 @@ public:
 		}
 	}
 
+	
+		/*!
+	 *
+     * E.g. for the mol balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
+     */
+	void bioChemicalReaction(const Element &element, 
+								NumEqVector &q, const VolumeVariables &volVars, double pos0, 
+								const SubControlVolume &scv) const
+	{}
+    
+    
 	/*!
 	 * \brief Applies a vector of point sources. The point sources
 	 *        are possibly solution dependent.
