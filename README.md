@@ -23,7 +23,7 @@ python3 installDumuxRosi_Ubuntu.py
 
 * Use the DuMu<sup>x</sup> [Installation Notes](https://dumux.org/docs/doxygen/master/installation.html) to set up DuMu<sup>x</sup>
 * Install [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) into the DuMu<sup>x</sup>  base folder (where dune-common/, dumux/, etc. are located) according to the CPlantBox installation instruction (README.md)
-* Finally, clone the _dumux_rosi_ repository into the DuMu<sup>x</sup> common base folder and use DUNE build system to build the repository. 
+* Finally, clone the _dumux-rosi_ repository into the DuMu<sup>x</sup> common base folder and use DUNE build system to build the repository. 
 
 # Further 
 
