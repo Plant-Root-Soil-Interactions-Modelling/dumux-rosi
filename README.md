@@ -2,8 +2,6 @@
 
 _dumux-rosi_ provides Python interfaces for solving the Richards equation as well as general advection–diffusion–reaction systems in plant–soil interaction modelling. It leverages the nonlinear finite-volume solver of [DuMu<sup>x</sup>](https://git.iws.uni-stuttgart.de/dumux-repositories/dumux) and is designed to integrate with [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox).
 
-<img src="Logo_long_white.png" alt="drawing" width="100"/>
-
 # Installation
 
 ## Using a Pyton script 
@@ -31,3 +29,5 @@ Please read the manual (Manual.pdf on this repository)
 - for installation guidelines
 - getting started with examples
 - folder structure is explained in the dumux-rosi wiki https://github.com/Plant-Root-Soil-Interactions-Modelling/dumux-rosi/wiki/Folder-structure
+
+<img src="Logo_long_white.png" alt="drawing" width="200"/>
