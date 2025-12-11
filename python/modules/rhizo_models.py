@@ -1,20 +1,22 @@
-# import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src");
-# sys.path.append("../../build-cmake/cpp/python_binding/")
-
 import plantbox as pb
-import functional.xylem_flux as xylem_flux
+import plantbox.functional.xylem_flux as xylem_flux
 
-from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
-from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
-from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from fv.fv_grid import *
-import fv.fv_richards as rich  # local pure Python cylindrical models
-import functional.van_genuchten as vg
+from rosi.rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
+from rosi.rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
+from rosi.richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
+from rosi.fv.fv_grid import *
+import rosi.fv.fv_richards as rich  # local pure Python cylindrical models
+import plantbox.functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-from functional.Perirhizal import PerirhizalPython
+from plantbox.functional.Perirhizal import PerirhizalPython
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+max_rank = comm.Get_size()
 
 
 class RhizoMappedSegments(PerirhizalPython):
@@ -72,7 +74,7 @@ class RhizoMappedSegments(PerirhizalPython):
         if eidx is None:
             eidx = np.array(range(0, len(self.ms.radii)), np.int64)  # segment indices for process
         self.eidx = np.array(eidx, np.int64)
-        self.outer_radii = np.array(self.get_outer_radii("length") )  # not parallel yet
+        self.outer_radii = np.array(self.get_outer_radii("length"))  # not parallel yet
         # self.outer_radii = np.minimum(np.array(self.segOuterRadii()), 1.)  # not parallel yet
         self.seg_length = self.ms.segLength()
         self.soil = soil
@@ -288,8 +290,8 @@ class RhizoMappedSegments(PerirhizalPython):
                     str = "RhizoMappedSegments.solve: dumux exception with boundaries in flow {:g} cm3/day, out flow {:g} cm3/day, segment radii [{:g}-{:g}] cm"
                     str = str.format(proposed_inner_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), proposed_outer_fluxes[j] / (2 * np.pi * self.ms.radii[j] * l), self.ms.radii[j], self.outer_radii[j])
                     print("node ", i, self.ms.nodes[self.ms.segments[j].y])
-                    #self.plot_cylinder(j)
-                    #self.plot_cylinders()
+                    # self.plot_cylinder(j)
+                    # self.plot_cylinders()
                     raise Exception(str)
         elif self.mode == "dumux_dirichlet":
             rx = argv[0]

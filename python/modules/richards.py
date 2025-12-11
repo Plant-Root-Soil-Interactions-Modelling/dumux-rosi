@@ -1,9 +1,12 @@
-import sys
-sys.path.append("../../../CPlantBox/src")
-import functional.van_genuchten as vg  
-from solverbase import SolverWrapper
+
+import plantbox.functional.van_genuchten as vg
+from rosi.solverbase import SolverWrapper
 import numpy as np
-from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+max_rank = comm.Get_size()
 
 
 class RichardsWrapper(SolverWrapper):
@@ -61,7 +64,6 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
 
         self.soils = soils.copy()
-        
 
     def setLayersZ(self, number:list, z:list = []):
         """ sets depth dependent layers 
@@ -84,7 +86,7 @@ class RichardsWrapper(SolverWrapper):
         @param z     list of z-positions [cm].  Between the sampling points linear interpolation is applied.                              
         """
         self.setParameter(self.param_group + "IC.P", self.dumux_str(p))
-        
+
         if z:
             assert(len(p) == len(z))  # sample points
             self.setParameter(self.param_group + "IC.Z", self.dumux_str(np.array(z) / 100.))
@@ -97,7 +99,7 @@ class RichardsWrapper(SolverWrapper):
         """
         if isinstance(c, float):
             c = [float(c)]
-            
+
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setICZ_solute before calling initialize()')
 
@@ -183,14 +185,14 @@ class RichardsWrapper(SolverWrapper):
             value_top = [value_top]
         if len(value_top) == 0:
             value_top = [0. for i in type_top]
-            
+
         assert isinstance(type_top[0], (str, int))
         for id_tt, tt in enumerate(type_top):
             if isinstance(tt, str):
                 if tt == "constantConcentration":
                     t = 1
                 elif tt == "constantFlux":
-                    t = 2                
+                    t = 2
                 elif tt == "noflux"  or tt == "noFlux" or tt == "no-flux":
                     t = 2
                     if not value_top[id_tt] == 0:
@@ -294,7 +296,6 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
                 type_bot[id_tb] = b
-        
 
         if self.checkProblemInitialized(throwError = False):
             self.base.setSBotBC(type_bot, value_bot)
@@ -318,17 +319,17 @@ class RichardsWrapper(SolverWrapper):
         """
         self.setBotBC(1, x)
 
-    def getBCFlows(self ):          
+    def getBCFlows(self):
         """returns the total boundary flow simulated during the last dumux solumation
         """
         assert self.dimWorld == 1
-        # water: [cm3/d] 
-        # solute: [g/d] or [mol/d] 
-        Q_in_m  = np.array([self.getInnerFlow(nc, self.length) for nc in range(self.numFluidComp)])
-        Q_out_m = np.array([self.getOuterFlow(nc, self.length) for nc in range(self.numFluidComp)]) 
-        
+        # water: [cm3/d]
+        # solute: [g/d] or [mol/d]
+        Q_in_m = np.array([self.getInnerFlow(nc, self.length) for nc in range(self.numFluidComp)])
+        Q_out_m = np.array([self.getOuterFlow(nc, self.length) for nc in range(self.numFluidComp)])
+
         return(Q_in_m, Q_out_m)
-        
+
     def getInnerFlow(self, eqIdx = 0, length = None):
         """ mean flow rate at the inner boundary [cm3 / day] """
         assert self.dimWorld == 1
@@ -424,7 +425,7 @@ class RichardsWrapper(SolverWrapper):
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
         else:
             if not self.useMoles:
-                unitChange *= 1e3 # [kg/cm3/day -> g/cm3/day]
+                unitChange *= 1e3  # [kg/cm3/day -> g/cm3/day]
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange
 
     def setSource(self, source_map, eq_idx = 0):
@@ -508,66 +509,65 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         return np.unique(self._flat0(self.gather(self.base.getLayerCellIndx(layerIndex), root = 0)))
 
-    def getConcentration_(self,idComp):      
+    def getConcentration_(self, idComp):
         """ non mpi version of
         """
-        # only valid for solutes (idComp > 0). 
-        if (idComp <= 0)|(idComp > self.numComp):
+        # only valid for solutes (idComp > 0).
+        if (idComp <= 0) | (idComp > self.numComp):
             raise Exception("richards::getConcentration_: Requested element id {idComp} does not correspond to a solute.")
-        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
-        C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
+        isDissolved = idComp <= self.numDissolvedSoluteComp  # is the component in the water phase (True) [bool]
+        C_ = self.getSolution_(idComp)  # mol/mol wat or mol/mol scv
         return C_ * self.phaseDensity(isDissolved)
-        
-    def getConcentration(self,idComp):      
+
+    def getConcentration(self, idComp):
         """ returns the concentration of a component (solute) [mol/cm3 phase] or [g/cm3 phase]
             with phase either the liquid (water) or the solid (bulk soil) phase
             @param idcomp: index of the component (> 0) [int]
         """
-        # only valid for solutes (idComp > 0). 
-        if (idComp <= 0)|(idComp > self.numComp):
+        # only valid for solutes (idComp > 0).
+        if (idComp <= 0) | (idComp > self.numComp):
             raise Exception("richards::getConcentration: Requested element id {idComp} does not correspond to a solute.")
-        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
-        C_ = self.getSolution(idComp) # [mol/mol phase] or [g/g phase]   
+        isDissolved = idComp <= self.numDissolvedSoluteComp  # is the component in the water phase (True) [bool]
+        C_ = self.getSolution(idComp)  # [mol/mol phase] or [g/g phase]
         return C_ * self.phaseDensity(isDissolved)
-        
-    def getContent(self,idComp):
+
+    def getContent(self, idComp):
         """ returns the content of a component (solute) [mol] or [g]
             @param idcomp: index of the component (> 0) [int]
         """
-        # only valid for solutes (idComp > 0). 
-        if (idComp <= 0)|(idComp > self.numComp):
+        # only valid for solutes (idComp > 0).
+        if (idComp <= 0) | (idComp > self.numComp):
             raise Exception("richards::getContent: Requested element id {idComp} does not correspond to a solute.")
-            
-        isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
-        vols = self.getCellVolumes_() # cm3 scv            
-        
-        C_ = self.getSolution_(idComp) # concentration in [mol solute/mol phase] or [g solute/g phase] 
-        C_ *= self.phaseDensity(isDissolved) # [mol solute/mol phase] * [mol phase/cm3 phase] or [g solute/g phase] * [g phase/cm3 phase]
-            
-        if not isDissolved: # is in the soil phase
-            return self._map(self._flat0(self.gather(np.multiply(vols , C_  ))),0)
-        
+
+        isDissolved = idComp <= self.numDissolvedSoluteComp  # is the component in the water phase (True) [bool]
+        vols = self.getCellVolumes_()  # cm3 scv
+
+        C_ = self.getSolution_(idComp)  # concentration in [mol solute/mol phase] or [g solute/g phase]
+        C_ *= self.phaseDensity(isDissolved)  # [mol solute/mol phase] * [mol phase/cm3 phase] or [g solute/g phase] * [g phase/cm3 phase]
+
+        if not isDissolved:  # is in the soil phase
+            return self._map(self._flat0(self.gather(np.multiply(vols , C_))), 0)
+
         # is in the water phase: needs to be multiplied by the water content to get the total concentration in the subcrontrol volume
-        watCont = self.getWaterContent_() # cm3 wat/cm3 scv
-        return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_ ))),0)
-          
-        
+        watCont = self.getWaterContent_()  # cm3 wat/cm3 scv
+        return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_))), 0)
+
     def phaseDensity(self, isDissolved):
         """ returns the density of the phase the solute is in [mol / m3]
             i.e., water phase for disolved solutes, solide phase otherwise
             @param isDissolved: is the solute disolved in water [bool]
         """
-        if isDissolved: 
+        if isDissolved:
             if self.useMoles:
-                return self.molarDensityWat #mol wat / cm3 wat
+                return self.molarDensityWat  # mol wat / cm3 wat
             else:
-                return self.densityWat # g wat / cm3 wat
-        else:   
+                return self.densityWat  # g wat / cm3 wat
+        else:
             if self.useMoles:
-                return self.molarBulkDensity # mol soil minerals / cm3 scv
+                return self.molarBulkDensity  # mol soil minerals / cm3 scv
             else:
-                return self.bulkDensity # g soil minerals / cm3 scv
-            
+                return self.bulkDensity  # g soil minerals / cm3 scv
+
     def writeDumuxVTK(self, file_name):
         """Uses the Dumux VTK writer to write the current model output"""
         self.checkGridInitialized()

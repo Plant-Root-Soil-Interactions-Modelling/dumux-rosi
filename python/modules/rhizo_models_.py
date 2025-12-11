@@ -1,19 +1,20 @@
-import sys; sys.path.append("../modules/"); sys.path.append("../modules/fv/"); sys.path.append("../../../CPlantBox/"); sys.path.append("../../../CPlantBox/src/python_modules/")
-sys.path.append("../../build-cmake/cpp/python_binding/")
-
 import plantbox as pb
-import xylem_flux  # to use its rsml reader
+import plantbox.xylem_flux  # to use its rsml reader
 
-from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
-from rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
-from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from fv_grid import *
-import fv_richards as rich  # local pure Python cylindrical models
-import van_genuchten as vg
+from rosi.rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding) of cylindrcial model
+from rosi.rosi_richardsnc_cyl import RichardsNCCylFoam  # C++ part (Dumux binding)
+from rosi.richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
+from rosi.fv_grid import *
+import rosi.fv_richards as rich  # local pure Python cylindrical models
+import plantbox.functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+max_rank = comm.Get_size()
 
 
 class RhizoMappedSegments(pb.MappedSegments):

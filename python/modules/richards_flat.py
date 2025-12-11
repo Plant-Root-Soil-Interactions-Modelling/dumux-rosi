@@ -1,8 +1,11 @@
-from solverbase import SolverWrapper
-from richards import RichardsWrapper
-from mpi4py import MPI; comm = MPI.COMM_WORLD; size = comm.Get_size(); rank = comm.Get_rank()
-
+from rosi.solverbase import SolverWrapper
+from rosi.richards import RichardsWrapper
 import numpy as np
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+max_rank = comm.Get_size()
 
 
 class RichardsFlatWrapper(RichardsWrapper):
