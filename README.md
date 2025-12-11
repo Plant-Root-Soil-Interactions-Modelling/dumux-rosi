@@ -1,15 +1,16 @@
 # Introduction
 
-_dumux-rosi_ offers simple Python interfaces to solve Richasds equation or general advection diffusion reactions equations in the scope of plant and soil interaction modelling, 
-using [DuMu<sup>x</sup>](https://git.iws.uni-stuttgart.de/dumux-repositories/dumux) as nonlinear finite volume solver. 
+_dumux-rosi_ provides Python interfaces for solving the Richards equation as well as general advection–diffusion–reaction systems in plant–soil interaction modelling. It leverages the nonlinear finite-volume solver of [DuMu<sup>x</sup>](https://git.iws.uni-stuttgart.de/dumux-repositories/dumux) and is designed to integrate with [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox).
+
+<img src="Logo_long_white.png" alt="drawing" width="100"/>
 
 # Installation
 
 ## Using a Pyton script 
 
-The installation scipt is located within the [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) repository and installs CPlantBox, DuMu<sup>x</sup>, and _dumux-rosi_
-
-For CPlantBox with _dumux-rosi_, download and run the Python file "installDumuxRosi_Ubuntu.py" (the file is based on the DuMu<sup>x</sup> installation file).
+The installation scipt is located within the [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) repository.
+This scripte will install the full setup:  CPlantBox,  _dumux-rosi_, and DuMu<sup>x</sup>]. 
+Just download and run the Python file "installDumuxRosi_Ubuntu.py" (which is based on the DuMu<sup>x</sup> installation file).
 ```bash
 sudo apt-get update
 sudo apt-get upgrade
@@ -20,9 +21,9 @@ python3 installDumuxRosi_Ubuntu.py
 
 ## by hand
 
-* install DuMu<sup>x</sup> using the [Installation Notes](https://dumux.org/docs/doxygen/master/installation.html)
-* install [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) into the DuMu<sup>x</sup>  base folder (where dune-common/, dumux/, etc. are located) according the installation instruction (README.md)
-* git clone _dumux-rosi_ in the DuMu<sup>x</sup> common base folder and use dune build system to build the repository. 
+* Use the DuMu<sup>x</sup> [Installation Notes](https://dumux.org/docs/doxygen/master/installation.html) to set up DuMu<sup>x</sup>
+* Install [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) into the DuMu<sup>x</sup>  base folder (where dune-common/, dumux/, etc. are located) according to the CPlantBox installation instruction (README.md)
+* Finally, clone the _dumux_rosi_ repository into the DuMu<sup>x</sup> common base folder and use DUNE build system to build the repository. 
 
 # Further 
 
