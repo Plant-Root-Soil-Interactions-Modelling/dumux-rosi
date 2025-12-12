@@ -23,7 +23,7 @@ min_b = [-35.0, -10.0, -50.0]  # [cm]
 max_b = [35.0, 10.0, 0.0]  # [cm]
 cell_number = [1, 1, 50]  # ~[4*4*1] cm3
 
-path = "../../modelparameter/structural/rootsystem/"
+path = "../../../CPlantBox/modelparameter/structural/rootsystem/"
 name = "Zeamays_synMRI_modified"  # "Anagallis_femina_Leitner_2010"  # Zea_mays_1_Leitner_2010, Zeamays_synMRI.xml  <<<<-------
 trans = 250  # cm3 /day (sinusoidal) = mL/day
 wilting_point = -15000  # cm
@@ -56,7 +56,7 @@ plant.setGeometry(sdf)  # |\label{l72c:soil_plant_end}|
 
 # root hydraulic properties #
 params = PlantHydraulicParameters()  # |\label{l72c:hydraulic}|
-params.read_parameters("../../modelparameter/functional/plant_hydraulics/couvreur2012")
+params.read_parameters("../../../CPlantBox/modelparameter/functional/plant_hydraulics/couvreur2012")
 # params.plot_conductivities(True) # |\label{l72c:plot_conductivities}|
 hm = HydraulicModel_Doussan(plant, params)
 hm.wilting_point = wilting_point  # |\label{l72c:hydraulic_end}|
