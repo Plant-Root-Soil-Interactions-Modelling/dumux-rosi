@@ -34,6 +34,7 @@ mkdir -p "$DEST"
 # 4. Copy all .so and .py files
 cp build-cmake/cpp/python_binding/*.so "$DEST/"
 cp python/modules/*.py "$DEST/"
+cp -r python/modules/fv "$DEST/fv"
 
 # 5. Create __init__.py to make it an importable package
 if [[ ! -f "$DEST/__init__.py" ]]; then

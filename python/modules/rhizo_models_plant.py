@@ -12,7 +12,7 @@ from rosi.helpful import write_file_array, write_file_float
 import numpy as np
 import matplotlib.pyplot as plt
 import psutil
-from air_models import AirSegment
+from rosi.fv.air_models import AirSegment
 from scipy import sparse
 import scipy.sparse.linalg as LA
 import helpful

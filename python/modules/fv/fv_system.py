@@ -1,9 +1,9 @@
 import numpy as np
 import copy
 
-from fv.fv_grid import *
-from fv.fv_solver import *
-import functional.van_genuchten as vg
+from rosi.fv.fv_grid import *
+from rosi.fv.fv_solver import *
+import plantbox.functional.van_genuchten as vg
 
 
 class FVSystem(FVSolver):

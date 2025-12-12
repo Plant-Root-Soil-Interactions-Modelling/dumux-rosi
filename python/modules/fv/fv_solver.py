@@ -1,7 +1,7 @@
 import numpy as np
 
-from fv.fv_grid import *
-import functional.van_genuchten as vg
+from rosi.fv.fv_grid import *
+import plantbox.functional.van_genuchten as vg
 
 
 class FVSolver:
