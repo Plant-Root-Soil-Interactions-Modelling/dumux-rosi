@@ -7,7 +7,7 @@ _dumux-rosi_ provides Python interfaces for solving the Richards equation as wel
 ## Using a Pyton script 
 
 The installation scipt is located within the [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) repository.
-This scripte will install the full setup:  CPlantBox,  _dumux-rosi_, and DuMu<sup>x</sup>]. 
+This script will install the full setup:  CPlantBox,  _dumux-rosi_, and DuMu<sup>x</sup>]. 
 Just download and run the Python file "installDumuxRosi_Ubuntu.py" (which is based on the DuMu<sup>x</sup> installation file).
 ```bash
 sudo apt-get update
@@ -16,12 +16,20 @@ sudo apt-get upgrade
 wget https://raw.githubusercontent.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox/master/installDumuxRosi_Ubuntu.py
 python3 installDumuxRosi_Ubuntu.py
 ```
+Finally, run the installation script from the dumux-rosi directory:
+```bash
+cd dumux-rosi
+./install_modules.sh
+```
+This will install dumux-rosi into your Python site-packages, making it available for import.
 
 ## by hand
 
 * Use the DuMu<sup>x</sup> [Installation Notes](https://dumux.org/docs/doxygen/master/installation.html) to set up DuMu<sup>x</sup>
 * Install [CPlantBox](https://github.com/Plant-Root-Soil-Interactions-Modelling/CPlantBox) into the DuMu<sup>x</sup>  base folder (where dune-common/, dumux/, etc. are located) according to the CPlantBox installation instruction (README.md)
-* Finally, clone the _dumux-rosi_ repository into the DuMu<sup>x</sup> common base folder and use DUNE build system to build the repository. 
+* Finally, clone the _dumux-rosi_ repository into the DuMu<sup>x</sup> common base folder and use DUNE build system to build the repository, and run install_modules.sh in the dumux-rosi folder to make it ready for use in Python.
+
+
 
 # Further 
 
