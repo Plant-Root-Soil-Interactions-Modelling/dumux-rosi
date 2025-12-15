@@ -1,9 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-
-
-
 # 1. Get Python's architecture-specific site-packages directory
 # Detect if we are in a virtual environment
 IN_VENV=$(python3 - <<'EOF'
