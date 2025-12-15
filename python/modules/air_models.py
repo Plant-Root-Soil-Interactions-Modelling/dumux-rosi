@@ -2,8 +2,8 @@ import plantbox as pb
 import plantbox.functional.xylem_flux as xylem_flux
 import sys
 from rosi.fv.fv_grid import *
-import rois.fv.fv_richards as rich  # local pure Python cylindrical models
-import plantboxfunctional.van_genuchten as vg
+import rosi.fv.fv_richards as rich  # local pure Python cylindrical models
+import plantbox.functional.van_genuchten as vg
 
 import numpy as np
 import matplotlib.pyplot as plt
