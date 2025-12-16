@@ -48,12 +48,16 @@ def getBiochemParam(s,soil_type):
     if s.noAds:
         s.CSSmax = 0.
         s.alpha = 0.
+        s.css1Function = 0
+        s.kads = 1e-100
+        s.kdes = 1
     else:
         kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
         kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
         k_clay_silt[1] = 0.082
+        
         yr_per_d = 1/365 # [yr/d]
         m3_per_cm3 = 1e-6; # m3/cm3
         cm3_per_m3 = 1e6; # cm3/m3
@@ -68,7 +72,7 @@ def getBiochemParam(s,soil_type):
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
-        
+    
     s.css1Function = 5 # current adsorption function implemented.
 
 

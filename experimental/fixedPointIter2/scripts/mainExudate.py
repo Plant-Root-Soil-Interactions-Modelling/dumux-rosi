@@ -68,7 +68,7 @@ def XcGrowth(scenarioData):
     doBioChemicalReaction = True
     doDecay_ = scenarioData['decay']
     doSoluteUptake = False # active uptake?
-    noAds = False # stop adsorption?
+    noAds = True # stop adsorption?
     doPhloemFlow = False
     doExudation = True #prescribed exudation for every root segment 
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?

@@ -54,7 +54,6 @@ def printPlantShape(rs,r, results_dir):
     length_Segs = np.array(r.rs.segLength())
     write_file_array("length_Segs", length_Segs, directory_ =results_dir)
     write_file_array("root_radii", np.array(r.rs.radii), directory_ =results_dir)
-    write_file_array("root_surf", np.array(r.rs.radii)**2*np.pi*length_Segs, directory_ =results_dir)
     orgs = r.plant.getOrgans(-1, False)
     parentorgid = np.array([org.getParent().getId() for org in orgs])
     parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
@@ -92,8 +91,6 @@ def printRSShape(rs,r, results_dir):
     length_Segs = np.array(r.rs.segLength())
     write_file_array("length_Segs", length_Segs, directory_ =results_dir)
     write_file_array("root_radii", np.array(r.rs.radii), directory_ =results_dir)
-    surf = length_Segs*np.array(r.rs.radii)**2*np.pi
-    write_file_array("root_surf", np.array(surf), directory_ =results_dir)
     orgs = r.plant.getOrgans(-1, False)
     #parentorgid = np.array([org.getParent().getId() for org in orgs])
     #parentNidx = np.array([org.getParent().getNodeId(org.parentNI) for org in orgs])
@@ -144,38 +141,17 @@ def printDiff1d3d(perirhizalModel, s):
     write_file_array("pHead", np.array(s.getSolutionHead()), directory_ =results_dir, fileType = '.csv') 
     write_file_array("theta", np.array(s.getWaterContent()), directory_ =results_dir, fileType = '.csv') 
     write_file_array("watVol", np.array(s.getWaterVolumes()), directory_ =results_dir, fileType = '.csv') 
-
-
     for i in range(perirhizalModel.numDissolvedSoluteComp):
+
         write_file_array("Soil_solute_conc"+str(i+1), 
-                         np.array(s.getSolution(i+1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6, # mol C/cm3 W
+                         np.array(s.getSolution(i+1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6, # mol C/mol w * molW/m3 W * m3 W/cm3 W
                          directory_ =results_dir, fileType = '.csv') 
-                         
-
-    scv = s.getCellVolumes()
-    scv_water = np.array(s.getWaterVolumes()) #cm^3 water per cell    
-    
-    Exud_tot = np.sum(np.array(s.getTotCContent()).flatten()) #mol / scv 
-    Exud_liq = np.sum(np.array(s.getSolution(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) #mol/m^3 --> mol/cm^3 W-->mol/ scv) 
-    Exud_ads = np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
-    Exud_ads_soil = np.sum(np.array(s.getCss1()).flatten()*scv) #mol /scv
-    Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
-    Exud_decay = np.sum(np.array(s.getReactions(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
-    
-    if not (np.around((Exud_ads+Exud_liq),5) == np.around(Exud_tot,5)):
-        print('issue exudate balance')
-        raise Exception
-
-    if not os.path.isfile(results_dir+'exud.csv'):
-        write_file_array('exud', np.array(['Exud_tot', 'Exud_liq', 'Exud_ads', 'Exud_ads_soil', 'Exud_ads_roots', 'Exud_decay']), directory_ =results_dir, fileType = '.csv' )
-    write_file_array('exud', np.array([Exud_tot, Exud_liq, Exud_ads, Exud_ads_soil, Exud_ads_roots, Exud_decay]), directory_ =results_dir, fileType = '.csv' )
-    
-    
     for i in range(perirhizalModel.numDissolvedSoluteComp, perirhizalModel.numSoluteComp):
-        write_file_array("scv_Soil_solute_conc"+str(i+1), 
+
+        write_file_array("Soil_solute_conc"+str(i+1), 
                          np.array(s.getSolution(i+1)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 , 
                          directory_ =results_dir, fileType = '.csv') 
-        
+
             
 def printTimeAndError(rs, rs_age):
     """
@@ -256,38 +232,6 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
                                                   phloemDataStorage.error_st_rel,#cumulative
                                                  abs(sum(plantModel.outputFlux))]), 
                          directory_ =results_dir, fileType = '.csv') #not cumulative
-    elif perirhizalModel.doExudation:
-        # print(round(plantModel.Qlight *1e6),"mumol m-2 s-1")
-        # print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(phloemDataStorage.error_st_abs,
-                                                                    # phloemDataStorage.error_st_rel))
-        # print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(abs(sum(plantModel.outputFlux))))
-        # print("C_ST (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(phloemDataStorage.C_ST), min(phloemDataStorage.C_ST),
-                                                                                                  # len(np.where(phloemDataStorage.C_ST == min(phloemDataStorage.C_ST) )[0]), max(phloemDataStorage.C_ST)))        
-        # print("C_me (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e}\tmax  {:5.2e}".format(np.mean(phloemDataStorage.C_meso), min(phloemDataStorage.C_meso), max(phloemDataStorage.C_meso)))        
-        # print('Q_X (mol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(phloemDataStorage.Q_ST), sum(phloemDataStorage.Q_meso), phloemDataStorage.Q_in))
-        # print('\tRm   {:.2e}\tGr   {:.2e}\tExud {:5.2e}'.format(sum(phloemDataStorage.Q_Rm), sum(phloemDataStorage.Q_Gr), sum(phloemDataStorage.Q_Exud)))
-
-        # if min(phloemDataStorage.C_ST) < 0.0:
-            # print("min(C_ST) < 0.0", min(phloemDataStorage.C_ST),np.mean(phloemDataStorage.C_ST),max(phloemDataStorage.C_ST))
-            # raise Exception
-
-        tiproots, tipstems, tipleaves = plantModel.get_organ_segments_tips()
-        write_file_array("root_segments_tips",tiproots, 
-                         directory_ =results_dir)
-        write_file_array("rhizoSegsId", np.array(perirhizalModel.rhizoSegsId), 
-                         directory_ =results_dir)
-
-        write_file_array("Q_Mucil", phloemDataStorage.Q_Mucil, directory_ =results_dir)
-        write_file_array("Q_Exud", phloemDataStorage.Q_Exud, directory_ =results_dir) #exudation per segment per time step
-        
-        write_file_float("Q_Exud_i", sum(phloemDataStorage.Q_Exud_i_seg), directory_ =results_dir) #exudation at each time step 
-        write_file_float("Q_Mucil_i", sum(phloemDataStorage.Q_Mucil_i_seg), directory_ =results_dir)
-        write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_cumul, directory_ =results_dir) #cumulative exudation of Exud_i
-        write_file_float("Q_Mucil_tot", phloemDataStorage.Q_Mucil_cumul, directory_ =results_dir)
-        
-        write_file_array("psiXyl", plantModel.psiXyl, directory_ =results_dir)
-        # write_file_array("transrate",plantModel.Jw, directory_ =results_dir, fileType = '.csv')
-        
 
 def printCylData(perirhizalModel, rs_age):
     """ print data of each perirhizal model"""

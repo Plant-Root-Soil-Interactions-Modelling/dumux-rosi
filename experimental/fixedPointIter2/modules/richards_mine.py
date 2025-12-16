@@ -490,9 +490,8 @@ class RichardsWrapper(SolverWrapper):
         '''
         C_S_W = self.getConcentration_(1)
         C_S_S2 = self.getSolution_(2) #stored value from voxel with roots
-        css1 = np.array([self.base.computeCSS1(self.bulkDensity_m3,C_S_W[i]*1e6, i) for i, idx in enumerate(self.getCellIndices_())])*1e-6
+        css1 = np.array([self.base.computeCSS1(self.bulkDensity_m3,C_S_W[i]*1e6, i) for i, idx in enumerate(self.getCellIndices_())])*1e-6 #value from voxel without roots 
         css1[C_S_S2>0] = 0.
-        
         return css1
     
     def getCss1(self): # mol/cm3 scv
@@ -503,13 +502,13 @@ class RichardsWrapper(SolverWrapper):
             
     def getTotCContent_each(self):
         """ copmute the total content per solute class in each cell of the domain """
-        #vols = self.getCellVolumes()#.flatten() #cm3 scv   
-        totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)])
-
+        totC = np.array([self.getContent(i+1) for i in range(self.numSoluteComp)]) #mol
         vols = self.getCellVolumes() 
-        css1 = self.getCss1() * vols
+        css1 = self.getCss1() * vols #mol
+        
         idTemps = css1 != 0
         totC[1][idTemps] = css1[idTemps]
+
         #if self.dimWorld==1:
         #    assert totC[1].sum() == 0.
         #    totC[1] = self.getCss1() * vols
@@ -520,7 +519,6 @@ class RichardsWrapper(SolverWrapper):
             except:
                 print('totC',totC,totC.shape , (self.numSoluteComp, self.numberOfCellsTot))
                 raise Exception
-            
         return totC
         
     def getTotCContent(self):
@@ -557,22 +555,6 @@ class RichardsWrapper(SolverWrapper):
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange     
         
-    def getReactions(self, eqIdx = 0):
-        """ Gathers the net sources for each cell into rank 0 as a map with global index as key [kg / cm3 / day]"""
-        self.checkGridInitialized()
-        return self._map(self._flat0(comm.gather(self.getReactions_(eqIdx), root = 0)), 2) 
-
-    def getReactions_(self, eqIdx = 0):
-        """nompi version of """
-        self.checkGridInitialized()
-        unitChange = 24 * 3600 / 1e6 # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
-        if eqIdx == 0:
-            if self.useMoles:
-                unitChange *=  self.molarMassWat # [mol/cm3/day -> cm3/cm3/day]
-            else:
-                unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
-        return np.array(self.base.getScvReactions()[eqIdx]) * unitChange
-    
     def getFluxesPerCell(self, eqIdx = 0, length = None):
         """ Gathers the net sources fir each cell into rank 0 as a map with global index as key [cm3/ day or kg/ day or mol / day]"""
         self.checkGridInitialized()
