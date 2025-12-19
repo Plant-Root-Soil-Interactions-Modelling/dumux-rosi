@@ -53,7 +53,7 @@ class SolverWrapper():
         """
             change the maximum inner time step which can be tested by dumux
         """
-        self.base.setMaxTimeStepSize(maxDt)
+        self.base.setMaxTimeStepSize(maxDt/24.0/60.0/60.0)
 
     def createGridFromInput(self, modelParamGroup = ""):
         """ Creates the Grid and gridGeometry from the global DuMux parameter tree """
