@@ -1764,9 +1764,6 @@ class RhizoMappedSegments(Perirhizal):  # pb.MappedPlant):
             return
             inner_fluxes_real: inner BC as implemented in dumux [cm3 day-1]  or [mol C day-1] 
         """
-        print('inner_fluxes_water_temp, outer_fluxes_water_temp, inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp',
-        inner_fluxes_water_temp, outer_fluxes_water_temp,
-                        inner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp)
         maxRelShift = float(cyl.MaxRelativeShift)
 
         # use first ddt during last simulation
