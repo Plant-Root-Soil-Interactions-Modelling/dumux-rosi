@@ -1512,7 +1512,6 @@ class RhizoMappedSegments(Perirhizal):  # pb.MappedPlant):
         if self.numDissolvedSoluteComp > 0:
             qIn_solMucil = np.full(self.numSoluteComp, 0.)
             for jj in range(self.numDissolvedSoluteComp):
-                print('self.numDissolvedSoluteComp', self.numDissolvedSoluteComp, jj)
                 qIn_solMucil[jj] = inner_fluxes_CN[jj] / (2 * np.pi * self.radii[gId] * l)
 
             cyl.setSoluteBotBC(cyl.typeBC, qIn_solMucil)
