@@ -11,7 +11,6 @@ from rosi.helpful import write_file_array, write_file_float
 # import scenario_setup# import setDefault
 import numpy as np
 import matplotlib.pyplot as plt
-import psutil
 from rosi.air_models import AirSegment
 from scipy import sparse
 import scipy.sparse.linalg as LA
