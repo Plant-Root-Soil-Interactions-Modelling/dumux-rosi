@@ -1,8 +1,6 @@
 
 import plantbox as pb
-import plantbox.functional.xylem_flux as xylem_flux
 import sys
-from plantbox.functional.xylem_flux import XylemFluxPython
 from rosi.richards_no_mpi_flat import RichardsNoMPIFlatWrapper as RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
 from rosi.fv.fv_grid import *
 import rosi.fv.fv_richards as rich  # local pure Python cylindrical models
