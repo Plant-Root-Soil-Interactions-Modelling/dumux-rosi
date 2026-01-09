@@ -325,7 +325,7 @@ def XcGrowth(scenarioData):
         if doExudation:
             exudateData.computeExudateFlow(rs_age, dt)    
             print('Q_Exud_cuml', exudateData.Q_Exud_cumul)
-            print('sum tot C Conent', sum(s.getTotCContent()))
+            print('sum tot C Content', sum(s.getTotCContent()))
             
         plantModel.time_plant_cumulS += (timeit.default_timer() - plantModel.time_start_plant)
             
@@ -388,4 +388,4 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'adsorption': args.adsorption, 'decay': args.decay}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 4 10 60 True False False
+    #mpiexec -n 1 python3 mainExudate.py loam 2 3 60 True False False
