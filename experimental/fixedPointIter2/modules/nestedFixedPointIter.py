@@ -229,7 +229,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     if len(Q_Exud_i) > 0: # resize vector if needed
         Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
         Q_mucil_i.resize(len(organTypes), refcheck=False)
-        
+        if sum(Q_Exud_i)>0: 
+            print('TotC', sum(s.getTotCContent()))
+            print('Q_ exud i', sum(Q_Exud_i))
+
         if len(airSegsId) > 0:
             try:
                 # make sure that no exudation in shoot segments or roots aboveground

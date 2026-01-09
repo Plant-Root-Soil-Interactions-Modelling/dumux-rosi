@@ -68,7 +68,8 @@ def XcGrowth(scenarioData):
     doBioChemicalReaction = True
     doDecay_ = scenarioData['decay']
     doSoluteUptake = False # active uptake?
-    noAds = True # stop adsorption?
+    doAds_ = scenarioData['adsorption']
+    # noAds = True # stop adsorption?
     doPhloemFlow = False
     doExudation = True #prescribed exudation for every root segment 
     doPhotosynthesis = False # photosynthesis-Transpiration (True) or just xylem flow (False)?
@@ -98,11 +99,22 @@ def XcGrowth(scenarioData):
     else: 
         doDecay = False
         
+    if doAds_ == "True": 
+        doAds = True
+    else: 
+        doAds = False
+        
     if ifexu == "True":
-        if doDecay:
-            results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay/"
+        if doAds: 
+            if doDecay:
+                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay_withsorption/"
+            else: 
+                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay_withsorption/"
         else: 
-            results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay/"
+            if doDecay:
+                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay_nosorption/"
+            else: 
+                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay_nosorption/"
     else: 
         results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_noexu/"
 
@@ -118,7 +130,7 @@ def XcGrowth(scenarioData):
     s = scenario_setup.create_soil_model(simMax,res,
                                          results_dir = results_dir,
                                          soil_=soil_type,
-                                         noAds = noAds, 
+                                         doAds = doAds, 
                                          doSoluteFlow = doSoluteFlow, 
                                          doBioChemicalReaction = doBioChemicalReaction,
                                          doDecay = doDecay,
@@ -312,6 +324,8 @@ def XcGrowth(scenarioData):
             
         if doExudation:
             exudateData.computeExudateFlow(rs_age, dt)    
+            print('Q_Exud_cuml', exudateData.Q_Exud_cumul)
+            print('sum tot C Conent', sum(s.getTotCContent()))
             
         plantModel.time_plant_cumulS += (timeit.default_timer() - plantModel.time_start_plant)
             
@@ -322,8 +336,10 @@ def XcGrowth(scenarioData):
             exudateData.bcastData()
 
         if (rank == 0):
-            #printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
-            printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
+            if doPhloemFlow:
+                printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
+            elif doExudation:
+                printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
             
         if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
@@ -337,7 +353,9 @@ def XcGrowth(scenarioData):
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
-            
+
+            printData.map_exudates(perirhizalModel.ms, plantModel, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], perirhizalModel, int(rs_age*10))
+
     """ wrap up """
     
     
@@ -358,15 +376,16 @@ if __name__ == "__main__":
     parser.add_argument('simInit', type = str, help = 'whatever, must be smaller than simMax')
     parser.add_argument('simMax', type = str, help = 'whatever, must be larger than simInit')
     parser.add_argument('exudate', type = str, help = 'True or False')
+    parser.add_argument('adsorption', type = str, help = 'True or False')
     parser.add_argument('decay', type = str, help = 'True or False')
 
     args = parser.parse_args()
     
-    name = args.soil_type + "_" + args.res + "_" + args.simInit+ "_" + args.simMax+'_'+args.exudate + "_" + args.decay
+    name = args.soil_type + "_" + args.res + "_" + args.simInit+ "_" + args.simMax+'_'+args.exudate + "_" + args.adsorption + "_" + args.decay
     print()
     print(name, "\n")
     
-    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'decay': args.decay}
+    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'adsorption': args.adsorption, 'decay': args.decay}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 5 10 60 True True
+    #mpiexec -n 1 python3 mainExudate.py loam 4 10 60 True False False

@@ -217,7 +217,7 @@ def setupDir(results_dir):
     """if results directory already exists, make it empty"""
 
     if rank == 0:
-        for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/","fpit2/", "fpit2/cyl_val/"]:
+        for extraText in ["","cyl_val/","printData/", "vtpvti/", "fpit/","fpit2/", "fpit2/cyl_val/", "exu_arrays/"]:
             if not os.path.exists(results_dir+extraText):
                 os.makedirs(results_dir+extraText)
             else:

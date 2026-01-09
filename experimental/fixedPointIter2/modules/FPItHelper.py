@@ -26,6 +26,7 @@ def storeOldMassData1d(perirhizalModel):
     # each solute for each cyl.
     perirhizalModel.soil_solute1d_eachCylechSolBefore = perirhizalModel.getTotCContentAll(doSum = False, reOrder = True)
     
+    
     if rank ==0:
 
         cellIds= perirhizalModel.getCellIds()
@@ -335,10 +336,6 @@ class fixedPointIterationHelper():
                     proposed_outer_sol_fluxes[jj] = perirhizalModel.splitSoilVals(soilVals=outer_R_bc_sol[jj] / dt, 
                                                     seg_values=self.compContent[jj]/rhizoWAfter_eachCyl4splitVals, dt = dt,
                                                     seg_volume= rhizoWAfter_eachCyl4splitVals.copy(), isWater = False)#mol/day
-
-                    
-                
-                
                 
         else:
             proposed_outer_fluxes = None

@@ -167,7 +167,7 @@ def printDiff1d3d(perirhizalModel, s):
         raise Exception
 
     if not os.path.isfile(results_dir+'exud.csv'):
-        write_file_array('exud', np.array(['Exud_tot', 'Exud_liq', 'Exud_ads', 'Exud_ads_soil', 'Exud_ads_roots', 'Exud_decay']), directory_ =results_dir, fileType = '.csv' )
+        write_file_array('exud', np.array(['Exud_tot','Exud_liq', 'Exud_ads', 'Exud_ads_soil', 'Exud_ads_roots', 'Exud_decay']), directory_ =results_dir, fileType = '.csv' )
     write_file_array('exud', np.array([Exud_tot, Exud_liq, Exud_ads, Exud_ads_soil, Exud_ads_roots, Exud_decay]), directory_ =results_dir, fileType = '.csv' )
     
     
@@ -257,20 +257,6 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
                                                  abs(sum(plantModel.outputFlux))]), 
                          directory_ =results_dir, fileType = '.csv') #not cumulative
     elif perirhizalModel.doExudation:
-        # print(round(plantModel.Qlight *1e6),"mumol m-2 s-1")
-        # print("Error in Suc_balance:\n\tabs (mmol) {:5.2e}\trel (-) {:5.2e}".format(phloemDataStorage.error_st_abs,
-                                                                    # phloemDataStorage.error_st_rel))
-        # print("Error in photos:\n\tabs (cm3/day) {:5.2e}".format(abs(sum(plantModel.outputFlux))))
-        # print("C_ST (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e} at {:d} segs \tmax  {:5.2e}".format(np.mean(phloemDataStorage.C_ST), min(phloemDataStorage.C_ST),
-                                                                                                  # len(np.where(phloemDataStorage.C_ST == min(phloemDataStorage.C_ST) )[0]), max(phloemDataStorage.C_ST)))        
-        # print("C_me (mol ml-1):\n\tmean {:.2e}\tmin  {:5.2e}\tmax  {:5.2e}".format(np.mean(phloemDataStorage.C_meso), min(phloemDataStorage.C_meso), max(phloemDataStorage.C_meso)))        
-        # print('Q_X (mol Suc): \n\tST   {:.2e}\tmeso {:5.2e}\tin   {:5.2e}'.format(sum(phloemDataStorage.Q_ST), sum(phloemDataStorage.Q_meso), phloemDataStorage.Q_in))
-        # print('\tRm   {:.2e}\tGr   {:.2e}\tExud {:5.2e}'.format(sum(phloemDataStorage.Q_Rm), sum(phloemDataStorage.Q_Gr), sum(phloemDataStorage.Q_Exud)))
-
-        # if min(phloemDataStorage.C_ST) < 0.0:
-            # print("min(C_ST) < 0.0", min(phloemDataStorage.C_ST),np.mean(phloemDataStorage.C_ST),max(phloemDataStorage.C_ST))
-            # raise Exception
-
         tiproots, tipstems, tipleaves = plantModel.get_organ_segments_tips()
         write_file_array("root_segments_tips",tiproots, 
                          directory_ =results_dir)
@@ -434,7 +420,23 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
     if rank == 0:
         print('did VTP print in file',results_dir+"vtpvti/plantAt"+ str(vtpindx) )
         
-        
+def map_exudates(rs, r, minB, maxB, perirhizalModel, rs_age ): 
+    #map exudates to a 1mm soil grid 
+    nx = int(maxB[0]-minB[0] / 0.1); 
+    ny = int(maxB[1]-minB[1] / 0.1);
+    nz = int(maxB[2]-minB[2] / 0.1);
+    X = np.linspace(minB[0] / 2, maxB[0] / 2, nx)
+    Y = np.linspace(minB[1] / 2, maxB[1] / 2, ny)
+    Z = np.linspace(minB[2], 0, nz)
+    XX, YY, ZZ = np.meshgrid(X,Y,Z, indexing='ij')
+    segments = r.rs.segments
+    nodes = r.rs.nodes
+    conc = perirhizalModel.map_cylinders_solute(segments, nodes, XX,YY,ZZ) # mol C/cm3 W
+    
+    results_dir = perirhizalModel.results_dir
+    print(results_dir + "exu_arrays/"+str(rs_age)+".npy")
+    np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
+  
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):
     print('the solute content changed',rank, cyl.gId,'nc_content',nc_content,nc_content_new,'vols',
                           cyl_cell_volumes,'newWatMol',newWatMol,'nc_molFr',nc_molFr)

@@ -16,16 +16,18 @@ from scenario_setup import setDefault
 import numpy as np
 import matplotlib.pyplot as plt
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size(); size = comm.Get_size()
-#import psutil
 from air_modelsPlant import AirSegment
 from scipy import sparse
 import scipy.sparse.linalg as LA
 import helpfull
 import numbers 
 from scipy.interpolate import PchipInterpolator,  CubicSpline
+from scipy.interpolate import griddata as gd
 import pandas as pd
 from plantbox import Perirhizal
 import FPItHelper
+from scipy.linalg import norm
+from scipy.interpolate import griddata as gd
 
 class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     """
@@ -2344,3 +2346,54 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     def gather(self,x, dtype = np.float64, doMap = True):
         return self._map(self._flat0(comm.gather(x, root=0)),dtype, doMap)
 
+
+    def map_cylinders_solute(self, segments, nodes, XX,YY,ZZ):
+        """ maps cylinders to soil grid """
+
+        shape = np.shape(XX)
+        conc = np.zeros((shape))
+        
+        dummy = 1
+        for i, cyl in enumerate(self.cyls):
+            if not isinstance(cyl, AirSegment) : 
+                    
+                R_ = cyl.getDofCoordinates()
+                vv_ = (cyl.getSolution(1)* self.molarDensityWat_m3/1e6) # mol C/cm3 W
+                
+                p0 = np.array(nodes[segments[i].x])
+                p1 = np.array(nodes[segments[i].y])
+                
+                v = p1 - p0
+                mag = norm(v)
+                v = v / mag
+                not_v = np.array([1, 0, 0])
+                if (v == not_v).all():
+                    not_v = np.array([0, 1, 0])
+                n1 = np.cross(v, not_v)
+                n1 /= norm(n1)
+                n2 = np.cross(v, n1)
+                t = np.linspace(0, mag, 20)
+                theta = np.linspace(0, 2 * np.pi, 20)
+                t, theta = np.meshgrid(t, theta)
+                
+                x = []
+                y = []
+                z = []
+                vv = []
+                
+                for j in range(0,len(R_)):
+                    R = R_[j]
+                    X, Y, Z = [p0[k] + v[k] * t + R * np.sin(theta) * n1[k] + R * np.cos(theta) * n2[k] for k in [0, 1, 2]]
+                    x.extend(X.flatten())
+                    y.extend(Y.flatten())
+                    z.extend(Z.flatten())
+                    vv.extend(np.ones((len(X.flatten())))*vv_[j])
+
+                # interpolate "data.v" on new grid "inter_mesh"
+                V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+                V[np.isnan(V)] = 0
+                V = np.array(V.reshape(shape))
+                conc = conc+V
+                print('cyl '+str(dummy)+' of ' + str(len(self.cyls)-len(self.airSegs))+ ' is finished!')
+                dummy = dummy+1
+        return conc

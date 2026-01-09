@@ -45,13 +45,7 @@ def getBiochemParam(s,soil_type):
     s.vmax_decay = 7.32e-5 #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
     s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
-    if s.noAds:
-        s.CSSmax = 0.
-        s.alpha = 0.
-        s.css1Function = 0
-        s.kads = 1e-100
-        s.kdes = 1
-    else:
+    if s.doAds:
         kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
         kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         k_clay_silt = {}
@@ -72,6 +66,12 @@ def getBiochemParam(s,soil_type):
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
         s.CSSmax = CSSmax_ # mol C/cm3 bulk soil
         #s.CSSmax = s.Qmmax * s.bulkDensity_m3 / 1e6 # mol OC/mol soil * [mol soil/m3] * [m3/cm3] =  mol/cm3
+    else: 
+        s.CSSmax = 0.
+        s.alpha = 0.
+        s.css1Function = 0
+        s.kads = 1e-100
+        s.kdes = 1
     
     s.css1Function = 5 # current adsorption function implemented.
 
@@ -338,13 +338,13 @@ def setSoilParam(s):
 
 def create_soil_model3D(  results_dir ,
                         p_mean_ = -100,paramIndx =0,
-                     noAds = False, ICcc = None, doSoluteFlow = True):
+                     doAds = True, ICcc = None, doSoluteFlow = True):
     return create_soil_model(results_dir,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
 def create_soil_model(simMax, res, results_dir , soil_='loam',
-                     noAds = False, ICcc = None, doSoluteFlow = True,
+                     doAds = True, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, doDecay=True, 
                      MaxRelativeShift = 1e-8):
     """
@@ -374,7 +374,8 @@ def create_soil_model(simMax, res, results_dir , soil_='loam',
     cell_number = soilTextureAndShape['cell_number']
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
-    s.noAds = noAds # no adsorption?
+    s.doAds = doAds
+    # s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
     s.doBioChemicalReaction = doBioChemicalReaction
     s.doDecay = doDecay
