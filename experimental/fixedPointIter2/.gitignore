@@ -1,5 +1,4 @@
 *.npz
 *.npy
-scripts/results/*
 not_used/
 plots/not_used/
