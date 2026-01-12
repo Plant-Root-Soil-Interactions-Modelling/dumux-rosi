@@ -1613,7 +1613,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     def get_inner_heads_RS(self):#        
         """ matric potential at the root surface interface [cm]"""
         rsx = np.array([
-            cyl.getInnerHead() for cyl in self.cyls
+            cyl.getInnerHead() if not isinstance(cyl, AirSegment) else -15000 for cyl in self.cyls
         ])  # [cm] (in richards.py, then richards_cyl.hh) 
         
         inner_heads= self.gather( rsx)#_flat0(comm)) #self._map(# gathers and maps correctly
