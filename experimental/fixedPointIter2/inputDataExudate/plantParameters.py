@@ -26,10 +26,12 @@ def init_conductivities(r, skr = 1., skx = 1.):
     #kr00 = np.array([[0., 0.]])  # artificial shoot
     #kx00 = np.array([[0., 1.e3]])  # artificial shoot
     
-    kr00 = np.array([[-1e4, 0.]])  # artificial shoot
-    kx00 = np.array([[0., 0.000864]])  # artificial shoot
-    kr001 = np.minimum(skr * kr00[:, 1], 1.)
-    kx001 = np.minimum(skx * kx00[:, 1], 1.)
+    # kr00 = np.array([[-1e4, 0.]])  # artificial shoot
+    # kx00 = np.array([[0., 0.000864]])  # artificial shoot
+    # kr001 = np.minimum(skr * kr00[:, 1], 1.)
+    # kx001 = np.minimum(skx * kx00[:, 1], 1.)
+    
+    #artificial shoot does not seem to be needed? 
 
     kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [8., 0.000181], [10, 0.0000648], [18, 0.0000648], [25, 0.0000173], [300, 0.0000173]])
     kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 0.000181], [10., 0.000181], [16, 0.0000173], [300, 0.0000173]])
@@ -40,13 +42,17 @@ def init_conductivities(r, skr = 1., skx = 1.):
     kr01 = np.minimum(skr * kr0[:, 1], 1.)
     kr11 = np.minimum(skr * kr1[:, 1], 1.)
     
-    r.setKr([kr001, kr01, kr11, kr11, kr01, kr01],
-                  [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    # r.setKr([kr001, kr01, kr11, kr11, kr01, kr01],
+                  # [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKr([kr01, kr11, kr11, kr01, kr01],
+                  [kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
     kx01 = np.minimum(skx * kx0[:, 1], 1.)
     kx11 = np.minimum(skx * kx1[:, 1], 1.)
-    
-    r.setKx([kx001, kx01, kx11, kx11, kx01, kx01],
-                  [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
+
+    r.setKx([kx01, kx11, kx11, kx01, kx01],
+                  [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])    
+    # r.setKx([kx001, kx01, kx11, kx11, kx01, kx01],
+                  # [kx00[:, 0], kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])
 
 
     return r
