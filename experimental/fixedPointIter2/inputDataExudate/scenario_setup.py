@@ -70,7 +70,7 @@ def getBiochemParam(s,soil_type):
         s.CSSmax = 0.
         s.alpha = 0.
         s.css1Function = 0
-        s.kads = 1e-100
+        s.kads = 1
         s.kdes = 1
     
     s.css1Function = 5 # current adsorption function implemented.
@@ -139,7 +139,8 @@ def getCSWfromC_total(s, C_total, theta):
     d = s.kdes
     Cmax = s.CSSmax
     Ct = C_total
-    
+    if (a == 0) or (Cmax == 0): # no adsorption
+        return C_total/theta
     # Coefficients for the quadratic equation: A*C^2 + B*C + C0 = 0
     A = theta * a
     B = -a * Ct + theta * d + a * Cmax
@@ -148,14 +149,28 @@ def getCSWfromC_total(s, C_total, theta):
     discriminant = B**2 - 4 * A * C0
     
     if isinstance(discriminant, numbers.Number):
-        if discriminant < 0:
+        if mindiscriminant < 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+        if A == 0:
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
     else:
         if min(discriminant) < 0:
-            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")            
+        if min(abs(A)) == 0:
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
+            
+    csw = (-B + discriminant**0.5) / (2 * A)
+    css = getCSS(s,csw)
+    if C_total != 0:
+        error = abs(C_total -csw *theta - css )
+        if ((error/C_total*100 > 0.1)) and (error > 1e-16):
+            print('issue getCSWfromC_total_within',
+                  'error',abs(C_total -csw *theta - css )/C_total*100,
+                  'Ctotal',C_total,'csw',csw ,'theta',theta , 'css',css )
+            raise Exception
             
     # Only the positive root is physically meaningful
-    return (-B + discriminant**0.5) / (2 * A)
+    return csw
 
 def setIC3D(s, soil_type, ICcc = None):
     return setIC(s, soil_type, ICcc)
