@@ -149,7 +149,7 @@ def getCSWfromC_total(s, C_total, theta):
     discriminant = B**2 - 4 * A * C0
     
     if isinstance(discriminant, numbers.Number):
-        if mindiscriminant < 0:
+        if discriminant < 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
         if A == 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
