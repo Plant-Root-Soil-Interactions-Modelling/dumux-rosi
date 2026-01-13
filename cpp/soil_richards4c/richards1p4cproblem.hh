@@ -236,7 +236,7 @@ public:
 			// k_sorp = k_sorp * m3_2_cm3;//mol/cm3 water to mol/m3 water 
 		// }
 		// if(css1Function == 9)
-		kads = getParam<double>("Soil.kads", kads)  /(24.*60.*60.);//[cm3/mol/d] => [m3/mol/s] or [1/d] => [1/s] 
+		kads = getParam<double>("Soil.kads", kads)  /(24.*60.*60.);//[cm3/mol/d] => [cm3/mol/s] or [1/d] => [1/s] 
          if(css1Function == 9)
          {
              kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 

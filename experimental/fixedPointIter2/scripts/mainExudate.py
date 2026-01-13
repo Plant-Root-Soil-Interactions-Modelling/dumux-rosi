@@ -229,21 +229,13 @@ def XcGrowth(scenarioData):
 
         _maxDiff1d3dCW_relbefore = perirhizalModel.maxDiff1d3dCW_rel
         _maxDiff1d3dCW_absbefore = perirhizalModel.maxDiff1d3dCW_abs
-        print('exudateData.Q_Exud_cumulDd', exudateData.Q_Exud_cumul, sum(exudateData.Q_Exud_i_seg), 'totC3dAfter',perirhizalModel.totC3dAfter,'totC3dBefore', perirhizalModel.totC3dBefore,
-             'perirhizalModel.rhizoTotCAfter',perirhizalModel.rhizoTotCAfter ,'allDiff1d3dCW_abs[2]', perirhizalModel.allDiff1d3dCW_abs[2],'\n\n')
-        print('source diff',perirhizalModel.totC3dAfter_eachVoxeleachComp[1][perirhizalModel.cellWithRoots], perirhizalModel.soil_solute1d_perVoxelAfter[1])
+        
         perirhizalModel.update() # update shape data in the rhizosphere model
-        print("check1d3dDiff error", 
-              'self.maxDiff1d3dCW_rel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel,
-              'self.maxDiff1d3dCW_abs',_maxDiff1d3dCW_absbefore, perirhizalModel.maxDiff1d3dCW_abs)
-        #print('increase sum(exudateData.Q_Exud_i_seg)')
-        #exudateData.Q_Exud_i_seg *= 1e9
-        print('exudateData.Q_Exud_cumulDd', exudateData.Q_Exud_cumul, sum(exudateData.Q_Exud_i_seg), 'totC3dAfter',perirhizalModel.totC3dAfter,'totC3dBefore', perirhizalModel.totC3dBefore,
-             'perirhizalModel.rhizoTotCAfter',perirhizalModel.rhizoTotCAfter,'allDiff1d3dCW_abs[2]', perirhizalModel.allDiff1d3dCW_abs[2],'\n\n' )
-        print('source diff',perirhizalModel.totC3dAfter_eachVoxeleachComp[1][perirhizalModel.cellWithRoots], perirhizalModel.soil_solute1d_perVoxelAfter[1])
+        
+        # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
             raise Exception
-        nnn += 1
+            
         
         if start: # for first loop, do extra printing to have initial error
             #fpit_Helper

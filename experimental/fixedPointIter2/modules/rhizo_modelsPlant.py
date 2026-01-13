@@ -630,7 +630,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # growth changes csw and therefore css1
         # so need to reset soilModel accordingly
         FPItHelper.storeNewMassData1d(self)
-        print("ignore updateCSS1AfterRSGrowth")
+        print("TODO: Add manual fix of concentration at each time step")
         #self.updateCSS1AfterRSGrowth(cellIds)  
         FPItHelper.storeNewMassData3d(self.soilModel,self)
         self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d) 
@@ -1290,6 +1290,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         if isDissolved:
                             if verbose:
                                 print('getCSWfromC_total_in molKonzNew[0]',molKonzNew[0])
+                             
                             ctotal = molKonzNew[nComp -1]
                             #molKonzNew[nComp -1] /= theta_new
                             #np.array([ self.soilModel.getCSWfromC_total(self.soilModel, 
