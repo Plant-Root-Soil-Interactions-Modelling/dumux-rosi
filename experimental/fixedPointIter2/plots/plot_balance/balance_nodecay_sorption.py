@@ -112,7 +112,7 @@ plt.plot(x_sim, exud_in, '.', label = 'prescribed incoming\n cumulative plant ex
 plt.plot(x_sim, exud_out[:len(x_sim)],label = 'Exud_tot + Exud_decay')
 plt.plot(x_sim, df['Exud_ads'].loc[:].values[:len(x_sim)],  label = 'Exud_sorbed')
 plt.plot(x_sim,  df['Exud_liq'].loc[:].values[:len(x_sim)],  label = 'Exud_liq')
-plt.plot(x_direct,y_direct*dt*1e6, label = 'direct calculation')
+plt.plot(x_direct,y_direct*dt, label = 'direct calculation')
 plt.legend()
 plt.title('no decay, sorption')
 plt.xlabel('Time (d)')
@@ -120,3 +120,4 @@ plt.xlim(0,dt*(len(exud_in))*1.1)
 plt.ylim(0,max( df['Exud_tot'].loc[:].values[:len(x_sim)])*1.1)
 plt.ylabel('Exudate content in soil domain (mol)', x = 0.05)
 plt.show()
+
