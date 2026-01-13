@@ -465,6 +465,7 @@ public:
             return CSSmax * CSW/(CSW+k_sorp);
         }
         if(css1Function == 9){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
+        if(css1Function == 5){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
     }
@@ -1071,7 +1072,7 @@ public:
         double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) ; // mol C / m3 scv zone 2
 		double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
 		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
-        double dtCSS2 = computeDtCSS2( C_S_W, CSS2);
+        double dtCSS2 =  computeDtCSS2( C_S_W, CSS2);
 		//[mol solute / m3 scv/s] 
 		if (doDecay)
 		{

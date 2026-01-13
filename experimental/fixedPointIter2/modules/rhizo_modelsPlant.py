@@ -631,7 +631,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # so need to reset soilModel accordingly
         FPItHelper.storeNewMassData1d(self)
         print("TODO: Add manual fix of concentration at each time step")
-        #self.updateCSS1AfterRSGrowth(cellIds)  
+        if self.soilModel.css1Function == 5 :
+            self.updateCSS1AfterRSGrowth(cellIds)  
         FPItHelper.storeNewMassData3d(self.soilModel,self)
         self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d) 
         
@@ -1224,17 +1225,23 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 volWatNew = theta_new *volNew
                 molKonzNew = np.full(molKonzOld.shape, 0.)
                 molFrNew = np.full(molKonzOld.shape, 0.)
-                #css1_Konz_old = cyl.getTotCContent_each()[1]/volOld # add  adsorption:C_S^s in mol
+                css1_Konz_old =  cyl.getCss1() #cyl.getTotCContent_each()[1]/volOld # add  adsorption:C_S^s in mol
+                numComp = self.numComp
+                if self.soilModel.css1Function == 5:
+                    numComp = 2
+                    
                 for nComp in range(1, self.numComp):
                     isDissolved = (nComp <= self.numDissolvedSoluteComp)
                     if isDissolved: # cm3 phase
                         molKonzOld[nComp -1] *= theta_old # to go from C_S^l in mol/cm3 wat to mol/cm3 scv
+                        if self.soilModel.css1Function == 5:
+                            molKonzOld[nComp -1] += css1_Konz_old
 
                     if ((molKonzOld[nComp -1] != 0.).any()) or (konzLeftOver[nComp -1]*deltaVol > 0.):
                         gradientOld = (molKonzOld[nComp -1][1:] - molKonzOld[nComp -1][:-1])   
                         gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
                         cOld = sum(molKonzOld[nComp -1] * volOld  )      
-                        assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
+                        #assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
                         
                         try:
                             try:
@@ -1290,11 +1297,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         if isDissolved:
                             if verbose:
                                 print('getCSWfromC_total_in molKonzNew[0]',molKonzNew[0])
-                             
+                              
                             ctotal = molKonzNew[nComp -1]
-                            #molKonzNew[nComp -1] /= theta_new
-                            #np.array([ self.soilModel.getCSWfromC_total(self.soilModel, 
-                            #ctotal[ii], theta_new[ii], False) for ii in range(len(theta_new))])# from C_S^l + C_S^s in mol/cm3 scv to C_S^l in mol/cm3 wat
+                            # from C_S^l + C_S^s in mol/cm3 scv to C_S^l in mol/cm3 scv
+                            molKonzNew[nComp -1] = np.array([ self.soilModel.getCSWfromC_total(self.soilModel, 
+                                                                                               ctotal[ii], theta_new[ii], False) for ii in range(len(theta_new))]) * theta_new
                             '''
                             molKonzNew[nComp] = ctotal - molKonzNew[nComp -1] * theta_new # get CSS1
                             if verbose:
@@ -1306,7 +1313,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     else:
                         molKonzNew[nComp -1] = molKonzOld[nComp -1]
                 
-                molFrNew = [molKonzNew[nc] / (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))]# go from concentration to mol fraction    
+                molFrNew = [molKonzNew[nc] / (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))]# go from concentration to mol fraction 
                 molFrNew[:self.numDissolvedSoluteComp] /= theta_new
                 # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
@@ -1322,7 +1329,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                          )
                 '''
                 if ( (molKonzNew.sum(axis=0)*volNew).sum()>0.  ):
-                    assert abs((molKonzNew.sum(axis=0)*volNew).sum() - self.cyls[lId].getTotCContent_each().sum(axis=1).sum())/(molKonzNew.sum(axis=0)*volNew).sum() < 0.01
+                    if ( self.soilModel.css1Function == 9) :
+                        assert abs((molKonzNew.sum(axis=0)*volNew).sum() - self.cyls[lId].getTotCContent_each().sum(axis=1).sum())/(molKonzNew.sum(axis=0)*volNew).sum() < 0.01
+                    if ( self.soilModel.css1Function == 5) :
+                        assert abs((molKonzNew.sum(axis=0)*volNew).sum() - self.cyls[lId].getTotCContent_each()[0].sum())/(molKonzNew.sum(axis=0)*volNew).sum() < 0.01
                                                             
                 
                 
@@ -1554,6 +1564,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
+                cyl.kads=self.soilModel.kads #[cm3/mol/d]
+                cyl.kdes = self.soilModel.kdes #[1/d]            
+                cyl.CSSmax = self.soilModel.CSSmax #[mol/cm3 scv zone 1] or mol
                 
                 cyl.setParameter("Soil.vmax_decay", str(self.soilModel.vmax_decay)) #mol C / m^3 scv / s
                 cyl.setParameter("Soil.km_decay", str(self.soilModel.km_decay)) #mol C / m^3 scv
@@ -2071,7 +2084,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
-        
+        cOld =  cyl.getTotCContent_each().sum(1)
         while redoSolve:
         
             try:
@@ -2213,6 +2226,29 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                   'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
                    cyl.getCellVolumes()))
 
+        def getCSSatEq(s, CSW):
+            """ @return concentration of adsobed carbon in the soil
+                according to @param CSW [mol C / cm3 water], the concentration
+                of small solutes in the soil water
+                @param: s the dumux soil object
+            """
+            return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) #kd*CSW
+        
+        '''
+        print(cyl.gId,'effect solve per seg','old',cOld,'new', cyl.getTotCContent_each().sum(1),'influxes',inner_fluxes_real[1:], 'outfluxes',outer_fluxes_solMucil_temp ,'dt',dt)
+        css1_th = np.array([getCSSatEq(cyl, cyl.getConcentration(1)[i]) for i in range(len(cyl.getCss1()))])
+        print('getCss1',cyl.getCss1(), css1_th)
+        print('err',cyl.getTotCContent_each().sum(1).sum() - cOld.sum() - (inner_fluxes_real[1:].sum() - outer_fluxes_solMucil_temp.sum())* dt)
+        print('err',cyl.getTotCContent_each()[0].sum() + (css1_th * cyl.getCellVolumes()).sum() - cOld.sum() - (inner_fluxes_real[1:].sum() - outer_fluxes_solMucil_temp.sum())* dt)
+        if( cyl.getTotCContent_each().sum(1).sum() > 0.):
+            print('getTotCContent_each',cyl.getTotCContent_each())
+            print('getCellVolumes',cyl.getCellVolumes())
+            print('theta',cyl.getWaterContent())
+            print('solution2',cyl.getSolution(2))
+            print('conz1',cyl.getConcentration(1))
+            raise Exception
+        '''
+            
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
     def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, 

@@ -73,7 +73,7 @@ def getBiochemParam(s,soil_type):
         s.kads = 1
         s.kdes = 1
     
-    s.css1Function = 9 # PDE adsorption
+    s.css1Function = 9 # 5: instantaneous, 9: PDE adsorption
 
     assert (( s.css1Function == 5) or ( s.css1Function == 9))
 
@@ -205,7 +205,7 @@ def setIC(s, soil_type, ICcc = None):
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           0.#s.CSS_init *unitConversion*addedVar
+                           s.CSS_init *unitConversion*addedVar
                            ])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc)
@@ -483,7 +483,7 @@ def setupOther(s, soil_type, simMax):
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
-    #s.getCSWfromC_total = getCSWfromC_total
+    s.getCSWfromC_total = getCSWfromC_total
     return s
 
 
