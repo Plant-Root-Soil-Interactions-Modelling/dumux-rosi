@@ -70,10 +70,10 @@ def getBiochemParam(s,soil_type):
         s.CSSmax = 0.
         s.alpha = 0.
         s.css1Function = 0
-        s.kads = 1e-100
+        s.kads = 1
         s.kdes = 1
     
-    s.css1Function = 5 # current adsorption function implemented.
+    s.css1Function = 9 # PDE adsorption
 
 
 
@@ -112,15 +112,27 @@ def setBiochemParam(s):
     return s
 
     
-def getCSS(s, CSW):
+def getCSSatEq(s, CSW):
     """ @return concentration of adsobed carbon in the soil
         according to @param CSW [mol C / cm3 water], the concentration
         of small solutes in the soil water
         @param: s the dumux soil object
     """
     return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) #kd*CSW
+
+'''
+Ct =  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) + CSW * theta
+(Ct -  CSW * theta)(s.kads * CSW + s.kdes) = s.kads * CSW * s.CSSmax
+Ct * s.kads * CSW + Ct * s.kdes - CSW * theta * s.kads * CSW - CSW * theta *  s.kdes - s.kads * CSW * s.CSSmax = 0
+ - CSW * theta * s.kads * CSW - CSW *  - s.kads * CSW * s.CSSmax = 0
+(Ct * s.kdes) + CSW (Ct * s.kads - theta *  s.kdes -  s.kads * s.CSSmax) -  CSW**2 * (theta * s.kads) = 0
+
+if no ads: (Ct * s.kdes) = CSW * theta *  s.kdes
+
+
+'''
     
-def getCSWfromC_total(s, C_total, theta):
+def getCSWfromC_total__(s, C_total, theta, verbose):
     """
     Compute the dissolved concentration C_SW (mol/cm3 water)
     from total concentration C_total (mol/cm3 soil),
@@ -139,6 +151,8 @@ def getCSWfromC_total(s, C_total, theta):
     d = s.kdes
     Cmax = s.CSSmax
     Ct = C_total
+    if (a == 0) or (Cmax == 0): # no adsorption
+        return C_total/theta
     
     # Coefficients for the quadratic equation: A*C^2 + B*C + C0 = 0
     A = theta * a
@@ -153,8 +167,18 @@ def getCSWfromC_total(s, C_total, theta):
     else:
         if min(discriminant) < 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
-            
+    if verbose:
+        print('getCSWfromC_total_within',A,B, C0,'discriminant',discriminant,'root', (-B + discriminant**0.5) / (2 * A) )
     # Only the positive root is physically meaningful
+    csw = (-B + discriminant**0.5) / (2 * A)
+    css = getCSS(s,csw)
+    if C_total != 0:
+        error = abs(C_total -csw *theta - css )
+        if ((error/C_total*100 > 0.1)) and (error > 1e-16):
+            print('issue getCSWfromC_total_within',
+                  'error',abs(C_total -csw *theta - css )/C_total*100,
+                  'Ctotal',C_total,'csw',csw ,'theta',theta , 'css',css )
+            raise Exception
     return (-B + discriminant**0.5) / (2 * A)
 
 def setIC3D(s, soil_type, ICcc = None):
@@ -174,7 +198,7 @@ def setIC(s, soil_type, ICcc = None):
         C_L = 0
 
         # concentraiton of adsobed C_S
-        s.CSS_init  = getCSS(s, C_S) #mol C/ cm3 scv
+        s.CSS_init  = getCSSatEq(s, C_S) #mol C/ cm3 scv
         
             
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
@@ -459,7 +483,7 @@ def setupOther(s, soil_type, simMax):
     # initial soil water and solute content
     cell_volumes = s.getCellVolumes()  # cm3
     s.buWSoilInit = sum(np.multiply(np.array(s.getWaterContent()), cell_volumes)) # cm3 water
-    s.getCSWfromC_total = getCSWfromC_total
+    #s.getCSWfromC_total = getCSWfromC_total
     return s
 
 

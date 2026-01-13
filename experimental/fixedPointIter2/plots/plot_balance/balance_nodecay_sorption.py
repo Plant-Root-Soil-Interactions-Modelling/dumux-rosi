@@ -70,7 +70,7 @@ dt = 20/60/24 #d
 params = ['Exud_tot', 'Exud_liq', 'Exud_ads', 'Exud_decay']
 linst = ['-', '--', ':', '-.']
 
-scenario = 'loam_2_exu_nodecay_nosorption'
+scenario = 'loam_2_exu_nodecay_withsorption'
 df = pd.read_csv(path2file2+"/"+scenario+"/exud.csv")
 
 exud_in = []
@@ -103,14 +103,20 @@ exud_out = df['Exud_tot'].loc[:].values+df['Exud_decay'].loc[:].values  #mol
 print('exu_tot')
 print('exud_in',exud_in)
 print('exud_out[:len(x_sim)]',exud_out[:len(x_sim)])
-print( df['Exud_tot'].loc[:].values,df['Exud_decay'].loc[:].values)
-print('y_direct',y_direct)
+print('Exud_tot', df['Exud_tot'].loc[:].values,'Exud_decay',df['Exud_decay'].loc[:].values)
+print('Exud_ads', df['Exud_ads'].loc[:].values,'Exud_liq',df['Exud_liq'].loc[:].values)
+print('diff', df['Exud_tot'].loc[:].values - df['Exud_ads'].loc[:].values - df['Exud_liq'].loc[:].values)
+print('y_direct',y_direct*dt)
 
 plt.plot(x_sim, exud_in, '.', label = 'prescribed incoming\n cumulative plant exudation') 
 plt.plot(x_sim, exud_out[:len(x_sim)], '.', label = 'Exud_tot + Exud_decay')
-plt.plot(x_direct,y_direct*dt, label = 'direct calculation')
+plt.plot(x_sim, df['Exud_ads'].loc[:].values[:len(x_sim)], '.', label = 'Exud_sorbed')
+plt.plot(x_sim,  df['Exud_liq'].loc[:].values[:len(x_sim)], '.', label = 'Exud_liq')
+plt.plot(x_direct,y_direct*dt*1e6, label = 'direct calculation')
 plt.legend()
-plt.title('no decay, no sorption')
+plt.title('no decay, sorption')
 plt.xlabel('Time (d)')
+plt.xlim(0,0.5)
+plt.ylim(0,max( df['Exud_tot'].loc[:].values)*1.1)
 plt.ylabel('Exudate content in soil domain (mol)', x = 0.05)
 plt.show()

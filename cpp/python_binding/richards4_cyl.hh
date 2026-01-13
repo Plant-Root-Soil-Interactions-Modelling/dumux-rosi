@@ -30,14 +30,14 @@ class Richards4Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
         return volumes;
     }
     
-	void setComputeDtCSS2(const std::function<double(double,double,double)>& s)
+	void setComputeDtCSS2(const std::function<double(double,double)>& s)
     {
         this->problem->computeDtCSS2 = s;
     }
     
-	double computeDtCSS2(double CSS1, double CSW, double CSS2)
+	double computeDtCSS2(double CSW, double CSS2)
     {
-        return this->problem->computeDtCSS2(CSS1, CSW, CSS2);
+        return this->problem->computeDtCSS2( CSW, CSS2);
     }
     
 	double computeInitCSS2(double CSS1, double CSW)

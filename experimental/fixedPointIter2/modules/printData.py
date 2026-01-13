@@ -156,11 +156,13 @@ def printDiff1d3d(perirhizalModel, s):
     scv_water = np.array(s.getWaterVolumes()) #cm^3 water per cell    
     
     Exud_tot = np.sum(np.array(s.getTotCContent()).flatten()) #mol / scv 
-    Exud_liq = np.sum(np.array(s.getSolution(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) #mol/m^3 --> mol/cm^3 W-->mol/ scv) 
-    Exud_ads = np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
+    Exud_liq = np.sum(np.array(s.getTotCContent_each()[0]).flatten()) #np.sum(np.array(s.getSolution(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) #mol/m^3 --> mol/cm^3 W-->mol/ scv) 
+    Exud_ads =np.sum(np.array(s.getTotCContent_each()[1]).flatten()) # np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
     Exud_ads_soil = np.sum(np.array(s.getCss1()).flatten()*scv) #mol /scv
     Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
-    Exud_decay = np.sum(np.array(s.getReactions(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
+    
+    # decay == reactions on solute1 - adsorption 
+    Exud_decay = np.sum( (np.array((s.getReactions(1)).flatten()) + np.array((s.getReactions(2)).flatten()) ) * scv ) # mol/cm3 * perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
     
     if not (np.around((Exud_ads+Exud_liq),5) == np.around(Exud_tot,5)):
         print('issue exudate balance')
