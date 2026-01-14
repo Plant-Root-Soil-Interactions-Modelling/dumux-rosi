@@ -201,6 +201,7 @@ def XcGrowth(scenarioData):
     printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
                             datas=[], datasName=[],initPrint=True)
     
+    nnn = 0
     while rs_age < simMax:
 
         rs_age += dt
@@ -225,8 +226,16 @@ def XcGrowth(scenarioData):
                 printData.printPlantShape(perirhizalModel.ms,plantModel, results_dir)
             else:
                 printData.printRSShape(perirhizalModel.ms,plantModel, results_dir)
-            
+
+        _maxDiff1d3dCW_relbefore = perirhizalModel.maxDiff1d3dCW_rel
+        _maxDiff1d3dCW_absbefore = perirhizalModel.maxDiff1d3dCW_abs
+        
         perirhizalModel.update() # update shape data in the rhizosphere model
+        
+        # check that the update worked as it should have
+        if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
+            raise Exception
+            
         
         if start: # for first loop, do extra printing to have initial error
             #fpit_Helper
@@ -262,6 +271,7 @@ def XcGrowth(scenarioData):
                           exudateData.Q_Mucil_i_seg]
             else:
                 Q_plant_=[[],[]]
+
                 
             net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
                                                     plantModel, 
@@ -389,3 +399,4 @@ if __name__ == "__main__":
     XcGrowth(scenarioData)
    
     #mpiexec -n 1 python3 mainExudate.py loam 2 3 60 True False False
+    #mpiexec -n 1 python3 mainExudate.py loam 2 3 60 True True False

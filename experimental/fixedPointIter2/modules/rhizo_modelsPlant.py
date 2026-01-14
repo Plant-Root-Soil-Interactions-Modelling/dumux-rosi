@@ -125,6 +125,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.maxdiff1d3dCurrant = np.inf
         self.sumDiff1d3dCW_absOld = np.full(self.numComp, 0.)
         self.sumDiff1d3dCW_relOld = np.full(self.numComp, 0.)
+        
+        cellIds = self.getCellIds()
+        self.allDiff1d3dCW_rel = np.full((self.numComp,len(cellIds)), 0.)
+        self.allDiff1d3dCW_abs = np.full((self.numComp,len(cellIds)), 0.)
+        
         self.diff1d3dCurrant_rel = 0.
         self.diff1d3dCurrant = np.inf
         self.solve_gave_up = False
@@ -134,7 +139,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.errC1ds = 1000.
         
         self.soil_water3dAfter_old = 0 # 
+        self.totC3dBefore = 0.
+        self.totC3dAfter = 0.
+        self.rhizoTotCAfter = 0.
         self.totC3dAfter_eachVoxeleachComp_old = 0 # colute content [mol]
+        self.totC3dAfter_eachVoxeleachComp = self.soilModel.getTotCContent_each()
+        self.soil_solute1d_perVoxelAfter = np.array([[] for _ in range(self.numComp)], dtype=object)
         self.rhizoWAfter_eachCyl_old = np.array([]) # water content in 1d models at the end of the time step
         self.rhizoWAfter_eachCyl = np.array([]) #cm3 water per 1d model
         self.rhizoTotCAfter_eachCyl_old = np.array([]) # solute content in 1d models at the end of the time step
@@ -469,7 +479,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         cellIds = self.getCellIds()
         
         wat_total = self.soilModel.getWaterContent()  # m3/m3 #self.soilWatVol_old
-        mol_total = np.array([self.soilModel.getContent(ncomp) for ncomp in range(1, self.numComp)]) 
+        mol_total = self.soilModel.getTotCContent_each()#
 
         # update the shape only of air segments and rhizoseg with almost same shape
 
@@ -507,7 +517,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             else:
                 phaseMol = None
 
-            # in mol/mol wat or mol/mol bulk soil
+            # in mol/mol wat or mol/mol bulk soil, mol/cm3 soil
             molFr_leftover, conc_leftover = self.getMolFrAndConcLeftover(c_content_leftover, # mol C
                                                               phaseMol,# mol wat or mol mineral soil
                                                               volLeftOver,# mol/molscv or mol/cm3 scv
@@ -541,13 +551,42 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             for i, cyl in enumerate(self.cyls):
                 if not isinstance(cyl, AirSegment) :
                     try:
+                        verbose_update = False
+                        if False:#((self.cyls[i].getTotCContent_each().sum(axis=1).sum() > 0) or (sum( conc_leftover[self.seg2cell[cyl.gId]]) > 0.)):
+                            print(i, 'cyl.gId_before',cyl.gId, 'cyl.getContent(1)',sum(self.cyls[i].getContent(1)),
+                                  'getTotCContent_each',self.cyls[i].getTotCContent_each().sum(axis=1),
+                                 'ctotOld', self.cyls[i].getTotCContent_each().sum(axis=1).sum(),
+                              'theta_leftover',theta_leftover[self.seg2cell[cyl.gId]], 
+                              'conc_leftover', conc_leftover[self.seg2cell[cyl.gId]],'volumes', self.cyls[i].CellVolumes.sum())
+                            verbose_update = True
+                        volOld = self.cyls[i].CellVolumes.sum()
+                        ctotOld = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
                         self.updateOld(i, cyl,smaller = False, 
                                        thetaLeftOver = theta_leftover[self.seg2cell[cyl.gId]],
-                                       konzLeftOver = conc_leftover[self.seg2cell[cyl.gId]])
+                                       konzLeftOver = conc_leftover[self.seg2cell[cyl.gId]], verbose = verbose_update)
+                        volNew = self.cyls[i].CellVolumes.sum()
+                        if False:#((self.cyls[i].getTotCContent_each().sum(axis=1).sum() > 0) or (sum( conc_leftover[self.seg2cell[cyl.gId]]) > 0.)):
+                            print(i,'cyl.gId_after',cyl.gId, self.cyls[i].gId, 'cyl.getContent',sum(self.cyls[i].getContent(1)),self.cyls[i].getTotCContent_each().sum(axis=1),
+                              'volumes', self.cyls[i].CellVolumes.sum())
+                            deltaVol = volNew - volOld
+                            ctotNew = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                            if(abs((ctotNew - ctotOld -  sum(conc_leftover[self.seg2cell[cyl.gId]]) * deltaVol)/ctotNew) > 0.1):
+                                print("error update of C",'ctotNew',ctotNew, 'ctotOld',ctotOld,
+                                      conc_leftover[self.seg2cell[cyl.gId]] , deltaVol, 
+                                     'ctoadd',sum(conc_leftover[self.seg2cell[cyl.gId]]) * deltaVol)
+                                raise Exception
+                            
 
                     except:
-                        print('error when creating smaller cylB',i, cyl.gId,
-                              theta_leftover[self.seg2cell[cyl.gId]],conc_leftover[self.seg2cell[cyl.gId]] )
+                        if False:#((self.cyls[i].getTotCContent_each().sum(axis=1).sum() > 0) or (sum( conc_leftover[self.seg2cell[cyl.gId]]) > 0.)):
+                            print(i,'cyl.gId_after',cyl.gId, self.cyls[i].gId, 'cyl.getContent',sum(self.cyls[i].getContent(1)),self.cyls[i].getTotCContent_each().sum(axis=1),
+                              'volumes', self.cyls[i].CellVolumes.sum())
+                            deltaVol = volNew - volOld
+                            ctotNew = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                            if(abs((ctotNew - ctotOld -  sum(conc_leftover[self.seg2cell[cyl.gId]]) * deltaVol)/ctotNew) > 0.1):
+                                print("error update of C",'ctotNew',ctotNew, 'ctotOld',ctotOld,
+                                      conc_leftover[self.seg2cell[cyl.gId]] , deltaVol, 
+                                     'ctoadd',sum(conc_leftover[self.seg2cell[cyl.gId]]) * deltaVol)
                         raise Exception
 
 
@@ -591,7 +630,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         # growth changes csw and therefore css1
         # so need to reset soilModel accordingly
         FPItHelper.storeNewMassData1d(self)
-        self.updateCSS1AfterRSGrowth(cellIds)  
+        print("TODO: Add manual fix of concentration at each time step")
+        if self.soilModel.css1Function == 5 :
+            self.updateCSS1AfterRSGrowth(cellIds)  
         FPItHelper.storeNewMassData3d(self.soilModel,self)
         self.check1d3dDiff(diff1d3dCW_abs_lim = maxlim1d3d) 
         
@@ -634,11 +675,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         '''        
         cswFr3d = self.soilModel.getSolution(1) # mol/mol water
         css2Fr3d = self.soilModel.getSolution(2) # mol/mol soil
-        # mol wat = cm3 W * [mol wat/m3 wat] * m3/cm3
+        
         if rank == 0:
+            # mol wat = cm3 W * [mol wat/m3 wat] * m3/cm3
             watMol = self.soil_W1d_perVoxelAfter*(self.soilModel.molarDensityWat_m3*1e-6)
+            # mol soil = cm3 scv * [mol soil/m3 scv] * m3/cm3
+            soilMol = self.soilModel.CellVolumes[cellsWithRoot]*self.bulkDensity_m3*1e-6
             cswFr1d = self.soil_solute1d_perVoxelAfter[0]/watMol
-            css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/watMol
+            css1Fr1d = self.soil_solute1d_perVoxelAfter[1]/soilMol
             cswFr3d[cellsWithRoot] = cswFr1d#[cellsWithRoot]
             css2Fr3d[cellsWithRoot] = css1Fr1d#[cellsWithRoot]
         else:
@@ -648,8 +692,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         css2Fr3d = comm.bcast(css2Fr3d, root = 0)
         self.soilModel.base.setSolution(cswFr3d,1)
         self.soilModel.base.setSolution(css2Fr3d,2)
-        #print('self.soilModel.getSolution(1)',self.soilModel.getSolution(1))
-        #print('self.soilModel.getSolution(2)',self.soilModel.getSolution(2))
+        print('updateCSS1AfterRSGrowth.soilModel.getSolution(1)',self.soilModel.getSolution(1)[cellsWithRoot],cswFr1d)
+        print('updateCSS1AfterRSGrowth.soilModel.getSolution(2)',self.soilModel.getSolution(2)[cellsWithRoot],css1Fr1d)
+        print('updateCSS1AfterRSGrowth.soilModel.getTotCContent_each()',self.soilModel.getTotCContent_each()[0][self.cellWithRoots],
+              self.soilModel.getTotCContent_each()[1][self.cellWithRoots])
         #print('cellsWithRoot',cellsWithRoot)
         #if sum(self.soilModel.getSolution(1)) != 0.:
         #    raise Exception
@@ -991,7 +1037,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 raise Exception
 
         # Verbose initial information
-        print_verbose('isWater', isWater, 'update_concentration error', 'totContent', totContent, 'gradient', gradient,'volumes', volumes, 'changeRatio', changeRatio)
+        print_verbose('isWater', isWater, 'update_concentration', 'totContent', totContent, 'gradient', gradient,'volumes', volumes, 'changeRatio', changeRatio)
 
         # Create and solve concentration matrix
         matrix_size = self.NC - 1
@@ -1149,18 +1195,14 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('theta_old',repr(theta_old),repr(changeRatio), repr(volNew),repr(volOld) )
                     print('points',repr(points),repr(oldPoints))
                     raise Exception
-                if verbose :
-                    print('changeRatioW ', changeRatioW, wOld, thetaLeftOver,deltaVol, maxVal, minVal)
-                    print('sum(maxVal*volNew)/wOld)',sum(maxVal*volNew)/wOld, sum(minVal*volNew)/wOld)
-                    print('theta_old',repr(theta_old),repr(changeRatio), repr(volNew),repr(volOld) )
-                    print('points',repr(points),repr(oldPoints))
+                    
                 try:
                     try:
                         # get theta for each cell
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
                                                              changeRatio=changeRatioW, 
                                                          gradient =gradientNew, volumes = volNew,isWater = True,
-                                                            verbose = verbose)
+                                                            verbose = False)
                     except:
                         print('1st faile of update_concentration for water, try again, try again with verbose = True. rank', rank)
                         theta_new = self.update_concentration(totContent = wOld*changeRatioW + max(thetaLeftOver*deltaVol,0.),
@@ -1176,55 +1218,61 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
                     print('\t',gId,"changeRatio",changeRatio, changeRatioW)    
                     print('\t',gId,"newHead", newHead ,theta_new)
-                    raise Exception
-                if verbose:
-                    print('\t',gId,"x_old",theta_old* volOld,volOld )
-                    print('\t',gId,"xnew", theta_new* volNew,volNew )
-                    print('\t',gId,"newHead", newHead )
-                    print('\t',gId,"points",oldPoints, points,centersNew)
-                    print('\t',gId,"gradient",gradientOld, gradientNew)
-                    print('\t',gId,"theta",theta_new, theta_old)
-                    print('\t',gId,"vg param", self.vg_soil.theta_R, self.vg_soil.theta_S,self.theta_wilting_point)   
-                    print('\t',gId,"changeRatio",changeRatio, changeRatioW)   
+                    raise Exception 
                     
                 ## new contents:  
                 molKonzOld =np.array( [np.array(cyl.getConcentration(nC+1)) for nC in range(self.soilModel.numSoluteComp)]) #mol/cm3 
                 volWatNew = theta_new *volNew
-                molKonzNew = []
-                molFrNew = []
+                molKonzNew = np.full(molKonzOld.shape, 0.)
+                molFrNew = np.full(molKonzOld.shape, 0.)
+                css1_Konz_old =  cyl.getCss1() #cyl.getTotCContent_each()[1]/volOld # add  adsorption:C_S^s in mol
+                numComp = self.numComp
+                if self.soilModel.css1Function == 5:
+                    numComp = 2
+                    
                 for nComp in range(1, self.numComp):
                     isDissolved = (nComp <= self.numDissolvedSoluteComp)
-                    if (molKonzOld[nComp -1] != 0.).any():
-                        if isDissolved: # cm3 phase
-                            molKonzOld[nComp -1] *= theta_old # to go from C_S^l in mol/cm3 wat to mol/cm3 scv
-                            if nComp == 1:
-                                molKonzOld[nComp -1] += cyl.getCss1() # add linear adsorption: C_S^l + C_S^s in mol/cm3 scv
+                    if isDissolved: # cm3 phase
+                        molKonzOld[nComp -1] *= theta_old # to go from C_S^l in mol/cm3 wat to mol/cm3 scv
+                        if self.soilModel.css1Function == 5:
+                            molKonzOld[nComp -1] += css1_Konz_old
 
-
+                    if ((molKonzOld[nComp -1] != 0.).any()) or (konzLeftOver[nComp -1]*deltaVol > 0.):
                         gradientOld = (molKonzOld[nComp -1][1:] - molKonzOld[nComp -1][:-1])   
                         gradientNew = self.interAndExtraPolation(points[1:-1],oldPoints[1:-1], gradientOld)
-                        cOld = sum(molKonzOld[nComp -1] * volOld  )                            
-                                
-                        if nComp == 1:
-                            assert abs(cOld - sum(cyl.getCss1()*volOld) - sum(cyl.getContent(nComp) ))< 1e-13
-                        else:
-                            assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
+                        cOld = sum(molKonzOld[nComp -1] * volOld  )      
+                        #assert abs(cOld - sum(cyl.getContent(nComp)))< 1e-13
                         
                         try:
                             try:
                                 #get mole fraction for each cell
-                                molKonzNew.append(
-                                    self.update_concentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                molKonzNew[nComp -1] = self.update_concentration(totContent = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                       volumes = volNew,isWater = False, verbose = False))                             
+                                       volumes = volNew,isWater = False, verbose = False)  
+                                cNewObj = cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.)
+                                cNewObt = sum(molKonzNew[nComp -1]*volNew)  
+                                if cNewObt > 0:
+                                    if(abs((cNewObj- cNewObt)/cNewObt)*100.>0.1):
+                                        print("error update_concentration, cOld:",cOld,'changeRatio',changeRatio , 'getContent',sum(cyl.getContent(nComp) ),
+                                              'konzLeftOver[nComp -1]',konzLeftOver[nComp -1],'deltaVol',deltaVol,'cNewObj',
+                                              cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                              'molKonzNew',molKonzNew[nComp -1],'cNewObt',sum(molKonzNew[nComp -1]*volNew)
+                                             )
+                                        raise Exception
                             except:
                                 print('1st faile of update_concentration for comp no',nComp,', try again, try again with verbose = True. rank', rank,
                                      'max(konzLeftOver[nComp -1]*deltaVol,0.)',max(konzLeftOver[nComp -1]*deltaVol,0.))
-                                molKonzNew.append(
-                                    self.update_concentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                molKonzNew[nComp -1] = self.update_concentration(totContent = cOld*changeRatio + max(konzLeftOver[nComp -1]*deltaVol,0.),
                                                                          changeRatio=changeRatio,gradient =gradientNew, 
-                                        volumes = volNew,isWater = False, verbose = True)) 
-                                        
+                                        volumes = volNew,isWater = False, verbose = True)
+
+                            if verbose:
+                                print("update C, cOld:",cOld,'changeRatio',changeRatio, 'getContent',sum(cyl.getContent(nComp) ),
+                                      'konzLeftOver[nComp -1]',konzLeftOver[nComp -1],'deltaVol',deltaVol,'cNewObj',
+                                      cOld*changeRatio+ max(konzLeftOver[nComp -1]*deltaVol,0.),
+                                      'molKonzNew',molKonzNew[nComp -1],'cNewObt',sum(molKonzNew[nComp -1]*volNew)
+                                     )
+                                
                         except:
                             print('update_concentration failed','cOld',cOld, 
                                   'changeRatio',changeRatio,'gradientNew',gradientNew,'molKonzOld',molKonzOld[nComp -1] ,
@@ -1233,7 +1281,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                             raise Exception
                         # final checks that the content is as expected after the updates
                         try:
-                            assert (abs(sum(molKonzNew[nComp -1]* volNew)- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.)) < 1e-14) or (abs(sum(molKonzNew[nComp -1]* volNew)<1e-14)) or (abs(abs(sum(molKonzNew[nComp -1]* volNew)/ (cOld*changeRatio  + max(konzLeftOver[nComp -1]*deltaVol,0.)))*100 -100) < 1e-5)
+                            assert (abs(sum(molKonzNew[nComp -1]* volNew
+                                           )- cOld*changeRatio - max(konzLeftOver[nComp -1]*deltaVol,0.)
+                                       ) < 1e-14) or (abs(sum(molKonzNew[nComp -1]* volNew)<1e-14)
+                                                     ) or (abs(abs(sum(molKonzNew[nComp -1]* volNew)/ (cOld*changeRatio  + max(konzLeftOver[nComp -1]*deltaVol,0.))
+                                                                  )*100 -100) < 1e-5)
                         except:
                             print('\t',rank,gId,"error",nComp, 'totContent', cOld*changeRatio,'changeRatio',changeRatio,
                                    'added',max(konzLeftOver[nComp -1]*deltaVol,0.),
@@ -1241,18 +1293,46 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                   'sum new content',sum(molKonzNew[nComp -1]* volNew),
                                   'sum old content',sum(molKonzOld[nComp -1] * volOld)  + max(konzLeftOver[nComp -1]*deltaVol,0.))
                             raise Exception
-                            
+                        
                         if isDissolved:
-                            molKonzNew[nComp -1] = self.soilModel.getCSWfromC_total(self.soilModel, molKonzNew[0], theta_new)# from C_S^l + C_S^s in mol/cm3 scv to C_S^l in mol/cm3 wat
+                            if verbose:
+                                print('getCSWfromC_total_in molKonzNew[0]',molKonzNew[0])
+                              
+                            ctotal = molKonzNew[nComp -1]
+                            # from C_S^l + C_S^s in mol/cm3 scv to C_S^l in mol/cm3 scv
+                            molKonzNew[nComp -1] = np.array([ self.soilModel.getCSWfromC_total(self.soilModel, 
+                                                                                               ctotal[ii], theta_new[ii], False) for ii in range(len(theta_new))]) * theta_new
+                            '''
+                            molKonzNew[nComp] = ctotal - molKonzNew[nComp -1] * theta_new # get CSS1
+                            if verbose:
+                                print('getCSWfromC_total_out','konz',molKonzNew[nComp -1],molKonzNew[nComp],theta_new,'konz_sol',(molKonzNew[nComp -1]*theta_new).sum()+molKonzNew[nComp].sum(),ctotal.sum(),
+                                     'totc',(molKonzNew[nComp -1]*theta_new*volNew).sum()+(molKonzNew[nComp]*volNew).sum(),(ctotal*volNew).sum())
+                            assert (abs(ctotal.sum() - (molKonzNew[nComp -1]*theta_new).sum() - molKonzNew[nComp].sum())/ctotal.sum() < 0.01)
+                            '''
+                            
                     else:
-                        molKonzNew.append(molKonzOld[nComp -1])
-                    
-                    molFrNew.append( molKonzNew[nComp -1] / (self.soilModel.phaseDensity(isDissolved)/1e6) )# go from concentration to mol fraction    
+                        molKonzNew[nComp -1] = molKonzOld[nComp -1]
+                
+                molFrNew = [molKonzNew[nc] / (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))]# go from concentration to mol fraction 
+                molFrNew[:self.numDissolvedSoluteComp] /= theta_new
                 # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                             x = newHead,# cm
                                                             cAll = molFrNew, # mol/mol water or mol/mol scv
                                                             Cells = centersNew) # cm
+                '''
+                print('molKonzOld',molKonzOld,'molKonzNew',molKonzNew)
+                print("self.cyls[lId] created :",molKonzNew.sum(axis=0)*volNew,(molKonzNew.sum(axis=0)*volNew).sum(), 'totnew',
+                          self.cyls[lId].getTotCContent_each(),self.cyls[lId].getTotCContent_each().sum(axis=1),
+                      'phaseDensity',[ (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))],
+                      'molFrNew',molFrNew
+                         )
+                '''
+                if ( (molKonzNew.sum(axis=0)*volNew).sum()>0.  ):
+                    if ( self.soilModel.css1Function == 9) :
+                        assert abs((molKonzNew.sum(axis=0)*volNew).sum() - self.cyls[lId].getTotCContent_each().sum(axis=1).sum())/(molKonzNew.sum(axis=0)*volNew).sum() < 0.01
+                    if ( self.soilModel.css1Function == 5) :
+                        assert abs((molKonzNew.sum(axis=0)*volNew).sum() - self.cyls[lId].getTotCContent_each()[0].sum())/(molKonzNew.sum(axis=0)*volNew).sum() < 0.01
                                                             
                 
                 
@@ -1484,6 +1564,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.kads", str(self.soilModel.kads)) #[cm3/mol/d]
                 cyl.setParameter("Soil.kdes", str(self.soilModel.kdes)) #[1/d]            
                 cyl.setParameter("Soil.CSSmax", str(self.soilModel.CSSmax)) #[mol/cm3 scv zone 1] or mol
+                cyl.kads=self.soilModel.kads #[cm3/mol/d]
+                cyl.kdes = self.soilModel.kdes #[1/d]            
+                cyl.CSSmax = self.soilModel.CSSmax #[mol/cm3 scv zone 1] or mol
                 
                 cyl.setParameter("Soil.vmax_decay", str(self.soilModel.vmax_decay)) #mol C / m^3 scv / s
                 cyl.setParameter("Soil.km_decay", str(self.soilModel.km_decay)) #mol C / m^3 scv
@@ -2001,7 +2084,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
-        
+        cOld =  cyl.getTotCContent_each().sum(1)
         while redoSolve:
         
             try:
@@ -2143,8 +2226,29 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                   'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
                    cyl.getCellVolumes()))
 
-
-
+        def getCSSatEq(s, CSW):
+            """ @return concentration of adsobed carbon in the soil
+                according to @param CSW [mol C / cm3 water], the concentration
+                of small solutes in the soil water
+                @param: s the dumux soil object
+            """
+            return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) #kd*CSW
+        
+        '''
+        print(cyl.gId,'effect solve per seg','old',cOld,'new', cyl.getTotCContent_each().sum(1),'influxes',inner_fluxes_real[1:], 'outfluxes',outer_fluxes_solMucil_temp ,'dt',dt)
+        css1_th = np.array([getCSSatEq(cyl, cyl.getConcentration(1)[i]) for i in range(len(cyl.getCss1()))])
+        print('getCss1',cyl.getCss1(), css1_th)
+        print('err',cyl.getTotCContent_each().sum(1).sum() - cOld.sum() - (inner_fluxes_real[1:].sum() - outer_fluxes_solMucil_temp.sum())* dt)
+        print('err',cyl.getTotCContent_each()[0].sum() + (css1_th * cyl.getCellVolumes()).sum() - cOld.sum() - (inner_fluxes_real[1:].sum() - outer_fluxes_solMucil_temp.sum())* dt)
+        if( cyl.getTotCContent_each().sum(1).sum() > 0.):
+            print('getTotCContent_each',cyl.getTotCContent_each())
+            print('getCellVolumes',cyl.getCellVolumes())
+            print('theta',cyl.getWaterContent())
+            print('solution2',cyl.getSolution(2))
+            print('conz1',cyl.getConcentration(1))
+            raise Exception
+        '''
+            
         return inner_fluxes_real[0], outer_fluxes_water_temp, inner_fluxes_real[1:], outer_fluxes_solMucil_temp        
      
     def _adjust_fluxes(self, cyl, dt, inner_fluxes_water_temp, outer_fluxes_water_temp, 

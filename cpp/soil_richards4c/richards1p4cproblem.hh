@@ -220,8 +220,8 @@ public:
 		css1Function = getParam<double>("Soil.css1Function", 0);// 0: no css1 , 1: linear css1
 		CSSmax = getParam<double>("Soil.CSSmax", CSSmax)*m3_2_cm3;//mol/cm3 => [mol/m3]	
 		//alpha = getParam<double>("Soil.alpha", alpha)/(24.*60.*60.);//[d-1] => [s-1]
-		kads = getParam<double>("Soil.kads", kads)  /m3_2_cm3;//[cm3/mol] => [m3/mol] 
-		kdes = getParam<double>("Soil.kdes", kdes);//[-] => [s-1]  
+		//kads = getParam<double>("Soil.kads", kads)  /m3_2_cm3;//[cm3/mol] => [m3/mol] 
+		kdes = getParam<double>("Soil.kdes", kdes)/(24.*60.*60.);//[d-1] => [s-1]         
 		vmax_decay = getParam<double>("Soil.vmax_decay", vmax_decay);//#[mol C / m^3 scv / s]
 		km_decay = getParam<double>("Soil.km_decay", km_decay);//[mol C / m^3 scv] 
 		
@@ -236,9 +236,11 @@ public:
 			// k_sorp = k_sorp * m3_2_cm3;//mol/cm3 water to mol/m3 water 
 		// }
 		// if(css1Function == 9)
-		// {
-		 // kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 
-		// }       
+		kads = getParam<double>("Soil.kads", kads)  /(24.*60.*60.);//[cm3/mol/d] => [cm3/mol/s] or [1/d] => [1/s] 
+         if(css1Function == 9)
+         {
+             kads *= 1/m3_2_cm3;//[cm3/mol/s] / [cm3/m3] => [m3/mol/s] 
+         }      
 
 
 		///
@@ -437,12 +439,46 @@ public:
 			return b_*C_S_W;
 		  case 5:
 			return (kads * C_S_W * CSSmax)/(kads * C_S_W + kdes);
+		  case 3:
+			return 0.;//only pde
+		  case 9:
+			return 0.;//only pde
 		  default:
-			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0 or 1)"+ std::to_string(css1Function));
+			DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0 or 1) "+ std::to_string(css1Function));
 		}
 		return 1.;
 	}
 
+    std::function<double(double,double)> computeDtCSS2 =
+        std::bind(&Richards1P4CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2); 
+        
+    double computeInitCSS2_(double CSS1, double CSW) // mol/m3
+    {
+        if(css1Function == 1){return CSS1;}
+        if(css1Function == 5){return CSS1;}
+        if(css1Function == 3)
+        {
+            if(verbose>1)
+            {
+                std::cout<<"computeInitCSS2_ "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<( CSSmax * CSW/(CSW+k_sorp))<<std::endl;
+            }
+            return CSSmax * CSW/(CSW+k_sorp);
+        }
+        if(css1Function == 9){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
+        if(css1Function == 5){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
+        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        return 0.;
+    }
+    double computeDtCSS2_(double CSW, double CSS2) // mol/m3/s
+    {
+        if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
+        if(css1Function == 5){return 0.;}
+        //if(css1Function == 10){return kads * (CSSmax - CSS2) - kdes * CSS2;}
+        
+        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
+        return 0.;
+    }
+    
 	/*!
 	 * \copydoc FVProblem::initial
 	 *
@@ -1033,17 +1069,21 @@ public:
 						, 0.); //mol C/m3 scv						
 		}
 		
+        double CSS2 = bulkSoilDensity * std::max(massOrMoleFraction(volVars,0, CSS2Idx - numFluidComps, false), 0.) ; // mol C / m3 scv zone 2
+		double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
+		double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;								//mol C/m3 soil water
+        double dtCSS2 =  computeDtCSS2( C_S_W, CSS2);
 		//[mol solute / m3 scv/s] 
 		if (doDecay)
 		{
 			//std::cout<<WorCorN[soluteIdx]<<"WorCorN";
-			q[soluteIdx] += -vmax_decay * WorCorN[soluteIdx]/(km_decay + WorCorN[soluteIdx])*pos0; //0* pos0 ; 
+			q[soluteIdx] += - ( vmax_decay * WorCorN[soluteIdx]/(km_decay + WorCorN[soluteIdx]) + dtCSS2)*pos0; //0* pos0 ; 
 			
 		}else{
 			//std::cout<<"noDecay";
-			q[soluteIdx] += 0* pos0;
+			q[soluteIdx] += -dtCSS2* pos0;
 		}
-		q[CSS2Idx] +=  0 * pos0 ;
+		q[CSS2Idx] +=  dtCSS2 * pos0 ;
 			
 	}
 
@@ -1228,32 +1268,6 @@ public:
 	bool computedCellVolumesCyl = false;
 	std::map<int,int>  faceIdx;
     
-    
-    std::function<double(double,double,double)> computeDtCSS2 =
-        std::bind(&Richards1P4CProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2, std::placeholders::_3); 
-    double computeInitCSS2_(double CSS1, double CSW) // mol/m3
-    {
-        if(css1Function == 1){return CSS1;}
-        if(css1Function == 3)
-        {
-            if(verbose>1)
-            {
-                std::cout<<"computeInitCSS2_ "<<CSSmax<<" "<<CSW<<" "<<k_sorp<<" "<<( CSSmax * CSW/(CSW+k_sorp))<<std::endl;
-            }
-            return CSSmax * CSW/(CSW+k_sorp);
-        }
-        if(css1Function == 9){return (kads * CSW * CSSmax)/(kads * CSW + kdes);}
-        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
-        return 0.;
-    }
-    double computeDtCSS2_(double CSS1, double CSW, double CSS2) // mol/m3/s
-    {
-        if(css1Function == 9){return kads * CSW * (CSSmax - CSS2) - kdes * CSS2;}
-        //if(css1Function == 10){return kads * (CSSmax - CSS2) - kdes * CSS2;}
-        
-        DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
-        return 0.;
-    }
     
 private:
 

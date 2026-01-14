@@ -59,8 +59,8 @@ def getBiochemParam(s,soil_type):
         # [kg/g] * [g/mol] = kg/mol
         kgC_per_mol = (1/1000) * s.molarMassC
         # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
-        s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol
-        s.kdes = kdes * yr_per_d
+        s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol # [cm3/mol/d]
+        s.kdes = kdes * yr_per_d # [1/d]
         s.Qmmax = k_clay_silt[soil_type] * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
@@ -73,9 +73,9 @@ def getBiochemParam(s,soil_type):
         s.kads = 1
         s.kdes = 1
     
-    s.css1Function = 5 # current adsorption function implemented.
+    s.css1Function = 9 # 5: instantaneous, 9: PDE adsorption
 
-
+    assert (( s.css1Function == 5) or ( s.css1Function == 9))
 
     
     
@@ -98,8 +98,8 @@ def setBiochemParam(s):
 
     #sorption
     s.setParameter("Soil.CSSmax", str(s.CSSmax)) #[mol/cm3] 
-    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol]
-    s.setParameter("Soil.kdes", str(s.kdes)) #[-]
+    s.setParameter("Soil.kads", str(s.kads)) #[cm3/mol/d]
+    s.setParameter("Soil.kdes", str(s.kdes))  #[1/d]
     
     
     if s.dimWorld == 3:
@@ -112,15 +112,27 @@ def setBiochemParam(s):
     return s
 
     
-def getCSS(s, CSW):
+def getCSSatEq(s, CSW):
     """ @return concentration of adsobed carbon in the soil
         according to @param CSW [mol C / cm3 water], the concentration
         of small solutes in the soil water
         @param: s the dumux soil object
     """
     return  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) #kd*CSW
+
+'''
+Ct =  (s.kads * CSW * s.CSSmax)/(s.kads * CSW + s.kdes) + CSW * theta
+(Ct -  CSW * theta)(s.kads * CSW + s.kdes) = s.kads * CSW * s.CSSmax
+Ct * s.kads * CSW + Ct * s.kdes - CSW * theta * s.kads * CSW - CSW * theta *  s.kdes - s.kads * CSW * s.CSSmax = 0
+ - CSW * theta * s.kads * CSW - CSW *  - s.kads * CSW * s.CSSmax = 0
+(Ct * s.kdes) + CSW (Ct * s.kads - theta *  s.kdes -  s.kads * s.CSSmax) -  CSW**2 * (theta * s.kads) = 0
+
+if no ads: (Ct * s.kdes) = CSW * theta *  s.kdes
+
+
+'''
     
-def getCSWfromC_total(s, C_total, theta):
+def getCSWfromC_total(s, C_total, theta, verbose):
     """
     Compute the dissolved concentration C_SW (mol/cm3 water)
     from total concentration C_total (mol/cm3 soil),
@@ -139,8 +151,9 @@ def getCSWfromC_total(s, C_total, theta):
     d = s.kdes
     Cmax = s.CSSmax
     Ct = C_total
-    if (a == 0) or (Cmax == 0): # no adsorption
+    if (a == 0) or (Cmax == 0) or (s.css1Function == 9): # no adsorption
         return C_total/theta
+    
     # Coefficients for the quadratic equation: A*C^2 + B*C + C0 = 0
     A = theta * a
     B = -a * Ct + theta * d + a * Cmax
@@ -155,10 +168,10 @@ def getCSWfromC_total(s, C_total, theta):
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
     else:
         if min(discriminant) < 0:
-            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")            
-        if min(abs(A)) == 0:
-            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
-            
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+    if verbose:
+        print('getCSWfromC_total_within',A,B, C0,'discriminant',discriminant,'root', (-B + discriminant**0.5) / (2 * A) )
+    # Only the positive root is physically meaningful
     csw = (-B + discriminant**0.5) / (2 * A)
     css = getCSS(s,csw)
     if C_total != 0:
@@ -168,9 +181,7 @@ def getCSWfromC_total(s, C_total, theta):
                   'error',abs(C_total -csw *theta - css )/C_total*100,
                   'Ctotal',C_total,'csw',csw ,'theta',theta , 'css',css )
             raise Exception
-            
-    # Only the positive root is physically meaningful
-    return csw
+    return (-B + discriminant**0.5) / (2 * A)
 
 def setIC3D(s, soil_type, ICcc = None):
     return setIC(s, soil_type, ICcc)
@@ -189,14 +200,14 @@ def setIC(s, soil_type, ICcc = None):
         C_L = 0
 
         # concentraiton of adsobed C_S
-        s.CSS_init  = getCSS(s, C_S) #mol C/ cm3 scv
+        s.CSS_init  = getCSSatEq(s, C_S) #mol C/ cm3 scv
         
             
         unitConversion = 1.0e6 # mol/cm3  => mol/m3 
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           0. 
+                           s.CSS_init *unitConversion*addedVar
                            ])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc)

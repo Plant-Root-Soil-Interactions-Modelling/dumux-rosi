@@ -243,7 +243,8 @@ class exudateDataStorage():
             Nc_shoot = len(self.perirhizalModel.ms.getShootSegments())
             Q_Exud_i_seg_shoot = np.zeros(Nc_shoot)
             #exud_ = np.full(len(exud[0]),1.)
-            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud) )   #per segment, mol/seg /d
+            print('increase manually exud to micromol')
+            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud) )*dt  #per segment, mol/seg  
             airSegsId = self.perirhizalModel.airSegs
             if len(airSegsId)>0:
                 self.Q_Exud_i_seg[airSegsId] = 0.
