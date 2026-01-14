@@ -191,7 +191,7 @@ class fixedPointIterationHelper():
         # plant-soil solute flow, defined outside of iteration loop
         self.Q_Exud_i = Q_Exud_i
         self.Q_mucil_i = Q_mucil_i
-        self.seg_sol_fluxes = np.array([Q_Exud_i /sim_time, Q_mucil_i/sim_time])# mol/day for segments        
+        self.seg_sol_fluxes = np.array([Q_Exud_i, Q_mucil_i])# mol/day for segments        
         self.sim_time = sim_time
         self.dt = dt
         self.initializeOldData(seg_fluxes, outer_R_bc_wat, outer_R_bc_sol)
@@ -219,10 +219,9 @@ class fixedPointIterationHelper():
         #self.comp2contentOld = perirhizalModel.getContentCyl(idComp=2, doSum = False, reOrder = True) # [mol] mucilage
         
         # matric potential at the segment-exterior interface, i.e. inner values of the (air or soil) cylindric models 
-        if True: #if self.s.doSimpleReaction < 1:
+        if self.s.doSimpleReaction < 1:
             self.rsx_init  = self.perirhizalModel.get_inner_heads(weather=self.perirhizalModel.weatherX) # store value at beginning time step
         else: 
-            # does not account for air segments.
             self.rsx_init  = self.perirhizalModel.get_inner_heads_RS() # ???? what is correct??? from transpiration data?  store value at beginning time step    
         self.rsx_input = self.rsx_init # rsx used as input
         self.rsx_old = self.rsx_input.copy() # rsx used to compute convergence rate
@@ -494,14 +493,14 @@ class fixedPointIterationHelper():
             assert sources_sol_from1d.shape == (self.perirhizalModel.numSoluteComp, self.s.numberOfCellsTot)
             
             # store error
-            self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time
+            self.s.errSoil_source_sol_abs = sum(sources_sol_from1d.flatten()) - (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))
 
             if perirhizalModel.debugMode:
-                print("self.s.errSoil_source_sol_abs",self.s.errSoil_source_sol_abs,"(sum(self.Q_Exud_i) + sum(self.Q_mucil_i))",
-                      (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))," sum(sources_sol_from1d.flatten())*dt", sum(sources_sol_from1d.flatten())*dt)
+                print("self.s.errSoil_source_sol_abs",self.s.errSoil_source_sol_abs,"(sum(self.Q_Exud_i) + sum(self.Q_mucil_i))*dt",
+                      (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))*dt," sum(sources_sol_from1d.flatten())*dt", sum(sources_sol_from1d.flatten())*dt)
             
-            if (sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time != 0.:
-                s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/((sum(self.Q_Exud_i) + sum(self.Q_mucil_i))/self.sim_time)*100)
+            if (sum(self.Q_Exud_i) + sum(self.Q_mucil_i)) != 0.:
+                s.errSoil_source_sol_rel = abs(s.errSoil_source_sol_abs/(sum(self.Q_Exud_i) + sum(self.Q_mucil_i))*100)
             else:
                 s.errSoil_source_sol_rel = np.nan
             self.sources_sol_from1d = sources_sol_from1d
@@ -940,7 +939,7 @@ class fixedPointIterationHelper():
             s.bulkMassErrorWaterSink_abs = self.net_PWU_limited*dt- self.sources_wat_from3d # sink sent to dumux == sink implemented?
 
 
-            s.bulkMassCErrorPlant_abs = abs(perirhizalModel.totC3dAfter - ( perirhizalModel.totC3dBefore + sum(self.Q_Exud_i) + sum(self.Q_mucil_i)))
+            s.bulkMassCErrorPlant_abs = abs(perirhizalModel.totC3dAfter - ( perirhizalModel.totC3dBefore + sum(self.Q_Exud_i)*dt + sum(self.Q_mucil_i)*dt))
             
             if (perirhizalModel.totC3dAfter > 0) and (not perirhizalModel.doSoluteUptake):
                 s.bulkMassCErrorPlant_rel = abs(s.bulkMassCErrorPlant_abs/perirhizalModel.totC3dAfter*100)
@@ -959,7 +958,7 @@ class fixedPointIterationHelper():
             print(f"relative error balance soil 3d (%)?\n\t\tfrom PWU {s.bulkMassErrorWater_rel:.2e}, from PWU-limited {s.bulkMassErrorWater_relLim:.2e},from PCU {s.bulkMassCErrorPlant_rel:.2e}, from 1ds C-change {s.bulkMassCError1ds_rel:.2e}"
                 )
             if perirhizalModel.debugMode:
-                print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i) + sum(self.Q_mucil_i)",sum(self.Q_Exud_i) + sum(self.Q_mucil_i)," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
+                print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i)*dt + sum(self.Q_mucil_i)*dt",sum(self.Q_Exud_i)*dt + sum(self.Q_mucil_i)*dt," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
                 
             ### for each voxel
             s.bulkMassErrorWaterAll_abs = abs(perirhizalModel.soil_water3dAfter - (perirhizalModel.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))

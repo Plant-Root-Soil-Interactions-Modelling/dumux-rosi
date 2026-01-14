@@ -254,8 +254,8 @@ def XcGrowth(scenarioData):
             phloemData.Q_Mucil_cumul += sum(phloemData.Q_Mucil_i_seg)
             
         if perirhizalModel.doExudation: 
-            exudateData.Q_Exud_cumul += sum(exudateData.Q_Exud_i_seg); 
-            exudateData.Q_Mucil_cumul += sum(exudateData.Q_Mucil_i_seg)
+            exudateData.Q_Exud_cumul += sum(exudateData.Q_Exud_i_seg*dt); 
+            exudateData.Q_Mucil_cumul += sum(exudateData.Q_Mucil_i_seg*dt)
 
         perirhizalModel.n_iter, keepGoing = helpfull.resetAndSaveData(perirhizalModel)
         

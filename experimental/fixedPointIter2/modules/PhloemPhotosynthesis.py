@@ -238,7 +238,7 @@ class exudateDataStorage():
                 stopgr = False                 
             
             kexu = self.plantModel.exudation_rates(self.plantModel.exudf, rs_age) #[kg/(m2 day)]
-            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr) # mol/ seg /dt 
+            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr) # mol/ seg /d
 
             Nc_shoot = len(self.perirhizalModel.ms.getShootSegments())
             Q_Exud_i_seg_shoot = np.zeros(Nc_shoot)

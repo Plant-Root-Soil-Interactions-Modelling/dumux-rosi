@@ -57,7 +57,6 @@ def init_conductivities(r, skr = 1., skx = 1.):
 
     return r
     
-    
 def prescribed_exudation(soil_type, ifexu):
     
     times = [0, 42, 63, 98, 154]

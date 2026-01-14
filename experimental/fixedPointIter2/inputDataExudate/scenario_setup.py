@@ -164,6 +164,8 @@ def getCSWfromC_total(s, C_total, theta, verbose):
     if isinstance(discriminant, numbers.Number):
         if discriminant < 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
+        if A == 0:
+            raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (A == 0).")
     else:
         if min(discriminant) < 0:
             raise ValueError("getCSWfromC_total: No real solution exists for the given parameters (discriminant < 0).")
