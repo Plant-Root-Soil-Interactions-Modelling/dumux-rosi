@@ -46,8 +46,8 @@ def getBiochemParam(s,soil_type):
     s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
     if s.doAds:
-        kads = 7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
-        kdes =  1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
+        kads = 1e1 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
+        kdes =  1e3 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
         k_clay_silt[1] = 0.082

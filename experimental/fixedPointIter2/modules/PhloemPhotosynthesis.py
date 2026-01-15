@@ -238,13 +238,13 @@ class exudateDataStorage():
                 stopgr = False                 
             
             kexu = self.plantModel.exudation_rates(self.plantModel.exudf, rs_age) #[kg/(m2 day)]
-            exud = self.plantModel.exudate_fluxes(dt, kexu, stopgr) # mol/ seg /d
+            exud = self.plantModel.exudate_fluxes(kexu, stopgr) # mol/ seg /d
 
             Nc_shoot = len(self.perirhizalModel.ms.getShootSegments())
             Q_Exud_i_seg_shoot = np.zeros(Nc_shoot)
             #exud_ = np.full(len(exud[0]),1.)
             print('increase manually exud to micromol')
-            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud) )*dt  #per segment, mol/seg  
+            self.Q_Exud_i_seg = np.concatenate((Q_Exud_i_seg_shoot, exud))*dt # mol/seg/dt
             airSegsId = self.perirhizalModel.airSegs
             if len(airSegsId)>0:
                 self.Q_Exud_i_seg[airSegsId] = 0.
@@ -265,7 +265,7 @@ class exudateDataStorage():
                 print(self.plantModel.Csoil_node, self.Q_Exud_i_seg,self.Q_Exud)
                 raise Exception
 
-            print("sum exud", sum(self.Q_Exud_i_seg))
+            print("sum exud", sum(self.Q_Exud_i_seg)) #mol/plant/dt
         else:
             self.Q_Exud_i_seg = None
             self.Q_Exud = None

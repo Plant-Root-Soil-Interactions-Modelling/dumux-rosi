@@ -159,7 +159,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
                 write_file_array("N_Q_Ag_dot_innerbis", plantModel.An, directory_ =results_dir)
             else:
                 rootSegs = np.array(perirhizalModel.organTypes) == pb.root
-                plantModel.TranspirationCumul_inner += sum(fpit_Helper.seg_fluxes[rootSegs]) * dt
+                plantModel.TranspirationCumul_inner += max(0,sum(fpit_Helper.seg_fluxes[rootSegs]) * dt) #todo: check if correct 
                 
             write_file_float("N_TranspirationCumul_inner", plantModel.TranspirationCumul_inner, directory_ =results_dir)
         
@@ -167,7 +167,7 @@ def innerLoop(plantModel,rs_age, fpit_Helper, perirhizalModel , sim_time, dt, s)
         return gaveUp, dt_inner, n_iter_inner_max
 
 
-def simulate_const(s, plantModel, sim_time, dt, rs_age, 
+def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age, 
                    Q_plant,
                     perirhizalModel = [],
                     outer_R_bc_sol=[], #mol
@@ -199,6 +199,10 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     cell_volumes = s.getCellVolumes() #cm3    
     N = int(np.ceil(sim_time / dt))  # number of iterations
     
+    # print differences between 1d and 3d soil models
+    # and content in 1d and 3d
+    printData.printDiff1d3d(perirhizalModel, s, dt)    
+    
      
     # max num of iteration needed for the fixed-point iteration loop. used by @see helpfull::suggestNumStepsChange
     n_iter_inner_max = 0  
@@ -225,7 +229,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     ###              flow, 1st guess for iteration loop
     ######
     # get root exudation and mucilage release
-    Q_Exud_i = Q_plant[0].copy(); Q_mucil_i = Q_plant[1].copy() #mol  
+    Q_Exud_i = Q_plant[0].copy(); Q_mucil_i = Q_plant[1].copy() #mol /segment/dt
     if len(Q_Exud_i) > 0: # resize vector if needed
         Q_Exud_i.resize(len(organTypes), refcheck=False) #, refcheck=False for cProfile
         Q_mucil_i.resize(len(organTypes), refcheck=False)
@@ -256,7 +260,7 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
     for Ni in range(N):
 
         rs_age_i_dt = rs_age + Ni * dt  # current simulation time
-        
+
         perirhizalModel.weatherX = weather(simDuration = rs_age_i_dt, dt = dt,
                                         hp =  max([tempnode[2] for tempnode in plantModel.get_nodes()]) /100., #canopy height [m]
                                         #spellData= perirhizalModel.spellData
@@ -462,21 +466,20 @@ def simulate_const(s, plantModel, sim_time, dt, rs_age,
                 datasName = [ ]
                 if rank == 0:   
                     # to check where a specific (problematic) segment is
-                    #is569 = np.array([i for i in range(len(fpit_Helper.rsx_old))]) == 569 
-                    datas = [#is569,
-                             plantModel.psiXyl, 
+                    datas = [plantModel.psiXyl, 
                               fpit_Helper.rsx_old, 
                               np.array(fpit_Helper.seg_fluxes), 
                              fpit_Helper.proposed_outer_fluxes
                             ]
-                    datasName = [ #'is569',
-                                "psiXyl",
+                    datasName = ["psiXyl",
                                  "rsi", "flux_in", 
                                  "flux_out"
                                 ]
                 printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx of vtp plot
                                     perirhizalModel, plantModel,s, perirhizalModel.getSoilTextureAndShape(), 
                                     datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
+                                    
+            
             ###########
             #       leave??
             ##########

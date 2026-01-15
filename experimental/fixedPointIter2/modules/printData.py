@@ -120,7 +120,7 @@ def printRSShape(rs,r, results_dir):
     volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
     write_file_array("volOrg", volOrg, directory_ =results_dir)
     
-def printDiff1d3d(perirhizalModel, s):
+def printDiff1d3d(perirhizalModel, s, dt):
     """print differences between 1d and 3d soil models"""
     results_dir = perirhizalModel.results_dir
     write_file_array("content_diff1d3dabs"+str(0), 
@@ -162,7 +162,7 @@ def printDiff1d3d(perirhizalModel, s):
     Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
     
     # decay == reactions on solute1 - adsorption 
-    Exud_decay = np.sum( (np.array((s.getReactions(1)).flatten()) + np.array((s.getReactions(2)).flatten()) ) * scv ) # mol/cm3 * perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
+    Exud_decay = -1*np.sum( (np.array((s.getReactions(1)).flatten()) + np.array((s.getReactions(2)).flatten()) ) * scv * dt ) # mol/cm3 * perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
     
     if not (np.around((Exud_ads+Exud_liq),5) == np.around(Exud_tot,5)):
         print('issue exudate balance')
@@ -268,9 +268,9 @@ def printOutput(rs_age, perirhizalModel, phloemDataStorage, plantModel):
         write_file_array("Q_Mucil", phloemDataStorage.Q_Mucil, directory_ =results_dir)
         write_file_array("Q_Exud", phloemDataStorage.Q_Exud, directory_ =results_dir) #exudation per segment per time step
         
-        write_file_float("Q_Exud_i", sum(phloemDataStorage.Q_Exud_i_seg), directory_ =results_dir) #exudation at each time step 
+        write_file_float("Q_Exud_i", sum(phloemDataStorage.Q_Exud_i_seg), directory_ =results_dir) #mol/dt/plant, exudation at each time step 
         write_file_float("Q_Mucil_i", sum(phloemDataStorage.Q_Mucil_i_seg), directory_ =results_dir)
-        write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_cumul, directory_ =results_dir) #cumulative exudation of Exud_i
+        write_file_float("Q_Exud_tot", phloemDataStorage.Q_Exud_cumul, directory_ =results_dir) # mol/plant, cumulative exudation of Exud_i
         write_file_float("Q_Mucil_tot", phloemDataStorage.Q_Mucil_cumul, directory_ =results_dir)
         
         write_file_array("psiXyl", plantModel.psiXyl, directory_ =results_dir)
@@ -422,8 +422,8 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
     if rank == 0:
         print('did VTP print in file',results_dir+"vtpvti/plantAt"+ str(vtpindx) )
         
-def map_exudates(rs, r, minB, maxB, perirhizalModel, rs_age ): 
-    #map exudates to a 1mm soil grid 
+def map_exudates_pHead(rs, r, minB, maxB, perirhizalModel, rs_age ): 
+    #map exudates / SWP to a 1mm soil grid 
     nx = int(maxB[0]-minB[0] / 0.1); 
     ny = int(maxB[1]-minB[1] / 0.1);
     nz = int(maxB[2]-minB[2] / 0.1);
@@ -433,11 +433,10 @@ def map_exudates(rs, r, minB, maxB, perirhizalModel, rs_age ):
     XX, YY, ZZ = np.meshgrid(X,Y,Z, indexing='ij')
     segments = r.rs.segments
     nodes = r.rs.nodes
-    conc = perirhizalModel.map_cylinders_solute(segments, nodes, XX,YY,ZZ) # mol C/cm3 W
-    
+    conc, pHead = perirhizalModel.map_cylinders(segments, nodes, XX,YY,ZZ) # mol C/cm3 W, cm
     results_dir = perirhizalModel.results_dir
-    print(results_dir + "exu_arrays/"+str(rs_age)+".npy")
     np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
+    np.save(results_dir + "swp_arrays/day"+str(rs_age)+".npy",pHead)
   
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):
     print('the solute content changed',rank, cyl.gId,'nc_content',nc_content,nc_content_new,'vols',

@@ -55,7 +55,7 @@ def XcGrowth(scenarioData):
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     initsim = int(scenarioData['simInit']) #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
-    dt = 20/60/24
+    dt = 20/60/24 #day
     dt_inner_init =  dt # 1/60/24 #
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
@@ -243,10 +243,7 @@ def XcGrowth(scenarioData):
             FPItHelper.storeNewMassData3d(s,perirhizalModel)
             perirhizalModel.check1d3dDiff( diff1d3dCW_abs_lim = 1e-13) # beginning: should not be any error
             printData.printTimeAndError(perirhizalModel, rs_age)
-            start = False
-        # print differences between 1d and 3d soil models
-        # and content in 1d and 3d
-        printData.printDiff1d3d(perirhizalModel, s)             
+            start = False    
 
         if perirhizalModel.doPhloemFlow:
             # go from current to cumulative exudation and mucilage release
@@ -254,8 +251,8 @@ def XcGrowth(scenarioData):
             phloemData.Q_Mucil_cumul += sum(phloemData.Q_Mucil_i_seg)
             
         if perirhizalModel.doExudation: 
-            exudateData.Q_Exud_cumul += sum(exudateData.Q_Exud_i_seg*dt); 
-            exudateData.Q_Mucil_cumul += sum(exudateData.Q_Mucil_i_seg*dt)
+            exudateData.Q_Exud_cumul += sum(exudateData.Q_Exud_i_seg); #mol/plant
+            exudateData.Q_Mucil_cumul += sum(exudateData.Q_Mucil_i_seg)
 
         perirhizalModel.n_iter, keepGoing = helpfull.resetAndSaveData(perirhizalModel)
         
@@ -268,13 +265,13 @@ def XcGrowth(scenarioData):
                         phloemData.Q_Mucil_i_seg]
             elif perirhizalModel.doExudation:
                 Q_plant_=[exudateData.Q_Exud_i_seg,
-                          exudateData.Q_Mucil_i_seg]
+                          exudateData.Q_Mucil_i_seg] #mol/seg/dt
             else:
                 Q_plant_=[[],[]]
 
                 
             net_sol_flux, net_flux, seg_Wfluxes, real_dt,failedLoop, n_iter_inner_max = fixedPointIter.simulate_const(s,
-                                                    plantModel, 
+                                                    plantModel, initsim,
                                                     sim_time= dt,dt= perirhizalModel.dt_inner, 
                                                     rs_age=rs_age, 
                                                     Q_plant=Q_plant_,
@@ -364,7 +361,7 @@ def XcGrowth(scenarioData):
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
 
-            printData.map_exudates(perirhizalModel.ms, plantModel, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], perirhizalModel, int(rs_age*10))
+            printData.map_exudates_SWP(perirhizalModel.ms, plantModel, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], perirhizalModel, int(rs_age*10))
 
     """ wrap up """
     
@@ -398,5 +395,6 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'adsorption': args.adsorption, 'decay': args.decay}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 2 3 60 True False False
-    #mpiexec -n 1 python3 mainExudate.py loam 2 3 60 True True False
+    #mpiexec -n 1 python3 mainExudate.py loam 2 5 60 True False False
+    #mpiexec -n 1 python3 mainExudate.py loam 2 5 60 True True False
+    #mpiexec -n 1 python3 mainExudate.py loam 2 5 60 True True True

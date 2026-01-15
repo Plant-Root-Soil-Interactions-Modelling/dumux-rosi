@@ -1696,7 +1696,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     def get_inner_heads_RS(self):#        
         """ matric potential at the root surface interface [cm]"""
         rsx = np.array([
-            cyl.getInnerHead() if not isinstance(cyl, AirSegment) else -15000 for cyl in self.cyls
+            cyl.getInnerHead() if not isinstance(cyl, AirSegment) else -100000 for cyl in self.cyls
         ])  # [cm] (in richards.py, then richards_cyl.hh) 
         
         inner_heads= self.gather( rsx)#_flat0(comm)) #self._map(# gathers and maps correctly
@@ -2451,11 +2451,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self._map(self._flat0(comm.gather(x, root=0)),dtype, doMap)
 
 
-    def map_cylinders_solute(self, segments, nodes, XX,YY,ZZ):
+    def map_cylinders(self, segments, nodes, XX,YY,ZZ):
         """ maps cylinders to soil grid """
 
         shape = np.shape(XX)
         conc = np.zeros((shape))
+        swp = np.zeros((shape))
         
         dummy = 1
         for i, cyl in enumerate(self.cyls):
@@ -2463,6 +2464,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     
                 R_ = cyl.getDofCoordinates()
                 vv_ = (cyl.getSolution(1)* self.molarDensityWat_m3/1e6) # mol C/cm3 W
+                ss_ = cyl.getSolutionHead() # cm 
                 
                 p0 = np.array(nodes[segments[i].x])
                 p1 = np.array(nodes[segments[i].y])
@@ -2484,6 +2486,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 y = []
                 z = []
                 vv = []
+                ss = []
                 
                 for j in range(0,len(R_)):
                     R = R_[j]
@@ -2492,12 +2495,19 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     y.extend(Y.flatten())
                     z.extend(Z.flatten())
                     vv.extend(np.ones((len(X.flatten())))*vv_[j])
+                    ss.extend(np.ones((len(X.flatten())))*ss_[j])
 
                 # interpolate "data.v" on new grid "inter_mesh"
                 V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
                 V[np.isnan(V)] = 0
                 V = np.array(V.reshape(shape))
                 conc = conc+V
+                
+                S = gd((x,y,z), ss, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+                S[np.isnan(S)] = 0
+                S = np.array(S.reshape(shape))
+                swp = swp+S
+                
                 print('cyl '+str(dummy)+' of ' + str(len(self.cyls)-len(self.airSegs))+ ' is finished!')
                 dummy = dummy+1
-        return conc
+        return conc, swp
