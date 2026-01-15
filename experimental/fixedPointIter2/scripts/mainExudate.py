@@ -361,7 +361,7 @@ def XcGrowth(scenarioData):
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
 
-            printData.map_exudates_SWP(perirhizalModel.ms, plantModel, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], perirhizalModel, int(rs_age*10))
+            printData.map_exudates_pHead(perirhizalModel.ms, plantModel, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], perirhizalModel, int(rs_age*10))
 
     """ wrap up """
     
