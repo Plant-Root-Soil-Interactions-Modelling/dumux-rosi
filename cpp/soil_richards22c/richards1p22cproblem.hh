@@ -985,7 +985,7 @@ public:
 		//double F_PNU_NO3 = k_N*k_C * (F_PNU_NO3_max * NO3soil_node[cpp_id]/(K_PNU_NO3 + NO3soil_node[cpp_id])+ K2_PNU_NO3* NO3soil_node[cpp_id]);
 					// [mol m-2 s-1] * [mols / molw] * [molw/m3] / ([mol m-3] + [mols / molw] * [molw/m3])
 					flux[i] = F_PNU_NO3_max * std::max(massOrMolFraction,0.)*rhoW/(K_PNU_NO3 + std::max(massOrMolFraction,0.)*rhoW)*pos0;
-					flux[i] += (K2_PNU_NO3 + std::max(massOrMolFraction,0.)*rhoW)*pos0;
+					flux[i] += (K2_PNU_NO3 * std::max(massOrMolFraction,0.)*rhoW)*pos0;
 					if (verbose)
 						{
 							std::cout<<"michaelisMentenNO3, F_PNU_NO3_max: "<<vMax<<" massOrMolFraction "<<
