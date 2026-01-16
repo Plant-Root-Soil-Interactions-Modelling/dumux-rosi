@@ -208,7 +208,7 @@ def setIC(s, soil_type, ICcc = None):
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           C_L *unitConversion*addedVar,
+                           #C_L *unitConversion*addedVar, mucilage, currently not included
                            s.CSS_init *unitConversion*addedVar,
                            0. # decay
                            ])# in mol/m3 water or mol/m3 scv
