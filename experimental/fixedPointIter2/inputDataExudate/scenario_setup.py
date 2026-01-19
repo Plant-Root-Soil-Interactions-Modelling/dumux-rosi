@@ -13,9 +13,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
-from rosi_richards4c_cyl import Richards4CCylFoam # C++ part (Dumux binding)
+from rosi_richards5c_cyl import Richards5CCylFoam as RichardsNCCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from rosi_richards4c import Richards4CSPILU as Richards4CSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards5c import Richards5CSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
@@ -42,6 +42,7 @@ def getBiochemParam(s,soil_type):
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
+    
     s.vmax_decay = 7.32e-5 #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
     s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
@@ -196,8 +197,8 @@ def setIC(s, soil_type, ICcc = None):
     """
     if ICcc is None:
     
-        C_S = 0
-        C_L = 0
+        C_S = 0 # exudates
+        C_L = 0 # mucilage
 
         # concentraiton of adsobed C_S
         s.CSS_init  = getCSSatEq(s, C_S) #mol C/ cm3 scv
@@ -207,7 +208,9 @@ def setIC(s, soil_type, ICcc = None):
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           s.CSS_init *unitConversion*addedVar
+                           #C_L *unitConversion*addedVar, mucilage, currently not included
+                           s.CSS_init *unitConversion*addedVar,
+                           0. # decay
                            ])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc)
@@ -387,7 +390,7 @@ def create_soil_model(simMax, res, results_dir , soil_='loam',
     else:
         soil_type = 1
         
-    s = RichardsWrapper(Richards4CSP())  # water and N solute          
+    s = RichardsWrapper(RichardsNCSP())  # water and N solute          
     s.results_dir = results_dir   
     s.pindx = soil_type
     
@@ -417,6 +420,8 @@ def create_soil_model(simMax, res, results_dir , soil_='loam',
     s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, soil_, simMax)
+    print('s.numSoluteComp',s.numSoluteComp,'numComp',s.numComp,
+            'numFluidComp',s.numFluidComp,'numDissolvedSoluteComp',s.numDissolvedSoluteComp,'\n\n\n')
     
     #if rank == 0:
     #    s.base.printParams()
@@ -503,7 +508,7 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, fname, path, so
     perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                              ms = pb.MappedRootSystem(),
                              limErr1d3dAbs = limErr1d3d, 
-                             RichardsNCCylFoam = Richards4CCylFoam)
+                             RichardsNCCylFoam = RichardsNCCylFoam)
 
     perirhizalModel.ms.setSeed(seed)
     perirhizalModel.ms.readParameters(path + fname)
