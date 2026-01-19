@@ -144,7 +144,7 @@ def storeNewMassData3d(s,perirhizalModel):
     water_content = s.getWaterContent()  # theta per cell [1]
     # 3d soil solute content per solute type and voxel,  (numSoluteComp,numberOfCellsTot)
     perirhizalModel.totC3dAfter_eachVoxeleachComp = s.getTotCContent_each()
-    print('storeNewMassData3d', s.getTotCContent_each()[1][perirhizalModel.cellWithRoots])
+    # print('storeNewMassData3d', s.getTotCContent_each()[1][perirhizalModel.cellWithRoots])
 
     if rank==0:
         perirhizalModel.soil_water3dAfter = np.multiply(water_content, s.CellVolumes)  # water per cell [cm3]

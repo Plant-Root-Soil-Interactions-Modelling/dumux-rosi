@@ -160,11 +160,9 @@ def printDiff1d3d(perirhizalModel, s, dt):
     Exud_ads =np.sum(np.array(s.getTotCContent_each()[1]).flatten()) # np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
     Exud_ads_soil = np.sum(np.array(s.getCss1()).flatten()*scv) #mol /scv
     Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
+    Exud_decay =np.sum(np.array(s.getTotCContent_each()[2]).flatten()) #np.sum(np.array(s.getSolution(3)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) 
     
-    # decay == reactions on solute1 - adsorption 
-    Exud_decay = -1*np.sum( (np.array((s.getReactions(1)).flatten()) + np.array((s.getReactions(2)).flatten()) ) * scv * dt ) # mol/cm3 * perirhizalModel.molarDensityWat_m3/1e6*scv_water) *-1
-    
-    if not (np.around((Exud_ads+Exud_liq),5) == np.around(Exud_tot,5)):
+    if not (np.around((Exud_ads+Exud_liq+Exud_decay),5) == np.around(Exud_tot,5)):
         print('issue exudate balance')
         raise Exception
 
@@ -392,6 +390,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                 filename="vtpvti/soil_rx"+ str(vtpindx),sol_ind =-1,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
+                
         
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):

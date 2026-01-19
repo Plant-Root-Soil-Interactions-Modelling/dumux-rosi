@@ -13,9 +13,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
-from rosi_richards5c_cyl import Richards5CCylFoam as RichardsNCCylFoam # C++ part (Dumux binding)
+from rosi_richards4c_cyl import Richards4CCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from rosi_richards5c import Richards5CSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards4c import Richards4CSPILU as Richards4CSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 
@@ -31,7 +31,6 @@ from PhloemPhotosynthesis import *
 import evapotranspiration as evap
 from scipy import interpolate
 
-
 def getBiochemParam(s,soil_type):    
     """ define TraiRhizo biochemical parameters 
         @param: the dumux soil object
@@ -42,13 +41,12 @@ def getBiochemParam(s,soil_type):
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
-    
     s.vmax_decay = 7.32e-5 #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
     s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
     if s.doAds:
-        kads = 1e1 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
-        kdes =  1e3 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
+        kads = 1e1 #6.62e5 #7.07e+02  #2.86e-04 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3 #1e1
+        kdes =  1e3 #8.76e3 #1.63e+03 #1.67e-01 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3 #1e3
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
         k_clay_silt[1] = 0.082
@@ -197,8 +195,8 @@ def setIC(s, soil_type, ICcc = None):
     """
     if ICcc is None:
     
-        C_S = 0 # exudates
-        C_L = 0 # mucilage
+        C_S = 0
+        C_L = 0
 
         # concentraiton of adsobed C_S
         s.CSS_init  = getCSSatEq(s, C_S) #mol C/ cm3 scv
@@ -208,9 +206,7 @@ def setIC(s, soil_type, ICcc = None):
         addedVar = 1. * float(s.doSoluteFlow) # empirical factor
         s.CSW_init = C_S * unitConversion
         s.ICcc = np.array([C_S *unitConversion*addedVar,
-                           #C_L *unitConversion*addedVar, mucilage, currently not included
-                           s.CSS_init *unitConversion*addedVar,
-                           0. # decay
+                           s.CSS_init *unitConversion*addedVar
                            ])# in mol/m3 water or mol/m3 scv
         if rank == 0:
             print('init s.ICcc', s.ICcc)
@@ -276,7 +272,7 @@ def vg_SPP(i = int(1)):
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
 
-def getSoilTextureAndShape(soil_= "loam", res = 1):  
+def getSoilTextureAndShape(soil_= "loam", res=1):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
@@ -306,7 +302,6 @@ def getSoilTextureAndShape(soil_= "loam", res = 1):
         area = 20 * 45  # cm2 45
     else: 
         print('Wrong resolution chosen') 
-    
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
@@ -390,7 +385,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_='loam',
     else:
         soil_type = 1
         
-    s = RichardsWrapper(RichardsNCSP())  # water and N solute          
+    s = RichardsWrapper(Richards4CSP())  # water and N solute          
     s.results_dir = results_dir   
     s.pindx = soil_type
     
@@ -420,8 +415,6 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_='loam',
     s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
     s = setupOther(s, soil_, initsim, simMax, soilTextureAndShape)
-    print('s.numSoluteComp',s.numSoluteComp,'numComp',s.numComp,
-            'numFluidComp',s.numFluidComp,'numDissolvedSoluteComp',s.numDissolvedSoluteComp,'\n\n\n')
     
     #if rank == 0:
     #    s.base.printParams()
@@ -438,7 +431,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     
     # climate data 
     cell_number = soilTextureAndShape['cell_number']
-    min_b = soilTextureAndShape['min_b']     
+    min_b = soilTextureAndShape['min_b']
     times, net_inf = evap.net_infiltration(soil_type, simMax, soilTextureAndShape['Kc'])
     
     s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step?
@@ -480,7 +473,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     f = interpolate.interp1d([0,10,20,40,60,75,150], h_raw)
     hx = np.arange(0, -min_b[2], -min_b[2]/cell_number[2])
     hy = f(hx)
-    h  = np.flip(hy) #cm  
+    h  = np.flip(hy) #cm
     h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
     h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
     h = h.flatten()
@@ -506,7 +499,6 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-    soilTextureAndShape = getSoilTextureAndShape(soil_type) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
@@ -515,7 +507,7 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     perirhizalModel = RhizoMappedSegments(soilModel = soil_model, 
                              ms = pb.MappedRootSystem(),
                              limErr1d3dAbs = limErr1d3d, 
-                             RichardsNCCylFoam = RichardsNCCylFoam)
+                             RichardsNCCylFoam = Richards4CCylFoam)
 
     perirhizalModel.ms.setSeed(seed)
     perirhizalModel.ms.readParameters(path + fname)

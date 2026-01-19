@@ -92,7 +92,7 @@ def XcGrowth(scenarioData):
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
-    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type)
+    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
     
     if doDecay_ == "True": 
         doDecay = True
@@ -107,16 +107,16 @@ def XcGrowth(scenarioData):
     if ifexu == "True":
         if doAds: 
             if doDecay:
-                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay_withsorption/"
+                results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_exu_withdecay_withsorption/"
             else: 
-                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay_withsorption/"
+                results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_exu_nodecay_withsorption/"
         else: 
             if doDecay:
-                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_withdecay_nosorption/"
+                results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_exu_withdecay_nosorption/"
             else: 
-                results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_exu_nodecay_nosorption/"
+                results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_exu_nodecay_nosorption/"
     else: 
-        results_dir="./results/Exudate/"+soil_type+'_'+str(res)+"_noexu/"
+        results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_noexu/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -127,7 +127,7 @@ def XcGrowth(scenarioData):
                     
     """ initialize """
 
-    s = scenario_setup.create_soil_model(simMax,res,
+    s = scenario_setup.create_soil_model(initsim, simMax,res,
                                          results_dir = results_dir,
                                          soil_=soil_type,
                                          doAds = doAds, 
@@ -140,7 +140,7 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax,ifexu, s, xml_name,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
                                             path, soil_type,
                                             limErr1d3d = 5e-12)  
 
@@ -348,7 +348,7 @@ def XcGrowth(scenarioData):
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
             
-        if int(rs_age *1000)/1000-int(rs_age) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]

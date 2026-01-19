@@ -63,14 +63,14 @@ font = {'size'   : 18}
 plt.rc('font', **font)
 path2file2 = "../../scripts/results/Exudate"
 
-starttime = 5
-endtime = 10
+starttime = 2
+endtime = 5
 g_per_mol = 12.01
 dt = 20/60/24 #d
 params = ['Exud_tot', 'Exud_liq', 'Exud_ads', 'Exud_decay']
 linst = ['-', '--', ':', '-.']
 
-scenario = 'loam_2_exu_nodecay_withsorption'
+scenario = 'day2_loam_2_exu_withdecay_withsorption'
 df = pd.read_csv(path2file2+"/"+scenario+"/exud.csv")
 
 exud_in = [0.]
@@ -99,26 +99,31 @@ num = [0]
 y_direct = np.array([0]+y_direct)
 
 #exudate balance input - output
-exud_out = df['Exud_tot'].loc[:].values+df['Exud_decay'].loc[:].values  #mol
+exud_tot = df['Exud_tot'].loc[:].values #+df['Exud_decay1'].loc[:].values  #mol
+
+
 print('exu_tot')
 print('exud_in',exud_in)
-print('exud_out[:len(x_sim)]',exud_out[:len(x_sim)])
+print('exud_out[:len(x_sim)]',exud_tot[:len(x_sim)])
 print('Exud_tot', df['Exud_tot'].loc[:].values,'Exud_decay',df['Exud_decay'].loc[:].values)
 print('Exud_ads', df['Exud_ads'].loc[:].values,'Exud_liq',df['Exud_liq'].loc[:].values)
 print('diff',max(abs( df['Exud_tot'].loc[:].values - df['Exud_ads'].loc[:].values - df['Exud_liq'].loc[:].values)))
 print('y_direct',y_direct*dt)
 print('lengths',len(exud_in),len(df['Exud_ads'].loc[:].values),len(df['Exud_liq'].loc[:].values),len(df['Exud_tot'].loc[:].values))
+
+
 plt.plot(x_sim-dt+starttime, exud_in, '.', label = 'prescribed incoming\n cumulative plant exudation') 
-plt.plot(x_sim-dt+starttime, exud_out[:len(x_sim)],label = 'Exud_tot')
+plt.plot(x_sim-dt+starttime, exud_tot[:len(x_sim)],label = 'Exud_tot')
 plt.plot(x_sim-dt+starttime, df['Exud_ads'].loc[:].values[:len(x_sim)],  label = 'Exud_sorbed')
 plt.plot(x_sim-dt+starttime,  df['Exud_liq'].loc[:].values[:len(x_sim)],  label = 'Exud_liq')
-plt.plot(x_sim-dt+starttime, -1*df['Exud_decay'].loc[:].values[:len(x_sim)],  label = 'Exud_decay')
+plt.plot(x_sim-dt+starttime, df['Exud_decay'].loc[:].values[:len(x_sim)],  label = 'Exud_decay')
+plt.plot(x_sim-dt+starttime, df['Exud_ads'].loc[:].values[:len(x_sim)]+df['Exud_liq'].loc[:].values[:len(x_sim)]+df['Exud_decay'].loc[:].values[:len(x_sim)],  label = 'Exud_tot_test')
 # plt.plot(x_direct,y_direct, label = 'direct calculation')
 plt.legend()
-plt.title('no decay, sorption')
+plt.title('with decay & sorption')
 plt.xlabel('Time (d)')
 plt.xlim(starttime,dt*(len(exud_in))*1.1+starttime)
-plt.ylim(0,max( df['Exud_tot'].loc[:].values[:len(x_sim)])*1.1)
+plt.ylim(-0.1*max( df['Exud_tot'].loc[:].values[:len(x_sim)]),max( df['Exud_tot'].loc[:].values[:len(x_sim)])*1.1)
 plt.ylabel('Exudate content in soil domain (mol)', x = 0.05)
 plt.show()
 

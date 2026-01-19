@@ -461,7 +461,7 @@ def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age,
 
 
             # for debug
-            if False:#not perirhizalModel.doMinimumPrint:
+            if True:#not perirhizalModel.doMinimumPrint:
                 datas = []
                 datasName = [ ]
                 if rank == 0:   
@@ -477,7 +477,7 @@ def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age,
                                 ]
                 printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx of vtp plot
                                     perirhizalModel, plantModel,s, perirhizalModel.getSoilTextureAndShape(), 
-                                    datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
+                                    datas, datasName, initPrint=True, doSolutes = perirhizalModel.doSoluteFlow)
                                     
             
             ###########

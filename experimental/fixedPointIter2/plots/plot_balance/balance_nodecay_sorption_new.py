@@ -63,14 +63,14 @@ font = {'size'   : 18}
 plt.rc('font', **font)
 path2file2 = "../../scripts/results/Exudate"
 
-starttime = 5
-endtime = 10
+starttime = 2
+endtime = 5
 g_per_mol = 12.01
 dt = 20/60/24 #d
 params = ['Exud_tot', 'Exud_liq', 'Exud_ads', 'Exud_decay']
 linst = ['-', '--', ':', '-.']
 
-scenario = 'loam_2_exu_nodecay_withsorption'
+scenario = 'day2_loam_2_exu_nodecay_withsorption'
 df = pd.read_csv(path2file2+"/"+scenario+"/exud.csv")
 
 exud_in = [0.]
@@ -118,7 +118,7 @@ plt.legend()
 plt.title('no decay, sorption')
 plt.xlabel('Time (d)')
 plt.xlim(starttime,dt*(len(exud_in))*1.1+starttime)
-plt.ylim(0,max( df['Exud_tot'].loc[:].values[:len(x_sim)])*1.1)
+plt.ylim(-0.1*max( df['Exud_tot'].loc[:].values[:len(x_sim)]),max( df['Exud_tot'].loc[:].values[:len(x_sim)])*1.1)
 plt.ylabel('Exudate content in soil domain (mol)', x = 0.05)
 plt.show()
 
