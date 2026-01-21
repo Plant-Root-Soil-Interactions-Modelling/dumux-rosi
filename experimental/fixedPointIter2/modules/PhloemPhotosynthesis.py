@@ -448,6 +448,7 @@ def computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
     else: # just xylem flow
         if (rank == 0):
             transpiration = plantModel.transpiration(rs_age_i_dt,dt)
+            # transpiration = 6 #testing
             before_shoot = len(perirhizalModel.ms.getShootSegments())
             rx = plantModel.solve(rs_age_i_dt, 
                          [-transpiration],

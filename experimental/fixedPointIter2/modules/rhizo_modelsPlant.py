@@ -28,6 +28,7 @@ from plantbox import Perirhizal
 import FPItHelper
 from scipy.linalg import norm
 from scipy.interpolate import griddata as gd
+from scipy.ndimage import zoom
 
 class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     """
@@ -2451,20 +2452,28 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self._map(self._flat0(comm.gather(x, root=0)),dtype, doMap)
 
 
-    def map_cylinders(self, segments, nodes, XX,YY,ZZ):
+    def map_cylinders(self, s, segments, nodes, cell_number, XX,YY,ZZ, ifexu):
         """ maps cylinders to soil grid """
 
-        shape = np.shape(XX)
-        conc = np.zeros((shape))
-        swp = np.zeros((shape))
-        
+        shape_orig = [cell_number[2], cell_number[0], cell_number[1]]
+        shape_new = np.shape(XX)
+        shape_rel = np.array(shape_new)/np.array(shape_orig)
+        swp_ = np.reshape(np.array(s.getSolutionHead()), shape_orig)
+        swp = zoom(swp_, shape_rel)
+        if ifexu == "True":
+            conc_ = np.reshape(np.array(s.getSolution(1)* self.molarDensityWat_m3/1e6), shape_orig) # mol C/cm3 water
+            conc = zoom(conc_,shape_rel)
+            decay_ = np.reshape(np.array(s.getSolution(3)* self.bulkDensity_m3 /1e6 ), shape_orig) # mol C/cm3 soil
+            decay = zoom(decay_,shape_rel)
         dummy = 1
         for i, cyl in enumerate(self.cyls):
             if not isinstance(cyl, AirSegment) : 
                     
                 R_ = cyl.getDofCoordinates()
-                vv_ = (cyl.getSolution(1)* self.molarDensityWat_m3/1e6) # mol C/cm3 W
                 ss_ = cyl.getSolutionHead() # cm 
+                if ifexu: 
+                    vv_ = (cyl.getSolution(1)* self.molarDensityWat_m3/1e6) # mol C/cm3 W
+                    dd_ = (cyl.getSolution(3)* self.bulkDensity_m3/1e6) # mol C/cm3 soil
                 
                 p0 = np.array(nodes[segments[i].x])
                 p1 = np.array(nodes[segments[i].y])
@@ -2486,6 +2495,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 y = []
                 z = []
                 vv = []
+                dd = []
                 ss = []
                 
                 for j in range(0,len(R_)):
@@ -2494,20 +2504,31 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     x.extend(X.flatten())
                     y.extend(Y.flatten())
                     z.extend(Z.flatten())
-                    vv.extend(np.ones((len(X.flatten())))*vv_[j])
                     ss.extend(np.ones((len(X.flatten())))*ss_[j])
+                    if ifexu: 
+                        vv.extend(np.ones((len(X.flatten())))*vv_[j])
+                        dd.extend(np.ones((len(X.flatten())))*dd_[j])
+                    
 
                 # interpolate "data.v" on new grid "inter_mesh"
-                V = gd((x,y,z), vv, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
-                V[np.isnan(V)] = 0
-                V = np.array(V.reshape(shape))
-                conc = conc+V
+                if ifexu == "True": 
+                    V = gd((z,x,y), vv, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
+                    V[np.isnan(V)] = 0
+                    V = np.array(V.reshape(shape_new))
+                    conc = conc+V
+                    
+                    D = gd((z,x,y), dd, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
+                    D[np.isnan(D)] = 0
+                    decay_test = np.vstack((D, decay.flatten()))
+                    decay = np.reshape(np.max(decay_test, axis = 0),shape_new) #cumulative decay/cm^3 soil, max value of all cylinders and soil is taken 
+                else: 
+                    conc = None
+                    decay = None
                 
-                S = gd((x,y,z), ss, (XX.flatten(),YY.flatten(),ZZ.flatten()), method='linear')
+                S = gd((z,x,y), ss, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
                 S[np.isnan(S)] = 0
-                S = np.array(S.reshape(shape))
-                swp = swp+S
-                
+                swp_test = np.vstack((S, swp.flatten()))
+                swp = np.reshape(np.min(swp_test, axis = 0),shape_new) #minimum soil water potential of all cylinders and soil is taken 
                 print('cyl '+str(dummy)+' of ' + str(len(self.cyls)-len(self.airSegs))+ ' is finished!')
                 dummy = dummy+1
-        return conc, swp
+        return conc, decay, swp

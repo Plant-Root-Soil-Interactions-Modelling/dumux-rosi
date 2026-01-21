@@ -15,26 +15,26 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 font = {'size'   : 18}
 plt.rc('font', **font)
 
-path = '../../scripts/results/Exudate/day2_loam_2_exu_withdecay_withsorption/swp_arrays/'
+path = '../../scripts/results/Exudate/day1_sand_2_noexu/swp_arrays/'
 files = [f for f in listdir(path) if isfile(join(path, f))]
 files = np.sort(files) 
 print(files) 
 
 fig, axs = plt.subplots(1, len(files))
 for i in range(0, len(files)): 
-    conc = np.load(path + files[i])
-    conc_ = conc[:,int(np.shape(conc)[1]/2),600:]
-    # conc_ = np.max(conc, axis = 1) 
-    # conc_ = conc_[:,600:]
-    conc_rot = ndimage.rotate(conc_, 90)
-    colors = plt.cm.jet(conc_)
+    swp = np.load(path + files[i])
+    swp_ = swp[:,int(np.shape(swp)[1]/2),:]
+    # swp_ = np.max(swp, axis = 1) 
+    # swp_ = swp_[:,600:]
+    swp_rot = ndimage.rotate(swp_, 180)
+    colors = plt.cm.jet(swp_)
     if i == 0: 
-        norm = mpl.colors.Normalize(vmin=np.min(conc_), vmax=np.max(conc_))
-    m = axs[i].imshow(conc_rot, cmap = 'jet', norm = norm, aspect=1)
+        norm = mpl.colors.Normalize(vmin=np.min(swp_), vmax=np.max(swp_))
+    m = axs[i].imshow(swp_rot, cmap = 'jet', norm = norm, aspect=1)
     if i == len(files)-1: 
         divider = make_axes_locatable(axs[i])
         cax = divider.append_axes("right", size="5%", pad=0.05)
-        plt.colorbar(m, cax = cax, label = 'Exudate concentration (-)')
-    # plt.title("Exudate concentration")
+        plt.colorbar(m, cax = cax, label = 'Soil water potential (cm)')
+    # plt.title("Exudate swpentration")
     axs[i].axis('off')
 plt.show()

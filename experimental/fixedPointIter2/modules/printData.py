@@ -421,20 +421,23 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
     if rank == 0:
         print('did VTP print in file',results_dir+"vtpvti/plantAt"+ str(vtpindx) )
         
-def map_exudates_pHead(rs, r, minB, maxB, perirhizalModel, rs_age ): 
+def map_exudates_pHead(rs, r, s, minB, maxB, cell_number, perirhizalModel, rs_age, ifexu): 
     #map exudates / SWP to a 1mm soil grid 
-    nx = int(maxB[0]-minB[0] / 0.1); 
-    ny = int(maxB[1]-minB[1] / 0.1);
-    nz = int(maxB[2]-minB[2] / 0.1);
+    nx = int((maxB[0]-minB[0]) / 0.1); 
+    ny = int((maxB[1]-minB[1]) / 0.1);
+    nz = int((maxB[2]-minB[2]) / 0.1);
     X = np.linspace(minB[0] / 2, maxB[0] / 2, nx)
     Y = np.linspace(minB[1] / 2, maxB[1] / 2, ny)
     Z = np.linspace(minB[2], 0, nz)
-    XX, YY, ZZ = np.meshgrid(X,Y,Z, indexing='ij')
+    ZZ, XX, YY = np.meshgrid(Z,X,Y, indexing='ij')
+    
     segments = r.rs.segments
     nodes = r.rs.nodes
-    conc, pHead = perirhizalModel.map_cylinders(segments, nodes, XX,YY,ZZ) # mol C/cm3 W, cm
+    conc, decay, pHead = perirhizalModel.map_cylinders(s, segments, nodes, cell_number, XX,YY,ZZ, ifexu) # mol C/cm3 W, cm
     results_dir = perirhizalModel.results_dir
-    np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
+    if ifexu == "True":
+        np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
+        np.save(results_dir + "decay_arrays/day"+str(rs_age)+".npy",decay)
     np.save(results_dir + "swp_arrays/day"+str(rs_age)+".npy",pHead)
   
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):

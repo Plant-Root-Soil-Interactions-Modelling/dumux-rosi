@@ -47,8 +47,8 @@ def getBiochemParam(s,soil_type):
     s.km_decay = 10.5 #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
     if s.doAds:
-        kads = 1e1 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
-        kdes =  1e3 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
+        kads = 85 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
+        kdes =  40 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
         k_clay_silt[1] = 0.082
@@ -484,7 +484,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
     h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
     h = h.flatten()
-    #h = np.ones((20*44*75))*-100 #TODO
+    # h = np.ones((cell_number[0]*cell_number[1]*cell_number[2]))*-100 #testing
     s.setInitialConditionHead(h)  # cm
     
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
