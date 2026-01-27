@@ -2,7 +2,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import scipy
 from scipy.interpolate import griddata
-import rosi.helpful as helpful
+import helpful as helpful
 from mpi4py import MPI
 
 comm = MPI.COMM_WORLD

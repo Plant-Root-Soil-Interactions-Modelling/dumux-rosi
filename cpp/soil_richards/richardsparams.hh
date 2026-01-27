@@ -56,6 +56,7 @@ public:
         Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
 
         /* Get Van Genuchten parameters from the input file */
+        std::vector<Scalar> lambda = getParam<std::vector<Scalar>>("Soil.VanGenuchten.L");
         std::vector<Scalar> qr = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qr"); // [1]
         std::vector<Scalar> qs = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Qs"); // [1]
         std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");  // [1/cm]
@@ -80,6 +81,7 @@ public:
             Scalar a = alpha.at(i) * 100.; // from [1/cm] to [1/m]
             basicParams_.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
             basicParams_.at(i).setN(n.at(i)); // N
+            basicParams_.at(i).setL(lambda.at(i)); // N
             k_.push_back(kc_.at(i)*mu/(rho*g_)); // Convert to intrinsic permeability
 
             // Regularisation parameters
@@ -189,7 +191,7 @@ public:
         layerIndices.push_back(layerIndex);
     }
 
-    void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks) {
+    void changeVanGenuchtenSet(int vgIndex, double qr, double qs, double alpha, double n, double ks, double lambda = 0.5) {
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
         Scalar rho = Water::liquidDensity(0.,0.);  // Density: 1000 [kg/m³]
         int i = vgIndex; // rename
@@ -199,6 +201,7 @@ public:
         Scalar a = alpha * 100.; // from [1/cm] to [1/m]
         basicParams_.at(i).setAlpha(a/(rho*g_)); //  psi*(rho*g) = p  (from [1/m] to [1/Pa])
         basicParams_.at(i).setN(n); // N
+        basicParams_.at(i).setL(lambda); // N
         k_.push_back(ks*mu/(rho*g_)); // Convert to intrinsic permeability
         materialLaw_.at(i) = PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)); // update material Law
     }

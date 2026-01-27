@@ -1,6 +1,7 @@
-
-import plantbox.functional.van_genuchten as vg
-from rosi.solverbase import SolverWrapper
+import sys
+sys.path.append("../../../CPlantBox/src")
+import functional.van_genuchten as vg
+from solverbase import SolverWrapper
 import numpy as np
 from mpi4py import MPI
 
@@ -46,15 +47,16 @@ class RichardsWrapper(SolverWrapper):
         if self.checkProblemInitialized(throwError = False):
             raise Exception('use setVGParameters before calling initialize()')
 
-        qr, qs, alpha, n, ks = [], [], [], [], []
+        qr, qs, alpha, n, ks, l = [], [], [], [], [], []
         self.vg_soils = []
         for soil in soils:
-            assert len(soil) == 5, "setVGParameters, soil need to be a list of 5 parameters: qr, qs, alpha, n, ks "
+            assert len(soil) == 6, "setVGParameters, soil need to be a list of 5 parameters: qr, qs, alpha, n, ks, l "
             qr.append(soil[0])
             qs.append(soil[1])
             alpha.append(soil[2])
             n.append(soil[3])
             ks.append(soil[4])
+            l.append(soil[5])
             self.vg_soils.append(vg.Parameters(soil))
 
         self.setParameter(self.param_group + "VanGenuchten.Qr", self.dumux_str(qr))
@@ -62,6 +64,7 @@ class RichardsWrapper(SolverWrapper):
         self.setParameter(self.param_group + "VanGenuchten.Alpha", self.dumux_str(alpha))
         self.setParameter(self.param_group + "VanGenuchten.N", self.dumux_str(n))
         self.setParameter(self.param_group + "VanGenuchten.Ks", self.dumux_str(ks))
+        self.setParameter(self.param_group + "VanGenuchten.L", self.dumux_str(l))
 
         self.soils = soils.copy()
 
