@@ -1196,8 +1196,8 @@ public:
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depolymucil = f_A * v_maxL * (WorCorN[mucilIdx]/(K_L+ WorCorN[mucilIdx])) * WorCorN[CoAIdx];// mol C/(m^3 bulk soil *s)
-		double F_depolyCH_Idx = f_A * v_maxL * (WorCorN[CH_Idx]/(K_L+ WorCorN[CH_Idx])) * WorCorN[CoAIdx];// mol C/(m^3 bulk soil *s)
+		double F_depolymucil = f_A * v_maxL * (WorCorN[mucilIdx]/(K_L+ WorCorN[mucilIdx])) * (WorCorN[CoAIdx]+ C_aLim[0]);// mol C/(m^3 bulk soil *s)
+		double F_depolyCH_Idx = f_A * v_maxL * (WorCorN[CH_Idx]/(K_L+ WorCorN[CH_Idx])) * (WorCorN[CoAIdx]+ C_aLim[0]);// mol C/(m^3 bulk soil *s)
 		
 		double F_uptake_S = 0.;
 		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
