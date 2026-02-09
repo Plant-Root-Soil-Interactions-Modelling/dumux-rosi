@@ -503,6 +503,7 @@ public:
             {
 				getScvfFluxesAtT(timeLoop->timeStepSize(),dt) ;
 				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;
+				trackReactionRates(timeLoop->timeStepSize(),dt) ;
             }
 			
             gridVariables->advanceTimeStep();
@@ -879,7 +880,7 @@ public:
      * For a single mpi process. Gathering is done in Python
 	 * [ kg /m^3/s] or [ mol / m^3/s]
      */
-    virtual void getScvSourcesAtT(double dt, double outer_dt) {
+    void getScvSourcesAtT(double dt, double outer_dt) {
 		checkGridInitialized();
 		
         auto fvGeometry = Dumux::localView(*gridGeometry);
@@ -906,6 +907,7 @@ public:
 				{
 					scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
 				}
+				
 			}
 		}
 		
@@ -971,6 +973,11 @@ public:
             }
         }
     }
+	
+	//this dummy function will be overloaded to read out the reaction rates
+	virtual void trackReactionRates(double dt, double outer_dt){
+		
+	}
 
 	std::vector<double> getFaceSurfaces() {
 

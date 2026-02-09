@@ -15,7 +15,7 @@ class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 	public:
 	
 	//how many reaction terms will be saved, I need a better place to load this
-	static constexpr int numReactionTermsgeneral = 8; //general reaction terms, such as how much of the solutes were taken up by the microbes
+	static constexpr int numReactionTermsgeneral = 10; //general reaction terms, such as how much of the solutes were taken up by the microbes
 	static constexpr int numReactionTermsMicrobes = 11; //reaction terms for each microbial species
 	static constexpr int numReactionTerms=numReactionTermsgeneral+numReactionTermsMicrobes;
 
@@ -144,7 +144,7 @@ class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
      * For a single mpi process. Gathering is done in Python
 	 * [ kg /m^3/s] or [ mol / m^3/s]
      */
-    virtual void getScvSourcesAtT(double dt, double outer_dt) {
+	virtual void trackReactionRates(double dt, double outer_dt){
 		this->checkGridInitialized();
 		
         auto fvGeometry = Dumux::localView(*this->gridGeometry);
@@ -164,23 +164,55 @@ class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 				if(this->dimWorld == 1){
 					pos0 = scv.center()[0]; 
 				}
-				NumEqVector scvfSource_(0.0), scvfSource_dummy(0.0);
+				NumEqVector scvfSource_dummy(0.0);
 				std::vector<double> reactionRates_;
-				scvfSource_ = this->problem->source(e, fvGeometry, elemVolVars, scv); // [ kg / (m^3 \cdot s)] or [ mol / (m^3 \cdot s)]
 				const auto& volVars = elemVolVars[scv];
 				reactionRates_=this->problem->bioChemicalReaction(e, scvfSource_dummy, volVars, pos0, scv);				
-				for(int eqIdx = 0; eqIdx < this->nEV.size(); eqIdx ++)
-				{
-					this->scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
-				}
 				for(int reacIdx = 0; reacIdx < numReactionTerms; reacIdx ++)
 				{
 					this->reactionRates[reacIdx][scv.dofIndex()] += reactionRates_[reacIdx]/pos0*dt/outer_dt;
 				}
 			}
 		}
-		
 	}
+	
+    // virtual void getScvSourcesAtT(double dt, double outer_dt) {
+		// this->checkGridInitialized();
+		
+        // auto fvGeometry = Dumux::localView(*this->gridGeometry);
+		
+        // auto elemVolVars = Dumux::localView(this->gridVariables->curGridVolVars());
+		
+
+        // for (const auto& e : elements(this->gridGeometry->gridView())) { //, Dune::Partitions::interior
+
+            // fvGeometry.bind(e);
+			
+            // elemVolVars.bind(e, fvGeometry, this->x);
+			
+			// for (const auto& scv : scvs(fvGeometry))
+            // {
+				// double pos0 = 1;
+				// if(this->dimWorld == 1){
+					// pos0 = scv.center()[0]; 
+				// }
+				// NumEqVector scvfSource_(0.0), scvfSource_dummy(0.0);
+				// std::vector<double> reactionRates_;
+				// scvfSource_ = this->problem->source(e, fvGeometry, elemVolVars, scv); // [ kg / (m^3 \cdot s)] or [ mol / (m^3 \cdot s)]
+				// const auto& volVars = elemVolVars[scv];
+				// reactionRates_=this->problem->bioChemicalReaction(e, scvfSource_dummy, volVars, pos0, scv);				
+				// for(int eqIdx = 0; eqIdx < this->nEV.size(); eqIdx ++)
+				// {
+					// this->scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
+				// }
+				// for(int reacIdx = 0; reacIdx < numReactionTerms; reacIdx ++)
+				// {
+					// this->reactionRates[reacIdx][scv.dofIndex()] += reactionRates_[reacIdx]/pos0*dt/outer_dt;
+				// }
+			// }
+		// }
+		
+	// }
 		
 };
 
