@@ -170,7 +170,8 @@ class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 				reactionRates_=this->problem->bioChemicalReaction(e, scvfSource_dummy, volVars, pos0, scv);				
 				for(int reacIdx = 0; reacIdx < numReactionTerms; reacIdx ++)
 				{
-					this->reactionRates[reacIdx][scv.dofIndex()] += reactionRates_[reacIdx]/pos0*dt/outer_dt;
+					//timesteps are counted in days, but dt is in seconds
+					this->reactionRates[reacIdx][scv.dofIndex()] += reactionRates_[reacIdx]*(dt/24/3600);
 				}
 			}
 		}
