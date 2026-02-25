@@ -163,6 +163,17 @@ class RichardsNoMPIWrapper(RichardsWrapper):
             else:
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
         return np.array(self.base.getScvSources()[eqIdx]) * unitChange  
+        
+    def getReactionRates(self, eqIdx=0):
+        """nompi version of """
+        self.checkGridInitialized()
+        unitChange = 24 * 3600 / 1e6 # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
+        if eqIdx == 0:
+            if self.useMoles:
+                unitChange *=  self.molarMassWat # [mol/cm3/day -> cm3/cm3/day]
+            else:
+                unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
+        return np.array(self.base.getReactionRates()[eqIdx]) * unitChange    
     
     def getBCFlows(self ):  
         

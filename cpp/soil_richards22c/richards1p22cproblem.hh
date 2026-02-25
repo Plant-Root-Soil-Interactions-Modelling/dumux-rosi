@@ -81,6 +81,11 @@ public:
     static constexpr int numFluidComps = FluidSystem::numComponents;
     static constexpr int numSolidComps = SolidSystem::numComponents;
     static constexpr int numInertSolidComps =  SolidSystem::numInertComponents;
+	
+	//how many reaction terms will be saved
+	static constexpr int numReactionTermsgeneral = 10; //general reaction terms, such as how much of the solutes were taken up by the microbes
+	static constexpr int numReactionTermsMicrobes = 11; //reaction terms for each microbial species
+	static constexpr int numReactionTerms=numReactionTermsgeneral+numReactionTermsMicrobes;
 
 	enum {
 		// W elements
@@ -152,6 +157,58 @@ public:
 
 	enum GridParameterIndex {
 		materialLayerNumber = 0
+	};
+	
+	//reaction terms for each microbial species
+	enum ReactionTermsMicrobes{
+		uptake_S_A = 0,//uptake of solutes by active microbes
+		uptake_S_D = 1,//uptake of solutes by dormant microbes
+		decay_A = 2, //decay of active microbes
+		decay_D = 3, //decay of dormant microbes
+		growth = 4, //growth of microbes
+		deact = 5, //deactivation of microbes
+		react = 6, //reactivation of microbes
+		overNResp_A = 7, //overflow N respiration of active microbes
+		overNResp_D = 8, //overflow N respiration of dormant microbes
+		ImMin_A = 9, //immobilisation / mineralisation of N by active microbes
+		ImMin_D = 10 //immobilisation / mineralisation of N by dormant microbes
+		
+	};
+	
+	//Every reaction gets assigned an index here
+	enum ReactionTermsgeneral{
+		depolymucil = 0, //rate of mucilage depolimerisation to solute
+		depolyCH_Idx = 1,//rate of high molecular weight C depolimerisation to solute
+		uptake_S = 2, //general uptake of solutes by the microbes
+		decay = 3, //amount of decaying microbial biomass
+		growth_S = 4, //amount of solutes taken up due to growth
+		growth_N = 5, //uptake of N in solutes taken up during growth
+		NH4_cons = 6, //how much NH4 is converted to NO3 by the microbes
+		NO3_cons = 7, //how much NO3 is converted to N2 by the microbes
+		ImMin = 8, //total immobilisation / mineralisation of N
+		Ndecay = 9, //nitrogen released by the maintanence of microbes
+		uptake_S_A_O = numReactionTermsgeneral+2*uptake_S_A, //all of these are just duplicates of the reaction terms for microbes above
+		uptake_S_A_C = numReactionTermsgeneral+2*uptake_S_A+1,
+		uptake_S_D_O = numReactionTermsgeneral+2*uptake_S_D,
+		uptake_S_D_C = numReactionTermsgeneral+2*uptake_S_D+1,
+		decay_A_O = numReactionTermsgeneral+2*decay_A,
+		decay_A_C = numReactionTermsgeneral+2*decay_A+1,
+		decay_D_O = numReactionTermsgeneral+2*decay_D,
+		decay_D_C = numReactionTermsgeneral+2*decay_D+1,
+		growth_O = numReactionTermsgeneral+2*growth,
+		growth_C = numReactionTermsgeneral+2*growth+1,
+		deact_O = numReactionTermsgeneral+2*deact,
+		deact_C = numReactionTermsgeneral+2*deact+1,
+		react_O = numReactionTermsgeneral+2*react,
+		react_C = numReactionTermsgeneral+2*react+1,
+		overNResp_A_O = numReactionTermsgeneral+2*overNResp_A,
+		overNResp_A_C = numReactionTermsgeneral+2*overNResp_A+1,
+		overNResp_D_O = numReactionTermsgeneral+2*overNResp_D,
+		overNResp_D_C = numReactionTermsgeneral+2*overNResp_D+1,
+		ImMin_A_O = numReactionTermsgeneral+2*ImMin_A,
+		ImMin_A_C = numReactionTermsgeneral+2*ImMin_A+1,
+		ImMin_D_O = numReactionTermsgeneral+2*ImMin_D,
+		ImMin_D_C = numReactionTermsgeneral+2*ImMin_D+1
 	};
 	
 	
@@ -554,7 +611,7 @@ public:
 		bcTypes.setAllNeumann();
         if (onUpperBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcTopType_ == constantPressure) {
-                bcTypes.setDirichlet(pressureIdx);
+                //bcTypes.setDirichlet(pressureIdx);
 			 
 														  
 												  
@@ -563,19 +620,19 @@ public:
 			{
 				if (bcSTopType_.at(i - soluteIdx) == constantConcentration) 
 				{
-					bcTypes.setDirichlet(i);
+					//bcTypes.setDirichlet(i);
 				}
 			}
             
         } else if (onLowerBoundary_(globalPos)) { // top, bot, or outer bc
             if (bcBotType_ == constantPressure) {
-                bcTypes.setDirichlet(pressureIdx);//,conti0EqIdx
+                //bcTypes.setDirichlet(pressureIdx);//,conti0EqIdx
             }
 			for(int i = soluteIdx; i<numComponents_;i++)//solutes
 			{
 				if (bcSBotType_.at(i - soluteIdx) == constantConcentration) 
 				{
-					bcTypes.setDirichlet(i);
+					//bcTypes.setDirichlet(i);
 				}
 			}
             
@@ -1014,13 +1071,14 @@ public:
      * E.g. for the mass balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
-			const SubControlVolume &scv) const {
+			const SubControlVolume &scv, bool print_function_terms=false) const {
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
 		bool dobioChemicalReaction = dobioChemicalReaction_; //by default, do biochemical reactions
 		double pos0; 
         double svc_volume;
         int dofIndex = scv.dofIndex();
+		std::vector<double> F; //this is where the amount of reactions are saved to, currently it is not used by this function
 		if (dimWorld == 1)//1daxissymmetric model
 		{
 			pos0 = pos[0];
@@ -1066,7 +1124,7 @@ public:
 		}
 		if(dobioChemicalReaction)
 		{
-			bioChemicalReaction(element, source, volVars, pos0, scv);
+			F=bioChemicalReaction(element, source, volVars, pos0, scv);
 		}else{ 
 			double C_SfrW = std::max(massOrMoleFraction(volVars,0, soluteIdx, true), 0.);					//mol C/mol soil water
 			double C_S_W = massOrMoleDensity(volVars, h2OIdx, true) * C_SfrW;	//mol C/m3 soil water
@@ -1129,7 +1187,7 @@ public:
 	/*
      * E.g. for the mol balance that would be a mass rate in \f$ [ mol / (m^3 \cdot s)] \f
      */
-	void bioChemicalReaction(const Element &element, 
+	std::vector<double> bioChemicalReaction(const Element &element, 
 								NumEqVector &q, const VolumeVariables &volVars, double pos0, 
 								const SubControlVolume &scv) const
 	{
@@ -1193,22 +1251,28 @@ public:
 			WorCorN[CSS2Idx] = WorCorN[CSS2Idx] / (1. - f_sorp) ; // mol C / m3 scv zone 2
 		}else{WorCorN[CSS2Idx] = 0.;}
 		
+		std::vector<double> F(numReactionTermsgeneral+2*numReactionTermsMicrobes); //general reaction terms, microbial reaction terms
+		//all terms here have the units [mol C/m3 /s]
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-		double F_depolymucil = f_A * v_maxL * (WorCorN[mucilIdx]/(K_L+ WorCorN[mucilIdx])) * (WorCorN[CoAIdx]+ C_aLim[0]);// mol C/(m^3 bulk soil *s)
-		double F_depolyCH_Idx = f_A * v_maxL * (WorCorN[CH_Idx]/(K_L+ WorCorN[CH_Idx])) * (WorCorN[CoAIdx]+ C_aLim[0]);// mol C/(m^3 bulk soil *s)
+
+		F[depolymucil] = f_A * v_maxL * (WorCorN[mucilIdx]/(K_L+ WorCorN[mucilIdx])) * ( WorCorN[CoAIdx] + C_aLim[0]);// mol C/(m^3 bulk soil *s)
+		F[depolyCH_Idx] = f_A * v_maxL * (WorCorN[CH_Idx]/(K_L+ WorCorN[CH_Idx])) *( WorCorN[CoAIdx] + C_aLim[0]);// mol C/(m^3 bulk soil *s)
+
 		
-		double F_uptake_S = 0.;
-		double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
-		double F_growth_S = 0.;	
-		double F_growth_N = 0.;	
-		double F_NH4 = 0.; double F_NO3 = 0.; double F_ImMin = 0.; double CtoN_CSS2 = 0.;
+		//double F_uptake_S = 0.;
+		//double F_decay = 0.;	//mol C/(m^3 bulk soil *s)
+		//double F_growth_S = 0.;	
+		//double F_growth_N = 0.;	
+		//double F_NH4 = 0.; double F_NO3 = 0.; double F_ImMin = 0.; double CtoN_CSS2 = 0.;
+		double CtoN_CSS2 = 0.;
 		
-		std::vector<double> F_uptake_S_A(2), F_uptake_S_D(2), F_decay_A(2), F_decay_D(2) ;
-		std::vector<double> F_growth(2), F_deact(2), F_react(2), phi(2);
-		std::vector<double> F_overNResp_A(2), F_overNResp_D(2);// overflow N respiration
-		std::vector<double> F_ImMin_A(2), F_ImMin_D(2);
+		//std::vector<double> F_uptake_S_A(2), F_uptake_S_D(2), F_decay_A(2), F_decay_D(2) ;
+		//std::vector<double> F_growth(2), F_deact(2), F_react(2), phi(2);
+		std::vector<double> phi(2);
+		//std::vector<double> F_overNResp_A(2), F_overNResp_D(2);// overflow N respiration
+		//std::vector<double> F_ImMin_A(2), F_ImMin_D(2);
 		
 		double N_out = WorCorN[NsoluteIdx] + WorCorN[NCH_Idx] + WorCorN[NH4Idx] + WorCorN[NO3Idx];
 		double C_out = WorCorN[soluteIdx] + WorCorN[CH_Idx] + WorCorN[mucilIdx];
@@ -1236,44 +1300,57 @@ public:
 			double m_max_ = m_max[CxIdx] / f_N;// * std::max(WorCorN[CxAIdx]/WorCorN[NxAIdx] - k_CNobj, 0) * (1 - ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) );
 			double micro_max_ = micro_max[CxIdx] * f_N;
 			
+			//factor for activation / deactivation
+			phi[CxIdx] = 1/(1 + std::exp((C_S_W_thres[CxIdx] - WorCorN[soluteIdx])/(k_phi * C_S_W_thres[CxIdx])));	// - 
+			
 			//				Uptake			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C soil / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 wat] = [mol C_oX / m3 wat /s]
-			F_uptake_S_A[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_uptake_S_D[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * beta[CxIdx] * WorCorN[CxDIdx] ; //mol C/(m^3 bulk soil *s)
+			//F_uptake_S_A[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*uptake_S_A+CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * WorCorN[CxAIdx] ;
+			//F_uptake_S_D[CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * beta[CxIdx] * WorCorN[CxDIdx] ; //mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*uptake_S_D+CxIdx] =  f_A * (m_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(m_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * beta[CxIdx] * WorCorN[CxDIdx] ; //mol C/(m^3 bulk soil *s)
 			
 			//				Decay
 			// [mol C microb / m3 bulk soil /s] = [s-1] * [mol C microb / m3 bulk soil] - [mol C microb / m3 bulk soil /s]
-			F_decay_A[CxIdx] =  m_max_  * WorCorN[CxAIdx]  - F_uptake_S_A[CxIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_decay_D[CxIdx] =  m_max_  * beta[CxIdx]  * WorCorN[CxDIdx]  - F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
+			//F_decay_A[CxIdx] =  m_max_  * WorCorN[CxAIdx]  - F_uptake_S_A[CxIdx] ;			//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*decay_A+CxIdx] =  m_max_  * WorCorN[CxAIdx]  - F[numReactionTermsgeneral+2*uptake_S_A+CxIdx] ;			//mol C/(m^3 bulk soil *s)
+			//F_decay_D[CxIdx] =  m_max_  * beta[CxIdx]  * WorCorN[CxDIdx]  - F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*decay_D+CxIdx] =  m_max_  * beta[CxIdx]  * WorCorN[CxDIdx]  - F[numReactionTermsgeneral+2*uptake_S_D+CxIdx] ;	//mol C/(m^3 bulk soil *s)
 			
 			//				Other
 			
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
-			F_growth[CxIdx] =  f_A * (micro_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(micro_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * (WorCorN[CxAIdx] + C_aLim[CxIdx]) ;		//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*growth+CxIdx] =  f_A * (micro_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(micro_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * (WorCorN[CxAIdx] + C_aLim[CxIdx]) ;		//mol C/(m^3 bulk soil *s)
 			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.)) CorN_W
 			{
 				std::cout<<"F_growth["<<CxIdx<<"] " << std::scientific<<std::setprecision(20)
 				<<micro_max_ <<" "<< WorCorN[soluteIdx] <<" "<< k_S[CxIdx] <<" "<< (WorCorN[CxAIdx] + C_aLim[CxIdx])
-				<<" "<<F_growth[CxIdx]<<std::endl;
+				<<" "<<F[growth_O+CxIdx]<<std::endl;
 				std::cout<<"F_decay_A["<<CxIdx<<"] " << std::scientific<<std::setprecision(20)
-				 <<" "<< WorCorN[CxAIdx]  <<" "<< F_uptake_S_A[CxIdx]  <<" "
-				<< F_decay_A[CxIdx] <<std::endl;
+				 <<" "<< WorCorN[CxAIdx]  <<" "<< F[uptake_S_A_O+CxIdx]  <<" "
+				<< F[decay_A_O+CxIdx] <<std::endl;
 			}
-			phi[CxIdx] = 1/(1 + std::exp((C_S_W_thres[CxIdx] - WorCorN[soluteIdx])/(k_phi * C_S_W_thres[CxIdx])));								// - 
-			// [-] * [1/s] * [mol C/m3 bulk soil]
-			F_deact[CxIdx]  =  std::max(f_A2D , (1. - phi[CxIdx] )) * k_D[CxIdx]  * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
-			F_react[CxIdx]  =  std::min(f_D2A, phi[CxIdx]) * k_R[CxIdx]  * WorCorN[CxDIdx] ;				//mol C/(m^3 bulk soil *s)
 			
-			F_uptake_S += F_uptake_S_A[CxIdx] + F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
-			F_decay += F_decay_A[CxIdx] + F_decay_D[CxIdx];	
-			F_growth_S += (1/k_growth[CxIdx]) * F_growth[CxIdx];
-			F_growth_N += F_growth[CxIdx] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ;
+			// [-] * [1/s] * [mol C/m3 bulk soil]
+			//F_deact[CxIdx]  =  std::max(f_A2D , (1. - phi[CxIdx] )) * k_D[CxIdx]  * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*deact+CxIdx]  =  std::max(f_A2D , (1. - phi[CxIdx] )) * k_D[CxIdx]  * WorCorN[CxAIdx] ;			//mol C/(m^3 bulk soil *s)
+			//F_react[CxIdx]  =  std::min(f_D2A, phi[CxIdx]) * k_R[CxIdx]  * WorCorN[CxDIdx] ;				//mol C/(m^3 bulk soil *s)
+			F[numReactionTermsgeneral+2*react+CxIdx]  =  std::min(f_D2A, phi[CxIdx]) * k_R[CxIdx]  * WorCorN[CxDIdx] ;
+			
+			//F_uptake_S += F_uptake_S_A[CxIdx] + F_uptake_S_D[CxIdx] ;	//mol C/(m^3 bulk soil *s)
+			F[uptake_S] += F[numReactionTermsgeneral+2*uptake_S_A+CxIdx] + F[numReactionTermsgeneral+2*uptake_S_D+CxIdx] ;	//mol C/(m^3 bulk soil *s)
+			//F_decay += F_decay_A[CxIdx] + F_decay_D[CxIdx];	
+			F[decay] += F[numReactionTermsgeneral+2*decay_A+CxIdx] + F[numReactionTermsgeneral+2*decay_D+CxIdx];	
+			//F_growth_S += (1/k_growth[CxIdx]) * F_growth[CxIdx];
+			F[growth_S] += (1/k_growth[CxIdx]) * F[numReactionTermsgeneral+2*growth+CxIdx];
+			//F_growth_N += F_growth[CxIdx] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ;
+			F[growth_N] += F[numReactionTermsgeneral+2*growth+CxIdx] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ;
 			
 			// nitrogen	
 				// immobilisation/mineralisation
-			F_ImMin_A[CxIdx]= WorCorN[CxAIdx] * (
+			F[numReactionTermsgeneral+2*ImMin_A+CxIdx]= WorCorN[CxAIdx] * (
 								std::max(
 								safeDivision(WorCorN[CxAIdx],(WorCorN[NxAIdx]+k_eps)) - k_CNobj, 0.)
 								* f_Im * ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) 
@@ -1282,7 +1359,7 @@ public:
 								* f_Min * ( WorCorN[NxAIdx]/ (WorCorN[NxAIdx] + K_rMin)) 
 								);
 
-			F_ImMin_D[CxIdx]=  beta[CxIdx] * WorCorN[CxDIdx] * (
+			F[numReactionTermsgeneral+2*ImMin_D+CxIdx]=  beta[CxIdx] * WorCorN[CxDIdx] * (
 								std::max(
 								safeDivision(WorCorN[CxDIdx],(WorCorN[NxDIdx]+k_eps)) - k_CNobj, 0.)
 								* f_Im * ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_rIm)) 
@@ -1291,21 +1368,26 @@ public:
 								* f_Min * ( WorCorN[NxDIdx]/ (WorCorN[NxDIdx] + K_rMin)) 
 								);
 			
-			F_ImMin += F_ImMin_A[CxIdx] + F_ImMin_D[CxIdx];
-			
-			F_NH4 += ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_NH4)) * v_maxNH4 
+			F[ImMin] += F[numReactionTermsgeneral+2*ImMin_A+CxIdx] + F[numReactionTermsgeneral+2*ImMin_D+CxIdx];
+				
+			F[NH4_cons] += ( WorCorN[NH4Idx]/ (WorCorN[NH4Idx] + K_NH4)) * v_maxNH4 
 						* k_MBtoNH4 * (beta[CxIdx] * WorCorN[CxDIdx] + WorCorN[CxAIdx]);
-			F_NO3 += ( WorCorN[NO3Idx]/ (WorCorN[NO3Idx] + K_NO3)) * v_maxNO3 
+			F[NO3_cons] += ( WorCorN[NO3Idx]/ (WorCorN[NO3Idx] + K_NO3)) * v_maxNO3 
 						* k_MBtoNO3 * (beta[CxIdx] * WorCorN[CxDIdx] + WorCorN[CxAIdx]);
 			
 			
 			
 		}
 		
-		double F_Ndecay =   F_decay_A[CoAIdx_] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
-					+ F_decay_D[CoAIdx_] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx]) 
-					+ F_decay_A[CcAIdx_] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
-					+ F_decay_D[CcAIdx_] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);
+		// double F[Ndecay] =   F_decay_A[CoAIdx_] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
+					// + F_decay_D[CoAIdx_] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx]) 
+					// + F_decay_A[CcAIdx_] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
+					// + F_decay_D[CcAIdx_] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);
+					
+		F[Ndecay] =   F[decay_A_O] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
+					+ F[decay_D_O] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx]) 
+					+ F[decay_A_C] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
+					+ F[decay_D_C] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);
 					
 		// https://www.mdpi.com/2076-3417/6/10/269
 		// https://www.sciencedirect.com/science/article/pii/S0301479717306825?via%3Dihub loess soil
@@ -1323,43 +1405,43 @@ public:
         
 		//[mol solute / m3 scv/s] 
 		// water phase
-		q[soluteIdx] += ( F_depolymucil + F_depolyCH_Idx + (1. - k_decay2)*F_decay - F_uptake_S -  F_growth_S - F_CSS2)* pos0 ;
-		q[mucilIdx]  += -F_depolymucil * pos0;		
-		q[CH_Idx]  += (-F_depolyCH_Idx +  k_decay2 * F_decay) * pos0;		
-		q[NsoluteIdx] += (F_depolyCH_Idx * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx]) 
-							+ (1. - k_decay2)*F_Ndecay 
-							- (F_uptake_S ) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-							- F_growth_N
+		q[soluteIdx] += ( F[depolymucil] + F[depolyCH_Idx] + (1. - k_decay2)*F[decay] - F[uptake_S] -  F[growth_S] - F_CSS2)* pos0 ;
+		q[mucilIdx]  += -F[depolymucil] * pos0;		
+		q[CH_Idx]  += (-F[depolyCH_Idx] +  k_decay2 * F[decay]) * pos0;		
+		q[NsoluteIdx] += (F[depolyCH_Idx] * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx]) 
+							+ (1. - k_decay2)*F[Ndecay] 
+							- (F[uptake_S] ) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+							- F[growth_N]
 							- F_CSS2*CtoN_CSS2)* pos0 ;
-		q[NCH_Idx]  += (-F_depolyCH_Idx * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx])  
-								+  k_decay2 * F_Ndecay) * pos0;
-		q[NH4Idx]  += (-F_ImMin - F_NH4 - F_NH4S)* pos0;
-		q[NO3Idx]  += (F_NH4 - F_NO3) * pos0;
+		q[NCH_Idx]  += (-F[depolyCH_Idx] * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx])  
+								+  k_decay2 * F[Ndecay]) * pos0;
+		q[NH4Idx]  += (-F[ImMin] - F[NH4_cons] - F_NH4S)* pos0;
+		q[NO3Idx]  += (F[NH4_cons] - F[NO3_cons]) * pos0;
 		
 		// soil phase
-		q[CoAIdx] += (  F_growth[CoAIdx_] - F_deact[CoAIdx_] + F_react[CoAIdx_] - (1./k_decay)*F_decay_A[CoAIdx_]) * pos0;
-		q[CoDIdx] += ( F_deact[CoAIdx_] - F_react[CoAIdx_] - (1./k_decay)*F_decay_D[CoAIdx_]) * pos0;		
-		q[CcAIdx] += (   F_growth[CcAIdx_] - F_deact[CcAIdx_] + F_react[CcAIdx_] - (1./k_decay)*F_decay_A[CcAIdx_]) * pos0;
-		q[CcDIdx] += (F_deact[CcAIdx_] - F_react[CcAIdx_] - (1./k_decay)*F_decay_D[CcAIdx_]) * pos0;		
-		q[NoAIdx] += ( (F_growth[CoAIdx_] + F_uptake_S_A[CoAIdx_]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-							+ F_react[CoAIdx_] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
-							- (F_deact[CoAIdx_] + F_decay_A[CoAIdx_]) * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
-							+ F_ImMin_A[CoAIdx_]
+		q[CoAIdx] += (  F[growth_O] - F[deact_O] + F[react_O] - (1./k_decay)*F[decay_A_O]) * pos0;
+		q[CoDIdx] += ( F[deact_O] - F[react_O] - (1./k_decay)*F[decay_D_O]) * pos0;		
+		q[CcAIdx] += (   F[growth_C] - F[deact_C] + F[react_C] - (1./k_decay)*F[decay_A_C]) * pos0;
+		q[CcDIdx] += (F[deact_C] - F[react_C] - (1./k_decay)*F[decay_D_C]) * pos0;		
+		q[NoAIdx] += ( (F[growth_O] + F[uptake_S_A_O]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+							+ F[react_O] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
+							- (F[deact_O] + F[decay_A_O]) * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
+							+ F[ImMin_A_O]
 							) * pos0;
-		q[NoDIdx] += ( F_deact[CoAIdx_] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
-						+ F_uptake_S_D[CoAIdx_] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-						- (F_react[CoAIdx_] + F_decay_D[CoAIdx_]) * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
-							+ F_ImMin_D[CoAIdx_]
+		q[NoDIdx] += ( F[deact_O] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
+						+ F[uptake_S_D_O] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+						- (F[react_O] + F[decay_D_O]) * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
+						+ F[ImMin_D_O]
 						) * pos0;		
-		q[NcAIdx] += ( (F_growth[CcAIdx_] + F_uptake_S_A[CcAIdx_]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-							+ F_react[CcAIdx_] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
-							- (F_deact[CcAIdx_] + F_decay_A[CcAIdx_]) * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
-							+ F_ImMin_A[CcAIdx_]
+		q[NcAIdx] += ( (F[growth_C] + F[uptake_S_A_C]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+							+ F[react_C] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
+							- (F[deact_C] + F[decay_A_C]) * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
+							+ F[ImMin_A_C]
 							) * pos0;
-		q[NcDIdx] += ( F_deact[CcAIdx_] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
-						+ F_uptake_S_D[CcAIdx_] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-						- (F_react[CcAIdx_] + F_decay_D[CcAIdx_]) * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
-							+ F_ImMin_D[CcAIdx_]
+		q[NcDIdx] += ( F[deact_C] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
+						+ F[uptake_S_D_C] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+						- (F[react_C] + F[decay_D_C]) * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
+						+ F[ImMin_D_C]
 						) * pos0;
 		
 		q[CSS2Idx] +=  F_CSS2 * pos0 ;
@@ -1367,15 +1449,15 @@ public:
 		q[NH4SIdx] +=  F_NH4S * pos0 ;
 			
 		// gas emitted
-		q[co2Idx] += (((1.-k_growth[CoAIdx_])/k_growth[CoAIdx_])*F_growth[CoAIdx_] +((1.-k_growth[CcAIdx_])/k_growth[CcAIdx_])*F_growth[CcAIdx_] +((1.-k_decay)/k_decay)*F_decay+ F_uptake_S) * pos0;
-		q[N2Idx] += F_NO3 * pos0;
+		q[co2Idx] += (((1.-k_growth[CoAIdx_])/k_growth[CoAIdx_])*F[growth_O] +((1.-k_growth[CcAIdx_])/k_growth[CcAIdx_])*F[growth_C] +((1.-k_decay)/k_decay)*F[decay]+ F[uptake_S]) * pos0;
+		q[N2Idx] += F[NO3_cons] * pos0;
 			
 			if(verbose>1)
 			{
                 std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
             }
-
+		return F;
 	}
 
 	/*!

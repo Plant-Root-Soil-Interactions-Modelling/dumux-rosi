@@ -47,6 +47,8 @@ public:
     }
 };
 
+
+
 /**
  * Dumux as a solver with a simple Python interface.
  *
@@ -399,6 +401,7 @@ public:
 		scvfInnerFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
 		scvfBoundaryFluxes.assign(nEV.size(), std::vector<double>(nFaces, 0.));
 		scvSources.assign(nEV.size(),std::vector<double>(gridGeometry->numScv(),0.));
+		assignReactionRates();//default, creates array of 1 reaction term for each cell
 		
         globalPointIdx.resize(gridGeometry->gridView().size(dim)); // number of vertices
         for (const auto& v : Dune::vertices(gridGeometry->gridView())) {
@@ -429,6 +432,10 @@ public:
 
 		problemInitialized = true;
     }
+	
+	virtual void assignReactionRates(){
+		reactionRates.assign(1,std::vector<double>(this->gridGeometry->numScv(),0.)); //use size 1 as a default
+	}
 
     /**
      * Sets the initial conditions, for a MPI process
@@ -496,6 +503,7 @@ public:
             {
 				getScvfFluxesAtT(timeLoop->timeStepSize(),dt) ;
 				getScvSourcesAtT(timeLoop->timeStepSize(),dt) ;
+				trackReactionRates(timeLoop->timeStepSize(),dt) ;
             }
 			
             gridVariables->advanceTimeStep();
@@ -858,11 +866,11 @@ public:
 					auto elemFluxVars = Dumux::localView(gridVariables->gridFluxVarsCache());
 					//elemFluxVars.bindElement(e, fvGeometry, elemVolVars);
 
-                    f += problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx]; // [kg / (m2 s)]
+                    f += problem->neumann(e, fvGeometry, elemVolVars, elemFluxVars, scvf)[eqIdx] * scvf.area(); // [kg / (m2 s)] * [m2] = [kg / s]
                 }
             }
             if (c>0) {
-                fluxes[cellIdx->index(e)] = f/c; // mean value
+                fluxes[cellIdx->index(e)] = f;//net flux on the boundary /c; // mean value
             }
         }
         return fluxes;
@@ -899,6 +907,7 @@ public:
 				{
 					scvSources[eqIdx][scv.dofIndex()] += scvfSource_[eqIdx]/pos0*dt/outer_dt;
 				}
+				
 			}
 		}
 		
@@ -964,6 +973,11 @@ public:
             }
         }
     }
+	
+	//this dummy function will be overloaded to read out the reaction rates
+	virtual void trackReactionRates(double dt, double outer_dt){
+		
+	}
 
 	std::vector<double> getFaceSurfaces() {
 
@@ -1178,6 +1192,10 @@ public:
     virtual std::vector<std::vector<double>> getScvSources() {
         return scvSources;
     }
+	
+	virtual std::vector<std::vector<double>> getReactionRates() {
+        return reactionRates;
+    }
     
 	// reset to value before the last call to solve()
     virtual void reset() {
@@ -1240,6 +1258,7 @@ protected:
     std::vector<std::vector<double>> scvfBoundaryFluxes;
     std::vector<std::vector<double>> scvfInnerFluxes;
     std::vector<std::vector<double>> scvSources;
+	std::vector<std::vector<double>> reactionRates; //save all the reaction rates
 
     SolutionVector x;
 	SolutionVector xBackUp;
@@ -1325,6 +1344,7 @@ void init_solverbase(py::module &m, std::string name) {
 			.def("getScvfBoundaryFluxes", &Solver::getScvfBoundaryFluxes)
             .def("getScvfInnerFluxes", &Solver::getScvfInnerFluxes)
             .def("getScvSources", &Solver::getScvSources)
+			.def("getReactionRates", &Solver::getReactionRates)   
             .def("getNetFlux", &Solver::getNetFlux, py::arg("eqIdx") = 0)
             .def("pickCell", &Solver::pickCell)
             .def("pick", &Solver::pick)
