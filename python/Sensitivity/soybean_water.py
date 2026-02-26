@@ -1,34 +1,36 @@
-""" 
-    Dynamic:
-
-    Simulates dynamic water movement for a single fixed soybean scenario
-    
-    either reproduce a parameter set given by a json file (script top), 
-    or from scratch (script bot)
-    
-    Daniel Leitner, 2025
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+Dynamic:
 
-import os
+Simulates dynamic water movement for a single fixed soybean scenario
+
+either reproduce a parameter set given by a json file (script top),
+or from scratch (script bot)
+
+Daniel Leitner, 2025
+"""
+
+import sys
+
+sys.path.append("../modules")
+sys.path.append("../../build-cmake/cpp/python_binding/")
+sys.path.append("../../../CPlantBox")
+sys.path.append("../../../CPlantBox/src")
+
 import json
+import os
 
-import plantbox as pb
-import visualisation.vtk_plot as vp
-import functional.van_genuchten as vg
-
-import scenario_setup as scenario
 import evapotranspiration as evap
-import soil_model
+import functional.van_genuchten as vg
 import hydraulic_model
-
-import sra_new
-import run_sra
-
 import numpy as np
+import plantbox as pb
+import run_sra
+import scenario_setup as scenario
+import soil_model
+import sra_new
+import visualisation.vtk_plot as vp
 
-sim_time = 87.5  # 87.5 # 87.5  # 40  # 87.5  # 87.5  # 87.5  # [day]
+sim_time = 87.5  # [day]
 envirotype = 0
 
 # # rerun experiment from json
@@ -84,21 +86,23 @@ hairsElongation = 0.3
 
 # # 3
 mods = {
-        "output_times": [40, 60],
-
-        "conductivity_mode": "scale",
-        "scale_kr":1.,
-        "scale_kx":1.,
-
-        "a145": 0.2, "a2": 0.04, "a3": 0.04,
-        "hairsZone145":0, "hairsZone2":1.7, "hairsZone3":0.4,
-        "hairsLength145":0, "hairsLength2":0.1, "hairsLength3":0.3,
-        "hairsElongation": 0.3,
-
-        "dx": 0.1,
-
-        "bot_bc": "noFlux",
-        }
+    "output_times": [40, 60],
+    "conductivity_mode": "scale",
+    "scale_kr": 1.0,
+    "scale_kx": 1.0,
+    "a145": 0.2,
+    "a2": 0.04,
+    "a3": 0.04,
+    "hairsZone145": 0,
+    "hairsZone2": 1.7,
+    "hairsZone3": 0.4,
+    "hairsLength145": 0,
+    "hairsLength2": 0.1,
+    "hairsLength3": 0.3,
+    "hairsElongation": 0.3,
+    "dx": 0.1,
+    "bot_bc": "noFlux",
+}
 
 import cProfile
 import pstats
@@ -107,12 +111,12 @@ ob = cProfile.Profile()
 
 ob.enable()
 
-run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, "results/", save_all = True)
+run_sra.run_soybean("soybean_test", envirotype, sim_time, mods, "results/", save_all=True)
 
 ob.disable()
 
 stats = pstats.Stats(ob)
-stats.sort_stats('tottime')
+stats.sort_stats("tottime")
 stats.print_stats(20)
 
 # # kr = np.zeros((3,))
@@ -143,4 +147,3 @@ stats.print_stats(20)
 # # ana.addAge(sim_time)
 # #
 # # vp.plot_roots(ana, "distanceTip")
-

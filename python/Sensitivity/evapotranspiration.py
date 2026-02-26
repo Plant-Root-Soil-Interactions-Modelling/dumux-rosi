@@ -1,31 +1,31 @@
-
 """
-    Dynamic:
-    
-    this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
-    
-    using Beer's law, (assuming a predefined dynamic LAI)
-    
-    Daniel Leitner, 2025        
+Dynamic:
+
+this script helps to obtain net infiltration and potential transpiration from evapotranspiration data
+
+using Beer's law, (assuming a predefined dynamic LAI)
+
+Daniel Leitner, 2025
 """
 
 import pickle
+from datetime import *
+
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
-from datetime import *
-from functional.xylem_flux import sinusoidal2
+from functional.PlantHydraulicParameters import sinusoidal2
 
 SMALL_SIZE = 16
 MEDIUM_SIZE = 16
 BIGGER_SIZE = 16
-plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
-plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
-plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
-plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
-plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
+plt.rc("font", size=SMALL_SIZE)  # controls default text sizes
+plt.rc("axes", titlesize=SMALL_SIZE)  # fontsize of the axes title
+plt.rc("axes", labelsize=MEDIUM_SIZE)  # fontsize of the x and y labels
+plt.rc("xtick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc("ytick", labelsize=SMALL_SIZE)  # fontsize of the tick labels
+plt.rc("legend", fontsize=SMALL_SIZE)  # legend fontsize
+plt.rc("figure", titlesize=BIGGER_SIZE)  # fontsize of the figure title
 
 # Soybean
 # sigmoidal
@@ -40,12 +40,12 @@ plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
 # [ 5.14321003e+00  6.65910800e+01  4.09254414e-04 -1.08617435e+00]
 
 
-def sigmoid(x, L , x0, k, b):
+def sigmoid(x, L, x0, k, b):
     y = L / (1 + np.exp(-k * (x - x0))) + b
     return max(y, 0)
 
 
-def exp2(x, L , x0, k, b):
+def exp2(x, L, x0, k, b):
     y = L * np.exp(-k * (x - x0) * (x - x0)) + b
     return max(y, 0)
 
@@ -55,7 +55,7 @@ def lai_soybean(x):
 
 
 def lai_soybean2(x):
-    return exp2(x, 8.83381831e+00, 8.29555707e+01, 1.15834259e-03, 1.75018634e-01)  # see test_lai.py
+    return exp2(x, 8.83381831e00, 8.29555707e01, 1.15834259e-03, 1.75018634e-01)  # see test_lai.py
 
 
 def lai_maize(x):
@@ -63,29 +63,29 @@ def lai_maize(x):
 
 
 def lai_maize2(x):
-    return exp2(x, 5.14321003e+00, 6.65910800e+01, 4.09254414e-04, -1.08617435e+00)  # see test_lai.py
+    return exp2(x, 5.14321003e00, 6.65910800e01, 4.09254414e-04, -1.08617435e00)  # see test_lai.py
 
 
 def lai_noroots(x):
-    return 0.
+    return 0.0
 
 
 def get_transpiration_pickle(filename, range_, area):
-    """ takes the transpiration of filename in time @range_ from a pickle file"""
-    with open(filename, 'rb') as f:
+    """takes the transpiration of filename in time @range_ from a pickle file"""
+    with open(filename, "rb") as f:
         data = pickle.load(f)
     y_ = data["Tpot"]
-    y = y_.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
-    trans = lambda t, dt:-y[int((t + dt / 2) * 24)] * area  # day -> hour
+    y = y_.loc[range_[0] : range_[1]].values / 10.0 * 24.0  # mm -> cm, /hour -> /day
+    trans = lambda t, dt: -y[int((t + dt / 2) * 24)] * area  # day -> hour
     return trans
 
 
 def net_infiltration_table_pickle(filename, range_):
-    """ takes the net infiltration of filename in time @range_ from a pickle file"""
-    with open(filename, 'rb') as f:
+    """takes the net infiltration of filename in time @range_ from a pickle file"""
+    with open(filename, "rb") as f:
         data = pickle.load(f)
     yd = data["Net_infilteration"]
-    y = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
+    y = yd.loc[range_[0] : range_[1]].values / 10.0 * 24.0  # mm -> cm, /hour -> /day
     y_ = []
     x_ = []
     for i in range(0, y.shape[0]):
@@ -95,16 +95,16 @@ def net_infiltration_table_pickle(filename, range_):
 
 
 def get_transpiration_beers_pickle(filename, start_date, sim_time, area, lai_f, Kc):
-    """ calculates transpiration with Beer's law from start_date from a pickle file"""
-    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    """calculates transpiration with Beer's law from start_date from a pickle file"""
+    start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
     end_date = start_date + timedelta(sim_time + 1, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
 
-    with open(filename, 'rb') as f:
+    with open(filename, "rb") as f:
         data = pickle.load(f)
 
     yd = data["ET0"]
-    et0 = yd.loc[range_[0]: range_[1]].values / 10. * 24.  # mm -> cm, /hour -> /day
+    et0 = yd.loc[range_[0] : range_[1]].values / 10.0 * 24.0  # mm -> cm, /hour -> /day
 
     """ 1. ET0 -> ETc """
     etc = et0 * Kc  # ETc = crop evapotranspiration
@@ -112,7 +112,7 @@ def get_transpiration_beers_pickle(filename, start_date, sim_time, area, lai_f, 
     """ 2. ETc -> Tpot, Evap """
     k = 0.6
     t_ = np.linspace(0, sim_time, len(etc))
-    tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
+    tpot = np.multiply(etc, [(1.0 - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
 
     # plt.plot(t_, etc, label = "Crop evapotranspiration")
@@ -126,33 +126,33 @@ def get_transpiration_beers_pickle(filename, start_date, sim_time, area, lai_f, 
     # plt.legend()
     # plt.show()
     # print("hourly potential transpiration len", len(tpot))
-    trans = lambda t, dt:-tpot[int((t + dt / 2) * 24)] * area  # day -> hour
+    trans = lambda t, dt: -tpot[int((t + dt / 2) * 24)] * area  # day -> hour
 
     return trans
 
 
 def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_age):
-    """ ! used by run_sra ! 
+    """! used by run_sra !
     calculates potential transpiration with Beer's law from start_date from a csv file
-        
+
     start_date              format '%Y-%m-%d %H:%M:%S'
     sim_time                maximal simulation time (to calculate end date)
-    area                    soil surface area   
-    lai_f                   time dependent leaf area index (lai_soybean2)   
-    Kc                      crop coefficient  
-    initial_age             initial_age root system age (shifts start and end date)               
+    area                    soil surface area
+    lai_f                   time dependent leaf area index (lai_soybean2)
+    Kc                      crop coefficient
+    initial_age             initial_age root system age (shifts start and end date)
     """
-    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    start_date = start_date + timedelta(days = initial_age)
-    end_date = start_date + timedelta(days = sim_time + 1)  # +1 just to be sure
+    start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+    start_date = start_date + timedelta(days=initial_age)
+    end_date = start_date + timedelta(days=sim_time + 1)  # +1 just to be sure
     range_ = [str(start_date), str(end_date)]
 
     """ 1. load ET, ET0 -> ETc """
     df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day
-    df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
-    df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
-    df2 = df2.drop(['Date'], axis = 1)
-    yd2 = df2["ET (kg/m2)"].loc[range_[0]: range_[1]].values * 0.1  # dm->cm
+    df2["Datetime"] = pd.to_datetime(df2["Date"], format="%Y-%m-%d")
+    df2 = df2.set_index(pd.DatetimeIndex(df2["Datetime"]))
+    df2 = df2.drop(["Date"], axis=1)
+    yd2 = df2["ET (kg/m2)"].loc[range_[0] : range_[1]].values * 0.1  # dm->cm
     et0 = yd2
     etc = et0 * Kc  # ETc = crop evapotranspiration
 
@@ -160,9 +160,9 @@ def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_
     k = 0.6
     print(sim_time, len(etc))
     t_ = np.linspace(0, len(etc) - 1, len(etc))
-    tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(initial_age + t_[i]))) for i in range(0, len(etc))])
+    tpot = np.multiply(etc, [(1.0 - np.exp(-k * lai_f(initial_age + t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
-    trans = lambda t, dt:-tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
+    trans = lambda t, dt: -tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
 
     # t2_ = np.linspace(0, sim_time + 1, len(etc) * 24)  # more points more fun...
     # tpot2 = [-trans(t, 0.) / area for t in t2_]
@@ -178,43 +178,43 @@ def get_transpiration_beers_csvS(start_date, sim_time, area, lai_f, Kc, initial_
     return trans
 
 
-def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc , initial_age):
-    """ 
+def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc, initial_age):
+    """
     ! used by run_sra !
-    calculates net infiltration with Beer's law from start_date from INARI csv file 
-    
+    calculates net infiltration with Beer's law from start_date from INARI csv file
+
     start_date              format '%Y-%m-%d %H:%M:%S'
     sim_time                maximal simulation time (to calculate end date)
-    lai_f                   time dependent leaf area index (lai_soybean2)   
-    Kc                      crop coefficient  
-    initial_age             initial_age root system age (shifts start and end date)   
+    lai_f                   time dependent leaf area index (lai_soybean2)
+    Kc                      crop coefficient
+    initial_age             initial_age root system age (shifts start and end date)
     """
-    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
-    start_date = start_date + timedelta(days = initial_age)
-    end_date = start_date + timedelta(days = sim_time + 1)
+    start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
+    start_date = start_date + timedelta(days=initial_age)
+    end_date = start_date + timedelta(days=sim_time + 1)
     range_ = [str(start_date), str(end_date)]
 
     """ 0. load precipitation """
     df = pd.read_csv("data/WeatherSummary_K0_20-22.csv")  # precipitation data
-    df['Datetime'] = pd.to_datetime(df['date'], format = '%Y-%m-%d')
-    df = df.set_index(pd.DatetimeIndex(df['Datetime']))
-    df = df.drop(['date'], axis = 1)
-    yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
+    df["Datetime"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
+    df = df.set_index(pd.DatetimeIndex(df["Datetime"]))
+    df = df.drop(["date"], axis=1)
+    yd = df["prcp"].loc[range_[0] : range_[1]].values * 2.54  # inches -> cm
     t_ = np.linspace(0, sim_time, yd.shape[0] * 24)  # relative time in hours
-    precip = np.array([ yd[int(t)] for t in t_ ])  # TODO precip / day
+    precip = np.array([yd[int(t)] for t in t_])  # TODO precip / day
 
     """ 1. load ET, ET0 -> ETc """
     df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
-    df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
-    df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
-    df2 = df2.drop(['Date'], axis = 1)
-    yd2 = df2["ET (kg/m2)"].loc[range_[0]: range_[1]].values * 0.1  # dm->cm
-    et0 = np.array([ yd2[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
+    df2["Datetime"] = pd.to_datetime(df2["Date"], format="%Y-%m-%d")
+    df2 = df2.set_index(pd.DatetimeIndex(df2["Datetime"]))
+    df2 = df2.drop(["Date"], axis=1)
+    yd2 = df2["ET (kg/m2)"].loc[range_[0] : range_[1]].values * 0.1  # dm->cm
+    et0 = np.array([yd2[int(t)] * sinusoidal2(t, 0.0) for t in t_])
     etc = et0 * Kc
 
     """ 2. ETc -> Tpot, Evap """
     k = 0.6
-    tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(initial_age + t))) for t in t_])
+    tpot = np.multiply(etc, [(1.0 - np.exp(-k * lai_f(initial_age + t))) for t in t_])
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
@@ -254,34 +254,34 @@ def net_infiltration_table_beers_csvS(start_date, sim_time, lai_f, Kc , initial_
 
 
 def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
-    """ calculates net infiltration with Beer's law from start_date from INARI csv file"""
+    """calculates net infiltration with Beer's law from start_date from INARI csv file"""
 
     sim_time += 1
-    start_date = datetime.strptime(start_date, '%Y-%m-%d %H:%M:%S')
+    start_date = datetime.strptime(start_date, "%Y-%m-%d %H:%M:%S")
     end_date = start_date + timedelta(sim_time, 3600)  # root system starts to grow one day earlier (+max dat)
     range_ = [str(start_date), str(end_date)]
 
     """ 0. load precipitation """
     df = pd.read_csv("data/WeatherSummary_K0_20-22.csv")  # precipitation data
-    df['Datetime'] = pd.to_datetime(df['date'], format = '%Y-%m-%d')
-    df = df.set_index(pd.DatetimeIndex(df['Datetime']))
-    df = df.drop(['date'], axis = 1)
-    yd = df["prcp"].loc[range_[0]: range_[1]].values * 2.54  # inches -> cm
+    df["Datetime"] = pd.to_datetime(df["date"], format="%Y-%m-%d")
+    df = df.set_index(pd.DatetimeIndex(df["Datetime"]))
+    df = df.drop(["date"], axis=1)
+    yd = df["prcp"].loc[range_[0] : range_[1]].values * 2.54  # inches -> cm
     precip = yd
     t_ = np.linspace(0, len(precip), len(precip))  # relative time
 
     """ 1. load ET, ET0 -> ETc """
     df2 = pd.read_csv("data/K0_ET0_2020-22.csv")  # evapotranspiration kg / m2 ; kg = dm3 = 0.1 cm m2 # 0.1 cm / day (?)
-    df2['Datetime'] = pd.to_datetime(df2['Date'], format = '%Y-%m-%d')
-    df2 = df2.set_index(pd.DatetimeIndex(df2['Datetime']))
-    df2 = df2.drop(['Date'], axis = 1)
-    yd2 = df2["ET (kg/m2)"].loc[range_[0]: range_[1]].values * 0.1  # dm->cm
+    df2["Datetime"] = pd.to_datetime(df2["Date"], format="%Y-%m-%d")
+    df2 = df2.set_index(pd.DatetimeIndex(df2["Datetime"]))
+    df2 = df2.drop(["Date"], axis=1)
+    yd2 = df2["ET (kg/m2)"].loc[range_[0] : range_[1]].values * 0.1  # dm->cm
     et0 = yd2
     etc = et0 * Kc
     """ 2. ETc -> Tpot, Evap """
     k = 0.6
     t_ = np.linspace(0, sim_time, len(etc))
-    tpot = np.multiply(etc, [(1. - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
+    tpot = np.multiply(etc, [(1.0 - np.exp(-k * lai_f(t_[i]))) for i in range(0, len(etc))])
     evap = etc - tpot
     evap = -evap
     net_inf = precip + evap
@@ -324,8 +324,8 @@ def net_infiltration_table_beers_csv(start_date, sim_time, lai_f, Kc):
     return np.array(x_), np.array(y_)
 
 
-def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.):
-    """ adds a consant nitrate source @param nit_flux due to nitrification [g/day] """
+def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux=0.0):
+    """adds a consant nitrate source @param nit_flux due to nitrification [g/day]"""
     z_ = np.linspace(-0.5, -29.5, 30)  # top 30 cm layers
     for z in z_:
         i = s.pick([0, 0, z])  # cell index
@@ -333,6 +333,7 @@ def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.):
             soil_sol_fluxes[i] += nit_flux
         else:
             soil_sol_fluxes[i] = nit_flux
+
 
 # def get_transpiration_beers_csv(start_date, sim_time, area, lai_f, Kc):
 #     """ calculates transpiration with Beer's law from start_date from a pickle file"""
@@ -421,4 +422,3 @@ def add_nitrificatin_source(s, soil_sol_fluxes, nit_flux = 0.):
 #         y_.extend([net_inf[i], net_inf[i]])
 #
 #     return x_, y_
-
