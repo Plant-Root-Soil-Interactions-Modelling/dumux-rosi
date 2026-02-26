@@ -1,6 +1,4 @@
-vtk
-matplotlib
-scipy
-pandas
-mpi4py
 bayesian-optimization
+scikit-learn
+minisom
+dash_ag_grid
