@@ -1,12 +1,13 @@
 """
-    Macrcoscopic:
+Macrcoscopic:
 
-    zips the results from result_cplantbox/ folder?
-    
-    Daniel Leitner, 2025      
+zips the results from result_cplantbox/ folder
+
+Daniel Leitner, 2025
 """
-import zipfile
+
 import json
+import zipfile
 
 import global_optimization_tools as got
 
@@ -23,6 +24,6 @@ for a in all:
 # Write all JSON data to a zip file
 with zipfile.ZipFile(exp_name + ".zip", "w", zipfile.ZIP_DEFLATED) as zipf:
     with zipf.open(exp_name + ".json", "w") as json_file:
-        json_file.write(json.dumps(all_json, indent = 4).encode("utf-8"))
+        json_file.write(json.dumps(all_json, indent=4).encode("utf-8"))
 
 print("fin.")

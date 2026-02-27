@@ -244,13 +244,13 @@ def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times
 
             vol = ana.getParameter("volume")
             c1 = carbon_cost.carbon_cost_volume(vol)
-            if cc_data:  # untested
+            if cc_data:
                 subType = ana.getParameter("subType")
-                segLeng = ana.getParameter("length")
-                r = cc_data["radii"]
+                segLen = ana.getParameter("length")
+                r_ = cc_data["radii"]
                 a = cc_data["anatomy"]
                 c2 = carbon_cost.carbon_cost_simple(vol, subType, a[0][0], a[1][0], a[2][0])
-                c3 = carbon_cost.carbon_cost_anatomy(vol, subType, segLen, a[0], a[1], a[2], r[0], r[1], r[2])
+                c3 = carbon_cost.carbon_cost_anatomical(vol, subType, segLen, a[0], a[1], a[2], r_[0], r_[1], r_[2])
                 carbon_.append([c1, c2, c3])
             else:
                 carbon_.append([c1])

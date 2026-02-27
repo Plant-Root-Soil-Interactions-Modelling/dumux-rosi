@@ -7,7 +7,7 @@ see run_sra.py,
 see __main__, arguments are passed over command line (freezing fixed parameters, and passing sensitive parameters)
 
 On Cluster:
-source myenv/bin/activate
+source cpbenv/bin/activate
 python3 run_SA.py (make sure target directory is empty)
 then use a bash file to send jobs to cluster (e.g. run_file.sh)
 
