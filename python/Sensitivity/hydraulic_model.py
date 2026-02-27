@@ -1,40 +1,47 @@
-""" 
-    Dynamic & Macroscopic:
-
-    Helps to set up the root architecture or a single root (and applies possible modifications), 
-    see RootHydraulicModel, PlantHydraulicParameters 
-    
-    TODO check if single root is still working 
-    
-    Daniel Leitner, 2025   
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+Dynamic & Macroscopic:
 
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); size = comm.Get_size()
-import numpy as np
-import timeit
+Helps to set up the root architecture or a single root (and applies possible modifications),
+see RootHydraulicModel, PlantHydraulicParameters
+
+TODO check if single root is still working
+
+Daniel Leitner, 2025
+"""
+
 import copy
+import timeit
+from datetime import *
+
+import evapotranspiration as evap
 import matplotlib
 import matplotlib.pyplot as plt
-from mpl_toolkits.axes_grid1 import make_axes_locatable
-
-from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
-from rosi_richards import RichardsSP
-# from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
-from richards import RichardsWrapper  # Python part, macroscopic soil model
-
+import numpy as np
 import plantbox as pb  # CPlantBox
-import functional.van_genuchten as vg
-from functional.PlantHydraulicParameters import PlantHydraulicParameters
-from functional.PlantHydraulicModel import HydraulicModel_Doussan
-from functional.PlantHydraulicModel import HydraulicModel_Meunier
-import evapotranspiration as evap
-from datetime import *
+import plantbox.functional.van_genuchten as vg
+from mpl_toolkits.axes_grid1 import make_axes_locatable
+from plantbox.functional.PlantHydraulicModel import (
+    HydraulicModel_Doussan,
+    HydraulicModel_Meunier,
+)
+from plantbox.functional.PlantHydraulicParameters import PlantHydraulicParameters
+
+# from rosi_richards import RichardsSPnum as  RichardsSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi.richards import RichardsWrapper  # Python part, macroscopic soil model
+from rosi.rosi_richards import RichardsSP
+from rosi.rosi_richardsnc import (
+    RichardsNCSP,  # C++ part (Dumux binding), macroscopic soil model
+)
+
+from mpi4py import MPI
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+size = comm.Get_size()
 
 
 def set_all_sd(rs, s):
-    """ # sets all standard deviation to a percantage, i.e. value*s """
+    """# sets all standard deviation to a percantage, i.e. value*s"""
     for p in rs.getOrganRandomParameter(pb.OrganTypes.root):
         p.a_s = p.a * s
         p.lbs = p.lb * s
@@ -62,9 +69,9 @@ def set_all_sd(rs, s):
     # print(seed.delayB)
 
 
-def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, stochastic = False, mods = None, model = "Meunier"):
-    """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
-        and maps it to the soil_model """
+def create_mapped_rootsystem(min_b, max_b, cell_number, soil_model, fname, stochastic=False, mods=None, model="Meunier"):
+    """loads a rmsl file, or creates a rootsystem opening an xml parameter set,
+    and maps it to the soil_model"""
 
     global picker  # make sure it is not garbage collected away...
 
@@ -85,7 +92,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
                 seed = 1  # always the same random seed
         else:
             seed = None
-        seed = comm.bcast(seed, root = 0)  # random seed must be the same for each process; TODO check test for that ...
+        seed = comm.bcast(seed, root=0)  # random seed must be the same for each process; TODO check test for that ...
         # print("create_mapped_rootsystem(): Seed rank {:g}:".format(rank), seed)
 
         rs = pb.MappedPlant()
@@ -95,9 +102,9 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         print(fname)
 
         if not stochastic:
-            set_all_sd(rs, 0.)
+            set_all_sd(rs, 0.0)
 
-        initial_age = 1.
+        initial_age = 1.0
         if mods is not None:  # apply modifications
             if "initial_age" in mods:
                 initial_age = mods["initial_age"]
@@ -105,7 +112,7 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
 
             apply_mods(mods, rs)
 
-        rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+        rs.setGeometry(pb.SDF_PlantBox(1.0e6, 1.0e6, np.abs(min_b[2])))
         rs.initializeLB()
 
         rs.simulate(initial_age, True)
@@ -117,20 +124,24 @@ def create_mapped_rootsystem(min_b , max_b , cell_number, soil_model, fname, sto
         else:
             raise "create_mapped_rootsystem(): unknown model"
 
-    r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+    r.ms.setRectangularGrid(
+        pb.Vector3d(min_b[0], min_b[1], min_b[2]),
+        pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]),
+        cut=False,
+    )
 
     if soil_model is not None:
-        picker = lambda x, y, z: soil_model.pick([0., 0., z])
+        picker = lambda x, y, z: soil_model.pick([0.0, 0.0, z])
         r.ms.setSoilGrid(picker)  # maps segments, maps root segments and soil grid indices to each other in both directions
 
     return r, params
 
 
 def get_indices(key, max_st):
-    """ parses names for subTypes, and '_a' for absolute value or '_s' for scaling (default is scaling)"""
+    """parses names for subTypes, and '_a' for absolute value or '_s' for scaling (default is scaling)"""
 
-    ind_indices = [list(range(0, max_st)), [1, 4], [2, 3], [1], [2], [3], [4], [4]] # no type 5 for soybean
+    ind_indices = [list(range(0, max_st)), [1, 4], [2, 3], [1], [2], [3], [4], [4]]  # no type 5 for soybean
     ind_names = ["", "145", "23", "1", "2", "3", "4", "45"]
 
     abs_ = False  # default
@@ -143,7 +154,7 @@ def get_indices(key, max_st):
 
     for i in range(1, len(ind_indices)):
         if key.endswith(ind_names[i]):
-            return ind_indices[i], abs_, key[0:-len(ind_names[i])]
+            return ind_indices[i], abs_, key[0 : -len(ind_names[i])]
 
     return ind_indices[0], abs_, key
 
@@ -151,17 +162,17 @@ def get_indices(key, max_st):
 def apply_mods(mods, plant):
     """
     applies changes to RootRandomParameters @param rrp and SeedRandomParameters @parm srp
-    
+
     maximal root length:             lmax, lmax145, lmax2, lmax3, lmax4              scaling
     insertion angle from base root:  theta45, theta2, theta3                         angles in radians
     initial growth rate:             r, r145, r2, r3                                 scaling
     interlateral spacing:            ln, ln145, ln2                                  scaling
     root radius                      a, a145, a2, a3                                 scaling
-    seminal roots:                   src [number of], src_first, src_delay           scaling 
-    tropism:                         tropismN, tropismN145, tropismN2, tropismN3     scaling 
-                                     tropismS, tropismS145, tropismS2, tropismS3     scaling 
+    seminal roots:                   src [number of], src_first, src_delay           scaling
+    tropism:                         tropismN, tropismN145, tropismN2, tropismN3     scaling
+                                     tropismS, tropismS145, tropismS2, tropismS3     scaling
     root hairs:                      hairsZone, hairsLength, hairsElongation         scaling
-    aixal resolution                 dx                                              always absolute  
+    aixal resolution                 dx                                              always absolute
     """
     rrp = plant.getOrganRandomParameter(pb.OrganTypes.root)
     srp = plant.getOrganRandomParameter(pb.OrganTypes.seed)
@@ -294,23 +305,22 @@ def apply_mods(mods, plant):
                 rrp[i].dx = mods[key]
             mods.pop(key)
 
-        
 
-def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic = False, mods = None, model = "Meunier"):
-    """ creates a mapped sinlge root"""
+def create_mapped_singleroot(min_b, max_b, cell_number, soil_model, stochastic=False, mods=None, model="Meunier"):
+    """creates a mapped sinlge root"""
 
     global picker  # make sure it is not garbage collected away...
 
     params = PlantHydraulicParameters()
 
-    rs = create_singleroot(ns = 100, l = 50 , a = 0.05)
+    rs = create_singleroot(ns=100, l=50, a=0.05)
 
     if mods is not None:  # apply modifications
         apply_mods(mods, rs)
 
-    rs.setGeometry(pb.SDF_PlantBox(1.e6, 1.e6, np.abs(min_b[2])))
+    rs.setGeometry(pb.SDF_PlantBox(1.0e6, 1.0e6, np.abs(min_b[2])))
     rs.initializeLB(4, 5)
-    rs.simulate(1., True)
+    rs.simulate(1.0, True)
 
     if model == "Meunier":
         r = HydraulicModel_Meunier(rs, params)
@@ -319,25 +329,28 @@ def create_mapped_singleroot(min_b , max_b , cell_number, soil_model, stochastic
     else:
         raise "create_mapped_rootsystem(): unknown model"
 
-    r.ms.setRectangularGrid(pb.Vector3d(min_b[0], min_b[1], min_b[2]), pb.Vector3d(max_b[0], max_b[1], max_b[2]),
-                            pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]), cut = False)
+    r.ms.setRectangularGrid(
+        pb.Vector3d(min_b[0], min_b[1], min_b[2]),
+        pb.Vector3d(max_b[0], max_b[1], max_b[2]),
+        pb.Vector3d(cell_number[0], cell_number[1], cell_number[2]),
+        cut=False,
+    )
 
-    picker = lambda x, y, z: soil_model.pick([0., 0., z])
+    picker = lambda x, y, z: soil_model.pick([0.0, 0.0, z])
     r.ms.setSoilGrid(picker)  # maps segments, maps root segements and soil grid indices to each other in both directions
 
     return r, params
 
 
-def create_singleroot(ns = 100, l = 50 , a = 0.05):
-    """ creates a single root with @param ns segments, length l, and radius a """
+def create_singleroot(ns=100, l=50, a=0.05):
+    """creates a single root with @param ns segments, length l, and radius a"""
     radii = np.array([a] * ns)
     nodes = [pb.Vector3d(0, 0, 0)]
     segs = []
     dx = l / ns
-    z_ = np.linspace(-dx, -l , ns)
+    z_ = np.linspace(-dx, -l, ns)
     for i in range(0, ns):
         nodes.append(pb.Vector3d(0, 0, z_[i]))
         segs.append(pb.Vector2i(i, i + 1))
     rs = pb.MappedSegments(nodes, segs, radii)
     return rs
-

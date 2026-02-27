@@ -11,11 +11,11 @@ import timeit
 
 import carbon_cost
 import evapotranspiration as evap
-import functional.van_genuchten as vg
 import numpy as np
 import plantbox as pb
-import visualisation.vtk_plot as vtk
-from functional.Perirhizal import PerirhizalPython
+import plantbox.functional.van_genuchten as vg
+import plantbox.visualisation.vtk_plot as vtk
+from plantbox.functional.Perirhizal import PerirhizalPython
 
 
 def simulate_dynamic(s, r, lookuptable_name, sim_time, dt, trans_f, output_times, initial_age=1.0, cc_data=None):

@@ -9,26 +9,19 @@ or from scratch (script bot)
 Daniel Leitner, 2025
 """
 
-import sys
-
-sys.path.append("../modules")
-sys.path.append("../../build-cmake/cpp/python_binding/")
-sys.path.append("../../../CPlantBox")
-sys.path.append("../../../CPlantBox/src")
-
 import json
 import os
 
 import evapotranspiration as evap
-import functional.van_genuchten as vg
 import hydraulic_model
 import numpy as np
 import plantbox as pb
+import plantbox.functional.van_genuchten as vg
+import plantbox.visualisation.vtk_plot as vp
 import run_sra
 import scenario_setup as scenario
 import soil_model
 import sra_new
-import visualisation.vtk_plot as vp
 
 sim_time = 87.5  # [day]
 envirotype = 0

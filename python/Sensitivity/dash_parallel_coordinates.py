@@ -175,7 +175,7 @@ app.layout = dbc.Container(
             id="download-btn",
             color="primary",
             className="mb-3",
-        ),  # hallo
+        ),
         dcc.Download(id="download-expnames"),
         dag.AgGrid(
             id="table",

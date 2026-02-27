@@ -1,34 +1,17 @@
 """
-    Macroscopic:
-    
-    prints actual, potential, and cumulative transpiration, and shows optimal file number indices
-    
-    list_filename ... a list of the simulation results files to be considered
-    
-    Daniel Leitner, 2025    
+Macroscopic:
+
+prints actual, potential, and cumulative transpiration, and shows optimal file number indices
+
+list_filename ... a list of the simulation results files to be considered
+
+Daniel Leitner, 2025
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
-
-import numpy as np
-import matplotlib.pyplot as plt
-
-from functional.xylem_flux import sinusoidal2
 
 import evapotranspiration as evap
-
-SMALL_SIZE = 16
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 32
-plt.rc('font', size = BIGGER_SIZE)  # controls default text sizes
-plt.rc('axes', titlesize = BIGGER_SIZE)  # fontsize of the axes title
-plt.rc('axes', labelsize = BIGGER_SIZE)  # fontsize of the x and y labels
-plt.rc('xtick', labelsize = BIGGER_SIZE)  # fontsize of the tick labels
-plt.rc('ytick', labelsize = BIGGER_SIZE)  # fontsize of the tick labels
-plt.rc('legend', fontsize = BIGGER_SIZE)  # legend fontsize
-plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
-prop_cycle = plt.rcParams['axes.prop_cycle']
-colors = prop_cycle.by_key()['color']
+import figure_style
+import matplotlib.pyplot as plt
+import numpy as np
 
 Kc_maize = 1.2
 Kc_soybean = 1.15
@@ -36,7 +19,7 @@ Kc_soybean = 1.15
 list_filename = "data/my_pick_12.txt"
 path = "results (2)/"  # from results.zip
 
-with open(list_filename, "r", encoding = "utf-8") as file:
+with open(list_filename, "r", encoding="utf-8") as file:
     lines = file.readlines()
 lines = [line.strip() for line in lines]
 

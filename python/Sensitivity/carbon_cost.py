@@ -1,27 +1,24 @@
-""" 
-    Carbon cost models
-        
-    carbon_cost(plant, params, model) calls one of the models below:
-        
-    carbon(...)                    proportional to volume
-    carbon_cost_simple(...)        carbon cost proportional to the plant volume subtracting arenchymna percentage
-    carbon_cost_anatomical(...)    carbon cost as weighted sum with varying carbon dry masses 
-        for cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex, see also carbon_()
-    
-    
-    Daniel Leitner, 2025  
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
+Carbon cost models
+
+carbon_cost(plant, params, model) calls one of the models below:
+
+carbon(...)                    proportional to volume
+carbon_cost_simple(...)        carbon cost proportional to the plant volume subtracting arenchymna percentage
+carbon_cost_anatomical(...)    carbon cost as weighted sum with varying carbon dry masses
+    for cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex, see also carbon_()
+
+
+Daniel Leitner, 2025
+"""
 
 import numpy as np
-
 import plantbox as pb
 import scenario_setup
 
 
 def carbon_cost_volume(vol):
-    """ returns the carbon cost propotional to the plant volume """
+    """returns the carbon cost propotional to the plant volume"""
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
     carbon_per_drymass = 0.45  # 45% (40-45%)
@@ -32,25 +29,25 @@ def carbon_cost_volume(vol):
 
 
 def carbon_cost_simple(vol, subType, ap145, ap2, ap3):
-    """ returns the carbon cost proportional to the plant volume subtracting arenchymna percentage """
+    """returns the carbon cost proportional to the plant volume subtracting arenchymna percentage"""
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
     carbon_per_drymass = 0.45  # 45% (40-45%)
 
-    v = np.sum(np.multiply((1. - ap145) * np.equal(subType, 1), vol))
-    v += np.sum(np.multiply((1. - ap145) * np.equal(subType, 4), vol))
-    v += np.sum(np.multiply((1. - ap145) * np.equal(subType, 5), vol))
-    v += np.sum(np.multiply((1. - ap2) * np.equal(subType, 2), vol))
-    v += np.sum(np.multiply((1. - ap3) * np.equal(subType, 3), vol))
+    v = np.sum(np.multiply((1.0 - ap145) * np.equal(subType, 1), vol))
+    v += np.sum(np.multiply((1.0 - ap145) * np.equal(subType, 4), vol))
+    v += np.sum(np.multiply((1.0 - ap145) * np.equal(subType, 5), vol))
+    v += np.sum(np.multiply((1.0 - ap2) * np.equal(subType, 2), vol))
+    v += np.sum(np.multiply((1.0 - ap3) * np.equal(subType, 3), vol))
     dry_mass = v * fresh_density * dry_matter_content
 
     return dry_mass * carbon_per_drymass
 
 
 def carbon_cost_anatomical(vol, subType, segLen, ana145, ana2, ana3, a145, a2, a3):
-    """ returns the carbon cost as weighted sum with varying carbon dry masses for
-        cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex
-        see also carbon_()
+    """returns the carbon cost as weighted sum with varying carbon dry masses for
+    cortex, stele, and epidermis. Aarenchyma percentage is subtracted from the cortex
+    see also carbon_()
     """
     c145 = carbon_(ana145, a145)
     c2 = carbon_(ana2, a2)
@@ -64,7 +61,7 @@ def carbon_cost_anatomical(vol, subType, segLen, ana145, ana2, ana3, a145, a2, a
 
 
 def carbon_(anatomy, a):
-    """ carbon per length [g/cm] of model 'anatomical' """
+    """carbon per length [g/cm] of model 'anatomical'"""
     fresh_density = 1.03  # g / cm3 (1.02–1.05 g/cm3)
     dry_matter_content = 0.08  #
 
@@ -75,13 +72,13 @@ def carbon_(anatomy, a):
     epidermis_area = (a * a - (a - 0.02) * (a - 0.02)) * np.pi  # two cell layers with 0.01 cm diameter
     stele_area = anatomy[4] * anatomy[4] * np.pi
     cortex_area = a * a * np.pi - epidermis_area - stele_area
-    cortex_area *= (1. - anatomy[0])  # aerenchyma percentage
+    cortex_area *= 1.0 - anatomy[0]  # aerenchyma percentage
 
     return fresh_density * dry_matter_content * (c_stele * stele_area + c_cortex * cortex_area + c_epidermis * epidermis_area)
 
 
 def carbon_cost(plant, params, model):
-    """ calculates the carbon cost of the plant model = [volume, simple, or anatomical] """
+    """calculates the carbon cost of the plant model = [volume, simple, or anatomical]"""
 
     carbon_per_drymass = 0.45  # 45% (40-45%)
 
