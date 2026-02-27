@@ -251,10 +251,9 @@ def local_soybean_radii(enviro_type=0, bot_str=""):
     make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local=False)
 
 
-def simulate_list(enviro_type=0):
-    print("simulate_list")
+def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
+    print("simulate_list: ", enviro_type, bot_str, list_filename)
     root_type = "soybean"  # unused
-    list_filename = "data/my_pick.txt"
 
     with open(list_filename, "r", encoding="utf-8") as file:
         lines = file.readlines()
@@ -262,27 +261,20 @@ def simulate_list(enviro_type=0):
     print("number of lines in my_pick.txt:", len(lines))
     jobs = []
     for line in lines:  # line = experiment name
-        jobs.append([line, float(0.0), 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
+        jobs.append([line, bot_str, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
 
-    sim_time = 87.5  # 87.5  # 87.5  # days
+    sim_time = 87.5  # days
     make_jobs("file", "", "", enviro_type, sim_time, jobs, run_local=False)
-    # run_sra.run_soybean_exp(lines[1], enviro_type, sim_time, save_all = False)
-
-    # enviro_type = 1
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 5
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 36
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-    # enviro_type = 59
-    # start_jobs(type_str, "", root_type, enviro_type, sim_time, jobs, run_local = False)
-
-    # TODO
-    # run_experiment(exp_name, enviro_type, sim_time) using a params file
-    #
 
 
 if __name__ == "__main__":
+
+    simulate_list(0, "", "data/my_pick_12.txt")
+    simulate_list(1, "", "data/my_pick_12.txt")
+    # simulate_list(0, "free_", "data/my_pick_12.txt")
+    # simulate_list(1, "free_", "data/my_pick_12.txt")
+    # simulate_list(0, "200_", "data/my_pick_12.txt")
+    # simulate_list(1, "200_", "data/my_pick_12.txt")
 
     #
     # Make job files for local sensitivty analysis
@@ -317,6 +309,7 @@ if __name__ == "__main__":
     local_soybean_radii(1, "free_")
     # local_soybean_radii(0, "200_") # bot bc water table at 2m
     # local_soybean_radii(1, "200_")
+
 
 # def local_soybean_conductivities():
 #     """ constructs a local sensitivity analysis of hydraulic conductivities

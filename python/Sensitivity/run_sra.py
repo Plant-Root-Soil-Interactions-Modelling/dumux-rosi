@@ -335,11 +335,6 @@ def run(argv):
             with zipf.open("soybean_all14.json", "r") as json_file:
                 all = json.load(json_file)  # Deserialize JSON data
 
-        # folder_path = "results_cplantbox/"
-        # file_path = os.path.join(folder_path, exp_name + "_mods.json")
-        # with open(file_path, 'r', encoding = 'utf-8') as file:
-        #     params = json.load(file)
-
         params = all[exp_name]
         params["mecha_path"] = "mecha_results"  # mecha results must correspond to conductivity indices given in soybean_all14.zip
 
@@ -347,6 +342,11 @@ def run(argv):
         params.pop("exp_name")
         params.pop("enviro_type")
         params.pop("sim_time")
+
+        if argv[5] == "_free":
+            params["bot_bc"] = "freeDrainage"  # otherwise potential
+        if argv[5] == "_200":
+            params["water_table"] = 200  # otherwise 120
 
         run_soybean(exp_name, enviro_type, sim_time, params, exp_name[:-4] + "/", save_all=True)
 
