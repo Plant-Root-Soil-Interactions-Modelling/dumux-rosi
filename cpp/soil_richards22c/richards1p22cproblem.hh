@@ -153,6 +153,7 @@ public:
 		outflowCyl = 10,		
 		michaelisMentenNO3 = 11,
 		michaelisMentenNH4 = 12,
+		advectiveflow = 13,
 	};
 
 	enum GridParameterIndex {
@@ -958,6 +959,11 @@ public:
 						}
 					break;
 				}
+				case advectiveflow:{
+					// [molw] * [mols / molw]
+					flux[i] = flux[h2OIdx] * std::max(massOrMolFraction,0.)*pos0;
+					break;
+				}
 				default:
 					DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute) unknown: "+std::to_string(bcSTopType_.at(i_s)));
 				}
@@ -1049,6 +1055,11 @@ public:
                             massOrMolFraction<<", rhoW: "<<rhoW<<" K_PNU_NO3 "<<K_PNU_NO3
 							<<" K2_PNU_NO3 "<<K2_PNU_NO3<<" pos0 "<<pos0<<std::endl;
 						}
+					break;
+				}
+				case advectiveflow:{
+					// [molw] * [mols / molw]
+					flux[i] = flux[h2OIdx] * std::max(massOrMolFraction,0.)*pos0;
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
