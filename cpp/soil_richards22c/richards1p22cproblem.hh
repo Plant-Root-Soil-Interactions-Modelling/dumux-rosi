@@ -1409,11 +1409,13 @@ public:
 		//[mol solute / m3 scv /s] 
 		//double CSS1 = this->computeCSS1(WorCorN[soluteIdx], WorCorN[h2OIdx], svc_volume); // mol C/scv zone 1
         double F_CSS2 = kads * WorCorN[soluteIdx] * (CSSmax - WorCorN[CSS2Idx]) - kdes * WorCorN[CSS2Idx];//computeDtCSS2(CSS1, WorCorN[soluteIdx], WorCorN[CSS2Idx]);
-		if (F_CSS2 > 0. ) // net adsorption
-		{
-			CtoN_CSS2 = safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]);
-		}else{CtoN_CSS2 = safeDivision(WorCorN[NSS2Idx],WorCorN[CSS2Idx]);} // net desorption
+		//if (F_CSS2 > 0. ) // net adsorption
+		//{
+		//	CtoN_CSS2 = safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]);
+		//}else{CtoN_CSS2 = safeDivision(WorCorN[NSS2Idx],WorCorN[CSS2Idx]);} // net desorption
         
+		double F_NSS2 = kads * WorCorN[NsoluteIdx] * (CSSmax - WorCorN[CSS2Idx]) - kdes * WorCorN[NSS2Idx];
+		
 		//[mol solute / m3 scv/s] 
 		// water phase
 		q[soluteIdx] += ( F[depolymucil] + F[depolyCH_Idx] + (1. - k_decay2)*F[decay] - F[uptake_S] -  F[growth_S] - F_CSS2)* pos0 ;
