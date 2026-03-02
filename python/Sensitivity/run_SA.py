@@ -83,7 +83,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
     """
 
     if type_str == "file":
-        job_directory = "file_list"
+        job_directory = root_type  # in case of file list, pass folder name in root_type
     else:
         job_directory = os.path.join(os.getcwd(), file_name)
 
@@ -97,7 +97,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
 
         try:
             job_name = file_name + "_{:03}".format(int(job[0]))
-        except:  # in case of "file" the filename is passed in job[0]
+        except:  # if job is str instead of number; in case of "file" the filename is passed in job[0]
             job_name = file_name + str(job[0])
 
         print(
@@ -253,7 +253,7 @@ def local_soybean_radii(enviro_type=0, bot_str=""):
 
 def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     print("simulate_list: ", enviro_type, bot_str, list_filename)
-    root_type = "soybean"  # unused
+    root_type = list_filename.split("/")[-1].split(".")[0]  # extract filename without path and extension to use as root type
 
     with open(list_filename, "r", encoding="utf-8") as file:
         lines = file.readlines()
@@ -268,7 +268,7 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     for line in lines:  # line = experiment name
         jobs.append([line, bc, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
     sim_time = 87.5  # days
-    make_jobs("file", "", "", enviro_type, sim_time, jobs, run_local=False)
+    make_jobs("file", "", root_type + "_" + str(enviro_type), enviro_type, sim_time, jobs, run_local=False)
 
 
 if __name__ == "__main__":
