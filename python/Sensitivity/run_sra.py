@@ -222,7 +222,8 @@ def run(argv):
     """
 
     type = argv[1]
-    exp_name = argv[2]  # codes for bot BC "_free" and "_200"
+    exp_name = argv[2]
+    # codes for bot BC "_free" and "_200" in the name; for type=="file", argv[5] = 1.0 for free drainage, and argv[5] = 2.0 for water table at 200cm
     enviro_type = int(float(argv[3]))
     sim_time = float(argv[4])
 
@@ -344,9 +345,11 @@ def run(argv):
         params.pop("sim_time")
 
         if argv[5] == 1.0:  # _free
+            print("running file with free drainage")
             params["bot_bc"] = "freeDrainage"  # otherwise potential
         if argv[5] == 2.0:  # _200
-            params["water_table"] = 200  # otherwise 120
+            print("running file with water table at 200cm")
+            params["water_table"] = 200  # otherwise 120 cm
 
         run_soybean(exp_name, enviro_type, sim_time, params, exp_name[:-4] + "/", save_all=True)
 

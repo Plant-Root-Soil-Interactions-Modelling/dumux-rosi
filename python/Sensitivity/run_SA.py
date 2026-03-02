@@ -98,7 +98,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
         try:
             job_name = file_name + "_{:03}".format(int(job[0]))
         except:  # if job is str instead of number; in case of "file" the filename is passed in job[0]
-            job_name = file_name + str(job[0])
+            job_name = str(job[0])
 
         print(
             "creating job <{:s}>:".format(type_str),
@@ -126,7 +126,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
                 fh.writelines("cd ..\n")
                 fh.writelines("source /etc/profile.d/modules.sh\n")
                 fh.writelines("module load openmpi/4.1.4\n")
-                fh.writelines("source source ../../../CPlantBox/cpbenv/bin/activate\n")
+                fh.writelines("source ../../../CPlantBox/cpbenv/bin/activate\n")  # source source
                 fh.writelines(
                     "python3 run_sra.py {:s} {:s} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g} {:g}\n".format(
                         str(type_str), str(job_name), int(enviro_type), float(sim_time), *job[1:]
@@ -169,7 +169,6 @@ def local_soybean(enviro_type=0, bot_str=""):  # bot_str = "", or "free", or "20
     """constructs a local sensitivity analysis presented in the preproject for values
     "kr", "kx", "lmax1", "lmax2", "lmax3", "theta1", "a", "src"
     """
-
     type_str = "original"  # the 'original' sa analysis from the pre project
     root_type = "soybean"
     file_name = "local_soybean_"
@@ -253,7 +252,7 @@ def local_soybean_radii(enviro_type=0, bot_str=""):
 
 def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     print("simulate_list: ", enviro_type, bot_str, list_filename)
-    root_type = list_filename.split("/")[-1].split(".")[0]  # extract filename without path and extension to use as root type
+    root_type = list_filename.split("/")[-1].split(".")[0]  # extract list filename without path and extension to use as root type
 
     with open(list_filename, "r", encoding="utf-8") as file:
         lines = file.readlines()
@@ -261,9 +260,9 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     print("number of lines in my_pick.txt:", len(lines))
     jobs = []
     bc = 0.0
-    if bot_str == "free_":
+    if bot_str == "free":
         bc = 1.0
-    elif bot_str == "200_":
+    elif bot_str == "200":
         bc = 2.0
     for line in lines:  # line = experiment name
         jobs.append([line, bc, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
@@ -273,8 +272,8 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
 
 if __name__ == "__main__":
 
-    simulate_list(0, "", "data/exp_name_list1.txt")
-    # simulate_list(1, "", "data/my_pick_12.txt")
+    # simulate_list(0, "", "data/exp_name_list1.txt")
+    simulate_list(0, "free", "data/exp_name_list1.txt")
     # simulate_list(0, "free_", "data/my_pick_12.txt")
     # simulate_list(1, "free_", "data/my_pick_12.txt")
     # simulate_list(0, "200_", "data/my_pick_12.txt")
