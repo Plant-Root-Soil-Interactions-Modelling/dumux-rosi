@@ -343,9 +343,9 @@ def run(argv):
         params.pop("enviro_type")
         params.pop("sim_time")
 
-        if argv[5] == "_free":
+        if argv[5] == 1.0:  # _free
             params["bot_bc"] = "freeDrainage"  # otherwise potential
-        if argv[5] == "_200":
+        if argv[5] == 2.0:  # _200
             params["water_table"] = 200  # otherwise 120
 
         run_soybean(exp_name, enviro_type, sim_time, params, exp_name[:-4] + "/", save_all=True)

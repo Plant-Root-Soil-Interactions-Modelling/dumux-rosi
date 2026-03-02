@@ -19,7 +19,7 @@ Daniel Leitner, 2025
 import os
 import random
 
-import figure_stlye
+import figure_style
 import matplotlib.pyplot as plt
 import numpy as np
 import run_sra
@@ -83,7 +83,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
     """
 
     if type_str == "file":
-        job_directory = "file"
+        job_directory = "file_list"
     else:
         job_directory = os.path.join(os.getcwd(), file_name)
 
@@ -260,106 +260,110 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     lines = [line.strip() for line in lines]
     print("number of lines in my_pick.txt:", len(lines))
     jobs = []
+    bc = 0.0
+    if bot_str == "free_":
+        bc = 1.0
+    elif bot_str == "200_":
+        bc = 2.0
     for line in lines:  # line = experiment name
-        jobs.append([line, bot_str, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
-
+        jobs.append([line, bc, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
     sim_time = 87.5  # days
     make_jobs("file", "", "", enviro_type, sim_time, jobs, run_local=False)
 
 
 if __name__ == "__main__":
 
-    simulate_list(0, "", "data/my_pick_12.txt")
-    simulate_list(1, "", "data/my_pick_12.txt")
+    simulate_list(0, "", "data/exp_name_list1.txt")
+    # simulate_list(1, "", "data/my_pick_12.txt")
     # simulate_list(0, "free_", "data/my_pick_12.txt")
     # simulate_list(1, "free_", "data/my_pick_12.txt")
     # simulate_list(0, "200_", "data/my_pick_12.txt")
     # simulate_list(1, "200_", "data/my_pick_12.txt")
 
-    #
-    # Make job files for local sensitivty analysis
-    #
+#     #
+#     # Make job files for local sensitivty analysis
+#     #
 
-    local_soybean(0)  # default water table at 1.2m
-    local_soybean(1)
-    local_soybean(0, "free_")  # bot bc: free drainage
-    local_soybean(1, "free_")
-    # local_soybean(0, "200_") # bot bc water table at 2m
-    # local_soybean(1, "200_")
+#     local_soybean(0)  # default water table at 1.2m
+#     local_soybean(1)
+#     local_soybean(0, "free_")  # bot bc: free drainage
+#     local_soybean(1, "free_")
+#     # local_soybean(0, "200_") # bot bc water table at 2m
+#     # local_soybean(1, "200_")
 
-    local_soybean2(0)  # default water table at 1.2m
-    local_soybean2(1)
-    local_soybean2(0, "free_")  # bot bc: free drainage
-    local_soybean2(1, "free_")
-    # local_soybean2(0, "200_") # bot bc water table at 2m
-    # local_soybean2(1, "200_")
+#     local_soybean2(0)  # default water table at 1.2m
+#     local_soybean2(1)
+#     local_soybean2(0, "free_")  # bot bc: free drainage
+#     local_soybean2(1, "free_")
+#     # local_soybean2(0, "200_") # bot bc water table at 2m
+#     # local_soybean2(1, "200_")
 
-    # Make job files for local sensitivty analysis
-    local_soybean_tropisms(0)  # default water table at 1.2m
-    local_soybean_tropisms(1)
-    local_soybean_tropisms(0, "free_")  # bot bc: free drainage
-    local_soybean_tropisms(1, "free_")
-    # local_soybean_tropisms(0, "200_") # bot bc water table at 2m
-    # local_soybean_tropisms(1, "200_")
+#     # Make job files for local sensitivty analysis
+#     local_soybean_tropisms(0)  # default water table at 1.2m
+#     local_soybean_tropisms(1)
+#     local_soybean_tropisms(0, "free_")  # bot bc: free drainage
+#     local_soybean_tropisms(1, "free_")
+#     # local_soybean_tropisms(0, "200_") # bot bc water table at 2m
+#     # local_soybean_tropisms(1, "200_")
 
-    # Make job files for local sensitivty analysis
-    local_soybean_radii(0)  # default water table at 1.2m
-    local_soybean_radii(1)
-    local_soybean_radii(0, "free_")  # bot bc: free drainage
-    local_soybean_radii(1, "free_")
-    # local_soybean_radii(0, "200_") # bot bc water table at 2m
-    # local_soybean_radii(1, "200_")
+#     # Make job files for local sensitivty analysis
+#     local_soybean_radii(0)  # default water table at 1.2m
+#     local_soybean_radii(1)
+#     local_soybean_radii(0, "free_")  # bot bc: free drainage
+#     local_soybean_radii(1, "free_")
+#     # local_soybean_radii(0, "200_") # bot bc water table at 2m
+#     # local_soybean_radii(1, "200_")
 
 
-# def local_soybean_conductivities():
-#     """ constructs a local sensitivity analysis of hydraulic conductivities
-#        for young and old parts, dependent on root order (145, 2, 3)
-#     """
-#     print("local_soybean_conductivities")
-#     type_str = "conductivities10"  # varying age dependent conductiviies
-#     root_type = "soybean"
-#     file_name = "local_soybean_conductivities_"
-#     enviro_type = 0
-#     sim_time = 87.5  # days
-#
-#     kx = [0.1, 1.e-3, 1.e-3]
-#     kx_old = [0.35, 0.015]
-#
-#     kr = [1.e-3, 4.e-3, 4.e-3]
-#     kr_old = [5e-4, 0.0015]
-#
-#     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-#     p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
-#     write_ranges("results/" + file_name,
-#                  ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
-#                  [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
-#     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
-#
-#     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
-#
-#
-# def local_singleroot_conductivities():
-#     """ constructs a local sensitivity analysis of hydraulic conductivities
-#        for young and old parts, dependent on root order (145, 2, 3)
-#     """
-#     print("local_singleroot_conductivities")
-#     type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
-#     root_type = "soybean"
-#     file_name = "local_singleroot_conductivities64_"
-#     enviro_type = 0
-#     sim_time = 87.5  # days
-#
-#     kx = np.array([0.1]) / 16
-#     kx_old = np.array([0.35]) / 16 / 4
-#
-#     kr = np.array([1.e-3]) * 16 * 4
-#     kr_old = np.array([5e-4]) * 16 * 4
-#
-#     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
-#     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 35)])
-#     write_ranges("results/" + file_name,
-#                  ["ykr1", "okr1", "ykx1", "okx1"],
-#                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
-#     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
-#
-#     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+# # def local_soybean_conductivities():
+# #     """ constructs a local sensitivity analysis of hydraulic conductivities
+# #        for young and old parts, dependent on root order (145, 2, 3)
+# #     """
+# #     print("local_soybean_conductivities")
+# #     type_str = "conductivities10"  # varying age dependent conductiviies
+# #     root_type = "soybean"
+# #     file_name = "local_soybean_conductivities_"
+# #     enviro_type = 0
+# #     sim_time = 87.5  # days
+# #
+# #     kx = [0.1, 1.e-3, 1.e-3]
+# #     kx_old = [0.35, 0.015]
+# #
+# #     kr = [1.e-3, 4.e-3, 4.e-3]
+# #     kr_old = [5e-4, 0.0015]
+# #
+# #     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+# #     p2 = np.array([1.* 2 ** x for x in np.linspace(-4., 4., 17)])
+# #     write_ranges("results/" + file_name,
+# #                  ["ykr1", "okr1", "ykr2", "okr2", "kr3_", "ykx1", "okx1", "ykx2", "okx2", "kx3_"],
+# #                  [p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2]])
+# #     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kr[1], p2 * kr_old[1], p2 * kr[2], p2 * kx[0], p2 * kx_old[0], p2 * kx[1], p2 * kx_old[1], p2 * kx[2])
+# #
+# #     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)
+# #
+# #
+# # def local_singleroot_conductivities():
+# #     """ constructs a local sensitivity analysis of hydraulic conductivities
+# #        for young and old parts, dependent on root order (145, 2, 3)
+# #     """
+# #     print("local_singleroot_conductivities")
+# #     type_str = "singleroot_conductivities10"  # varying age dependent conductiviies
+# #     root_type = "soybean"
+# #     file_name = "local_singleroot_conductivities64_"
+# #     enviro_type = 0
+# #     sim_time = 87.5  # days
+# #
+# #     kx = np.array([0.1]) / 16
+# #     kx_old = np.array([0.35]) / 16 / 4
+# #
+# #     kr = np.array([1.e-3]) * 16 * 4
+# #     kr_old = np.array([5e-4]) * 16 * 4
+# #
+# #     # p2 = np.array([1.* 2 ** x for x in np.linspace(-1., 1., 9)])
+# #     p2 = np.array([1.* 2 ** x for x in np.linspace(-2., 2., 35)])
+# #     write_ranges("results/" + file_name,
+# #                  ["ykr1", "okr1", "ykx1", "okx1"],
+# #                  [p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0]])
+# #     jobs = make_local(p2 * kr[0], p2 * kr_old[0], p2 * kx[0], p2 * kx_old[0], 0., 0., 0., 0., 0., 0.)
+# #
+# #     start_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_local = False)

@@ -91,24 +91,24 @@ pbounds = {
 }
 
 params_conductivity = {
-    "anatomy_index145": 0,
-    "anatomy_index2": 0,
-    "anatomy_index3": 0,
-    "kr_young145": 0,
-    "kr_young2": 0,
-    "kr_young3": 0,
+    # "anatomy_index145": 0,
+    # "anatomy_index2": 0,
+    # "anatomy_index3": 0,
+    # "kr_young145": 0,
+    # "kr_young2": 0,
+    # "kr_young3": 0,
     "kr_old145": 0,
-    "kr_old145": 0,
-    "kr_old145": 0,
-    "kx_young145": 0,
-    "kx_young2": 0,
-    "kx_young3": 0,
+    # "kr_old2": 0,
+    # "kr_old3": 0,
+    # "kx_young145": 0,
+    # "kx_young2": 0,
+    # "kx_young3": 0,
     "kx_old145": 0,
-    "kx_old2": 0,
-    "kx_old3": 0,
-    "conductivity_age1": (1, 21),
-    "conductivity_age2": (1, 21),
-    "conductivity_age3": (1, 21),
+    # "kx_old2": 0,
+    # "kx_old3": 0,
+    # "conductivity_age1": (1, 21),
+    # "conductivity_age2": (1, 21),
+    # "conductivity_age3": (1, 21),
 }
 params_more = {
     "src_a": (3, 11),
@@ -134,11 +134,13 @@ params_more = {
     # 'tropismN3_a': (0., 3.5),
     # 'hairsLength3_a': (0., 0.1),
     # 'hairsZone3_a': (0., 10.)
-    "anatomy_index145": (0.0, 0.0),
+    # "anatomy_index145": (0.0, 0.0),
 }
 
 dims = list(params_more.keys())  # for the parallel coordinates
-dims.extend(target_names_parcord)
+# dims.extend(list(params_conductivity.keys()))
+dims.extend(target_names_parcord)  # add targtes
+
 
 more_dims = dims.copy()
 if not sort_:
