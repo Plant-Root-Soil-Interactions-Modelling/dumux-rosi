@@ -74,7 +74,8 @@ if __name__ == "__main__":
 
     plant1 = "ex_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
     plant2 = "exp_name_list_0_free/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
-    p = Path(plant2)
+    plant3 = "exp_name_list2_0_120/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e14/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e143dd7.npz"
+    p = Path(plant3)
     path = str(p.parent) + "/"
     name = p.name[:-4]  # remove .npz extension
 

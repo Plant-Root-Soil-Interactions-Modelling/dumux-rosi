@@ -56,7 +56,7 @@ def analyze_transpiration_list(list_name, folder_name, bugged=False):
 
 all_names, per, namesx = [], [], []
 
-namesx.append("Node 1, ET0]")
+namesx.append("Node 1, ET0")
 list_filename = "data/exp_name_list1.txt"  # list of experiment names
 folder_name = "exp_name_list1_0_120/"  # node 1, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
@@ -72,7 +72,7 @@ all_names.append(filenames_)
 # per.append(per_)
 # all_names.append(filenames_)
 
-namesx.append("Node 2, ET0]")
+namesx.append("Node 2, ET0")
 list_filename = "data/exp_name_list2.txt"  # list of experiment names
 folder_name = "exp_name_list2_0_120/"  # node 2, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
@@ -94,15 +94,15 @@ print("\nmean values:", mean_values)
 print("std values:", std_values)
 
 extra_points = []
-for opt in opt_ind:
-    extra_points.append([per[j][opt] for j in range(len(per))])
+for ii, opt in enumerate(opt_ind):
+    extra_points.append(per[ii][opt])
 
 x = np.arange(per_.shape[1])
 plt.figure(figsize=(8, 5))
 plt.bar(namesx, mean_values, yerr=std_values, capsize=5, alpha=0.7, color="skyblue", edgecolor="black")
 
-for i, extras in enumerate(extra_points):
-    plt.scatter(namesx, extras, zorder=10, label=f"Number {opt_ind[i]}")
+for i, _ in enumerate(extra_points):
+    plt.scatter(namesx[i], extra_points[i], zorder=10, label=f"Number {opt_ind[i]}")
 
 plt.ylabel("Mean performance (actual/potential)")
 plt.legend()
