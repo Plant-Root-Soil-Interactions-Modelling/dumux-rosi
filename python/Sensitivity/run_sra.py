@@ -113,6 +113,7 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all=Tru
         trans_ = trans_soybean
 
     if "bot_bc" in mods:
+        print("key found")
         bot_bc = mods["bot_bc"]
         mods.pop("bot_bc")
     else:
@@ -347,10 +348,11 @@ def run(argv):
         params.pop("enviro_type")
         params.pop("sim_time")
 
-        if argv[5] == 1.0:  # free
+        print("incoming...", argv[5], round(argv[5]))
+        if argv[5] == "1":  # free
             print("running file with free drainage")
             params["bot_bc"] = "freeDrainage"  # otherwise potential
-        if argv[5] == 2.0:  # 200
+        if argv[5] == "2":  # 200
             print("running file with water table at 200cm")
             params["water_table"] = 200  # otherwise 120 cm
 
