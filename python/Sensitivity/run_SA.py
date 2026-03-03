@@ -97,7 +97,7 @@ def make_jobs(type_str, file_name, root_type, enviro_type, sim_time, jobs, run_l
 
         try:
             job_name = file_name + "_{:03}".format(int(job[0]))
-        except:  # if job is str instead of number; in case of "file" the filename is passed in job[0]
+        except:  # if job[0] is str instead of number; in case of "file" the filename is passed in job[0]
             job_name = str(job[0])
 
         print(

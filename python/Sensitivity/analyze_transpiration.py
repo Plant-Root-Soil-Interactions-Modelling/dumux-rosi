@@ -13,11 +13,8 @@ import figure_style
 import matplotlib.pyplot as plt
 import numpy as np
 
-Kc_maize = 1.2
-Kc_soybean = 1.15
-
-list_filename = "data/my_pick_12.txt"
-path = "results (2)/"  # from results.zip
+list_filename = "data/my_pick_12.txt"  # list of experiment names
+path = "results (2)/"  # dynamic result path
 
 with open(list_filename, "r", encoding="utf-8") as file:
     lines = file.readlines()

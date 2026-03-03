@@ -351,7 +351,7 @@ def run(argv):
             print("running file with water table at 200cm")
             params["water_table"] = 200  # otherwise 120 cm
 
-        run_soybean(exp_name, enviro_type, sim_time, params, exp_name[:-4] + "/", save_all=True)
+        run_soybean(exp_name, enviro_type, sim_time, params, exp_name + "/", save_all=True)
 
     else:
 
