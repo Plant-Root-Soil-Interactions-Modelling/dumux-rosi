@@ -273,7 +273,10 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
 if __name__ == "__main__":
 
     # simulate_list(0, "", "data/exp_name_list1.txt")
-    simulate_list(0, "free", "data/exp_name_list1.txt")
+    # simulate_list(0, "free", "data/exp_name_list1.txt")
+    simulate_list(0, "", "data/exp_name_list2.txt")
+    # simulate_list(0, "free", "data/exp_name_list1.txt")
+
     # simulate_list(0, "free_", "data/my_pick_12.txt")
     # simulate_list(1, "free_", "data/my_pick_12.txt")
     # simulate_list(0, "200_", "data/my_pick_12.txt")
