@@ -267,7 +267,7 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     for line in lines:  # line = experiment name
         jobs.append([line, bc, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
     sim_time = 87.5  # days
-    make_jobs("file", "", root_type + "_" + str(enviro_type), enviro_type, sim_time, jobs, run_local=True)
+    make_jobs("file", "", root_type + "_" + str(enviro_type), enviro_type, sim_time, jobs, run_local=False)
 
 
 if __name__ == "__main__":
