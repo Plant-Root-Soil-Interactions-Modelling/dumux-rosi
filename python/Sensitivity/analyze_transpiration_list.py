@@ -56,17 +56,25 @@ def analyze_transpiration_list(list_name, folder_name, bugged=False):
 
 all_names, per, namesx = [], [], []
 
-namesx.append("Node 1 [et 0]]")
+namesx.append("Node 1, ET0]")
 list_filename = "data/exp_name_list1.txt"  # list of experiment names
-folder_name = "ex_name_list1_0_120/"  # node 1, envirotype 0, water table at 120 cm
+folder_name = "exp_name_list1_0_120/"  # node 1, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
 per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
 per.append(per_)
 all_names.append(filenames_)
 
-namesx.append("Node 1 free [et 0]")
-list_filename = "data/exp_name_list1.txt"  # list of experiment names
-folder_name = "exp_name_list_0_free/"  # node 1, envirotype 0, free drainage
+# namesx.append("Node 1  drainage, ET0")
+# list_filename = "data/exp_name_list1.txt"  # list of experiment names
+# folder_name = "exp_name_list_0_free/"  # node 1, envirotype 0, free drainage
+# bugged = True  # wrong subfolder name in previous version
+# per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
+# per.append(per_)
+# all_names.append(filenames_)
+
+namesx.append("Node 2, ET0]")
+list_filename = "data/exp_name_list2.txt"  # list of experiment names
+folder_name = "exp_name_list2_0_120/"  # node 2, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
 per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
 per.append(per_)

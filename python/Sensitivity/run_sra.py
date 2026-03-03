@@ -113,14 +113,10 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all=Tru
         trans_ = trans_soybean
 
     if "bot_bc" in mods:
-        print("key found")
         bot_bc = mods["bot_bc"]
         mods.pop("bot_bc")
     else:
         bot_bc = "potential"
-
-    print(bot_bc)
-    ddd
 
     s = soil_model.create_richards(
         soil_, min_b, max_b, cell_number, times=x_, net_inf=y_, bot_bc=bot_bc, bot_value=200.0 - water_table, initial_totalpotential=initial_totalpotential
@@ -358,7 +354,6 @@ def run(argv):
         run_soybean(exp_name, enviro_type, sim_time, params, exp_name + "/", save_all=True)
 
     else:
-
         print("Unknown run sa type", type)
 
 
