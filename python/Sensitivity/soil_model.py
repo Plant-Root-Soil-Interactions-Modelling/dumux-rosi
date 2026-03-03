@@ -47,7 +47,6 @@ def create_richards(soil_, min_b, max_b, cell_number, times=None, net_inf=None, 
     s.setHomogeneousIC(initial_totalpotential, equilibrium=True)  # cm
 
     s.initializeProblem()
-    s.setBotBC(bot_bc, bot_value)
 
     wilting_point = -15000
     s.setCriticalPressure(wilting_point)  # for boundary conditions constantFlow, constantFlowCyl, and atmospheric

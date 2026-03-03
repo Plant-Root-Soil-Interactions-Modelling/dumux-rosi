@@ -1,40 +1,28 @@
 """
-    Dynamic:
+Dynamic:
 
-    Plots net infiltration and 2D image of soil matric potential or concentration vs time (of a 1d soil)
-    in script pick name from L50-
-    manually set corresponding net infiltration by setting Kc and lai (see L113)
+Plots net infiltration and 2D image of soil matric potential or concentration vs time (of a 1d soil)
+in script pick name from L50-
+manually set corresponding net infiltration by setting Kc and lai (see L113)
 
-    Daniel Leitner, 2025  
+Daniel Leitner, 2025
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
 import os
-import numpy as np
+import sys
 from datetime import *
+from pathlib import Path
+
+import evapotranspiration as evap
+import figure_style
 import matplotlib
 import matplotlib.pyplot as plt
+import numpy as np
+import scenario_setup
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-import scenario_setup
-import evapotranspiration as evap
 
-SMALL_SIZE = 16
-MEDIUM_SIZE = 16
-BIGGER_SIZE = 16
-plt.rc('font', size = SMALL_SIZE)  # controls default text sizes
-plt.rc('axes', titlesize = SMALL_SIZE)  # fontsize of the axes title
-plt.rc('axes', labelsize = MEDIUM_SIZE)  # fontsize of the x and y labels
-plt.rc('xtick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-plt.rc('ytick', labelsize = SMALL_SIZE)  # fontsize of the tick labels
-plt.rc('legend', fontsize = SMALL_SIZE)  # legend fontsize
-plt.rc('figure', titlesize = BIGGER_SIZE)  # fontsize of the figure title
-prop_cycle = plt.rcParams['axes.prop_cycle']
-colors = prop_cycle.by_key()['color']
-
-
-def plot_soil(path, name, show = True):
+def plot_soil(path, name, show=True):
 
     ylim_ = None
     soil_min = -6000
@@ -48,45 +36,47 @@ def plot_soil(path, name, show = True):
     sim_time = np.max(times)
     data = alldata["psi_s"]
     data = np.transpose(data)
-    data = data[::-1,:]
+    data = data[::-1, :]
     yy = abs(int(depths[-1] - 10))  # depth index for visualization
-    data = data[:yy,:]
+    data = data[:yy, :]
 
     # derive net infiltration for setup
-    start_date = '2021-05-10 00:00:00'  # INARI csv data
+    start_date = "2021-05-10 00:00:00"  # INARI csv data
     Kc = 1.15
     lai = evap.lai_soybean2
-    t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc, initial_age = times[0])
+    t_, y_ = evap.net_infiltration_table_beers_csvS(start_date, sim_time, lai, Kc, initial_age=times[0])
     t_ = np.array(t_)
     y_ = np.array(y_)
     t_ = t_[::2]
     y_ = y_[::2]
 
-    fig, ax = plt.subplots(2, 1, figsize = (18, 10), gridspec_kw = {'height_ratios': [1, 3]})
+    fig, ax = plt.subplots(2, 1, figsize=(18, 10), gridspec_kw={"height_ratios": [1, 3]})
 
     # Net infiltration
-    bar = ax[0].bar(t_, 10 * np.array(y_), 1 / 24.)
+    bar = ax[0].bar(t_, 10 * np.array(y_), 1 / 24.0)
     ax[0].set_ylabel("net inf [mm/day]")
     ax[0].set_xlim(times[0], times[-1])
     if ylim_ is not None:
-        ax[0].set_ylim(ylim_, 1.)
+        ax[0].set_ylim(ylim_, 1.0)
     divider = make_axes_locatable(ax[0])
-    cax0 = divider.append_axes('right', size = '5%', pad = 0.05)
-    cax0.axis('off')
+    cax0 = divider.append_axes("right", size="5%", pad=0.05)
+    cax0.axis("off")
 
     # Soil
     divider = make_axes_locatable(ax[1])
-    cax = divider.append_axes('right', size = '5%', pad = 0.05)
-    cmap_reversed = matplotlib.cm.get_cmap('jet_r')
-    im = ax[1].imshow(data, cmap = cmap_reversed, vmin = soil_min, aspect = 'auto', extent = [times[0] , times[-1], -yy, 0.])  #  interpolation = 'bicubic', interpolation = 'nearest',
-    ax[1].plot(times[::10], depths, 'k:')
+    cax = divider.append_axes("right", size="5%", pad=0.05)
+    cmap_reversed = matplotlib.cm.get_cmap("jet_r")
+    im = ax[1].imshow(
+        data, cmap=cmap_reversed, vmin=soil_min, aspect="auto", extent=[times[0], times[-1], -yy, 0.0]
+    )  #  interpolation = 'bicubic', interpolation = 'nearest',
+    ax[1].plot(times[::10], depths, "k:")
     x = np.linspace(0, times[-1], data.shape[1])
     y = np.linspace(0, -yy, data.shape[0])
     X, Y = np.meshgrid(x, y)
-    contours = ax[1].contour(X, Y, data, [0.], colors = 'black')
-    cb = fig.colorbar(im, cax = cax, orientation = 'vertical')
+    contours = ax[1].contour(X, Y, data, [0.0], colors="black")
+    cb = fig.colorbar(im, cax=cax, orientation="vertical")
     cb.ax.get_yaxis().labelpad = 30
-    cb.set_label('soil matric potential [cm]', rotation = 270)
+    cb.set_label("soil matric potential [cm]", rotation=270)
     ax[1].set_ylabel("depth [cm]")
     ax[1].set_xlabel("time [days]")
 
@@ -97,7 +87,7 @@ def plot_soil(path, name, show = True):
     plt.tight_layout()
     if not os.path.exists("figures"):
         os.mkdir("figures")
-    plt.savefig('figures/' + name + '.png', dpi = 150, bbox_inches = 'tight')
+    plt.savefig("figures/" + name + ".png", dpi=150, bbox_inches="tight")
     if show:
         plt.show()
 
@@ -127,19 +117,26 @@ if __name__ == "__main__":
 
     # name = pick12[6] + "_36"  # node + envirotype
 
-    path = "local_soybean_0/"
-    name = "local_soybean_0_001"
+    plant1 = "ex_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    plant2 = "exp_name_list_0_free/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    p = Path(plant2)
+    path = str(p.parent) + "/"
+    name = p.name[:-4]  # remove .npz extension
     plot_soil(path, name)
 
-    path = "local_soybean_1/"
-    name = "local_soybean_1_001"
-    plot_soil(path, name)
+    # # References
+    # path = "local_soybean_0/"
+    # name = "local_soybean_0_001"
+    # plot_soil(path, name)
 
-    path = "local_soybean_free_0/"
-    name = "local_soybean_free_0_001"
-    plot_soil(path, name)
+    # path = "local_soybean_1/"
+    # name = "local_soybean_1_001"
+    # plot_soil(path, name)
 
-    path = "local_soybean_free_1/"
-    name = "local_soybean_free_1_001"
-    plot_soil(path, name)
+    # path = "local_soybean_free_0/"
+    # name = "local_soybean_free_0_001"
+    # plot_soil(path, name)
 
+    # path = "local_soybean_free_1/"
+    # name = "local_soybean_free_1_001"
+    # plot_soil(path, name)

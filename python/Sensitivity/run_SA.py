@@ -267,15 +267,15 @@ def simulate_list(enviro_type=0, bot_str="", list_filename="data/my_pick.txt"):
     for line in lines:  # line = experiment name
         jobs.append([line, bc, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0])  # <- put lines here
     sim_time = 87.5  # days
-    make_jobs("file", "", root_type + "_" + str(enviro_type), enviro_type, sim_time, jobs, run_local=False)
+    make_jobs("file", "", root_type + "_" + str(enviro_type), enviro_type, sim_time, jobs, run_local=True)
 
 
 if __name__ == "__main__":
 
     # simulate_list(0, "", "data/exp_name_list1.txt")
     # simulate_list(0, "free", "data/exp_name_list1.txt")
-    simulate_list(0, "", "data/exp_name_list2.txt")
-    # simulate_list(0, "free", "data/exp_name_list1.txt")
+    # simulate_list(0, "", "data/exp_name_list2.txt")
+    simulate_list(0, "free", "data/exp_name_list2.txt")
 
     # simulate_list(0, "free_", "data/my_pick_12.txt")
     # simulate_list(1, "free_", "data/my_pick_12.txt")

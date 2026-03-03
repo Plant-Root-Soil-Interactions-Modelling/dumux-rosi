@@ -1,26 +1,25 @@
 """
-    Dynamic:
-        
-        checks if segment analysers are stored
-        
-    Daniel Leitner, 2025          
+Dynamic:
+
+    checks if segment analysers are stored
+
+Daniel Leitner, 2025
 """
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src");
 
-import numpy as np
+import sys
+from pathlib import Path
+
 import matplotlib.pyplot as plt
-
+import numpy as np
 import plantbox as pb
-import scenario_setup as scenario
-import visualisation.vtk_plot as vp
-from functional.PlantHydraulicParameters import PlantHydraulicParameters
-from functional.PlantHydraulicModel import HydraulicModel_Doussan
-
+import plantbox.visualisation.vtk_plot as vp
 import run_SA
+import scenario_setup as scenario
+from plantbox.functional.PlantHydraulicModel import HydraulicModel_Doussan
+from plantbox.functional.PlantHydraulicParameters import PlantHydraulicParameters
 
 
-def plot_sa(path, name, param = "kr", output_index = 2):
+def plot_sa(path, name, param="kr", output_index=2):
     """
     param              "rx" (root matric potential), "rsx" (potential at root soil interface), "age", "kr", "kx", "axial_flux", "radial_flux"
     """
@@ -53,14 +52,14 @@ def plot_suf(path, name):
         z_max = 0
         z_min = -100
         suf_dist = ana.distribution("suf", z_max, z_min, n_layers, True)
-        plt.plot(suf_dist, np.linspace(z_max, z_min, n_layers), label = "{:g} days".format(t))
+        plt.plot(suf_dist, np.linspace(z_max, z_min, n_layers), label="{:g} days".format(t))
 
     plt.legend()
     plt.show()
 
 
 def print_sa_indics(path):
-    """ helps to find the right index in a local sensitivity analysis """
+    """helps to find the right index in a local sensitivity analysis"""
     names, ranges = run_SA.read_ranges("local_soybean_0/")
     ind = 1
     for i, n in enumerate(names):
@@ -70,11 +69,16 @@ def print_sa_indics(path):
 
 if __name__ == "__main__":
 
-    path = "local_soybean_1/"
-    name = "local_soybean_1_001"
+    # path = "local_soybean_1/"
+    # name = "local_soybean_1_001"
+
+    plant1 = "ex_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    plant2 = "exp_name_list_0_free/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    p = Path(plant2)
+    path = str(p.parent) + "/"
+    name = p.name[:-4]  # remove .npz extension
 
     print_sa_indics(path)  # to find a specific index
 
     plot_suf(path, name)
-    plot_sa(path, name, param = "subType")  # radial_flux, axial_flux
-
+    plot_sa(path, name, param="subType")  # radial_flux, axial_flux

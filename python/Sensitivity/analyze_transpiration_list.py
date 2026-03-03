@@ -26,17 +26,19 @@ def analyze_transpiration_list(list_name, folder_name, bugged=False):
 
     pot_ = np.ones((len(lines), 1))
     act_ = np.zeros((len(lines), 1))
+    filenames = []
     for i, name in enumerate(lines):
         if bugged:
             name_ = name[:-4]
         else:
             name_ = name
-
+        file_name = folder_name + name_ + "/" + name + ".npz"
+        filenames.append(file_name)
         try:
-            data = np.load(folder_name + name_ + "/" + name + ".npz")
-            print("Opening file:", folder_name + name_ + "/" + name + ".npz", flush=True)
+            data = np.load(file_name)
+            print(f"Opening file: {file_name}", flush=True)
         except FileNotFoundError:
-            print(f"File not found: {folder_name + name_ + '/' + name + '.npz'}")
+            print(f"File not found: {file_name}")
             continue
 
         times = data["times"]
@@ -49,32 +51,33 @@ def analyze_transpiration_list(list_name, folder_name, bugged=False):
         pot_[i] = cum_pot[-1]
 
     per_ = np.divide(act_, pot_)
-    return per_, act_, pot_
+    return per_, act_, pot_, filenames
 
 
-folder_names, per, namesx = [], [], []
+all_names, per, namesx = [], [], []
 
 namesx.append("Node 1 [et 0]]")
 list_filename = "data/exp_name_list1.txt"  # list of experiment names
 folder_name = "ex_name_list1_0_120/"  # node 1, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
-per_, act_, pot_ = analyze_transpiration_list(list_filename, folder_name, bugged)
+per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
 per.append(per_)
+all_names.append(filenames_)
 
 namesx.append("Node 1 free [et 0]")
 list_filename = "data/exp_name_list1.txt"  # list of experiment names
 folder_name = "exp_name_list_0_free/"  # node 1, envirotype 0, free drainage
 bugged = True  # wrong subfolder name in previous version
-per_, act_, pot_ = analyze_transpiration_list(list_filename, folder_name, bugged)
+per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
 per.append(per_)
+all_names.append(filenames_)
 
 print("\nbest performer")
 opt_ind = [np.argmax(per[i]) for i in range(len(per))]
 print(opt_ind)
 print("file  names of best performers:")
-for i in opt_ind:
-    print(lines[i])
-
+for ii, i in enumerate(opt_ind):
+    print(all_names[ii][i])
 
 # Plot
 mean_values = [np.mean(per[i]) for i in range(len(per))]

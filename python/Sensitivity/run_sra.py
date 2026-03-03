@@ -118,6 +118,9 @@ def run_soybean(exp_name, enviro_type, sim_time, mods, result_path, save_all=Tru
     else:
         bot_bc = "potential"
 
+    print(bot_bc)
+    ddd
+
     s = soil_model.create_richards(
         soil_, min_b, max_b, cell_number, times=x_, net_inf=y_, bot_bc=bot_bc, bot_value=200.0 - water_table, initial_totalpotential=initial_totalpotential
     )
@@ -344,10 +347,10 @@ def run(argv):
         params.pop("enviro_type")
         params.pop("sim_time")
 
-        if argv[5] == 1.0:  # _free
+        if argv[5] == 1.0:  # free
             print("running file with free drainage")
             params["bot_bc"] = "freeDrainage"  # otherwise potential
-        if argv[5] == 2.0:  # _200
+        if argv[5] == 2.0:  # 200
             print("running file with water table at 200cm")
             params["water_table"] = 200  # otherwise 120 cm
 

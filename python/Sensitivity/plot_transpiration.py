@@ -8,6 +8,7 @@ Daniel Leitner, 2025
 """
 
 import os
+from pathlib import Path
 
 import figure_style
 import matplotlib.pyplot as plt
@@ -75,18 +76,26 @@ if __name__ == "__main__":
     #     "soybean_all14_f7319dc5d83c72932fd39e4afbf6e50822c2f7bf13b27fc5749c1128642a95d2"  # 138
     #     ]
 
-    path = "local_soybean_0/"
-    name = "local_soybean_0_001"
+    plant1 = "ex_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    plant2 = "exp_name_list_0_free/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    p = Path(plant2)
+    path = str(p.parent) + "/"
+    name = p.name[:-4]  # remove .npz extension
     plot_transpiration(path, name)
 
-    path = "local_soybean_free_0/"
-    name = "local_soybean_free_0_001"
-    plot_transpiration(path, name)
+    # # References
+    # path = "local_soybean_0/"
+    # name = "local_soybean_0_001"
+    # plot_transpiration(path, name)
 
-    path = "local_soybean_1/"
-    name = "local_soybean_1_001"
-    plot_transpiration(path, name)
+    # path = "local_soybean_free_0/"
+    # name = "local_soybean_free_0_001"
+    # plot_transpiration(path, name)
 
-    path = "local_soybean_free_1/"
-    name = "local_soybean_free_1_001"
-    plot_transpiration(path, name)
+    # path = "local_soybean_1/"
+    # name = "local_soybean_1_001"
+    # plot_transpiration(path, name)
+
+    # path = "local_soybean_free_1/"
+    # name = "local_soybean_free_1_001"
+    # plot_transpiration(path, name)
