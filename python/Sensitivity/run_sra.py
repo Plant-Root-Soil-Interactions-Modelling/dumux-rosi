@@ -348,7 +348,6 @@ def run(argv):
         params.pop("enviro_type")
         params.pop("sim_time")
 
-        print("incoming...", argv[5], round(argv[5]))
         if argv[5] == "1":  # free
             print("running file with free drainage")
             params["bot_bc"] = "freeDrainage"  # otherwise potential
