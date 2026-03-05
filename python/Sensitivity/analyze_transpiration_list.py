@@ -4,8 +4,6 @@ Macroscopic:
 Mean performance plot (by envirotype)
 (actual/potential transpiration) mean and sd over all files in list_filename of each envirotype
 
-list_filename ... a list of the simulation results files to be considered
-results files are = path + name + "_" + envirotype + ".npz", for envirotypes in ["0", "1", "5", "36", "59"]
 
 Daniel Leitner, 2026
 """
@@ -64,18 +62,26 @@ per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_
 per.append(per_)
 all_names.append(filenames_)
 
-# namesx.append("Node 1  drainage, ET0")
-# list_filename = "data/exp_name_list1.txt"  # list of experiment names
-# folder_name = "exp_name_list_0_free/"  # node 1, envirotype 0, free drainage
-# bugged = True  # wrong subfolder name in previous version
-# per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
-# per.append(per_)
-# all_names.append(filenames_)
+namesx.append("Node 1  drainage, ET0")
+list_filename = "data/exp_name_list1.txt"  # list of experiment names
+folder_name = "exp_name_list1_0_free/"  # node 1, envirotype 0, free drainage
+bugged = False  # wrong subfolder name in previous version
+per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
+per.append(per_)
+all_names.append(filenames_)
 
 namesx.append("Node 2, ET0")
 list_filename = "data/exp_name_list2.txt"  # list of experiment names
 folder_name = "exp_name_list2_0_120/"  # node 2, envirotype 0, water table at 120 cm
 bugged = True  # wrong subfolder name in previous version
+per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
+per.append(per_)
+all_names.append(filenames_)
+
+namesx.append("Node 2, free, ET0")
+list_filename = "data/exp_name_list2.txt"  # list of experiment names
+folder_name = "exp_name_list2_0_free/"  # node 2, envirotype 0, free drainage
+bugged = False  # wrong subfolder name in previous version
 per_, act_, pot_, filenames_ = analyze_transpiration_list(list_filename, folder_name, bugged)
 per.append(per_)
 all_names.append(filenames_)
@@ -93,16 +99,33 @@ std_values = [np.std(per[i]) for i in range(len(per))]
 print("\nmean values:", mean_values)
 print("std values:", std_values)
 
-extra_points = []
-for ii, opt in enumerate(opt_ind):
-    extra_points.append(per[ii][opt])
 
 x = np.arange(per_.shape[1])
 plt.figure(figsize=(8, 5))
 plt.bar(namesx, mean_values, yerr=std_values, capsize=5, alpha=0.7, color="skyblue", edgecolor="black")
 
-for i, _ in enumerate(extra_points):
-    plt.scatter(namesx[i], extra_points[i], zorder=10, label=f"Number {opt_ind[i]}")
+# extra points ...
+optimals = [float(per[i][opt_ind[i]]) for i in range(len(per))]
+yy = [
+    [optimals[0], float(per[1][opt_ind[0]])],
+    [optimals[1], float(per[0][opt_ind[1]])],
+    [optimals[2], float(per[3][opt_ind[2]])],
+    [optimals[3], float(per[2][opt_ind[3]])],
+]
+xx = [
+    [namesx[0], namesx[1]],
+    [namesx[1], namesx[0]],
+    [namesx[2], namesx[3]],
+    [namesx[3], namesx[2]],
+]
+
+
+for i in range(len(namesx)):
+    print(xx[i], yy[i])
+    plt.scatter(xx[i], yy[i], zorder=10, label=f"Number {opt_ind[i]}")
+
+# reference points
+plt.scatter(namesx, [0.7317886554421104, 0.5234493369758094, 0.7317886554421104, 0.5234493369758094], zorder=10, label="reference")
 
 plt.ylabel("Mean performance (actual/potential)")
 plt.legend()

@@ -30,6 +30,8 @@ def plot_sa(path, name, param="kr", output_index=2):
     times_sa = all["times_sa"]
     print("Root system at time", times_sa[output_index])
 
+    print("Bounds", ana.getMinBounds())
+
     vp.plot_plant(ana, param)
 
 
@@ -39,8 +41,10 @@ def plot_suf(path, name):
     times_sa = all["times_sa"]
 
     for oi, t in enumerate(times_sa):
-        print(oi, t)
+        if oi == 0:  # skip first
+            continue
         ana = scenario.open_sa_numpy(path + "sa_" + name + f"_{oi}" + ".npz")
+        print(oi, t, "bounds", ana.getMinBounds())
         ms = pb.MappedSegments(ana.nodes, ana.segments, ana.data["radius"])
         params = PlantHydraulicParameters()
         params.setKrValues(ana.data["kr"])
@@ -75,6 +79,12 @@ if __name__ == "__main__":
     plant1 = "ex_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
     plant2 = "exp_name_list_0_free/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
     plant3 = "exp_name_list2_0_120/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e14/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e143dd7.npz"
+
+    plant1 = "exp_name_list1_0_120/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb950/soybean_all14_b6270e6280ec99e41746bd015dd7f6e20d4cd33ae33b9d346f5698bdb95075ba.npz"
+    plant2 = "exp_name_list1_0_free/soybean_all14_0a1816e0417e4805333e8bf7648ee5ae65627703501ce043ed996bd0fe556b61/soybean_all14_0a1816e0417e4805333e8bf7648ee5ae65627703501ce043ed996bd0fe556b61.npz"
+    plant3 = "exp_name_list2_0_120/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e14/soybean_all14_b96c78843547dbff412faa758815378dde5a923d876fedcbf67d06985e143dd7.npz"
+    plant4 = "exp_name_list2_0_free/soybean_all14_b292e892b188228d5a342b2ef503e21d2e5d72383bb7a32a7ef70e899b08d8bd/soybean_all14_b292e892b188228d5a342b2ef503e21d2e5d72383bb7a32a7ef70e899b08d8bd.npz"
+
     p = Path(plant3)
     path = str(p.parent) + "/"
     name = p.name[:-4]  # remove .npz extension
