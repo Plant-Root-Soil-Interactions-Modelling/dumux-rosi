@@ -13,6 +13,9 @@ import plantbox as pb
 from air_modelsPlant import AirSegment
 from helpfull import write_file_array, write_file_float, div0, div0f
 import vtk_plot_adapted as vp
+import vtk
+import vtk.util.numpy_support as numpy_support
+from pyevtk.hl import gridToVTK
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """
@@ -423,22 +426,40 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
         
 def map_exudates_pHead(rs, r, s, minB, maxB, cell_number, perirhizalModel, rs_age, ifexu): 
     #map exudates / SWP to a 1mm soil grid 
+    X_orig = np.linspace(minB[0], maxB[0], cell_number[0])
+    Y_orig = np.linspace(minB[1], maxB[1], cell_number[1])
+    Z_orig = np.linspace(minB[2], maxB[2], cell_number[2])
+    
+    
     nx = int((maxB[0]-minB[0]) / 0.1); 
     ny = int((maxB[1]-minB[1]) / 0.1);
     nz = int((maxB[2]-minB[2]) / 0.1);
-    X = np.linspace(minB[0] / 2, maxB[0] / 2, nx)
-    Y = np.linspace(minB[1] / 2, maxB[1] / 2, ny)
+    X = np.linspace(minB[0], maxB[0], nx)
+    Y = np.linspace(minB[1], maxB[1], ny)
     Z = np.linspace(minB[2], 0, nz)
     ZZ, XX, YY = np.meshgrid(Z,X,Y, indexing='ij')
     
     segments = r.rs.segments
     nodes = r.rs.nodes
-    conc, decay, pHead = perirhizalModel.map_cylinders(s, segments, nodes, cell_number, XX,YY,ZZ, ifexu) # mol C/cm3 W, cm
+    conc, decay, pHead = perirhizalModel.map_cylinders(s, segments, nodes, cell_number, X_orig, Y_orig, Z_orig, X, Y, Z, XX,YY,ZZ, ifexu) # mol C/cm3 W, cm
     results_dir = perirhizalModel.results_dir
-    if ifexu == "True":
+    if ifexu:
         np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
         np.save(results_dir + "decay_arrays/day"+str(rs_age)+".npy",decay)
     np.save(results_dir + "swp_arrays/day"+str(rs_age)+".npy",pHead)
+    
+    conc_ = np.transpose(np.reshape(conc, (nz, nx, ny)), (1,2,0)) 
+    decay_ = np.transpose(np.reshape(decay, (nz, nx, ny)), (1,2,0)) 
+    pHead_ = np.transpose(np.reshape(pHead, (nz, nx, ny)), (1,2,0)) 
+    conc_ = np.ascontiguousarray(conc_)
+    decay_ = np.ascontiguousarray(decay_)
+    pHead_ = np.ascontiguousarray(pHead_)
+
+    if ifexu:
+        gridToVTK(results_dir+"vtpvti/./exu_decay_swp_day"+str(rs_age), Y, X, Z, pointData = {"Exudates":conc_, "Decay":decay_, "SWP":pHead_,})
+    else: 
+        gridToVTK(results_dir+"vtpvti/./exu_decay_swp_day"+str(rs_age), Y, X, Z, pointData = {"SWP":pHead_,})
+
   
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):
     print('the solute content changed',rank, cyl.gId,'nc_content',nc_content,nc_content_new,'vols',
@@ -753,3 +774,4 @@ def WarnErrorIncrease( IdComponentWithError, perirhizalModel):
             write_file_array("error_sol_content_diff1d3drel"+str(nc+1), 
                              perirhizalModel.allDiff1d3dCW_rel[nc+1], directory_ =results_dir, fileType = '.csv')
     raise Exception
+    

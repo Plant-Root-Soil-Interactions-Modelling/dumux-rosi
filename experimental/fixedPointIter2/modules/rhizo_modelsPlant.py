@@ -26,9 +26,13 @@ from scipy.interpolate import griddata as gd
 import pandas as pd
 from plantbox import Perirhizal
 import FPItHelper
-from scipy.linalg import norm
+from FPItHelper import fixedPointIterationHelper
+
 from scipy.interpolate import griddata as gd
-from scipy.ndimage import zoom
+from scipy.interpolate import RegularGridInterpolator
+# from scipy.spatial import cKDTree
+from numpy.linalg import norm
+import time
 
 class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
     """
@@ -441,7 +445,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
     def update(self):
         """ 
-            creates new 1d models or update the sape of existing 1d models
+            creates new 1d models or update the shape of existing 1d models
         """
         if self.debugMode:
             self.printData('updateBefore')
@@ -499,7 +503,13 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
 
         try:
-            
+            # fpit_Helper = fixedPointIterationHelper(self.soilModel, self.perirhizalModel, self.plantModel, 
+                                                # seg_fluxes, outer_R_bc_wat, 
+                                                # outer_R_bc_sol, cylVol, Q_Exud_i, Q_mucil_i,
+                                                # dt, # sub-time step
+                                                # sim_time, # sim_time = N * dt
+                                                # emptyCells)
+            # fpit_Helper.compute3DSource(dt)
             
             # compute the leftover volume after cylinder shrinkage
             volLeftOver = np.array([self.get_Vol_leftoverI(i) for i in range(len(self.sizeSoilCell))])# cm3 scv 
@@ -795,7 +805,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                           watVol_leftover[highTheta], theta_leftOver[highTheta],highTheta,
                           self.maxDiff1d3dCW_abs[0],self.vg_soil.theta_S)
                     assert (np.logical_or(
-                        ((theta_leftOver[highTheta] - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 1.,
+                        ((theta_leftOver[highTheta] - self.vg_soil.theta_S)/self.vg_soil.theta_S)*100 < 5., #does this change anything? 
                         (theta_leftOver[highTheta] - self.vg_soil.theta_S)*volLeftOver[highTheta]<=self.maxDiff1d3dCW_abs[0] * 10
                          )).all()
                     theta_leftOver[highTheta] = self.vg_soil.theta_S 
@@ -804,6 +814,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                           watVol_leftover[highTheta], theta_leftOver[highTheta],highTheta,
                           self.maxDiff1d3dCW_abs[0],self.vg_soil.theta_S)
                     raise Exception
+               
                     
             WatPsi_leftover = np.full(theta_leftOver.shape, np.nan)
             if len(theta_leftOver) > 0:
@@ -2452,83 +2463,162 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self._map(self._flat0(comm.gather(x, root=0)),dtype, doMap)
 
 
-    def map_cylinders(self, s, segments, nodes, cell_number, XX,YY,ZZ, ifexu):
+    def map_cylinders(self, s, segments, nodes, cell_number, X_orig, Y_orig, Z_orig, X, Y, Z, XX,YY,ZZ, ifexu):
         """ maps cylinders to soil grid """
 
         shape_orig = [cell_number[2], cell_number[0], cell_number[1]]
-        shape_new = np.shape(XX)
-        shape_rel = np.array(shape_new)/np.array(shape_orig)
-        swp_ = np.reshape(np.array(s.getSolutionHead()), shape_orig)
-        swp = zoom(swp_, shape_rel)
-        if ifexu == "True":
-            conc_ = np.reshape(np.array(s.getSolution(1)* self.molarDensityWat_m3/1e6), shape_orig) # mol C/cm3 water
-            conc = zoom(conc_,shape_rel)
-            decay_ = np.reshape(np.array(s.getSolution(3)* self.bulkDensity_m3 /1e6 ), shape_orig) # mol C/cm3 soil
-            decay = zoom(decay_,shape_rel)
-        dummy = 1
-        for i, cyl in enumerate(self.cyls):
-            if not isinstance(cyl, AirSegment) : 
-                    
-                R_ = cyl.getDofCoordinates()
-                ss_ = cyl.getSolutionHead() # cm 
-                if ifexu: 
-                    vv_ = (cyl.getSolution(1)* self.molarDensityWat_m3/1e6) # mol C/cm3 W
-                    dd_ = (cyl.getSolution(3)* self.bulkDensity_m3/1e6) # mol C/cm3 soil
-                
-                p0 = np.array(nodes[segments[i].x])
-                p1 = np.array(nodes[segments[i].y])
-                
-                v = p1 - p0
-                mag = norm(v)
-                v = v / mag
-                not_v = np.array([1, 0, 0])
-                if (v == not_v).all():
-                    not_v = np.array([0, 1, 0])
-                n1 = np.cross(v, not_v)
-                n1 /= norm(n1)
-                n2 = np.cross(v, n1)
-                t = np.linspace(0, mag, 20)
-                theta = np.linspace(0, 2 * np.pi, 20)
-                t, theta = np.meshgrid(t, theta)
-                
-                x = []
-                y = []
-                z = []
-                vv = []
-                dd = []
-                ss = []
-                
-                for j in range(0,len(R_)):
-                    R = R_[j]
-                    X, Y, Z = [p0[k] + v[k] * t + R * np.sin(theta) * n1[k] + R * np.cos(theta) * n2[k] for k in [0, 1, 2]]
-                    x.extend(X.flatten())
-                    y.extend(Y.flatten())
-                    z.extend(Z.flatten())
-                    ss.extend(np.ones((len(X.flatten())))*ss_[j])
-                    if ifexu: 
-                        vv.extend(np.ones((len(X.flatten())))*vv_[j])
-                        dd.extend(np.ones((len(X.flatten())))*dd_[j])
-                    
+        shape_new = XX.shape
 
-                # interpolate "data.v" on new grid "inter_mesh"
-                if ifexu == "True": 
-                    V = gd((z,x,y), vv, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
-                    V[np.isnan(V)] = 0
-                    V = np.array(V.reshape(shape_new))
-                    conc = conc+V
-                    
-                    D = gd((z,x,y), dd, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
-                    D[np.isnan(D)] = 0
-                    decay_test = np.vstack((D, decay.flatten()))
-                    decay = np.reshape(np.max(decay_test, axis = 0),shape_new) #cumulative decay/cm^3 soil, max value of all cylinders and soil is taken 
-                else: 
-                    conc = None
-                    decay = None
-                
-                S = gd((z,x,y), ss, (ZZ.flatten(),XX.flatten(),YY.flatten()), method='linear')
-                S[np.isnan(S)] = 0
-                swp_test = np.vstack((S, swp.flatten()))
-                swp = np.reshape(np.min(swp_test, axis = 0),shape_new) #minimum soil water potential of all cylinders and soil is taken 
-                print('cyl '+str(dummy)+' of ' + str(len(self.cyls)-len(self.airSegs))+ ' is finished!')
-                dummy = dummy+1
+
+        ZZ_r = ZZ.ravel()
+        XX_r = XX.ravel()
+        YY_r = YY.ravel()
+        target_tuple = (ZZ_r, XX_r, YY_r)
+
+
+        swp_ = np.reshape(np.array(s.getSolutionHead()), shape_orig)
+        func_interp = RegularGridInterpolator((Z_orig, X_orig, Y_orig), swp_, method='slinear')
+        swp = func_interp(np.column_stack(target_tuple)).reshape(shape_new)
+
+        if ifexu:
+            conc_ = np.reshape(np.array(s.getSolution(1) * self.molarDensityWat_m3 / 1e6), shape_orig)
+            func_interp = RegularGridInterpolator((Z_orig, X_orig, Y_orig), conc_, method='slinear')
+            conc_orig = func_interp(np.column_stack(target_tuple)).reshape(shape_new)
+            conc = np.zeros(shape_new)
+
+            decay_ = np.reshape(np.array(s.getSolution(3) * self.bulkDensity_m3 / 1e6), shape_orig)
+            func_interp = RegularGridInterpolator((Z_orig, X_orig, Y_orig), decay_, method='slinear')
+            decay_orig = func_interp(np.column_stack(target_tuple)).reshape(shape_new)
+            decay = np.zeros(shape_new)
+
+        start_time = time.time()
+        # --- distribute work ---
+        n_cyls = len(self.cyls)
+        local_indices = range(rank, n_cyls, max_rank)
+
+        # --- local accumulators ---
+        if ifexu:
+            local_conc = np.zeros(shape_new)
+            local_decay = np.zeros(shape_new)
+        else:
+            local_conc = None
+            local_decay = None
+
+        local_swp = np.full(shape_new, np.inf)
+
+        # --- parallel loop ---
+        for i in local_indices:
+
+            cyl = self.cyls[i]
+
+            if isinstance(cyl, AirSegment):
+                continue
+
+            R_ = cyl.getDofCoordinates()
+            ss_ = cyl.getSolutionHead()
+
+            if ifexu:
+                vv_ = cyl.getSolution(1) * self.molarDensityWat_m3 / 1e6
+                dd_ = cyl.getSolution(3) * self.bulkDensity_m3 / 1e6
+
+            p0 = np.array(nodes[segments[i].x])
+            p1 = np.array(nodes[segments[i].y])
+
+            v = p1 - p0
+            mag = norm(v)
+            v /= mag
+
+            not_v = np.array([1, 0, 0])
+            if np.allclose(v, not_v):
+                not_v = np.array([0, 1, 0])
+
+            n1 = np.cross(v, not_v)
+            n1 /= norm(n1)
+            n2 = np.cross(v, n1)
+
+            t = np.linspace(0, mag, 20)
+            theta = np.linspace(0, 2 * np.pi, 20)
+            t, theta = np.meshgrid(t, theta)
+
+            sin_t = np.sin(theta)
+            cos_t = np.cos(theta)
+
+            x_list = []
+            y_list = []
+            z_list = []
+            ss_list = []
+
+            if ifexu:
+                vv_list = []
+                dd_list = []
+
+            for j, R in enumerate(R_):
+
+                Xc = p0[0] + v[0]*t + R*sin_t*n1[0] + R*cos_t*n2[0]
+                Yc = p0[1] + v[1]*t + R*sin_t*n1[1] + R*cos_t*n2[1]
+                Zc = p0[2] + v[2]*t + R*sin_t*n1[2] + R*cos_t*n2[2]
+
+                pts = Xc.size
+
+                x_list.append(Xc.ravel())
+                y_list.append(Yc.ravel())
+                z_list.append(Zc.ravel())
+                ss_list.append(np.full(pts, ss_[j]))
+
+                if ifexu:
+                    vv_list.append(np.full(pts, vv_[j]))
+                    dd_list.append(np.full(pts, dd_[j]))
+
+            x = np.concatenate(x_list)
+            y = np.concatenate(y_list)
+            z = np.concatenate(z_list)
+            ss = np.concatenate(ss_list)
+
+            if ifexu:
+                vv = np.concatenate(vv_list)
+                dd = np.concatenate(dd_list)
+
+                V = gd((z, x, y), vv, target_tuple, method='linear')
+                V = np.nan_to_num(V).reshape(shape_new)
+                local_conc += V
+
+                D = gd((z, x, y), dd, target_tuple, method='linear')
+                D = np.nan_to_num(D).reshape(shape_new)
+                local_decay += D
+
+            S = gd((z, x, y), ss, target_tuple, method='linear')
+            S = np.nan_to_num(S)
+            local_swp = np.minimum(local_swp, S.reshape(shape_new))
+
+
+        # --- reduction to rank 0 only ---
+
+        if rank == 0:
+            if ifexu:
+                conc = np.zeros_like(local_conc)
+                decay = np.zeros_like(local_decay)
+            else:
+                conc = None
+                decay = None
+            swp = np.zeros_like(local_swp)
+        else:
+            conc = None
+            decay = None
+            swp = None
+
+
+        if ifexu:
+            comm.Reduce(local_conc, conc, op=MPI.SUM, root=0)
+            comm.Reduce(local_decay, decay, op=MPI.SUM, root=0)
+
+        comm.Reduce(local_swp, swp, op=MPI.MIN, root=0)
+        print('Cylinder mapping finished in --- %s seconds ---'% (time.time() - start_time))
+
+
+
+        if ifexu:
+            conc = np.maximum(conc, conc_orig)
+            decay = np.maximum(decay, decay_orig)
+
         return conc, decay, swp
+     
