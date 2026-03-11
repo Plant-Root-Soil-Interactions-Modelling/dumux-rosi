@@ -15,27 +15,30 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 font = {'size'   : 18}
 plt.rc('font', **font)
 
-path = '../../scripts/results/Exudate/day1_loam_2_exu_withdecay_withsorption/'
+path = '../../scripts/results/Exudate/day1_loam_2_exu_withdecay_withsorption_strangesorption/'
 arrays = ['swp_arrays/', 'exu_arrays/', 'decay_arrays/']
 labels = ['Soil water potential (cm)', 'Exudate concentration (mol/cm^3)','Cumulative decay at a given location (mol/cm^3)']
 files = [f for f in listdir(path+arrays[0]) if isfile(join(path+arrays[0], f))]
 files = np.sort(files) 
- 
-fig, axs = plt.subplots(len(arrays), len(files))
+
+plotnum = 4 #len(fileS)
+fig, axs = plt.subplots(len(arrays), plotnum)
 for i in range(len(arrays)): 
-    for j in range(0, len(files)): 
-        data = np.load(path + arrays[i]+files[j])
+    for j in range(0, plotnum): 
+        data = np.load(path + arrays[i]+files[j+(len(files)-plotnum)])
         data_ = data[600:,int(np.shape(data)[1]/2),:]
         # data_ = np.max(data, axis = 1) 
         # data_ = data_[:,600:]
         data_rot = ndimage.rotate(data_, 180)
         colors = plt.cm.jet(data_)
-        if j == 0 : 
+        if j == 0: 
             norm = mpl.colors.Normalize(vmin=np.min(data_), vmax=np.max(data_))
+        if i == 0 and j == 0: 
+            norm = mpl.colors.Normalize(vmin=-50, vmax=0)
         # elif j ==0 & i == 1: 
             # norm = mpl.colors.Normalize(vmin=np.min(data_), vmax=np.max(data_))
         m = axs[i,j].imshow(data_rot, cmap = 'jet', norm = norm, aspect=1)
-        if j == len(files)-1: 
+        if j == plotnum-1: 
             divider = make_axes_locatable(axs[i,j])
             cax = divider.append_axes("right", size="5%", pad=0.05)
             plt.colorbar(m, cax = cax, label = labels[i])
