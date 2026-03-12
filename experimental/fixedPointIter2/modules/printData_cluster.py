@@ -441,19 +441,22 @@ def map_exudates_pHead(rs, r, s, minB, maxB, cell_number, perirhizalModel, rs_ag
     
     segments = r.rs.segments
     nodes = r.rs.nodes
-    conc, decay, pHead = perirhizalModel.map_cylinders(s, segments, nodes, cell_number, X_orig, Y_orig, Z_orig, X, Y, Z, XX,YY,ZZ, ifexu) # mol C/cm3 W, cm
+    conc, decay, pHead, wc = perirhizalModel.map_cylinders(s, segments, nodes, cell_number, X_orig, Y_orig, Z_orig, X, Y, Z, XX,YY,ZZ, ifexu) # mol C/cm3 W, cm, cm^3/cm^3 scv
     results_dir = perirhizalModel.results_dir
     if ifexu:
         np.save(results_dir + "exu_arrays/day"+str(rs_age)+".npy",conc)
         np.save(results_dir + "decay_arrays/day"+str(rs_age)+".npy",decay)
     np.save(results_dir + "swp_arrays/day"+str(rs_age)+".npy",pHead)
+    np.save(results_dir + "wc_arrays/day"+str(rs_age)+".npy",wc)
     
     # conc_ = np.transpose(np.reshape(conc, (nz, nx, ny)), (1,2,0)) 
     # decay_ = np.transpose(np.reshape(decay, (nz, nx, ny)), (1,2,0)) 
     # pHead_ = np.transpose(np.reshape(pHead, (nz, nx, ny)), (1,2,0)) 
+    # wc_ = np.transpose(np.reshape(wc, (nz, nx, ny)), (1,2,0))                  
     # conc_ = np.ascontiguousarray(conc_)
     # decay_ = np.ascontiguousarray(decay_)
     # pHead_ = np.ascontiguousarray(pHead_)
+    # wc_ = np.ascontiguousarray(wc_)   
 
     #if ifexu:
     #    gridToVTK(results_dir+"vtpvti/./exu_decay_swp_day"+str(rs_age), Y, X, Z, pointData = {"Exudates":conc_, "Decay":decay_, "SWP":pHead_,})
