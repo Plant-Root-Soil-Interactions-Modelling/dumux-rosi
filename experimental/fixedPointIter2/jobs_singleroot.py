@@ -38,7 +38,7 @@ def start_jobs(jobs):
             fh.writelines("cd $HOME/Dumux_ExudatePaper\n")
             fh.writelines("source cpbenv_exudPaper/bin/activate\n")
             fh.writelines("cd $HOME/Dumux_ExudatePaper/dumux/dumux-rosi/experimental/fixedPointIter2/scripts\n")
-            fh.writelines("mpiexec -n 1 python3 mainExudate.py {:s} {:s} {:s} {:s}".format(soil_type, sorption, SWP_ini, trans))
+            fh.writelines("mpiexec -n 1 python3 mainExudate_singleroot.py {:s} {:s} {:s} {:s}".format(soil_type, sorption, SWP_ini, trans))
         os.system("sbatch {:s}".format(job_file))
 
 
