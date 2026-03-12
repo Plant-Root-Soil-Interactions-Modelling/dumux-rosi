@@ -2479,6 +2479,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         swp_ = np.reshape(np.array(s.getSolutionHead()), shape_orig)
         func_interp = RegularGridInterpolator((Z_orig, X_orig, Y_orig), swp_, method='slinear')
         swp = func_interp(np.column_stack(target_tuple)).reshape(shape_new)
+        
+        wc_ = np.reshape(np.array(s.getWaterContent()), shape_orig)
+        func_interp = RegularGridInterpolator((Z_orig, X_orig, Y_orig), wc_, method='slinear')
+        wc_orig = func_interp(np.column_stack(target_tuple)).reshape(shape_new)
+        wc = np.zeros(shape_new)
 
         if ifexu:
             conc_ = np.reshape(np.array(s.getSolution(1) * self.molarDensityWat_m3 / 1e6), shape_orig)
@@ -2504,7 +2509,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             local_conc = None
             local_decay = None
 
-        local_swp = np.full(shape_new, np.inf)
+        local_swp = np.full(shape_new, 0.)
+        local_wc = np.full(shape_new, 0.)
 
         # --- parallel loop ---
         for i in local_indices:
@@ -2516,6 +2522,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
             R_ = cyl.getDofCoordinates()
             ss_ = cyl.getSolutionHead()
+            cc_ = cyl.getWaterContent()
 
             if ifexu:
                 vv_ = cyl.getSolution(1) * self.molarDensityWat_m3 / 1e6
@@ -2547,6 +2554,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             y_list = []
             z_list = []
             ss_list = []
+            cc_list = []
 
             if ifexu:
                 vv_list = []
@@ -2564,6 +2572,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 y_list.append(Yc.ravel())
                 z_list.append(Zc.ravel())
                 ss_list.append(np.full(pts, ss_[j]))
+                cc_list.append(np.full(pts, cc_[j]))
 
                 if ifexu:
                     vv_list.append(np.full(pts, vv_[j]))
@@ -2573,6 +2582,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             y = np.concatenate(y_list)
             z = np.concatenate(z_list)
             ss = np.concatenate(ss_list)
+            cc = np.concatenate(cc_list)
 
             if ifexu:
                 vv = np.concatenate(vv_list)
@@ -2589,6 +2599,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             S = gd((z, x, y), ss, target_tuple, method='linear')
             S = np.nan_to_num(S)
             local_swp = np.minimum(local_swp, S.reshape(shape_new))
+            
+            C = gd((z, x, y), cc, target_tuple, method='linear')
+            C = np.nan_to_num(C).reshape(shape_new)
+            local_wc += C
 
 
         # --- reduction to rank 0 only ---
@@ -2601,10 +2615,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 conc = None
                 decay = None
             swp = np.zeros_like(local_swp)
+            wc = np.zeros_like(local_wc)
         else:
             conc = None
             decay = None
             swp = None
+            wc = None
 
 
         if ifexu:
@@ -2612,13 +2628,20 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             comm.Reduce(local_decay, decay, op=MPI.SUM, root=0)
 
         comm.Reduce(local_swp, swp, op=MPI.MIN, root=0)
+        comm.Reduce(local_wc, wc, op=MPI.MIN, root=0)
         print('Cylinder mapping finished in --- %s seconds ---'% (time.time() - start_time))
-
 
 
         if ifexu:
             conc = np.maximum(conc, conc_orig)
             decay = np.maximum(decay, decay_orig)
+            
+        idx = wc == 0
+        wc[idx] = wc_orig[idx]
+        
+        count = np.sum(wc > self.vg_soil.theta_S)
+        print('Water content exceeds saturation water content in '+str(count)+' number of voxels')
+        wc[wc > self.vg_soil.theta_S ] = self.vg_soil.theta_S 
 
-        return conc, decay, swp
+        return conc, decay, swp, wc
      
