@@ -23,7 +23,8 @@ def initialPrint(plant):
                 # realised vs prescribed fluxes and sinks
                 "SinkLim3DS",
                 "SinkLim1DS","OutLim1DS",
-                "OutBCsol_diff","OutBCmucil_diff","InBCsol_diff","InBC_mucildiff",
+                #"OutBCsol_diff","OutBCmucil_diff",
+        #"InBCsol_diff","InBC_mucildiff",
                 # 1d-3d differences/errors
                 "sumDiff1d3dCW_abs","sumDiff1d3dCW_rel","diff1d3dCurrant",
         "diff1d3dCurrant_rel",
