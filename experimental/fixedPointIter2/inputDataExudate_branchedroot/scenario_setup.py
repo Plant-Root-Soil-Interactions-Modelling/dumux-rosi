@@ -30,7 +30,7 @@ from PhloemPhotosynthesis import *
 #import weatherFunctions
 import evapotranspiration as evap
 from scipy import interpolate
-
+    
 
 def getBiochemParam(s,soil_type, sorp):    
     """ define TraiRhizo biochemical parameters 
@@ -43,7 +43,7 @@ def getBiochemParam(s,soil_type, sorp):
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
     
-    decay_params = plantParameters.DecayParams(soil_type)
+    decay_params = plantParameters.DecayParams()
     s.vmax_decay = decay_params['Vmax'] #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
     s.km_decay = decay_params['Km'] #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
@@ -52,7 +52,7 @@ def getBiochemParam(s,soil_type, sorp):
         # kdes =  1e3 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         kd_values = plantParameters.SorptionParams(soil_type, sorp)
         kads = kd_values['kads']*s.molarMassC/s.bulkMassDensity_gpercm3 #[cm^3/mol/d] optimized from doi: 10.1111/j.1365-2389.2010.01244.x
-        kdes = kd_values['kdes']  #[1/d]             
+        kdes = kd_values['kdes']  #[1/d]
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
         k_clay_silt[1] = 0.082
@@ -280,36 +280,14 @@ def vg_SPP(i = int(1)):
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
 
-def getSoilTextureAndShape(soil_= 'loam', res = 1):  
+def getSoilTextureAndShape(soil_='loam', res = 1):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    # min_b = np.array([-3./2, -3./2, -5.]) # np.array( [5, 5, 0.] )
-    # max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
-    # cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
-    # area = 3*3
-    if res == 1: 
-        min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
-        max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
-        cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
-        area = 20 * 45  # cm2 45
-    elif res == 2: 
-        min_b = np.array([-20/2, -44/2, -74.])
-        max_b =np.array( [20/2, 44/2, 0.]) 
-        cell_number = np.array([10,22,37]) 
-        area = 20 * 44  # cm2 45 
-    elif res == 4: 
-        min_b = np.array([-20/2, -44/2, -72.])
-        max_b =np.array( [20/2, 44/2, 0.]) 
-        cell_number = np.array([5,11,18]) 
-        area = 20 * 44  # cm2 45        
-    elif res == 5: 
-        min_b = np.array([-20/2, -45/2, -75.])
-        max_b =np.array( [20/2, 45/2, 0.]) 
-        cell_number = np.array([4,9,15])
-        area = 20 * 45  # cm2 45
-    else: 
-        print('Wrong resolution chosen') 
+    min_b = np.array( [-2.5, -2.5, -25.] )
+    max_b =np.array([2.5, 2.5, 0.])
+    cell_number = np.array([5,5,25])
+    area = 5 * 5  # cm2 
     
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
@@ -319,7 +297,7 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
         i = 0
     else:
         i = 1
-     
+
     soilVG = vg_SPP(i)
     
     Kc_value = np.array([1,1,1,1.2,1.2,1.2])
@@ -376,7 +354,7 @@ def create_soil_model3D(  results_dir ,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
-def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
+def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type, SWP_ini, 
                      doAds = True, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, doDecay=True, 
                      MaxRelativeShift = 1e-8):
@@ -401,7 +379,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
     elif sorption_type == 'high': 
         sorp = 2
     else: 
-        print('no sorption type defined.') 
+        print('no sorption type defined.')
         
     s = RichardsWrapper(RichardsNCSP())  # water and N solute          
     s.results_dir = results_dir   
@@ -432,7 +410,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
     setIC3D(s, soil_type, ICcc)
     s.isPeriodic = True
     s.createGrid(min_b, max_b, cell_number, s.isPeriodic)  # [cm] 
-    s = setupOther(s, soil_, initsim, simMax, soilTextureAndShape)
+    s = setupOther(s, soil_, initsim, simMax, SWP_ini, soilTextureAndShape)
     print('s.numSoluteComp',s.numSoluteComp,'numComp',s.numComp,
             'numFluidComp',s.numFluidComp,'numDissolvedSoluteComp',s.numDissolvedSoluteComp,'\n\n\n')
     
@@ -446,7 +424,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
     return s
     
 
-def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
+def setupOther(s, soil_type, initsim, simMax, SWP_ini, soilTextureAndShape):
     """ define remaining soil parameters """ 
     
     # climate data 
@@ -465,10 +443,12 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     if s.dimWorld == 3:# 3d model
 
         if times is not None:
-            s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
+            # s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
+            s.setTopBC("noFlux")  # 0.5 is dummy value
         else:
             s.setTopBC("noFlux")
-        s.setBotBC("freeDrainage")
+        # s.setBotBC("freeDrainage")
+        s.setBotBC("noFlux")
     
         for i in range(1, s.numComp):# no flux
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
@@ -485,19 +465,19 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     s.eps_regularization = None # pcEps, krEps
     #s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be l
      
-    df = pd.read_csv("../inputDataExudate/data/init_pot_"+soil_type+"_2019.csv")  # initial potential
-    time = df['time'].loc[:].values
-    idx_time = (np.abs(time - initsim)).argmin()
-    h_raw = df.iloc[idx_time].values[1:]
-    h_raw = np.append(h_raw, h_raw[-1])
-    f = interpolate.interp1d([0,10,20,40,60,75,150], h_raw)
-    hx = np.arange(0, -min_b[2], -min_b[2]/cell_number[2])
-    hy = f(hx)
-    h  = np.flip(hy) #cm  
-    h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
-    h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
-    h = h.flatten()
-    # h = np.ones((cell_number[0]*cell_number[1]*cell_number[2]))*-100 #testing
+    # df = pd.read_csv("../inputDataExudate/data/init_pot_"+soil_type+"_2019.csv")  # initial potential
+    # time = df['time'].loc[:].values
+    # idx_time = (np.abs(time - initsim)).argmin()
+    # h_raw = df.iloc[idx_time].values[1:]
+    # h_raw = np.append(h_raw, h_raw[-1])
+    # f = interpolate.interp1d([0,10,20,40,60,75,150], h_raw)
+    # hx = np.arange(0, -min_b[2], -min_b[2]/cell_number[2])
+    # hy = f(hx)
+    # h  = np.flip(hy) #cm  
+    # h = np.repeat(h[:,np.newaxis],cell_number[0],axis=1) #x-axis
+    # h = np.repeat(h[:,:,np.newaxis],cell_number[1],axis=2) #y-axis
+    # h = h.flatten()
+    h = np.ones((cell_number[0]*cell_number[1]*cell_number[2]))*-float(SWP_ini)
     s.setInitialConditionHead(h)  # cm
     
     # for boundary conditions constantFlow, constantFlowCyl, and atmospheric
@@ -515,7 +495,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndShape, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, ifexu, single_trans, soil_model, soilTextureAndShape, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -557,7 +537,7 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     plantModel.wilting_point = -15000.
     plantModel.exudf = plantParameters.prescribed_exudation(soil_type, ifexu)
     plantModel.exudation_rates = plantParameters.exudation_rates
-    plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
+    plantModel.transpiration = evap.get_transpiration(simMax, single_trans)
     # set kr and kx for root system or plant
     
     plantParameters.init_conductivities(r = plantModel)

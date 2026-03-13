@@ -11,8 +11,8 @@ import numpy as np
 import argparse
 
 sys.path.append("../modules/");
-sys.path.append("../inputDataExudate/");
-sys.path.append("../inputDataExudate/data/");
+sys.path.append("../inputDataExudate_branchedroot/");
+sys.path.append("../inputDataExudate_branchedroot/data/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
@@ -46,15 +46,16 @@ def XcGrowth(scenarioData):
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
-    simMax = int(scenarioData['simMax'])
-    res = int(scenarioData['res'])
-    ifexu_ = scenarioData['exudate']
-    sorption_type = scenarioData['type_sorption']               
-    xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
-    # xml_name = "Faba_synMRI.xml"
+    sorption_type = scenarioData['type_sorption']
+    SWP_ini = scenarioData['SWP_ini']
+    single_trans = scenarioData['trans']
+    simMax = 15 #days
+    res = 1 #cm
+    ifexu = True
+    xml_name = "branch1.xml"  # root growth model parameter file
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
-    initsim = int(scenarioData['simInit']) #initial simulation time 
+    initsim = 1 #day
     # outer time step (outside of fixed-point iteration loop)
     dt = 20/60/24 #day
     dt_inner_init =  dt # 1/60/24 #
@@ -62,12 +63,13 @@ def XcGrowth(scenarioData):
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 10 # max num of iteration for loops
-    targetIter= 9 # target n_iter for adjusting time step of inner loop
+    k_iter = 100 # max num of iteration for loops
+    targetIter= 40# target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
     doSoluteUptake = False # active uptake?
+    doAds_ = True
     # noAds = True # stop adsorption?
     doPhloemFlow = False
     doExudation = True #prescribed exudation for every root segment 
@@ -87,22 +89,17 @@ def XcGrowth(scenarioData):
     doMinimumPrint =  True
     debugMode = False
     make_cyls = True
-    doDecay = True
-    doAds = True
     
     rsiCompMethod = 0
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
-    
+   
+    doDecay = True    
+    doAds = True
+    results_dir="./results_branchedroot/Exudate/"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
 
-    if ifexu_ == "True":
-       ifexu = True
-       results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_"+sorption_type+"sorption/"
-    else: 
-        ifexu = False
-        results_dir="./results/Exudate/day"+str(initsim)+"_"+soil_type+'_'+str(res)+"_noexu/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -116,7 +113,8 @@ def XcGrowth(scenarioData):
     s = scenario_setup.create_soil_model(initsim, simMax,res,
                                          results_dir = results_dir,
                                          soil_=soil_type,
-                                         sorption_type = sorption_type,                                
+                                         sorption_type = sorption_type, 
+                                         SWP_ini = SWP_ini,
                                          doAds = doAds, 
                                          doSoluteFlow = doSoluteFlow, 
                                          doBioChemicalReaction = doBioChemicalReaction,
@@ -127,7 +125,7 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, single_trans, s, soilTextureAndShape, xml_name,
                                             path, soil_type,
                                             limErr1d3d = 5e-12)  
 
@@ -218,9 +216,6 @@ def XcGrowth(scenarioData):
         _maxDiff1d3dCW_absbefore = perirhizalModel.maxDiff1d3dCW_abs
         
         perirhizalModel.update() # update shape data in the rhizosphere model
-        
-        print('error before vs after update,\n\trel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel)
-        print('\tabs',_maxDiff1d3dCW_absbefore,perirhizalModel.maxDiff1d3dCW_abs)
         
         # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
@@ -337,8 +332,8 @@ def XcGrowth(scenarioData):
                 printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
-        print('for now, remove some printing to make the troubleshooting faster')
-        if False:#np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+            
+        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]
@@ -350,10 +345,10 @@ def XcGrowth(scenarioData):
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
-
+    
+    
             if make_cyls == True: 
                 printData.map_exudates_pHead(perirhizalModel.ms, plantModel, s, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], soilTextureAndShape['cell_number'], perirhizalModel, int(rs_age*10), ifexu)
-
     """ wrap up """
     
     
@@ -370,21 +365,18 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('soil_type', type = str, help = 'loam or sand')
-    parser.add_argument('res', type = str, help = '1,2,4,5')
-    parser.add_argument('simInit', type = str, help = 'whatever, must be smaller than simMax')
-    parser.add_argument('simMax', type = str, help = 'whatever, must be larger than simInit')
-    parser.add_argument('exudate', type = str, help = 'True or False')
     parser.add_argument('type_sorption', type = str, help = 'low, medium, high')
-
+    parser.add_argument('SWP_ini', type = str, help = 'absolute value, whatever >0')
+    parser.add_argument('trans', type = str, help = 'whatever >=0')
     args = parser.parse_args()
     
-    name = args.soil_type + "_" + args.res + "_" + args.simInit+ "_" + args.simMax+'_'+args.exudate + "_" + args.type_sorption
+    name = args.soil_type + "_" +  args.type_sorption+ args.SWP_ini+'_'+ args.trans
     print()
     print(name, "\n")
     
-    scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'type_sorption': args.type_sorption}
+    scenarioData = {'soil_type': args.soil_type, 'type_sorption': args.type_sorption, 'SWP_ini' : args.SWP_ini, 'trans' : args.trans}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 False low
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True medium
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True high
+    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam high 100 0
+    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam medium 100 0
+    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam low 100 0

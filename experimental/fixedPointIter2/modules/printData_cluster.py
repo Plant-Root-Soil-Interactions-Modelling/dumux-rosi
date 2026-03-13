@@ -15,7 +15,7 @@ from helpfull import write_file_array, write_file_float, div0, div0f
 import vtk_plot_adapted as vp
 import vtk
 import vtk.util.numpy_support as numpy_support
-from pyevtk.hl import gridToVTK
+#from pyevtk.hl import gridToVTK
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """
@@ -26,8 +26,7 @@ def initialPrint(plant):
                 # realised vs prescribed fluxes and sinks
                 "SinkLim3DS",
                 "SinkLim1DS","OutLim1DS",
-                #"OutBCsol_diff","OutBCmucil_diff",
-        #"InBCsol_diff","InBC_mucildiff",
+                "OutBCsol_diff","OutBCmucil_diff","InBCsol_diff","InBC_mucildiff",
                 # 1d-3d differences/errors
                 "sumDiff1d3dCW_abs","sumDiff1d3dCW_rel","diff1d3dCurrant",
         "diff1d3dCurrant_rel",
@@ -450,19 +449,19 @@ def map_exudates_pHead(rs, r, s, minB, maxB, cell_number, perirhizalModel, rs_ag
     np.save(results_dir + "swp_arrays/day"+str(rs_age)+".npy",pHead)
     np.save(results_dir + "wc_arrays/day"+str(rs_age)+".npy",wc)
     
-    conc_ = np.transpose(np.reshape(conc, (nz, nx, ny)), (1,2,0)) 
-    decay_ = np.transpose(np.reshape(decay, (nz, nx, ny)), (1,2,0)) 
-    pHead_ = np.transpose(np.reshape(pHead, (nz, nx, ny)), (1,2,0)) 
-    wc_ = np.transpose(np.reshape(wc, (nz, nx, ny)), (1,2,0)) 
-    conc_ = np.ascontiguousarray(conc_)
-    decay_ = np.ascontiguousarray(decay_)
-    pHead_ = np.ascontiguousarray(pHead_)
-    wc_ = np.ascontiguousarray(wc_)
+    # conc_ = np.transpose(np.reshape(conc, (nz, nx, ny)), (1,2,0)) 
+    # decay_ = np.transpose(np.reshape(decay, (nz, nx, ny)), (1,2,0)) 
+    # pHead_ = np.transpose(np.reshape(pHead, (nz, nx, ny)), (1,2,0)) 
+    # wc_ = np.transpose(np.reshape(wc, (nz, nx, ny)), (1,2,0))                  
+    # conc_ = np.ascontiguousarray(conc_)
+    # decay_ = np.ascontiguousarray(decay_)
+    # pHead_ = np.ascontiguousarray(pHead_)
+    # wc_ = np.ascontiguousarray(wc_)   
 
-    if ifexu:
-        gridToVTK(results_dir+"vtpvti/./exu_decay_swp_wc_day"+str(rs_age), Y, X, Z, pointData = {"Exudates":conc_, "Decay":decay_, "SWP":pHead_,"WC":wc_,})
-    else: 
-        gridToVTK(results_dir+"vtpvti/./exu_decay_swp_wc_day"+str(rs_age), Y, X, Z, pointData = {"SWP":pHead_,"WC":wc_,})
+    #if ifexu:
+    #    gridToVTK(results_dir+"vtpvti/./exu_decay_swp_day"+str(rs_age), Y, X, Z, pointData = {"Exudates":conc_, "Decay":decay_, "SWP":pHead_,})
+    #else: 
+    #    gridToVTK(results_dir+"vtpvti/./exu_decay_swp_day"+str(rs_age), Y, X, Z, pointData = {"SWP":pHead_,})
 
   
 def errorWeatherChange(results_dir, cyl, pheadOld,nc_content, nc_content_new, nc_molFr):
