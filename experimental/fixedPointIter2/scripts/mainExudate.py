@@ -62,8 +62,8 @@ def XcGrowth(scenarioData):
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 100 # max num of iteration for loops
-    targetIter= 40# target n_iter for adjusting time step of inner loop
+    k_iter = 10 # max num of iteration for loops
+    targetIter= 9 # target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
@@ -219,6 +219,9 @@ def XcGrowth(scenarioData):
         
         perirhizalModel.update() # update shape data in the rhizosphere model
         
+        print('error before vs after update,\n\trel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel)
+        print('\tabs',_maxDiff1d3dCW_absbefore,perirhizalModel.maxDiff1d3dCW_abs)
+        
         # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
             raise Exception
@@ -334,8 +337,8 @@ def XcGrowth(scenarioData):
                 printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
-            
-        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        print('for now, remove some printing to make the troubleshooting faster')
+        if False:#np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]
