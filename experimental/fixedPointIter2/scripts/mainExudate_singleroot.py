@@ -88,7 +88,7 @@ def XcGrowth(scenarioData):
     # ATT: for short ismulations only
     doMinimumPrint =  True
     debugMode = False
-    make_cyls = True
+    make_cyls = False
     
     rsiCompMethod = 0
     # 0 : mean(allvals) after 4 iteration
@@ -98,7 +98,7 @@ def XcGrowth(scenarioData):
    
     doDecay = True    
     doAds = True
-    results_dir="./results_singleroot/Exudate/test"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
+    results_dir="./results_singleroot/Exudate/"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
 
 
     # to get printing directory/simulaiton type in the slurm.out file

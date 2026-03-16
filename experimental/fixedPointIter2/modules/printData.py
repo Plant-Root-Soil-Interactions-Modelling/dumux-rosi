@@ -179,8 +179,16 @@ def printDiff1d3d(perirhizalModel, s, dt):
         write_file_array("scv_Soil_solute_conc"+str(i+1), 
                          np.array(s.getSolution(i+1)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 , 
                          directory_ =results_dir, fileType = '.csv') 
+    
+    #save TotC and water content of macroscale cells only 
+    TotC = np.array(s.getTotCContent()).flatten()    
+    WaterC = np.array(s.getWaterContent()).flatten()   
+    RootCells = perirhizalModel.cellWithRoots # only id of cells with roots
+    TotC_macro = np.delete(TotC, RootCells)
+    WaterC_macro = np.delete(WaterC, RootCells)
+    write_file_array('TotC_macro', np.array(TotC_macro), directory_ =results_dir, fileType = '.csv' )
+    write_file_array('WaterC_macro', np.array(WaterC_macro), directory_ =results_dir, fileType = '.csv' )
         
-            
 def printTimeAndError(rs, rs_age):
     """
         get sum of the (resp. max) error/difference between 1d and 3d model for each element (water + solutes)
