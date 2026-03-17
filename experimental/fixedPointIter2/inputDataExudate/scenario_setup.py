@@ -43,7 +43,7 @@ def getBiochemParam(s,soil_type, sorp):
     s.mg_per_molC = s.molarMassC * 1000.
     s.Ds = 1.e-10 #m^2/s
     
-    decay_params = plantParameters.DecayParams(soil_type)
+    decay_params = plantParameters.DecayParams()
     s.vmax_decay = decay_params['Vmax'] #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
     s.km_decay = decay_params['Km'] #mol C / m^3 scv #michaelis constant from Nideggen et al. 
     
