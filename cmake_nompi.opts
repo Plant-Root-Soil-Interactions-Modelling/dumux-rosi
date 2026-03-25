@@ -1,60 +1,56 @@
-GXX_RELEASE_WARNING_OPTS=" \
-    -Wall \
-    -Wunused \
-    -Wmissing-include-dirs \
-    -Wcast-align \
-    -Wno-missing-braces \
-    -Wmissing-field-initializers \
-    -Wno-sign-compare"
+# === Compiler settings ===
+SPECIFIC_COMPILER="
+-DCMAKE_C_COMPILER=C:/msys64/mingw64/bin/gcc.exe
+-DCMAKE_CXX_COMPILER=C:/msys64/mingw64/bin/g++.exe
+"
 
-GXX_RELEASE_OPTS=" \
-    -fdiagnostics-color=always \
-    -fno-strict-aliasing \
-    -fstrict-overflow \
-    -fno-finite-math-only \
-    -DNDEBUG=1 \
-    -O3 \
-    -march=native \
-    -funroll-loops \
-    -g0"
+# === Generator ===
+SPECIFIC_GENERATOR="
+-DCMAKE_GENERATOR=Ninja 
+-DCMAKE_MAKE_PROGRAM=C:/msys64/mingw64/bin/ninja.exe
+"
 
-SPECIFIC_COMPILER=""
-# if you want to specify a specific compiler, do it by setting (comment the above line)
-#SPECIFIC_COMPILER="
-# -DCMAKE_C_COMPILER=/usr/bin/gcc-8
-# -DCMAKE_CXX_COMPILER=/usr/bin/g++-8
-#"
-
-SPECIFIC_GENERATOR=""
-# if you want to specify a specific make file generator (e.g. ninja), do it by setting (comment the above line)
-#SPECIFIC_GENERATOR="
-# -DCMAKE_GENERATOR='Ninja'
-# -DCMAKE_MAKE_PROGRAM='/usr/bin/ninja'
-#"
-
+# === OPMS flags ===
 OPM_FLAGS=""
-# to build opm it might be necessary to set manually the following variables (comment the above line)
-#OPM_FLAGS="
-#-Decl_DIR=[/path/to]/libecl/build
-#-DUSE_MPI=ON
-#"
 
-# set this to "ON" if you want to be able to have the headercheck target
+# Enable or disable headercheck
 DUMUX_ENABLE_HEADERCHECK=OFF
 
+# Thread flags for MSYS/MinGW
 STDTHREAD_LINK_FLAGS="-pthread"
 
-# for debug opts you can set DCMAKE_BUILD_TYPE to "Debug" or "RelWithDebInfo"
-# you can also do this in any of the CMakeLists.txt in Dumux
-# just rerun cmake again afterwards (run cmake <path-to-build-dir>)
+# === C++ flags for MinGW ===
+MIN_GW_RELEASE_FLAGS="-O2 -DNDEBUG -include C:/Users/m.giraud/Documents/CPlantBox-windows/posix_compat.h -mstatic-libgcc -mstatic-libstdc++ -static-libgomp -pthread"
+MIN_GW_DEBUG_FLAGS="-O0 -include C:/Users/m.giraud/Documents/CPlantBox-windows/posix_compat.h -mstatic-libgcc -mstatic-libstdc++ -static-libgomp -pthread"
+MIN_GW_RELWITHDEBINFO_FLAGS="-O2 -include C:/Users/m.giraud/Documents/CPlantBox-windows/posix_compat.h -mstatic-libgcc -mstatic-libstdc++ -static-libgomp -pthread"
 
+# === Main CMake flags ===
 CMAKE_FLAGS="$SPECIFIC_COMPILER $SPECIFIC_GENERATOR $OPM_FLAGS
--DCMAKE_CXX_FLAGS_RELEASE='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS'
--DCMAKE_CXX_FLAGS_DEBUG='-O0 -g -ggdb -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare'
--DCMAKE_CXX_FLAGS_RELWITHDEBINFO='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS -g -ggdb -Wall'
+-DCMAKE_CXX_FLAGS_RELEASE=\"${MIN_GW_RELEASE_FLAGS}\"
+-DCMAKE_CXX_FLAGS_DEBUG=\"${MIN_GW_DEBUG_FLAGS}\"
+-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=\"${MIN_GW_RELWITHDEBINFO_FLAGS}\"
+-DBUILD_SHARED_LIBS=OFF
 -DCMAKE_BUILD_TYPE=Release
 -DENABLE_HEADERCHECK=$DUMUX_ENABLE_HEADERCHECK
 -DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS:BOOL=TRUE
--DCMAKE_DISABLE_FIND_PACKAGE_MPI=1 
+-DCMAKE_DISABLE_FIND_PACKAGE_MPI=1
 -DUG_ENABLE_PARALLEL=0
+-DDUNE_PYTHON_ALLOW_GET_PIP=1
+-DCMAKE_CXX_STANDARD=17
+-DCXX_MAX_STANDARD=17
+-DCMAKE_CXX_STANDARD_REQUIRED=ON
+-DCXX_MAX_SUPPORTED_STANDARD=17
+-Ddune-common_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-common/build-cmake
+-Ddune-geometry_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-geometry/build-cmake
+-Ddune-istl_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-istl/build-cmake
+-Ddune-grid_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-grid/build-cmake
+-Ddune-alugrid_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-alugrid/build-cmake
+-Ddune-foamgrid_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-foamgrid/build-cmake
+-Ddune-spgrid_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-spgrid/build-cmake
+-Ddune-uggrid_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-uggrid/build-cmake
+-Ddune-localfunctions_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dune-localfunctions/build-cmake
+-Ddumux_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/dumux/build-cmake
+-DDUNE_OPTS_FILE=C:/Users/m.giraud/Documents/CPlantBox-windows/dumux-rosi/cmake_nompi.opts
+-DPython3_EXECUTABLE=C:/Users/m.giraud/Documents/CPlantBox-windows/CPlantBox-windows/Python312/Python312/python.exe
+-DPython3_ROOT_DIR=C:/Users/m.giraud/Documents/CPlantBox-windows/CPlantBox-windows/Python312/Python312
 "

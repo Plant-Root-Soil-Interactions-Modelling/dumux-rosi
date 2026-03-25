@@ -1,0 +1,1215 @@
+#!/usr/bin/env bash
+# SPDX-FileCopyrightInfo: Copyright (C) DUNE Project contributors, see file LICENSE.md in module root
+# SPDX-License-Identifier: LicenseRef-GPL-2.0-only-with-DUNE-exception
+
+set -e
+
+###############################################
+###
+### check for environment variables
+###
+if test -z "$GREP"; then
+  GREP=grep
+fi
+if test -z "$SED"; then
+  SED=sed
+fi
+
+if test -z "$MAKE"; then
+  MAKE=make
+fi
+
+system_default_cmake="no"
+if test -z "$CMAKE"; then
+  CMAKE=cmake
+  system_default_cmake="yes"
+fi
+
+space=" "
+tab="	"
+BLANK="$space$tab"
+nl=$'\n'
+
+###############################################
+###
+### read lib
+###
+
+# quote parameter for passing it through the shell
+# the result is meant to be used inside "...", i.e. the outer quotes are _not_
+# included
+#
+# you should have the identity
+# eval "[ x\"\$param\" = x\"$(doublequote "$param")\" ]"
+doublequote()
+{
+  local val="$1"
+  local result=
+  local token=
+  local special=
+  while [ -n "$val" ]; do
+    token=${val%%[\"\$\`\\]*}
+    val=${val#"$token"}
+    special=${val:0:1}
+    val=${val:1}
+    result=$result$token${special:+\\$special}
+  done
+  # if the value ends in \n, protect it by appending two double-quotes so it
+  # won't get stripped by the surrounding $(...)
+  case $result in
+    *"$nl") result=$result'""';;
+  esac
+  printf "%s" "$result"
+}
+
+canonicalname(){
+    if test $# -ne 1; then
+        echo Usage: canonicalname path >&2
+        return 1
+    fi
+    file="`eval echo $1`" # expand ~
+    if test ! -e "$file"; then
+        echo $file: file not found >&2
+        return 1
+    fi
+    # if this is a symlink, then follow the symlink
+    if test -L "$file"; then
+        fdir="`dirname \"$file\"`"
+        flink="`readlink \"$file\"`"
+        if test -e "$flink"; then
+            # these are absolute links, or links in the CWD
+            canonicalname "$flink"
+        else
+            canonicalname "$fdir/$flink"
+        fi
+    else
+        # if this is a file, then remember the filename and
+        # canonicalize the directory name
+        if test -f "$file"; then
+            fdir="`dirname \"$file\"`"
+            fname="`basename \"$file\"`"
+            fdir="`canonicalname \"$fdir\"`"
+            echo "$fdir/$fname"
+        fi
+        # if this is a directory, then create an absolute
+        # directory name and we are done
+        if test -d "$file"; then
+            (cd "$file"; pwd)
+        fi
+    fi
+}
+
+canonicalpath(){
+  if test $# -ne 1; then
+     echo Usage: canonicalpath path >&2
+     return 1
+  fi
+  dirname "`canonicalname "$1"`"
+}
+
+checkdebug () {
+  while test $# -gt 0; do
+    if test x$1 = x--debug; then
+      echo yes
+      return
+    fi
+    shift
+  done
+  echo no
+}
+
+DEBUG=`checkdebug $@`
+if test "x$DEBUG" = "xyes"; then
+  set -x
+  set -v
+fi
+
+
+onbuildfailure() {
+  echo "Terminating $(basename "$0") due to previous errors!" >&2
+  exit 1
+}
+
+#
+# for each module load the $CONTROL script part and run $command
+#
+# parameters:
+# $1 list of modules
+# $2-$* commands + parameters to execute
+#
+build_module() {
+  local module=$1
+  shift
+  while test $# -gt 0; do
+    # get command
+    command=$1
+    shift
+
+    # only load other parameters
+    load_opts NONE
+    # get command options
+    CMD_FLAGS=
+    while test $# -gt 0 && test "$1" != ":"; do
+      COMMAND=$(echo $command | tr '[:lower:]' '[:upper:]')
+      # setup parameter list
+      CMD_FLAGS="$CMD_FLAGS \"$(doublequote "$1")\""
+      shift
+    done
+    if test -z "$CMD_FLAGS"; then
+      load_opts $command
+    else
+      # disable usage of opts file
+      if test "x$DUNE_OPTS_FILE" != "x"; then
+        echo "WARNING: commandline parameters will overwrite setting in opts file \"$DUNE_OPTS_FILE\""
+      fi
+    fi
+
+    # skip command delimiter
+    if test "$1" = ":"; then shift; fi
+
+    # actually run the commands (we already know that these are valid commands)
+    local runcommand=run_$command
+
+    # build the modules
+    local path="$(eval "echo \$PATH_${module}")"
+    echo "Hi! the path is $PATH and $path"
+    path=$(echo "$path" | awk 'BEGIN{RS=":"; ORS=":"}  
+    {
+      if ($0 ~ /^\/[a-zA-Z]\//) {
+        drive=toupper(substr($0,2,1))
+        rest=substr($0,4)
+        printf "%s:/%s", drive, rest
+      } else if (length($0)>0) {
+        printf "%s", $0
+      }
+    }' | sed 's/:$//')
+    abs_builddir=$(echo "$abs_builddir" | awk 'BEGIN{RS=":"; ORS=":"}  
+    {
+      if ($0 ~ /^\/[a-zA-Z]\//) {
+        drive=toupper(substr($0,2,1))
+        rest=substr($0,4)
+        printf "%s:/%s", drive, rest
+      } else if (length($0)>0) {
+        printf "%s", $0
+      }
+    }' | sed 's/:$//')
+    BUILDDIR=$(echo "$BUILDDIR" | awk 'BEGIN{RS=":"; ORS=":"}  
+    {
+      if ($0 ~ /^\/[a-zA-Z]\//) {
+        drive=toupper(substr($0,2,1))
+        rest=substr($0,4)
+        printf "%s:/%s", drive, rest
+      } else if (length($0)>0) {
+        printf "%s", $0
+      }
+    }' | sed 's/:$//')
+    echo "Hi! the NEW path is $path"
+    echo "Hi! the old abs_builddir is $abs_builddir"
+    echo "Hi! the old BUILDDIR is $BUILDDIR"
+    echo "Hi! the old CONTROL is $CONTROL"
+    eval echo "--- calling $command for \$NAME_${module} ---"
+    trap onbuildfailure EXIT
+    if ! (
+      set -e
+      cd "$path"
+      export module
+      export ABS_BUILDDIR=$(abs_builddir $module $BUILDDIR)
+      eval_control $runcommand "$path/$CONTROL"
+    ); then eval echo "--- Failed to build \$NAME_${module} at $path and $ABS_BUILDDIR $CONTROL---"; exit 1; fi
+    trap onfailure EXIT
+
+    eval echo "--- \$NAME_${module} done ---"
+  done
+}
+
+#
+# load command options from an opts file
+# the name of the opts file is stored in the global variable $DUNE_OPTS_FILE
+#
+# parameters:
+# $1 command
+#
+load_opts() {
+  local command=$1
+  local COMMAND=$(echo $command | tr '[:lower:]' '[:upper:]')
+  CMD_FLAGS=$(eval echo \$${COMMAND}_FLAGS)
+  local CMD_FLAGS_FROM_FILE=""
+  if test "$command" = "NONE"; then
+    BUILDDIR=$DUNE_BUILDDIR
+    if test "x$DUNE_OPTS_FILE" != "x"; then
+      if test -z "$BUILDDIR"; then
+        # no builddir set yet, use build dir from opts file if set
+        # Note: if --use-buiddir is used BUILDDIR will be set already
+        OPTS_FILE_BUILDDIR="$(eval BUILDDIR=""; . $DUNE_OPTS_FILE; eval echo \$BUILDDIR)"
+        if test -n "$OPTS_FILE_BUILDDIR"; then
+          BUILDDIR="$OPTS_FILE_BUILDDIR"
+        fi
+      fi
+      if test "$system_default_cmake" = "yes"; then
+        # We use cmake for building, but CMAKE is not yet set.
+        # Check the opts file for it
+        OPTS_FILE_CMAKE="$(eval CMAKE=""; . $DUNE_OPTS_FILE; eval echo \$CMAKE)"
+        if test -n "$OPTS_FILE_CMAKE"; then
+          CMAKE="$OPTS_FILE_CMAKE"
+        fi
+      fi
+    fi
+  fi
+  if test "x$DUNE_OPTS_FILE" != "x"; then
+    if test "$command" = "configure"; then
+      CMAKE_FLAGS="$(. $DUNE_OPTS_FILE; eval echo \$CMAKE_FLAGS)"
+      CMAKE_FLAGS="$CMAKE_FLAGS -DDUNE_OPTS_FILE=$DUNE_OPTS_FILE"
+      CMAKE_MODULE_PATH="$(. $DUNE_OPTS_FILE; eval echo \$CMAKE_MODULE_PATH)"
+    fi
+    CMD_FLAGS_FROM_FILE="$(eval ${COMMAND}_FLAGS=""; . $DUNE_OPTS_FILE; eval echo \$${COMMAND}_FLAGS)"
+  fi
+  if test -n "$CMD_FLAGS_FROM_FILE"; then
+    echo "----- using default flags \$${COMMAND}_FLAGS from $DUNE_OPTS_FILE -----"
+    echo "Hi! the flags i set were $CMD_FLAGS_FROM_FILE"
+    CMD_FLAGS=$CMD_FLAGS_FROM_FILE
+  elif test -n "$CMD_FLAGS"; then
+    echo "----- using default flags \$${COMMAND}_FLAGS from environment -----"
+  fi
+
+  # if no build directory is set, use default "build-cmake"
+  if test -z "$BUILDDIR"; then
+    export BUILDDIR=build-cmake
+  fi
+}
+
+abs_builddir()
+{
+  local m=$1
+  local builddir=$2
+  local name="$(eval echo \$NAME_$m)"
+  local path="$(eval echo \$PATH_$m)"
+  case $BUILDDIR in
+      /*)
+          echo $builddir/$name
+          ;;
+      *)
+          echo $path/$builddir
+          ;;
+  esac
+}
+
+# Uses the current compiler to extract information about the
+# multiarch triplets and sets the export variable MULTIARCH_LIBDIR
+# according to it.
+# If no compiler is specified then cc or gcc is used.
+extract_multiarch(){
+  set +e #error in the multiarch detection should not be fatal.
+  local my_cxx_compiler
+  if test "x$MULTIARCH_LIBDIR" != "x"; then
+    return
+  fi
+  load_opts "cmake"
+  if test "x$my_cxx_compiler" == "x"; then
+    load_opts "configure"
+  fi
+  my_cxx_compiler=`echo $CMD_FLAGS | $GREP CXX | $SED "s/.*CXX=[\"']\{0,1\}\([^$BLANK'\"]*\)[\"']\{0,1\}.*/\1/"`
+  if test "x$my_cxx_compiler" == "x"; then
+    $(which cc &>/dev/null)
+    if test $? -eq "0"; then
+      my_cxx_compiler=cc
+    else
+      my_cxx_compiler=gcc
+    fi
+  fi
+  multiarch=$($my_cxx_compiler --print-multiarch 2>/dev/null)
+  if test $? -gt 0; then
+    for i in "target=" "Target:"; do
+      multiarch=$($my_cxx_compiler -v 2>&1| $GREP "$i" | $SED "s/.*$i[$BLANK]*\([a-z0-9_-]*\)/\1/" | $SED "s/-[a-z]*-linux-gnu/-linux-gnu/")
+     if test -n "$multiarch"; then break; fi
+   done
+  fi
+  set -e # set to old value.
+  export MULTIARCH_LIBDIR="lib/$multiarch"
+}
+
+export PREFIX_DIR="`canonicalpath "$0"`/.."
+
+export PREFIX_DIR=$(echo "$PREFIX_DIR" | awk 'BEGIN{RS=":"; ORS=":"}  
+{
+  if ($0 ~ /^\/[a-zA-Z]\//) {
+	drive=toupper(substr($0,2,1))
+	rest=substr($0,4)
+	printf "%s:/%s", drive, rest
+  } else if (length($0)>0) {
+	printf "%s", $0
+  }
+}' | sed 's/:$//')
+echo "PREFIX_DIR $PREFIX_DIR/lib/dunemodules.lib"
+# Read the modules find part
+. "$PREFIX_DIR/lib/dunemodules.lib"
+
+
+
+###############################################
+
+
+###############################################
+###
+### Commands
+###
+
+# check all parameter
+check_commands() {
+  while test $# -gt 0; do
+    # get command
+    command=$1
+    shift
+    # skip command options
+    while test $# -gt 0 && test "$1" != ":"; do
+      shift
+    done
+    # skip command delimiter
+    if test "$1" = ":"; then shift; fi
+    # test the commands
+    if ! is_command $command; then
+      usage
+      echo "ERROR: unknown command \"$command\""  >&2
+      exit 1
+    fi
+  done
+}
+
+# check whether the parameter is valid command or not
+is_command() {
+eval '
+case "$1" in
+  '`echo $COMMANDS | $SED -e 's/ / | /g'`')
+    return 0
+    ;;
+  *)
+    return 1
+    ;;
+esac'
+}
+
+# list of all dunecontrol commands
+COMMANDS="printdeps vcsetup update cmake configure make all exec bexec status svn git"
+
+# list of dunecontrol commands for which the version check is skipped by default
+COMMANDSTOSKIPVERSIONCHECK="update status svn git exec bexec"
+
+# help string for the commands
+printdeps_HELP="print recursive dependencies of a module"
+vcsetup_HELP="setup version control repository (Git etc.) or working copy (SVN)"
+update_HELP="update all modules from their repositories"
+cmake_HELP="run cmake for each module"
+configure_HELP="${cmake_HELP}"
+make_HELP="build each module"
+all_HELP="\trun 'vcsetup', 'configure' and 'make' command for each module"
+exec_HELP="execute an arbitrary command in each module source directory"
+bexec_HELP="execute an arbitrary command in each module build directory"
+status_HELP="show vc status for all modules"
+svn_HELP="\trun svn command for each svn managed module"
+git_HELP="\trun git command for each git managed module"
+
+#
+# setup command proxies
+# call will be forwarded to run_default_$command
+#
+
+for command in $COMMANDS; do
+  eval "run_$command () { run_default_$command; }"
+done
+
+#
+# default implementations for commands...
+# these can be overwritten in the $CONTROL files
+#
+
+run_default_exec () { bash -c "eval $CMD_FLAGS"; }
+
+run_default_bexec () {
+  if test -d "$ABS_BUILDDIR"; then
+    bash -c "cd \"$ABS_BUILDDIR\" && eval $CMD_FLAGS";
+  else
+    eval echo "Build directory \\\"$ABS_BUILDDIR\\\" not found, skipping bexec for \$NAME_${module}"
+  fi
+}
+
+run_default_status () {
+  local verbose=0
+  local update=""
+  local is_git=""
+  local is_svn=""
+  name="$(eval echo \$NAME_$module)"
+
+  if test -e .git; then is_git=1; fi
+  if test -d .svn; then is_svn=1; fi
+  if test ! "$is_svn" -a ! "$is_git" ; then
+    echo "module $name not under known version control"
+    return
+  fi
+
+  for i in $CMD_FLAGS; do
+    if eval test "x$i" = "x-v"; then verbose=1; fi
+    if eval test "x$i" = "x-vv"; then verbose=2; fi
+    if eval test "x$i" = "x-u"; then update="-u"; fi
+  done
+  # is out output connected to a tty?
+  if test -t 1; then
+    blue="\e[1m\e[34m"
+    green="\e[1m\e[32m"
+    red="\e[1m\e[31m"
+    reset="\e[0m\e[0m"
+  fi
+
+  if test $verbose -eq 1; then
+    test "$is_svn" && svn status $update | $GREP -E "^M|^A|^D|^C|^U"
+    test "$is_git" && git status -uno
+  elif test $verbose -eq 2; then
+    test "$is_svn" && svn status $update
+    test "$is_git" && git status
+  fi
+
+
+  if test "$is_svn" ; then
+    changed=$(svn status | $GREP -E "^M|^A|^D" | wc -l)
+    collisions=$(svn status | $GREP -E "^C"| wc -l)
+    pending=$(svn status $update | $GREP -E "^...... \* " | wc -l)
+  fi
+  if test "$is_git" ; then
+    changed=$(git status --porcelain | $GREP -E "^ *M|^ *A|^ *D|^ *R|^ *C" | wc -l)
+    collisions=$(git status --porcelain | $GREP -E "^ *U"| wc -l)
+    pending=$(git status | $GREP -E "^\# Your branch is ahead |^\# Your branch is behind " | wc -l)
+  fi
+  color=$green
+  text="no changes"
+  if [ $changed -eq 0 ]; then
+    true
+  elif [ $changed -eq 1 ]; then
+    color=$blue;
+    text="1 change"
+  else
+    color=$blue;
+    text="$changed changes"
+  fi
+  if [ $pending -eq 0 ]; then
+    true
+  elif [ $pending -eq 1 ]; then
+    color=$blue;
+    text="$text, 1 update pending"
+  else
+    color=$blue;
+    text="$text, $pending updates pending"
+  fi
+  if [ $collisions -eq 0 ]; then
+    true
+  elif [ $collisions -eq 1 ]; then
+    color=$red
+    text="$text, 1 collision"
+  else
+    color=$red
+    text="$text, $count collisions"
+  fi
+  echo -e "$color[$text]$reset $name"
+}
+
+run_default_vcsetup() {
+  # load user options
+  if [ -n "$CMD_FLAGS" ]; then
+    eval "$CMD_FLAGS"
+  fi
+
+  # Check for both a file and a directory to cope with Git submodules
+  if [ -e .git ] ; then
+
+    # Read Whitespace-Hook setting from dune.module file
+    local SETUPGITHOOK="$($GREP -i "^[$BLANK]*Whitespace-Hook:" dune.module | cut -d ':' -f2 | eval $PARSER_TRIM | tr '[:upper:]' '[:lower:]')"
+
+    if [ "x$SETUPGITHOOK" = "xyes" ]; then
+      # we have to install the Git whitespace hook
+
+      # There are several options as to what the current worktree might be backed by right now:
+      # - a plain old repository    -> copy to .git/hooks
+      # - a submodule repository    -> .git refers to the submodule repository inside the root $GIT_DIR
+      # - a git repo worktree       -> .git refers to the worktree data inside the original $GIT_DIR and we need to find
+      #                                the "canonical" $GIT_DIR root
+      # - a submodule in a worktree -> That just gets checked out again into the worktree backing store, so no worktree
+      #                                dereferencing here
+
+      # We try this first by trying git's built-in infrastructure, but if the user's git is too old, we fall back to
+      # manual parsing
+
+      GITHOOKPATH="$(git rev-parse --git-common-dir)"
+      if [ $? -ne 0 -o "${GITHOOKPATH}" = "--git-common-dir" ] ; then
+
+        # no worktree support from here on out
+
+        GITHOOKPATH="$(git rev-parse --git-dir)"
+
+        if [ $? -ne 0 -o "${GITHOOKPATH}" = "--git-dir" ] ; then
+
+          # do the parsing manually
+
+          if [ -f .git ] ; then
+            # submodule -> .git contains a pointer to the repository
+            GITHOOKPATH="$($SED 's/gitdir: //' < .git)"
+          else
+            # standard case, .git is the repository
+            GITHOOKPATH=.git
+          fi
+        fi
+      fi
+      GITHOOKPATH="${GITHOOKPATH}/hooks/pre-commit"
+
+      if [ -n "$DISABLEWHITESPACEHOOK" ] ; then
+        # the user doesn't want the Git whitespace hook - deinstall it if necessary and warn the user
+        echo "WARNING: The current module wants to install the DUNE whitespace hook, but you have disabled the hook in your options!"
+        echo "WARNING: You will have to make sure that your commits don't introduce any trailing whitespace or indentation with tabs!"
+        echo "WARNING: Otherwise, your commits might be rejected when trying to push them to an official repository!"
+
+        if [ -e "$GITHOOKPATH" ]; then
+          # there is a pre-commit hook, check whether it is our whitespace hook
+          local HOOKTAG="$(eval head -n 2 \"$GITHOOKPATH\" | tail -n 1)"
+          if [ "x$HOOKTAG" = "x# dune-git-whitespace-hook" ]; then
+            echo "--> Removing DUNE whitespace hook as requested by the user"
+            rm "$GITHOOKPATH"
+          fi
+        fi
+      else
+        # standard handling of Git whitespace hook
+        for f in dune-git-whitespace-hook git-whitespace-hook; do
+          f="${PREFIX_DIR}/bin/${f}"
+          if [ -e "${f}" ]; then
+            git_whitespace_hook="${f}"
+            break
+          fi
+        done
+        if [ -z "${git_whitespace_hook:-}" ]; then
+          echo "Did not find git-whitespace-hook." >&2
+          exit 1
+        fi
+        if [ ! -e "$GITHOOKPATH" ]; then
+          # there is no hook yet, we can safely install ours
+          echo "--> Installing Git pre-commit hook to enforce whitespace policy"
+          cp -p "${git_whitespace_hook}" "$GITHOOKPATH"
+        else
+          # there is already a hook, check whether it is our whitespace hook
+          local HOOKTAG="$(eval head -n 2 \"$GITHOOKPATH\" | tail -n 1)"
+          if [ "x$HOOKTAG" = "x# dune-git-whitespace-hook" ]; then
+            if [ "${git_whitespace_hook}" -nt "$GITHOOKPATH" ]; then
+              echo "--> Updating Git pre-commit hook with newer version"
+              cp -p "${git_whitespace_hook}" "$GITHOOKPATH"
+            fi
+          else
+            echo "WARNING: Existing pre-commit hook found!"
+            echo "WARNING: Skipping installation of DUNE whitespace hook!"
+            echo "WARNING: If you want to contribute patches to DUNE, you should make sure to call the whitespace hook"
+            echo "WARNING: (dune-common/bin/git-whitespace-hook) from you custom pre-commit hook, otherwise your commits"
+            echo "WARNING: might contain trailing whitespace and will not apply cleanly to the official repositories!"
+          fi
+        fi
+      fi
+    fi
+
+    # Apply git configuration settings
+    if [ -f .vcsetup/config ]; then
+      echo -n "--> Setting Git configuration entries... "
+      cat .vcsetup/config | while read; do
+        # Filter out comments
+        local COMMENT="$(echo $REPLY | $GREP '^#')"
+        if [ ! "x$COMMENT" = "x$REPLY" ]; then
+          # parse line into an array first to catch obvious syntax errors
+          # like 'option value; rm -rf /'
+          eval local GIT_ARGS=($REPLY)
+          git config "${GIT_ARGS[@]}"
+        fi
+      done
+      echo "done"
+    fi
+
+    # Apply user supplied configuration settings
+    if [ -n "$GIT_CONFIG_FILE" ]; then
+      if [ -f "$GIT_CONFIG_FILE" ]; then
+        echo -n "--> Setting custom Git configuration entries from '$GIT_CONFIG_FILE'... "
+        cat "$GIT_CONFIG_FILE" | while read; do
+          # Filter out comments
+          local COMMENT="$(echo $REPLY | $GREP '^#')"
+          if [ ! "x$COMMENT" = "x$REPLY" ]; then
+            # parse line into an array first to catch obvious syntax errors
+            # like 'option value; rm -rf /'
+            eval local GIT_ARGS=($REPLY)
+            git config "${GIT_ARGS[@]}"
+          fi
+        done
+        echo "done"
+      else
+        echo "WARNING: custom Git config file '$GIT_CONFIG_FILE' not found!"
+      fi
+    fi
+
+  fi
+
+  # Run custom setup scripts
+  if [ -e .git -o -d .svn ]; then
+    if [ -d .vcsetup/run.d ]; then
+      for SCRIPT in .vcsetup/run.d/* ; do
+        if [ -x "$SCRIPT" ]; then
+          echo "--> Running $SCRIPT"
+          "$SCRIPT"
+        fi
+      done
+    fi
+  fi
+}
+
+run_default_update () {
+  if test -d .svn; then
+    svn update
+  elif test -e .git; then
+      if test -d .git && test -d ".git/svn" && test -n "`git svn find-rev HEAD`"; then
+          # If the current HEAD points to a SVN commit, update via git-svn
+          git svn rebase
+      else
+          # Update all remotes (if any)
+          git remote update
+
+          # merge all changes fast-forward style if possible
+          if ! git merge --ff-only FETCH_HEAD 2> /dev/null; then
+              eval echo "\$NAME_${module} seems to be using git, and could not be"
+              echo "updated automatically. Please update it manually."
+              echo "(Usually, this is done via 'git svn rebase' for modules using"
+              echo "subversion or 'git merge' for modules which use git natively."
+              echo "Conflicts can be resolved using 'git mergetool'.)"
+          fi
+      fi
+  else
+    eval echo "WARNING: \$NAME_${module} is not under a known version control system."
+    echo "         We support svn and git."
+  fi
+}
+
+run_default_cmake () {
+  extract_multiarch
+  echo "Hi! in run_default_cmake BUILDDIR ${BUILDDIR}"
+  BUILDDIR=$(echo "$BUILDDIR" | awk 'BEGIN{RS=":"; ORS=":"}  
+    {
+      if ($0 ~ /^\/[a-zA-Z]\//) {
+        drive=toupper(substr($0,2,1))
+        rest=substr($0,4)
+        printf "%s:/%s", drive, rest
+      } else if (length($0)>0) {
+        printf "%s", $0
+      }
+    }' | sed 's/:$//')
+  echo "Hi! in run_default_cmake NEW BUILDDIR ${BUILDDIR}"
+  # tell CMake about the build directory root when we are using an absolute build directory
+  if [[ ${BUILDDIR} = /* ]] ; then
+      CMAKE_PARAMS="$CMAKE_PARAMS -DDUNE_BUILD_DIRECTORY_ROOT_PATH='${BUILDDIR}'"
+  fi
+
+  # add arguments given as configure-opts to CMAKE_params
+  CMAKE_PARAMS="$CMAKE_PARAMS $CMD_FLAGS"
+  
+  # get dependencies & suggestions
+  sort_modules $module
+  for m in $MODULES; do
+    path="$(eval "echo \$PATH_$m")"
+    path=$(echo "$path" | awk 'BEGIN{RS=":"; ORS=":"}  
+    {
+      if ($0 ~ /^\/[a-zA-Z]\//) {
+        drive=toupper(substr($0,2,1))
+        rest=substr($0,4)
+        printf "%s:/%s", drive, rest
+      } else if (length($0)>0) {
+        printf "%s", $0
+      }
+    }' | sed 's/:$//')
+    echo "Hi! in run_default_cmake  path $path"
+    # add other module's build dir to path
+    if [ $module != $m ] ; then
+      name=$(eval "echo \$NAME_$m")
+      local m_ABS_BUILDDIR=$(abs_builddir $m $BUILDDIR)
+	  echo "Hi! in run_default_cmake  m_ABS_BUILDDIR $m_ABS_BUILDDIR"
+      if test -d "$m_ABS_BUILDDIR"; then
+        CMAKE_PARAMS="$CMAKE_PARAMS \"-D""$name""_DIR=$m_ABS_BUILDDIR\""
+      else
+        TMP_PARAMS="\"-D""$name""_DIR=$path\""
+        for i in $MULTIARCH_LIBDIR lib lib64 lib32; do
+          if test -d "$path/$i/cmake/$name"; then
+            TMP_PARAMS="\"-D""$name""_DIR=$path/$i/cmake/$name\""
+            break;
+          fi
+        done
+        CMAKE_PARAMS="$CMAKE_PARAMS $TMP_PARAMS"
+      fi
+    fi
+  done
+      # create build directory if requested
+		  
+	  ABS_BUILDDIR=$(echo "$ABS_BUILDDIR" | awk 'BEGIN{RS=":"; ORS=":"}  
+	  {
+	   if ($0 ~ /^\/[a-zA-Z]\//) {
+		drive=toupper(substr($0,2,1))
+		rest=substr($0,4)
+		printf "%s:/%s", drive, rest
+	  } else if (length($0)>0) {
+	    printf "%s", $0
+	  }
+	  }' | sed 's/:$//')
+	  PWD=$(echo "$PWD" | awk 'BEGIN{RS=":"; ORS=":"}  
+	  {
+	   if ($0 ~ /^\/[a-zA-Z]\//) {
+		drive=toupper(substr($0,2,1))
+		rest=substr($0,4)
+		printf "%s:/%s", drive, rest
+	  } else if (length($0)>0) {
+	    printf "%s", $0
+	  }
+	  }' | sed 's/:$//')
+	  CMAKE_MODULE_PATH=$(echo "$CMAKE_MODULE_PATH" | awk 'BEGIN{RS=":"; ORS=":"}  
+	  {
+	   if ($0 ~ /^\/[a-zA-Z]\//) {
+		drive=toupper(substr($0,2,1))
+		rest=substr($0,4)
+		printf "%s:/%s", drive, rest
+	  } else if (length($0)>0) {
+	    printf "%s", $0
+	  }
+	  }' | sed 's/:$//')
+	  echo "Hi! in run_default_cmake ABS_BUILDDIR $ABS_BUILDDIR PWD $PWD"
+      test -d "$ABS_BUILDDIR" || mkdir -p "$ABS_BUILDDIR"
+      SRCDIR="$PWD"
+      cd "$ABS_BUILDDIR"
+
+      # Prevent using an empty module path
+      if test -n "$CMAKE_MODULE_PATH"; then
+          _MODULE_PATH="-DCMAKE_MODULE_PATH=\"$CMAKE_MODULE_PATH\""
+      fi
+      echo "$CMAKE $_MODULE_PATH $CMAKE_PARAMS $CMAKE_FLAGS \"$SRCDIR\""
+      eval $CMAKE "$_MODULE_PATH $CMAKE_PARAMS $CMAKE_FLAGS \"$SRCDIR\"" || exit 1
+}
+
+run_default_configure () {
+  # configure just forwards to cmake
+  run_default_cmake
+}
+
+run_default_make () {
+  test ! -d "$ABS_BUILDDIR" || cd "$ABS_BUILDDIR"
+  PARAMS="$CMD_FLAGS"
+  echo "build directory: $BUILDDIR"
+  # prepend '--' to separate cmake and make parameters
+  if ! $(echo "$PARAMS" | grep -q -- '--'); then
+    PARAMS="-- $PARAMS"
+  fi
+  echo $CMAKE --build . "$PARAMS"
+  eval $CMAKE --build . "$PARAMS"
+}
+
+run_default_all () {
+  for cmd in vcsetup cmake make; do
+    eval echo "--- calling $cmd for \$NAME_${module} ---"
+    load_opts $cmd
+    run_$cmd
+  done
+}
+
+run_default_svn () {
+  if test -d .svn; then
+    PARAMS="$CMD_FLAGS"
+    eval svn "$PARAMS"
+  fi
+}
+
+run_default_git () {
+  if test -e .git; then
+    PARAMS="$CMD_FLAGS"
+    eval git "$PARAMS"
+  fi
+}
+
+###############################################
+###
+### main
+###
+
+onfailure() {
+  echo "Execution of $(basename "$0") terminated due to errors!" >&2
+  exit 1
+}
+
+usage () {
+  (
+    echo "Usage: $(basename "$0") [OPTIONS] COMMANDS [COMMAND-OPTIONS]"
+    echo ""
+    echo "  Execute COMMANDS for all Dune modules found. All entries in the"
+    echo "  DUNE_CONTROL_PATH variable are scanned recursively for Dune modules."
+    echo "  If DUNE_CONTROL_PATH is empty, the current directory is scanned."
+    echo "  Dependencies are controlled by the $CONTROL files."
+    echo ""
+    echo "OPTIONS:"
+    echo "  -h, --help          show this help"
+    echo "      --debug         enable debug output of this script"
+    echo "  -v, --verbose       print additional information when building up the dependency tree"
+    echo "      --module=mod    apply the actions on module mod"
+    echo "                      and all modules it depends on"
+    echo "      --only=mod      only apply the actions on module mod"
+    echo "                      and not the modules it depends on"
+    echo "      --current       only apply the actions on the current module,"
+    echo "                      i.e. the one whose source tree we are standing in,"
+    echo "                      and not the modules it depends on"
+    echo "      --current-dep   apply the actions on the current module,"
+    echo "                      and all modules it depends on"
+    echo "      --resume        resume a previous run (only consider the modules"
+    echo "                      not built successfully on the previous run)"
+    echo "      --skipfirst     skip the first module (use with --resume)"
+    echo "      --skipversioncheck      do not perform version checks when looking for other Dune modules"
+    echo "      --opts=FILE     load default options from FILE"
+    echo "      --builddir=NAME make out-of-source builds in a subdir NAME."
+    echo "                      This directory is created inside each module."
+    echo "                      If NAME is an absolute path, the build directory "
+    echo "                      is set to NAME/module-name for each module."
+    echo "      --[COMMAND]-opts=opts   set options for COMMAND"
+    echo "                     (this is mainly useful for the 'all' COMMAND)"
+    echo "COMMANDS:"
+    echo "  Colon-separated list of commands. Available commands are:"
+    printf "  \`help'\tguess what :-)\n"
+    printf "  \`print'\tprint the list of modules sorted after their dependencies\n"
+    printf "  \`info'\tsame as \`print\', but including whether it is a dependency or suggestion\n"
+    for i in $COMMANDS; do
+      printf "  \`$i'\t$(eval echo \$${i}_HELP)\n"
+    done
+    printf "  \`export'\trun eval \`dunecontrol export\` to save the list of\n"
+    printf "  \t\tdune.module files to the DUNE_CONTROL_PATH variable\n"
+    echo
+  )  >&2
+}
+
+# create the module list
+create_module_list() {
+  # try to get the resume file name from the options
+  if test -z "$RESUME_FILE" && test -n "$DUNE_OPTS_FILE"; then
+    export RESUME_FILE="$(eval . $DUNE_OPTS_FILE; eval echo \$RESUME_FILE)"
+  fi
+
+  if test "$RESUME_FLAG" = "yes" ; then
+    if ! test -s "$RESUME_FILE" ; then
+      echo "Error: No previous run to resume. Please make sure that the RESUME_FILE"
+      echo "       is the name of a writeable file (currently it is '$RESUME_FILE')"
+      exit 1
+    fi
+
+    export MODULES=
+    RESUME="`cat "$RESUME_FILE"`"
+    for a in $RESUME ; do
+        export NAME_`fix_variable_name $a`="$a"
+        fix_and_assign MODULE "$a"
+        export SEARCH_MODULES="$SEARCH_MODULES $MODULE"
+        export ONLY="$ONLY $MODULE"
+    done
+  fi
+
+  find_modules_in_path
+  if test "x$ONLY" != x; then
+    export MODULES="$ONLY"
+  elif test "x$SEARCH_MODULES" != "x"; then
+    sort_modules $SEARCH_MODULES
+  else
+    sort_modules $MODULES
+  fi
+
+  if test "x$REVERSE_FLAG" = "xyes"; then
+    export MODULES="$REVERSEMODULES"
+  fi
+
+  if test "x$SKIPFIRST" = "xyes" ; then
+    export MODULES=`echo $MODULES " " | cut '--delimiter= ' --fields=2-`
+  fi
+  # warn about superseded modules:
+  if test -n "$superseded_modules"; then
+    # sort moules list and make it unique.
+    superseded_modules=$(echo $superseded_modules | tr ' ' '\n'| sort -u)
+    echo >&2
+    echo "The following local modules do supersede the corresponding installed ones:"  >&2
+    echo "$superseded_modules"  >&2
+    echo  >&2
+  fi
+}
+
+# print the module list
+print_module_list() {
+  DELIM=$1
+  shift
+  while test -n "$2"; do
+    echo -n "$(eval echo \$NAME_$1)$DELIM"
+    shift
+  done
+  echo -n "$(eval echo \$NAME_$1)"
+}
+
+trap onfailure EXIT
+
+# clear variables
+export SEARCH_MODULES=""
+export MODULES=""
+export ONLY=""
+export RESUME_FLAG=no
+export REVERSE_FLAG=no
+export SKIPFIRST=no
+export DUNE_CONTROL_VERBOSE=no
+
+# parse commandline parameters
+while test $# -gt 0; do
+    # get option
+    command=$1
+    option=$1
+
+    # get args
+    set +e
+    # stolen from configure...
+    # when no option is set, this returns an error code
+    arg=`expr "x$option" : 'x[^=]*=\(.*\)'`
+    set -e
+
+    # switch
+    case "$option" in
+    --opts=*)
+      if test "x$arg" = "x"; then
+        usage
+        echo "ERROR: Parameter for --opts is missing"  >&2
+        echo  >&2
+        exit 1;
+      fi
+      DUNE_OPTS_FILE=`canonicalname $arg`
+      DUNE_OPTS_FILE=$(echo "$DUNE_OPTS_FILE" | awk 'BEGIN{RS=":"; ORS=":"}  
+      {
+        if ($0 ~ /^\/[a-zA-Z]\//) {
+          drive=toupper(substr($0,2,1))
+          rest=substr($0,4)
+          printf "%s:/%s", drive, rest
+        } else if (length($0)>0) {
+          printf "%s", $0
+        }
+      }' | sed 's/:$//')
+      if ! test -r "$DUNE_OPTS_FILE"; then
+        usage
+        echo "ERROR: could not read opts file \"$DUNE_OPTS_FILE\""  >&2
+        echo  >&2
+        exit 1;
+      fi
+    ;;
+    --*-opts=*)
+      optcmd=`expr "x$option=" : 'x--\([^-]*\)-opts=.*'`
+      if is_command $optcmd; then
+        COMMAND=`echo $optcmd | tr '[:lower:]' '[:upper:]'`
+        export ${COMMAND}_FLAGS="$arg"
+      else
+        usage
+        echo "ERROR: unknown option \"$option\""  >&2
+        exit 1
+      fi
+    ;;
+    -h|--help)
+      command=help
+      break
+    ;;
+    -p|--print)
+      command=print
+      break
+    ;;
+    --module=*)
+      if test "x$arg" = "x"; then
+        usage
+        echo "ERROR: Parameter for --module is missing"  >&2
+        echo  >&2
+        exit 1;
+      fi
+      for a in `echo $arg | tr ',' ' '`; do
+        export NAME_`fix_variable_name $a`="$a"
+        fix_and_assign MODULE "$a"
+        export SEARCH_MODULES="$SEARCH_MODULES $MODULE"
+      done
+    ;;
+    --only=*)
+      if test "x$arg" = "x"; then
+        usage
+        echo "ERROR: Parameter for --only is missing"  >&2
+        echo  >&2
+        exit 1;
+      fi
+      for a in `echo $arg | tr ',' ' '`; do
+        export NAME_`fix_variable_name $a`="$a"
+        fix_and_assign MODULE "$a"
+        export SEARCH_MODULES="$SEARCH_MODULES $MODULE"
+        export ONLY="$ONLY $MODULE"
+      done
+    ;;
+    --builddir=*)
+      export DUNE_BUILDDIR=$arg
+    ;;
+    --no-builddir)
+      export DUNE_BUILDDIR=""
+    ;;
+    --skipversioncheck)
+      export SKIPVERSIONCHECK=yes
+    ;;
+    --current)
+      while ! test -f $CONTROL; do
+        cd ..
+        if test "$OLDPWD" = "$PWD"; then
+          echo "You are not inside the source tree of a DUNE module." >&2
+          exit -1
+        fi
+      done;
+      parse_control $PWD/$CONTROL
+      fix_and_assign MODULE "$module"
+      export SEARCH_MODULES="$SEARCH_MODULES $MODULE"
+      export ONLY="$ONLY $MODULE"
+    ;;
+    --current-dep)
+      while ! test -f $CONTROL; do
+        cd ..
+        if test "$OLDPWD" = "$PWD"; then
+          echo "You are not inside the source tree of a DUNE module." >&2
+          exit -1
+        fi
+      done;
+      parse_control $PWD/$CONTROL
+      fix_and_assign MODULE "$module"
+      export SEARCH_MODULES="$SEARCH_MODULES $MODULE"
+    ;;
+    --resume)
+      export RESUME_FLAG="yes"
+    ;;
+    --reverse)
+      export REVERSE_FLAG="yes"
+    ;;
+    --skipfirst)
+      export SKIPFIRST=yes
+    ;;
+    -v|--verbose)
+      export DUNE_CONTROL_VERBOSE=yes
+    ;;
+    --debug) true ;; # ignore this option, it is handled right at the beginning
+    --*)
+      usage
+      echo "ERROR: Unknown option \`$option'"  >&2
+      echo  >&2
+      exit 1
+      ;;
+    *)
+      break
+    ;;
+    esac
+
+    shift
+done
+
+extract_multiarch
+
+# create PKG_CONFIG_PATH for installed dune modules
+for i in $MULTIARCH_LIBDIR lib64 lib32 lib; do
+  if test -d "$PREFIX_DIR/$i/pkgconfig"; then
+    export PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$PREFIX_DIR/$i/pkgconfig"
+  fi
+done
+
+# we assume there should be a command...
+if test "x$command" = "x"; then
+  usage
+  exit 1
+fi
+
+case "$command" in
+  print)
+    create_module_list
+    eval "print_module_list ' ' $MODULES"
+    echo >&2
+    ;;
+  info)
+    create_module_list
+    echo $SORTEDMODULES_INFO
+  ;;
+  export)
+    create_module_list
+    DUNE_CONTROL_PATH=""
+    for mod in $MODULES; do
+      path="$(eval echo \$PATH_$mod)"
+      name=$(eval echo \$NAME_$mod)
+      if test -f "$path/dune.module"; then
+        export DUNE_CONTROL_PATH="$DUNE_CONTROL_PATH:$path/dune.module"
+      else
+        if test -f "$path/lib/dunecontrol/$name/dune.module"; then
+          export DUNE_CONTROL_PATH="$DUNE_CONTROL_PATH:$path/lib/dunecontrol/$name/dune.module"
+        else
+          echo "ERROR: while creating list of dune.module files"  >&2
+          echo "       couldn't find dune.module file for $name in $path" >&2
+          echo  >&2
+          exit 1
+        fi
+      fi
+    done
+    echo export DUNE_CONTROL_PATH=$(echo $DUNE_CONTROL_PATH | $SED -e 's/^://')
+    ;;
+  printdeps)
+    find_modules_in_path
+    if test "x$SEARCH_MODULES" == "x"; then
+      echo "ERROR: printdeps requires an explicit --module=... parameter"  >&2
+      exit 1
+    fi
+    mainmod=`echo $SEARCH_MODULES`
+    name=`eval echo \\${NAME_$mainmod}`
+    echo "dependencies for $name"
+    ### DEPENDENCIES
+    sort_modules $mainmod
+    for mod in $SORTEDMODULES_DEPS; do
+      eval echo "\"  \$NAME_${mod} (required)\""
+    done
+    for mod in $SORTEDMODULES_SUGS; do
+      eval echo "\"  \$NAME_${mod} (suggested)\""
+    done
+    ;;
+  unexport)
+    echo export DUNE_CONTROL_PATH=""
+  ;;
+  help)
+    usage
+  ;;
+  *)
+    set -e
+    # skip version check if command is in according list
+    if grep -q "$1" <<<"$COMMANDSTOSKIPVERSIONCHECK" ; then
+      export SKIPVERSIONCHECK=yes;
+    fi
+    check_commands "$@"
+    create_module_list
+    NAMES=""
+    BUILDMODULES=""
+    for mod in $MODULES; do
+      if test "$(eval echo \$INST_$mod)" != "yes"; then
+        NAMES="$NAMES$(eval echo \$NAME_$mod) "
+        BUILDMODULES="$BUILDMODULES$mod "
+      fi
+    done
+    echo "--- going to build $NAMES ---"
+    if test -n "$RESUME_FILE"; then
+        # write all modules to the resume file
+        for mod in $MODULES ; do
+            echo "$mod"
+        done > "$RESUME_FILE"
+    fi
+
+    for mod in $BUILDMODULES; do
+      build_module "$mod" "$@"
+
+      if test -n "$RESUME_FILE"; then
+          # remove the current module from the resume file
+          modules_togo=`cat "$RESUME_FILE"`
+          for mod_togo in $modules_togo ; do
+              if test "$mod_togo" != "$mod" ; then
+                  echo "$mod_togo"
+              fi
+          done > "$RESUME_FILE"
+      fi
+    done
+    echo "--- done ---"
+  ;;
+esac
+
+trap - EXIT

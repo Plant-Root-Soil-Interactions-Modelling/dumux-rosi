@@ -1,56 +1,35 @@
-GXX_RELEASE_WARNING_OPTS=" \
-    -Wall \
-    -Wunused \
-    -Wmissing-include-dirs \
-    -Wcast-align \
-    -Wno-missing-braces \
-    -Wmissing-field-initializers \
-    -Wno-sign-compare"
-
-GXX_RELEASE_OPTS=" \
-    -fdiagnostics-color=always \
-    -fno-strict-aliasing \
-    -fstrict-overflow \
-    -fno-finite-math-only \
-    -DNDEBUG=1 \
-    -O3 \
-    -march=native \
-    -funroll-loops \
-    -g0"
-
+# Compiler selection
 SPECIFIC_COMPILER=""
-# if you want to specify a specific compiler, do it by setting (comment the above line)
-#SPECIFIC_COMPILER="
-# -DCMAKE_CXX_COMPILER=/usr/bin/clang++
-#"
-# -DCMAKE_C_COMPILER=/usr/bin/gcc-8
 
-SPECIFIC_GENERATOR=""
-# if you want to specify a specific make file generator (e.g. ninja), do it by setting (comment the above line)
-#SPECIFIC_GENERATOR="
-# -DCMAKE_GENERATOR='Ninja'
-# -DCMAKE_MAKE_PROGRAM='/usr/bin/ninja'
-#"
+# Visual Studio generator
+SPECIFIC_GENERATOR="-G \"Visual Studio 17 2022\""
 
+# Optional external libraries
 OPM_FLAGS=""
-# to build opm it might be necessary to set manually the following variables (comment the above line)
-#OPM_FLAGS="
-#-Decl_DIR=[/path/to]/libecl/build
-#-DUSE_MPI=ON
-#"
 
-# set this to "ON" if you want to be able to have the headercheck target
+# Header check target
 DUMUX_ENABLE_HEADERCHECK=OFF
 
-# for debug opts you can set DCMAKE_BUILD_TYPE to "Debug" or "RelWithDebInfo"
-# you can also do this in any of the CMakeLists.txt in Dumux
-# just rerun cmake again afterwards (run cmake <path-to-build-dir>)
+# MSVC compiler flags
+MSVC_RELEASE_FLAGS="/O2 /DNDEBUG /W3"
+MSVC_DEBUG_FLAGS="/Od /Zi /W3"
+MSVC_RELWITHDEBINFO_FLAGS="/O2 /Zi /W3"
 
+# CMake flags
 CMAKE_FLAGS="$SPECIFIC_COMPILER $SPECIFIC_GENERATOR $OPM_FLAGS
--DCMAKE_CXX_FLAGS_RELEASE='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS'
--DCMAKE_CXX_FLAGS_DEBUG='-O0 -g -ggdb -Wall -Wextra -Wno-unused-parameter -Wno-sign-compare'
--DCMAKE_CXX_FLAGS_RELWITHDEBINFO='$GXX_RELEASE_OPTS $GXX_RELEASE_WARNING_OPTS -g -ggdb -Wall'
+-DCMAKE_TOOLCHAIN_FILE=C:/Users/m.giraud/Documents/CPlantBox-windows/vcpkg/scripts/buildsystems/vcpkg.cmake
+-DVCPKG_TARGET_TRIPLET=x64-windows-static-md
+-DBUILD_SHARED_LIBS=OFF
+-DCMAKE_CXX_FLAGS_RELEASE=\"$MSVC_RELEASE_FLAGS\"
+-DCMAKE_CXX_FLAGS_DEBUG=\"$MSVC_DEBUG_FLAGS\"
+-DCMAKE_CXX_FLAGS_RELWITHDEBINFO=\"$MSVC_RELWITHDEBINFO_FLAGS\"
 -DCMAKE_BUILD_TYPE=RelWithDebInfo
 -DENABLE_HEADERCHECK=$DUMUX_ENABLE_HEADERCHECK
--DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS:BOOL=TRUE
+-DDUNE_GRID_EXPERIMENTAL_GRID_EXTENSIONS=TRUE
+# Force compiler and build tools to use symlink without spaces
+-DCMAKE_CXX_COMPILER=C:/VS2022/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe
+-DCMAKE_C_COMPILER=C:/VS2022/VC/Tools/MSVC/14.44.35207/bin/Hostx64/x64/cl.exe
+-DCMAKE_MAKE_PROGRAM=C:/VS2022/MSBuild/Current/Bin/amd64/MSBuild.exe
 "
+
+#-DCMAKE_CXX_FLAGS_RELEASE='$MSVC_RELEASE_FLAGS'

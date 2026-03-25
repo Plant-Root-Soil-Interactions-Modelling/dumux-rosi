@@ -129,28 +129,6 @@ def gitSetBranch(folder, branch):
 with open("installdumux.log", "w") as _:
     pass
 
-#################################################################
-#################################################################
-# (1/3) Check some prerequisites
-#################################################################
-#################################################################
-programs = ["git", "gcc", "g++", "cmake", "pkg-config"]
-showMessage(f"(1/3) Checking all prerequisites: {' '.join(programs)}...")
-
-# check some prerequisites
-for program in programs:
-    if which(program) is None:
-        logger.error("An error occurred while checking for prerequisites.")
-        logger.error(f"The required program '{program}' has not been found.")
-        sys.exit(1)
-
-if which("paraview") is None:
-    logger.warning("ParaView could not be found. (You might have it but we can't find it.)")
-    logger.warning("We recommend installing ParaView to view simulation results.")
-
-checkCppVersion()
-
-showMessage("(1/3) Step completed. All prerequisites found.")
 
 #################################################################
 #################################################################

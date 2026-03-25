@@ -2,30 +2,30 @@
 dune_symlink_to_source_files(FILES "grids" "python" "input")
 
 add_executable(richardsnc3d EXCLUDE_FROM_ALL richards1p2c.cc) #todo: update
-target_compile_definitions(richardsnc3d PUBLIC GRIDTYPE=Dune::SPGrid<double,3>)
+target_compile_definitions(richardsnc3d PRIVATE GRIDTYPE=Dune::SPGrid<double,3>)
 
 add_executable(richardsnc1d EXCLUDE_FROM_ALL richards1p2c.cc) #todo: update
-target_compile_definitions(richardsnc1d PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
+target_compile_definitions(richardsnc1d PRIVATE GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richardsnc1d_cyl EXCLUDE_FROM_ALL richards1p2c_cyl.cc) #todo: update
-target_compile_definitions(richardsnc1d_cyl PUBLIC GRIDTYPE=Dune::FoamGrid<1,1>)
+target_compile_definitions(richardsnc1d_cyl PRIVATE GRIDTYPE=Dune::FoamGrid<1,1>)
 
 add_executable(richardsnc_alu EXCLUDE_FROM_ALL richards1p2c.cc) #todo: update
-target_compile_definitions(richardsnc_alu PUBLIC GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
+target_compile_definitions(richardsnc_alu PRIVATE GRIDTYPE=Dune::ALUGrid<3,3,Dune::simplex,Dune::conforming>)
 
 add_executable(richardsnc_ug EXCLUDE_FROM_ALL richards1p2c.cc) #todo: update
-target_compile_definitions(richardsnc_ug PUBLIC GRIDTYPE=Dune::UGGrid<3>)
+target_compile_definitions(richardsnc_ug PRIVATE GRIDTYPE=Dune::UGGrid<3>)
 
 
-set(PYBIND11_DIR ${PROJECT_SOURCE_DIR}/../CPlantBox/src/external/pybind11)
+# set(PYBIND11_DIR ${PROJECT_SOURCE_DIR}/../CPlantBox/src/external/pybind11)
 
 
-# Include Pybind11
-add_subdirectory(${PYBIND11_DIR} pybind11)
-add_executable(richardsnc1d_cyl_pybi EXCLUDE_FROM_ALL richards1d2c_PyBi.cc)
-target_link_libraries(richardsnc1d_cyl_pybi PUBLIC pybind11::embed)
+# # Include Pybind11
+# add_subdirectory(${PYBIND11_DIR} pybind11)
+# add_executable(richardsnc1d_cyl_pybi EXCLUDE_FROM_ALL richards1d2c_PyBi.cc)
+# target_link_libraries(richardsnc1d_cyl_pybi PUBLIC pybind11::embed)
 
-add_executable(richardsnc3d_pybi EXCLUDE_FROM_ALL richards3d2c_PyBi.cc)
-target_link_libraries(richardsnc3d_pybi PUBLIC pybind11::embed)
-# optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+# add_executable(richardsnc3d_pybi EXCLUDE_FROM_ALL richards3d2c_PyBi.cc)
+# target_link_libraries(richardsnc3d_pybi PUBLIC pybind11::embed)
+# # optionally set cmake build type (Release / Debug / RelWithDebInfo)
+# set(CMAKE_BUILD_TYPE RelWithDebInfo)
