@@ -1734,9 +1734,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                        (abs(thetainit- thetainitth) < 1e-9) )).all()
             except:
                 print('error: issue with cylinder creations', rank)
+                print('theta',thetainit,thetainitth)
+                print('pHeadcyl',pHeadcyl,' self.vg_soil', self.vg_soil)
                 print('len(pHeadcyl) == (self.NC - 1)?', len(pHeadcyl), (self.NC - 1))
                 print('(abs((pHeadcyl - x)/x_divide)*100 > 1e-5).all()?',abs((pHeadcyl - x)/x_divide)*100, pHeadcyl,x,'x_divide',x_divide)
-                print('theta',thetainit,thetainitth)
                 raise Exception
                 
             return cyl
