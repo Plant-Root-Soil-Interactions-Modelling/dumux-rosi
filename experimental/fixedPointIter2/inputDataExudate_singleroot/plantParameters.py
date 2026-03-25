@@ -60,18 +60,20 @@ def init_conductivities(r, skr = 1., skx = 1.):
     
 def prescribed_exudation(soil_type, ifexu):
     
-    times = [0, 42, 63, 98, 154]
     
-    if ifexu == "True": 
-        if soil_type == 'loam':
-            exu_prop = np.array([0.00095, 0.00095,0.00052,0.00049,0.00045])#[kg C/(m2 root surface  day)] 
-        elif soil_type == 'sand':
-            exu_prop = np.array([0.0012, 0.0012,0.00048,0.00037,0.00033]) #[kg C/(m2 root surface day)]
-        else:
-            print('No exudate properties found')
-    else: 
-        exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
+    
+    # if ifexu == "True": 
+        # if soil_type == 'loam':
+            # exu_prop = np.array([0.00095, 0.00095,0.00052,0.00049,0.00045])#[kg C/(m2 root surface  day)] 
+        # elif soil_type == 'sand':
+            # exu_prop = np.array([0.0012, 0.0012,0.00048,0.00037,0.00033]) #[kg C/(m2 root surface day)] 
+        # else:
+            # print('No exudate properties found')
+    # else: 
+        # exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
 
+    times = [0, 20]
+    exu_prop = np.array([0.001,0.001])
     f = interpolate.interp1d(times, exu_prop)  
     
     return f     
@@ -96,4 +98,4 @@ def DecayParams():
     Km = 13.5 #mol C / m^3
     decay_params =  {'Vmax': Vmax, 'Km': Km}
     
-    return decay_params   
+    return decay_params
