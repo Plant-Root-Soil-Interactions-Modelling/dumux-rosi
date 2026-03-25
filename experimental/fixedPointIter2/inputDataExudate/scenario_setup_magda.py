@@ -461,9 +461,12 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     s.maxDt =  250./(3600.*24.)
     s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
-    
-    s.eps_regularization = None # pcEps, krEps
-    #s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be l
+    if soil_type == "sand":
+        s.eps_regularization = 1e-10 
+        s.setRegularisation(s.eps_regularization, s.eps_regularization) 
+    else:
+        s.eps_regularization = None # pcEps, krEps
+    ## needs to be l
      
     df = pd.read_csv("../inputDataExudate/data/init_pot_"+soil_type+"_2019.csv")  # initial potential
     time = df['time'].loc[:].values

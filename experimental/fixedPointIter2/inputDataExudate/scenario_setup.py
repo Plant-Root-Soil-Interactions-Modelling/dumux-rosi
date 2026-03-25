@@ -342,11 +342,11 @@ def getSoilTextureAndShape(soil_= "loam", res = 1):
     
     return soilTextureAndShape
 
-def setSoilParam(s):    
+def setSoilParam(s, soil_type, res):    
     """ save the soil parameters
         @param: the dumux soil object
     """
-    soilTexture = getSoilTextureAndShape()
+    soilTexture = getSoilTextureAndShape(soil_type, res)
     s.solidDensity = soilTexture['solidDensity'] #[kg/m^3 solid] 
     s.solidMolarMass = soilTexture['solidMolarMass']# [kg/mol] 
     s.soil =  soilTexture['soilVG'] 
@@ -397,7 +397,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_='loam',
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
     s.MaxRelativeShift_1DS = MaxRelativeShift / 10.
     
-    soilTextureAndShape = getSoilTextureAndShape(soil_type, res) 
+    soilTextureAndShape = getSoilTextureAndShape(soil_, res) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
@@ -413,7 +413,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_='loam',
     s.initialize() 
     setDefault(s)
     
-    setSoilParam(s)
+    setSoilParam(s, soil_, res)
     getBiochemParam(s,soil_type)
     setBiochemParam(s)
     setIC3D(s, soil_type, ICcc)
@@ -502,11 +502,11 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndShape, fname, path, soil_type,stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndShape, fname, path, soil_type,res , stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-    soilTextureAndShape = getSoilTextureAndShape(soil_type) 
+    soilTextureAndShape = getSoilTextureAndShape(soil_type, res) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
