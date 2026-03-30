@@ -280,14 +280,15 @@ def vg_SPP(i = int(1)):
     soil[1] = [0.03, 0.414, 0.038, 2, 1864]
     return soil[i]
 
-def getSoilTextureAndShape(soil_='loam', res = 1):  
+def getSoilTextureAndShape(soil_='loam', res = 0.5
+):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
-    min_b = np.array( [-2.5, -2.5, -25.] )
-    max_b =np.array([2.5, 2.5, 0.])
-    cell_number = np.array([5,5,25])
-    area = 5 * 5  # cm2 
+    min_b = np.array( [-2, -2, -15.] )
+    max_b =np.array([2, 2, 0.])
+    cell_number = np.array([8,8,30])
+    area = 4 * 4  # cm2 
     
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 

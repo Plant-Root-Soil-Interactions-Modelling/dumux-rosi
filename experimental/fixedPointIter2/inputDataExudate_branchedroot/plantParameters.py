@@ -80,7 +80,7 @@ def prescribed_exudation(soil_type, ifexu):
 
 def exudation_rates(f, t):   
     
-    kex = np.array([[0., 3.5], [f(t),f(t)/2]])
+    kex = np.array([[0., 3.5], [f(t),f(t)]])
         
     return kex
 

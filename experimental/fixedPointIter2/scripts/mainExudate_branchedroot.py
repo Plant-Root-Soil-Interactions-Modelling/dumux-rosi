@@ -45,14 +45,14 @@ def XcGrowth(scenarioData):
     
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
-    soil_type = scenarioData['soil_type']
-    sorption_type = scenarioData['type_sorption']
-    SWP_ini = scenarioData['SWP_ini']
-    single_trans = scenarioData['trans']
+    soil_type = 'loam'
+    sorption_type = 'medium'
+    SWP_ini = '100'
+    single_trans = '0'
     simMax = 15 #days
-    res = 1 #cm
+    res = 0.5 #cm
     ifexu = True
-    xml_name = "branch1.xml"  # root growth model parameter file
+    xml_name = scenarioData['root_type']+".xml"  # root growth model parameter file
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     initsim = 1 #day
@@ -98,7 +98,7 @@ def XcGrowth(scenarioData):
    
     doDecay = True    
     doAds = True
-    results_dir="./results_branchedroot/Exudate/"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
+    results_dir="./results_branchedroot/Exudate/"+scenarioData['root_type']+'/'
 
 
     # to get printing directory/simulaiton type in the slurm.out file
@@ -364,19 +364,15 @@ def XcGrowth(scenarioData):
 if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
-    parser.add_argument('soil_type', type = str, help = 'loam or sand')
-    parser.add_argument('type_sorption', type = str, help = 'low, medium, high')
-    parser.add_argument('SWP_ini', type = str, help = 'absolute value, whatever >0')
-    parser.add_argument('trans', type = str, help = 'whatever >=0')
+    parser.add_argument('root_type', type = str, help = 'straight1 or branched1')
     args = parser.parse_args()
     
-    name = args.soil_type + "_" +  args.type_sorption+ args.SWP_ini+'_'+ args.trans
+    name = args.root_type 
     print()
     print(name, "\n")
     
-    scenarioData = {'soil_type': args.soil_type, 'type_sorption': args.type_sorption, 'SWP_ini' : args.SWP_ini, 'trans' : args.trans}
+    scenarioData = {'root_type': args.root_type}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam high 100 0
-    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam medium 100 0
-    #mpiexec -n 1 python3 mainExudate_branchedroot.py loam low 100 0
+    #mpiexec -n 1 python3 mainExudate_branchedroot.py straight1
+    #mpiexec -n 1 python3 mainExudate_branchedroot.py branched1
