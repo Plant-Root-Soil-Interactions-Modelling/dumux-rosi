@@ -110,7 +110,7 @@ def XcGrowth(scenarioData):
                     
     """ initialize """
 
-    s = scenario_setup.create_soil_model(initsim, simMax,res,
+    s = scenario_setup.create_soil_model(initsim, simMax,soilTextureAndShape,
                                          results_dir = results_dir,
                                          soil_=soil_type,
                                          sorption_type = sorption_type, 
@@ -126,7 +126,7 @@ def XcGrowth(scenarioData):
 
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, single_trans, s, soilTextureAndShape, xml_name,
-                                            path, soil_type,
+                                            path, soil_type,res,
                                             limErr1d3d = 5e-12)  
 
     # store parameters

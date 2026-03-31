@@ -113,7 +113,7 @@ def XcGrowth(scenarioData):
                     
     """ initialize """
 
-    s = scenario_setup.create_soil_model(initsim, simMax,res,
+    s = scenario_setup.create_soil_model(initsim, simMax,soilTextureAndShape,
                                          results_dir = results_dir,
                                          soil_=soil_type,
                                          sorption_type = sorption_type,                                

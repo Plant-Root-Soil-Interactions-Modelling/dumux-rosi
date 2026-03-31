@@ -288,6 +288,7 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
     # max_b =np.array( [3./2, 3./2, 0.]) #  np.array([-5, -5, -5.])
     # cell_number = np.array([3,3,5]) #  [2,1,1])#np.array( [1,1,1]) # 1cm3
     # area = 3*3
+
     if res == 1: 
         min_b = np.array([-20/2, -45/2, -74.]) # np.array( [5, 5, 0.] )
         max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
@@ -346,11 +347,10 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
     
     return soilTextureAndShape
 
-def setSoilParam(s, soil_type, res):    
+def setSoilParam(s, soilTexture):    
     """ save the soil parameters
         @param: the dumux soil object
     """
-    soilTexture = getSoilTextureAndShape(soil_type, res)
     s.solidDensity = soilTexture['solidDensity'] #[kg/m^3 solid] 
     s.solidMolarMass = soilTexture['solidMolarMass']# [kg/mol] 
     s.soil =  soilTexture['soilVG'] 
@@ -376,7 +376,7 @@ def create_soil_model3D(  results_dir ,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
-def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
+def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_, sorption_type,
                      doAds = True, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, doDecay=True, 
                      MaxRelativeShift = 1e-8):
@@ -410,7 +410,6 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
     s.MaxRelativeShift = MaxRelativeShift # 1e-10
     s.MaxRelativeShift_1DS = MaxRelativeShift / 10.
     
-    soilTextureAndShape = getSoilTextureAndShape(soil_, res) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
@@ -426,7 +425,7 @@ def create_soil_model(initsim, simMax, res, results_dir , soil_, sorption_type,
     s.initialize() 
     setDefault(s)
     
-    setSoilParam(s, soil_, res)
+    setSoilParam(s, soilTextureAndShape)
     getBiochemParam(s,soil_type,sorp)
 
     setBiochemParam(s)
@@ -520,7 +519,6 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-    soilTextureAndShape = getSoilTextureAndShape(soil_type, res) 
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
