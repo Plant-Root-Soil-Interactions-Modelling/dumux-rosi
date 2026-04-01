@@ -271,14 +271,15 @@ def setDefault(s):
     return s
     
 def vg_SPP(i = int(1)):
-    """ Van Genuchten parameter, called by maize()  """
-        
+    """ Van Genuchten parameter, called by maize()  """  
     soil = {}
-    # theta_r, theta_s, alpha, n, Ks
+    # theta_r, theta_s, alpha, n, Ks                    
     #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
-    soil[0] = [0.041, 0.494, 0.0256, 1.49, 245]
-    soil[1] = [0.03, 0.414, 0.038, 2, 1864]
+    soil[0] = [0.1, 0.494, 0.05, 1.267, 441]   
+    soil[1] = [0.062, 0.414, 0.0182, 2.733, 5]
+               
     return soil[i]
+    
 
 def getSoilTextureAndShape(soil_= 'loam', res = 1):  
     """ soil shape and texture data
@@ -320,7 +321,7 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
         i = 0
     else:
         i = 1
-     
+        
     soilVG = vg_SPP(i)
     
     Kc_value = np.array([1,1,1,1.2,1.2,1.2])
@@ -339,11 +340,11 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
     
     soilTextureAndShape = {'min_b' : min_b,'max_b' : max_b,
                             'area':area,
-                           'cell_number':cell_number,
-                           "solidDensity":solidDensity,
-                        'solidMolarMass': solidMolarMass,
-                           'soilVG':soilVG,
-                           'Kc':Kc}
+                            'cell_number':cell_number,
+                            "solidDensity":solidDensity,
+                            'solidMolarMass': solidMolarMass,
+                            'soilVG':soilVG,
+                            'Kc':Kc}
     
     return soilTextureAndShape
 
@@ -354,7 +355,6 @@ def setSoilParam(s, soilTexture):
     s.solidDensity = soilTexture['solidDensity'] #[kg/m^3 solid] 
     s.solidMolarMass = soilTexture['solidMolarMass']# [kg/mol] 
     s.soil =  soilTexture['soilVG'] 
-    
     s.vg_soil = vg.Parameters(s.soil) 
     # [mol / m3 solid] =[kg/m^3 solid] / [kg/mol] 
     s.solidMolDensity = s.solidDensity/s.solidMolarMass
