@@ -15,7 +15,7 @@ from helpfull import write_file_array, write_file_float, div0, div0f
 import vtk_plot_adapted as vp
 import vtk
 import vtk.util.numpy_support as numpy_support
-from pyevtk.hl import gridToVTK
+#from pyevtk.hl import gridToVTK
 
 def initialPrint(plant):
     """ put headings on files which will be filled later """

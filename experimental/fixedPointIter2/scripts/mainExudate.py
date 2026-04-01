@@ -86,7 +86,7 @@ def XcGrowth(scenarioData):
     # ATT: for short ismulations only
     doMinimumPrint =  True
     debugMode = False
-    make_cyls = True
+    make_cyls = False
     doDecay = True
     doAds = True
     
