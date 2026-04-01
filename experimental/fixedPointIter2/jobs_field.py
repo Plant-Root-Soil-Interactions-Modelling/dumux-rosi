@@ -46,12 +46,12 @@ def make_list():
     jobs = []
 
     # scenario static
-    soil_type = ["loam"] #, "sand"] 
+    soil_type = ["loam", "sand"] 
     res = ["2"] #, "4", "2", "1"] 
     simInit = ['1']
     simMax = ['60']
-    exudate = ['False'] #, 'False']
-    sorption = ['Low'] #, 'Medium', 'High']
+    exudate = ['True'] #, 'False']
+    sorption = ['Low', 'Medium', 'High']
 
     print("Creating", len(soil_type) * len(res) * len(simInit)* len(simMax)* len(exudate)*len(sorption), "simulations")
     print()
