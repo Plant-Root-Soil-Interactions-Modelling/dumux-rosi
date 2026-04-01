@@ -275,8 +275,8 @@ def vg_SPP(i = int(1)):
     soil = {}
     # theta_r, theta_s, alpha, n, Ks                    
     #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
-    soil[0] = [0.1, 0.494, 0.05, 1.267, 441]   
-    soil[1] = [0.062, 0.414, 0.0182, 2.733, 5]
+    soil[0] = [0.1, 0.411, 0.05, 1.267, 441]   
+    soil[1] = [0.062, 0.337, 0.0182, 2.733, 5]
                
     return soil[i]
     
@@ -427,7 +427,6 @@ def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_,
     
     setSoilParam(s, soilTextureAndShape)
     getBiochemParam(s,soil_type,sorp)
-
     setBiochemParam(s)
     setIC3D(s, soil_type, ICcc)
     s.isPeriodic = True

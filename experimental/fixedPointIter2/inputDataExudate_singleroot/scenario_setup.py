@@ -276,8 +276,8 @@ def vg_SPP(i = int(1)):
     soil = {}
     # theta_r, theta_s, alpha, n, Ks
     #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
-    soil[0] = [0.1, 0.494, 0.05, 1.267, 441]
-    soil[1] = [0.062, 0.414, 0.0182, 2.733, 5]
+    soil[0] = [0.1, 0.411, 0.05, 1.267, 441]
+    soil[1] = [0.062, 0.337, 0.0182, 2.733, 5]
     return soil[i]
 
 def getSoilTextureAndShape(soil_='loam', res = 1):  
@@ -496,7 +496,7 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, single_trans, soil_model, s
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
-    soilTextureAndShape = getSoilTextureAndShape(soil_type, res) 
+
     min_b = soilTextureAndShape['min_b']
     max_b = soilTextureAndShape['max_b']
     cell_number = soilTextureAndShape['cell_number']
