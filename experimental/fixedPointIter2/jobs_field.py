@@ -51,7 +51,7 @@ def make_list():
     simInit = ['1']
     simMax = ['60']
     exudate = ['True'] #, 'False']
-    sorption = ['Low', 'Medium', 'High']
+    sorption = ['low', 'medium', 'high']
 
     print("Creating", len(soil_type) * len(res) * len(simInit)* len(simMax)* len(exudate)*len(sorption), "simulations")
     print()
