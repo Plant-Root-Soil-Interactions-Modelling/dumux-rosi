@@ -62,7 +62,7 @@ def prescribed_exudation(soil_type, ifexu):
     
     times = [0, 42, 63, 98, 154]
     
-    if ifexu == "True": 
+    if ifexu: 
         if soil_type == 'loam':
             exu_prop = np.array([0.00095, 0.00095,0.00052,0.00049,0.00045])#[kg C/(m2 root surface  day)] 
         elif soil_type == 'sand':
