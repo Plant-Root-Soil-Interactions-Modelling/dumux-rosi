@@ -476,7 +476,7 @@ def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age,
                                  "flux_out"
                                 ]
                 printData.doVTPplots(str(int(rs_age*10))+"_"+str(fpit_Helper.n_iter), #indx of vtp plot
-                                    perirhizalModel, plantModel,s, perirhizalModel.getSoilTextureAndShape(), 
+                                    perirhizalModel, plantModel,s, perirhizalModel.soilTextureAndShape, 
                                     datas, datasName, initPrint=True, doSolutes = perirhizalModel.doSoluteFlow)
                                     
             

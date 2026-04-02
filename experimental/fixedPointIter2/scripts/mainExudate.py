@@ -56,13 +56,13 @@ def XcGrowth(scenarioData):
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     initsim = int(scenarioData['simInit']) #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
-    dt = 10/60/24 #day
+    dt = 20/60/24 #day
     dt_inner_init =  dt # 1/60/24 #
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 20 # max num of iteration for loops
+    k_iter = 10 # max num of iteration for loops
     targetIter= 9 # target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
@@ -145,7 +145,8 @@ def XcGrowth(scenarioData):
     
     perirhizalModel.plant_or_RS = plant_or_RS
     perirhizalModel.do1d1dFlow = do1d1dFlow
-    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
+    # perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
+    perirhizalModel.soilTextureAndShape = soilTextureAndShape
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
