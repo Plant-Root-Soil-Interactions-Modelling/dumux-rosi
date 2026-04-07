@@ -56,7 +56,7 @@ def XcGrowth(scenarioData):
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     initsim = int(scenarioData['simInit']) #initial simulation time 
     # outer time step (outside of fixed-point iteration loop)
-    dt = 20/60/24 #day
+    dt = 60/60/24 #day
     dt_inner_init =  dt # 1/60/24 #
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
@@ -339,7 +339,7 @@ def XcGrowth(scenarioData):
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
         print('for now, remove some printing to make the troubleshooting faster')
-        if False:#np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]
@@ -386,6 +386,6 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'type_sorption': args.type_sorption}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 False low
+    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True low
     #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True medium
     #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True high
