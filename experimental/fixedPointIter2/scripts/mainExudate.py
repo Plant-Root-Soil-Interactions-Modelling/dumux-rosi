@@ -386,6 +386,6 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'res' : args.res, 'simInit' : args.simInit, 'simMax' : args.simMax, 'exudate': args.exudate, 'type_sorption': args.type_sorption}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True low
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True medium
-    #mpiexec -n 1 python3 mainExudate.py loam 2 1 30 True high
+    #mpiexec -n 1 python3 mainExudate.py loam 2 0 60 True low
+    #mpiexec -n 1 python3 mainExudate.py loam 2 0 60 True medium
+    #mpiexec -n 1 python3 mainExudate.py loam 2 0 60 True high

@@ -116,13 +116,14 @@ def printRSShape(rs,r, results_dir):
                      directory_ =results_dir)
     write_file_array("nodes_Y", np.array([tempnode[1] for tempnode in r.get_nodes()]), directory_ =results_dir)
     write_file_array("nodes_Z", np.array([tempnode[2] for tempnode in r.get_nodes()]), directory_ =results_dir)
-    idPerNode = np.concatenate([
-        np.full(org.getNumberOfNodes()-1,org.getId()) for org in orgs]).reshape(-1)
-    globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
-    write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
-    write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
-    volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
-    write_file_array("volOrg", volOrg, directory_ =results_dir)
+    if len(orgs)>0: 
+        idPerNode = np.concatenate([
+            np.full(org.getNumberOfNodes()-1,org.getId()) for org in orgs]).reshape(-1)
+        globalNodeId = np.concatenate([org.getNodeIds()[1:] for org in orgs]).reshape(-1)
+        write_file_array("orgidPerNode", idPerNode, directory_ =results_dir)
+        write_file_array("globalNodeId", globalNodeId, directory_ =results_dir)
+        volOrg = np.array([org.orgVolume(-1,False) for org in orgs]) 
+        write_file_array("volOrg", volOrg, directory_ =results_dir)
     
 def printDiff1d3d(perirhizalModel, s, dt):
     """print differences between 1d and 3d soil models"""
@@ -403,7 +404,7 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                                extraArray = extraArray_, extraArrayName = extraArrayName_,
                 interactiveImage=False)  # VTK vizualisation
                 
-        
+
         if doSolutes:        
             for i in range(1, perirhizalModel.numComp):
                 extraArray_ = perirhizalModel.soilModel.getSolution(i) * perirhizalModel.phaseDensity(i)/1e6

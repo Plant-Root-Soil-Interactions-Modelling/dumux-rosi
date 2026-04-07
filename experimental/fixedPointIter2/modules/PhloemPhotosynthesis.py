@@ -450,6 +450,8 @@ def computeWaterFlow(fpit_Helper, perirhizalModel, plantModel, rs_age_i_dt, dt):
             transpiration = plantModel.transpiration(rs_age_i_dt,dt)
             # transpiration = 6 #testing
             before_shoot = len(perirhizalModel.ms.getShootSegments())
+            if rs_age_i_dt<=1: 
+                before_shoot = 0
             rx = plantModel.solve(rs_age_i_dt, 
                          [-transpiration],
                          sx= fpit_Helper.rsx_input[before_shoot], 
