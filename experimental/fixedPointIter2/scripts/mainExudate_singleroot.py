@@ -98,7 +98,7 @@ def XcGrowth(scenarioData):
    
     doDecay = True    
     doAds = True
-    results_dir="./results_singleroot/Exudate/"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
+    results_dir="./results_singleroot/Exudate_nodecay/"+soil_type+'_res'+str(res)+"_sorption"+sorption_type+'_SWP_ini'+str(SWP_ini)+'_trans'+str(single_trans)+'/'
 
 
     # to get printing directory/simulaiton type in the slurm.out file
@@ -143,7 +143,8 @@ def XcGrowth(scenarioData):
     
     perirhizalModel.plant_or_RS = plant_or_RS
     perirhizalModel.do1d1dFlow = do1d1dFlow
-    perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
+    # perirhizalModel.getSoilTextureAndShape = scenario_setup.getSoilTextureAndShape
+    perirhizalModel.soilTextureAndShape = soilTextureAndShape
     perirhizalModel.k_iter_2initVal = k_iter_2initVal
     perirhizalModel.rsiCompMethod = rsiCompMethod
     perirhizalModel.doPhotosynthesis = doPhotosynthesis
