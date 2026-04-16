@@ -24,7 +24,7 @@ mpl.rcParams.update({
     'figure.titlesize': fontsize,
     'mathtext.default': 'regular'
 })
-path2file = "../scripts/results_singleroot/Exudate/"
+path2file = "../scripts/results_singleroot_old/Exudate_nodecay/"
 
 left  = 0.1  # the left side of the subplots of the figure
 right = 0.85    # the right side of the subplots of the figure
@@ -64,16 +64,18 @@ for m in range(0, len(soiltype)):
 
         #macro 
         res = float(re.search(r'\d+', scenario).group())
-        with open(path2file + scenario + "TotC_macro.csv") as f:
-            totC = [list(map(float, row)) for row in csv.reader(f)]
-        max_len = max(len(row) for row in totC)
-        totC_ = np.array([row + [np.nan]*(max_len-len(row)) for row in totC])    
-        conc_macro = totC_ / (res**3) 
-
+        
         with open(path2file + scenario + "WaterC_macro.csv") as f:
             wc = [list(map(float, row)) for row in csv.reader(f)]
+        max_len = max(len(row) for row in wc)
         wc_ = np.array([row + [np.nan]*(max_len-len(row)) for row in wc])  
-        watvol_macro = wc_ * (res**3)
+        watvol_macro = wc_ * (res**3)        
+        
+        with open(path2file + scenario + "TotC_macro.csv") as f:
+            totC = [list(map(float, row)) for row in csv.reader(f)]
+        totC_ = np.array([row + [np.nan]*(max_len-len(row)) for row in totC])    
+        conc_macro = np.divide(totC_ , watvol_macro)
+
         time = np.loadtxt(path2file + scenario + "time.txt", delimiter=",")[:-1,0]
 
 
@@ -87,15 +89,15 @@ for m in range(0, len(soiltype)):
             max_len = max(len(row) for row in cellvol_)
             cellvol = np.array([row + [np.nan]*(max_len-len(row)) for row in cellvol_])    
             
-            with open(path_cyl + 'Cyl_content1_'+str(i)+".txt") as f:
-                totC_ = [list(map(float, row)) for row in csv.reader(f)]
-            totC = np.array([row + [np.nan]*(max_len-len(row)) for row in totC_])  
-            conc_micro_ = np.divide(totC,cellvol)
-            
             with open(path_cyl + 'Cyl_watercontent_'+str(i)+".txt") as f:
                 wc_ = [list(map(float, row)) for row in csv.reader(f)]
             wc = np.array([row + [np.nan]*(max_len-len(row)) for row in wc_])  
             watvol_micro_ = np.multiply(wc,cellvol)
+            
+            with open(path_cyl + 'Cyl_content1_'+str(i)+".txt") as f:
+                totC_ = [list(map(float, row)) for row in csv.reader(f)]
+            totC = np.array([row + [np.nan]*(max_len-len(row)) for row in totC_])  
+            conc_micro_ = np.divide(totC,watvol_micro_)
                 
             if i == 0: 
                 max_rows = np.shape(cellvol)[0]

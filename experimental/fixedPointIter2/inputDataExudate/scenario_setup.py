@@ -32,7 +32,7 @@ import evapotranspiration as evap
 from scipy import interpolate
 
 
-def getBiochemParam(s,soil_type, sorp):    
+def getBiochemParam(s,soil_type, sorp, diff):    
     """ define TraiRhizo biochemical parameters 
         @param: the dumux soil object
         @ param: index of the TraiRhizo parameter set to use
@@ -41,7 +41,7 @@ def getBiochemParam(s,soil_type, sorp):
     s.doSimpleReaction = 1 #only diffusion, decay, sorption and not Mona's complete model 
     s.molarMassC = 12.011
     s.mg_per_molC = s.molarMassC * 1000.
-    s.Ds = 1.e-10 #m^2/s
+    s.Ds = plantParameters.DiffusionParams(diff)  #m^2/s
     
     decay_params = plantParameters.DecayParams()
     s.vmax_decay = decay_params['Vmax'] #mol C / m^3 scv / s #max decay rate from Nideggen et al. 
@@ -376,7 +376,7 @@ def create_soil_model3D(  results_dir ,
                         p_mean_,paramIndx ,
                      noAds , ICcc , doSoluteFlow)
 
-def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_, sorption_type,
+def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_, sorption_type,diffusion, 
                      doAds = True, ICcc = None, doSoluteFlow = True,
                      doBioChemicalReaction=True, doDecay=True, 
                      MaxRelativeShift = 1e-8):
@@ -403,6 +403,18 @@ def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_,
     else: 
         print('no sorption type defined.') 
         
+        
+    if diffusion == 'low': 
+        diff = 0
+    elif diffusion == 'medium': 
+        diff = 1
+    elif diffusion == 'mediumhigh': 
+        diff = 2
+    elif diffusion == 'high': 
+        diff = 3
+    else: 
+        print('no diffusion defined.')
+        
     s = RichardsWrapper(RichardsNCSP())  # water and N solute          
     s.results_dir = results_dir   
     s.pindx = soil_type
@@ -416,7 +428,6 @@ def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_,
     s.cell_size = np.prod((max_b - min_b) / cell_number) # cm3 
     s.setParameter( "Soil.Grid.Cells", s.dumux_str(cell_number))  # send data to dumux
     s.doAds = doAds
-    # s.noAds = noAds # no adsorption?
     s.doSoluteFlow = doSoluteFlow
     s.doBioChemicalReaction = doBioChemicalReaction
     s.doDecay = doDecay
@@ -426,7 +437,7 @@ def create_soil_model(initsim, simMax, soilTextureAndShape, results_dir , soil_,
     setDefault(s)
     
     setSoilParam(s, soilTextureAndShape)
-    getBiochemParam(s,soil_type,sorp)
+    getBiochemParam(s,soil_type,sorp, diff)
     setBiochemParam(s)
     setIC3D(s, soil_type, ICcc)
     s.isPeriodic = True

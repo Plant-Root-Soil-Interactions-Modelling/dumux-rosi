@@ -11,12 +11,12 @@ import numpy as np
 import argparse
 
 sys.path.append("../modules/");
-sys.path.append("../inputDataExudate_singleroot/");
-sys.path.append("../inputDataExudate_singleroot/data/");
+sys.path.append("../inputDataExudate/");
+sys.path.append("../inputDataExudate/data/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
-sys.path.append("../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../../build-cmake/cpp/python_binding/");
 import plantbox as pb  # CPlantBox
 import vtk_plot_adapted as vp
 
@@ -46,32 +46,29 @@ def XcGrowth(scenarioData):
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
-    diffusion = scenarioData['diffusion']
-    sorption_type = scenarioData['sorption']
-    decay = scenarioData['decay']
-    SWP_ini = 100
-    single_trans = 0
-    simMax = 15 #days
-    res = 1 #cm
+    initsim = 0 #initial simulation time 
+    simMax = 60 #maximal simulation time 
+    res = 2
     ifexu = True
-    xml_name = "single_root.xml"  # root growth model parameter file
+    sorption_type = scenarioData['sorption']               
+    diffusion = scenarioData['diffusion']                
+    xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
+    # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
-    initsim = 0 #day
     # outer time step (outside of fixed-point iteration loop)
-    dt = 20/60/24 #day
+    dt = 15/60/24 #day
     dt_inner_init =  dt # 1/60/24 #
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 100 # max num of iteration for loops
-    targetIter= 40# target n_iter for adjusting time step of inner loop
+    k_iter = 10 # max num of iteration for loops
+    targetIter= 9 # target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
     doSoluteUptake = False # active uptake?
-    # doAds_ = True
     # noAds = True # stop adsorption?
     doPhloemFlow = False
     doExudation = True #prescribed exudation for every root segment 
@@ -91,21 +88,15 @@ def XcGrowth(scenarioData):
     doMinimumPrint =  True
     debugMode = False
     make_cyls = False
+    doDecay = True
+    doAds = True
     
     rsiCompMethod = 0
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
-   
-    doDecay = True    
-    doAds = True
-    if decay == 'False': 
-        doDecay = False
-    if sorption_type == 'None': 
-        doAds = False
-    results_dir="./results_singleroot/Exudate/"+soil_type+'_diffusion'+diffusion+"_sorption"+sorption_type+'_decay'+decay+'/'
-
+    results_dir="./results_field/"+soil_type+'_diffusion'+diffusion+"_sorption"+sorption_type+"/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -119,20 +110,19 @@ def XcGrowth(scenarioData):
     s = scenario_setup.create_soil_model(initsim, simMax,soilTextureAndShape,
                                          results_dir = results_dir,
                                          soil_=soil_type,
-                                         sorption_type = sorption_type, 
-                                         diffusion = diffusion,
-                                         SWP_ini = SWP_ini,
+                                         sorption_type = sorption_type,                                
+                                         diffusion = diffusion,                      
                                          doAds = doAds, 
-                                         doDecay = doDecay,
                                          doSoluteFlow = doSoluteFlow, 
                                          doBioChemicalReaction = doBioChemicalReaction,
+                                         doDecay = doDecay,
                                          MaxRelativeShift = MaxRelativeShift)
 
     
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, single_trans, s, soilTextureAndShape, xml_name,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
                                             path, soil_type,res,
                                             limErr1d3d = 5e-12)  
 
@@ -224,6 +214,9 @@ def XcGrowth(scenarioData):
         _maxDiff1d3dCW_absbefore = perirhizalModel.maxDiff1d3dCW_abs
         
         perirhizalModel.update() # update shape data in the rhizosphere model
+        
+        print('error before vs after update,\n\trel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel)
+        print('\tabs',_maxDiff1d3dCW_absbefore,perirhizalModel.maxDiff1d3dCW_abs)
         
         # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
@@ -340,7 +333,7 @@ def XcGrowth(scenarioData):
                 printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
-            
+        print('for now, remove some printing to make the troubleshooting faster')
         if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
@@ -353,10 +346,10 @@ def XcGrowth(scenarioData):
             printData.doVTPplots(int(rs_age*10), #indx/number of vtp plot
                                 perirhizalModel, plantModel,s, soilTextureAndShape, 
                                 datas, datasName, initPrint=False, doSolutes = perirhizalModel.doSoluteFlow)
-    
-    
+
             if make_cyls == True: 
                 printData.map_exudates_pHead(perirhizalModel.ms, plantModel, s, soilTextureAndShape['min_b'], soilTextureAndShape['max_b'], soilTextureAndShape['cell_number'], perirhizalModel, int(rs_age*10), ifexu)
+
     """ wrap up """
     
     
@@ -375,16 +368,15 @@ if __name__ == "__main__":
     parser.add_argument('soil_type', type = str, help = 'loam or sand')
     parser.add_argument('diffusion', type = str, help = 'low, medium, high')
     parser.add_argument('sorption', type = str, help = 'None, low, medium, mediumhigh, high')
-    parser.add_argument('decay', type = str, help = 'True, False')
     args = parser.parse_args()
     
-    name = args.soil_type + "_" +  args.diffusion+ "_" +  args.sorption+ args.decay
+    name = args.soil_type + "_" +  args.diffusion+ "_" +  args.sorption
     print()
     print(name, "\n")
     
-    scenarioData = {'soil_type': args.soil_type, 'diffusion' : args.diffusion, 'sorption': args.sorption, 'decay' : args.decay}
+    scenarioData = {'soil_type': args.soil_type, 'diffusion' : args.diffusion, 'sorption': args.sorption}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate_singleroot.py loam low None False
-    #mpiexec -n 1 python3 mainExudate_singleroot.py loam medium low False
-    #mpiexec -n 1 python3 mainExudate_singleroot.py loam high low True
+    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam low low
+    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam medium low
+    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam high low

@@ -57,23 +57,20 @@ def init_conductivities(r, skr = 1., skx = 1.):
 
     return r
     
-    
 def prescribed_exudation(soil_type, ifexu):
     
+    times = [0, 42, 63, 98, 154]
     
-    
-    # if ifexu == "True": 
-        # if soil_type == 'loam':
-            # exu_prop = np.array([0.00095, 0.00095,0.00052,0.00049,0.00045])#[kg C/(m2 root surface  day)] 
-        # elif soil_type == 'sand':
-            # exu_prop = np.array([0.0012, 0.0012,0.00048,0.00037,0.00033]) #[kg C/(m2 root surface day)] 
-        # else:
-            # print('No exudate properties found')
-    # else: 
-        # exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
+    if ifexu == "True": 
+        if soil_type == 'loam':
+            exu_prop = np.array([0.001,0.001,0.00055,0.00039,0.00045])#[kg C/(m2 root surface  day)] 
+        elif soil_type == 'sand':
+            exu_prop = np.array([0.0011,0.0011,0.0005,0.0003,0.00033]) #[kg C/(m2 root surface day)] 
+        else:
+            print('No exudate properties found')
+    else: 
+        exu_prop = np.array([0.,0.,0.,0.,0.]) #[kg/(m2 day)]
 
-    times = [0, 20]
-    exu_prop = np.array([0.001,0.001])
     f = interpolate.interp1d(times, exu_prop)  
     
     return f     
@@ -83,25 +80,3 @@ def exudation_rates(f, t):
     kex = np.array([[0., 3.5], [f(t),f(t)/2]])
         
     return kex
-
-def SorptionParams(soil_type, sorp): 
-    kads = [[0.16,0.73,15.1],[0.03,0.12, 2.51]]
-    kdes = [[205.7,14.4,96],[205.7, 14.4, 96]]
-    kads_ = kads[soil_type][sorp]
-    kdes_ = kdes[soil_type][sorp]
-    kd_values = {'kads': kads_, 'kdes': kdes_}
-    
-    return kd_values
-    
-def DecayParams(doDecay): 
-    Vmax = 8.2e-5 #mol C / m^3 scv / s,0.73,15.1]
-    Km = 13.5 #mol C / m^3
-    if doDecay == False: 
-        Vmax = 0
-    decay_params =  {'Vmax': Vmax, 'Km': Km}
-    
-    return decay_params
-    
-def DiffusionParams(Diff): 
-    Dl = [1e-11, 1e-10, 1e-9, 1e-8]
-    return Dl[Diff]
