@@ -91,36 +91,13 @@ def is_number(obj):
 class StdoutRedirector:
 
     def __init__(self, suppress_cerr = False):
-        self.libc = ctypes.CDLL(None)
-        self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
         self.buffer = None
         self.filepath = None
-        if suppress_cerr:
-            self.fd = 2
-        else:
-            self.fd = 1  # Do not suppress error messages
 
     def __enter__(self):
-        self.old_stdout_fd = os.dup(self.fd)
-        self.temp_file = tempfile.NamedTemporaryFile(delete = False)
-        self.temp_file_fd = self.temp_file.fileno()
-        os.dup2(self.temp_file_fd, self.fd)
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        os.dup2(self.old_stdout_fd, self.fd)
-        os.close(self.old_stdout_fd)
-        self.temp_file.close()
-
-        with open(self.temp_file.name, 'r') as temp_file:
-            self.buffer = temp_file.read()
-
-        os.remove(self.temp_file.name)
-
-        if exc_type is not None:
-            with open(self.filepath, 'w') as f:
-                f.write(self.buffer)
-
         return False
 
 

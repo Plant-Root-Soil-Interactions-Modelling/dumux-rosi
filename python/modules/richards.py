@@ -1,5 +1,5 @@
 
-import plantbox.functional.van_genuchten as vg
+import rosi.van_genuchten as vg
 from rosi.solverbase import SolverWrapper
 import numpy as np
 from mpi4py import MPI

@@ -46,7 +46,7 @@
 #include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
 //#include <dumux/material/fluidmatrixinteractions/diffusivityconstanttortuosity.hh>
 
-#include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
+#include <dumux/material/fluidmatrixinteractions/thermalconductivityaverage.hh>
 #include <dumux/material/components/simpleh2o.hh>
 #include <dumux/material/components/soil.hh>
 #include <dumux/material/components/constant.hh>
