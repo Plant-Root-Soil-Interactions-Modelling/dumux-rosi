@@ -14,6 +14,7 @@ import sys
 import threading
 import multiprocessing
 from mpi4py import MPI
+import tempfile 
 
 comm = MPI.COMM_WORLD
 rank = comm.Get_rank()
@@ -88,40 +89,42 @@ def is_number(obj):
     return isinstance(obj, (numbers.Number, np.number))
 
 
-class StdoutRedirector:
 
-    def __init__(self, suppress_cerr = False):
-        self.libc = ctypes.CDLL(None)
-        self.c_stdout = ctypes.c_void_p.in_dll(self.libc, "stdout")
+class StdoutRedirector:
+    def __init__(self, suppress_cerr=False):
         self.buffer = None
-        self.filepath = None
-        if suppress_cerr:
-            self.fd = 2
-        else:
-            self.fd = 1  # Do not suppress error messages
+        self.fd = 2 if suppress_cerr else 1
 
     def __enter__(self):
-        self.old_stdout_fd = os.dup(self.fd)
-        self.temp_file = tempfile.NamedTemporaryFile(delete = False)
-        self.temp_file_fd = self.temp_file.fileno()
-        os.dup2(self.temp_file_fd, self.fd)
+        self.old_fd = os.dup(self.fd)
+
+        self.temp_file = tempfile.NamedTemporaryFile(delete=False, mode="w+b")
+        self.temp_name = self.temp_file.name
+        self.temp_fd = self.temp_file.fileno()
+
+        # IMPORTANT: ensure Python doesn't buffer over C++ output timing
+        if self.fd == 1:
+            sys.stdout.flush()
+        else:
+            sys.stderr.flush()
+
+        os.dup2(self.temp_fd, self.fd)
+
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        os.dup2(self.old_stdout_fd, self.fd)
-        os.close(self.old_stdout_fd)
+        # restore original stdout/stderr
+        os.dup2(self.old_fd, self.fd)
+        os.close(self.old_fd)
+
         self.temp_file.close()
 
-        with open(self.temp_file.name, 'r') as temp_file:
-            self.buffer = temp_file.read()
+        with open(self.temp_name, "r", encoding="utf-8", errors="ignore") as f:
+            self.buffer = f.read()
 
-        os.remove(self.temp_file.name)
-
-        if exc_type is not None:
-            with open(self.filepath, 'w') as f:
-                f.write(self.buffer)
-
+        os.remove(self.temp_name)
         return False
+
 
 
 def suggestNumStepsChange(dt, dt_inner, failedLoop, perirhizalModel, n_iter_inner_max):  # taken from dumux
