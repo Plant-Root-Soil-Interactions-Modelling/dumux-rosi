@@ -875,7 +875,7 @@ public:
 			for (const auto& scv : scvs(fvGeometry))
             {
 				double pos0 = 1;
-				if(dimWorld == 1){
+				if((dimWorld == 1)&&(!problem->spatialParams().useExtrusion)){
 					pos0 = scv.center()[0];
 				}
 				NumEqVector scvfSource_(0.0);
@@ -924,7 +924,7 @@ public:
             {
 				double pos0 = 1;
 				//double scvf_area = scvf.area();
-				if(dimWorld == 1){
+				if((dimWorld == 1)&&(!problem->spatialParams().useExtrusion)){
 					pos0 = scvf.center()[0];
 					//scvf_area = 2 * M_PI * pos0 * segLength;//m2 TODO handle 1D area?
 				}

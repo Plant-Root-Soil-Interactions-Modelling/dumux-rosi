@@ -40,6 +40,23 @@ public:
     
 		
     /**
+     * Sets the initial conditions, for a MPI process (TODO for more than 1 equation)
+     *
+     *  @param init         globally shared initial data, sorted by global index [Pa]
+     */
+    virtual void setInitialConditionHead(std::vector<double> init) {
+        if (this->isBox) {
+            throw std::invalid_argument("Richards::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
+                int eIdx = this->gridGeometry->elementMapper().index(e);
+                int gIdx = this->cellIdx->index(e);
+                this->x[eIdx][0] = toPa(init[gIdx]);
+            }
+        }
+    }
+	
+    /**
      * [ kg / (m^2 \cdot s)]
      */
     double getInnerFlux(int eqIdx = 0) {
@@ -95,6 +112,22 @@ public:
     int outerIdx = -1;
     double rIn = 0.;
     double rOut = 0.;
+	
+	
+	
+	static constexpr double g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr double rho_ = 1.e3; // kg / m^3 (for type conversions)
+	static constexpr double pRef_ = 1.e5; // Pa
+
+	//! cm pressure head -> Pascal
+	static double toPa(double ph) {
+		return pRef_ + ph / 100. * rho_ * g_;
+	}
+	//! Pascal -> cm pressure head
+	static double toHead(double p) {
+		return (p - pRef_) * 100. / rho_ / g_;
+	}
+
 
 };
 
@@ -109,7 +142,8 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0),
 											py::arg("verbose") = true, py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
-
+	.def("setInitialConditionHead", &RichardsFoam::setInitialConditionHead)
+   
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsFoam::setCriticalPressure)
    .def("getSolutionHead", &RichardsFoam::getSolutionHead, py::arg("eqIdx") = 0)

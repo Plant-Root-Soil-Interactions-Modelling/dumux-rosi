@@ -50,7 +50,6 @@ public:
     RichardsParams(std::shared_ptr<const GridGeometry> fvGridGeometry)
     : ParentType(fvGridGeometry)
     {
-		useExtrusion = getParam<bool>("Problem.useExtrusion");
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
@@ -98,19 +97,6 @@ public:
         // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
     }
 
-    /*!
-     * \brief Return how much the domain is extruded at a given position.
-     */
-    Scalar extrusionFactorAtPos(const GlobalPosition& globalPos) const
-    {
-        // As a default, i.e. if the user's spatial parameters do not overload
-        // any extrusion factor method, return 1.0
-		if(useExtrusion){//dimWorld == 1){
-			return globalPos[0];
-		}
-		return 1.0;
-    }
-	
     /*!
      * \brief \copydoc GridGeometry::porosity
      */
@@ -195,6 +181,16 @@ public:
     	}
     }
 
+    /*!
+     * \brief Return how much the domain is extruded at a given position.
+     */
+    Scalar extrusionFactorAtPos(const GlobalPosition& globalPos) const
+    {
+        // As a default, i.e. if the user's spatial parameters do not overload
+        // any extrusion factor method, return 1.0
+        return globalPos[0];
+    }
+	
     void addVanGenuchtenDomain(double minx, double miny, double minz, double maxx, double maxy, double maxz, int layerIndex) {
         homogeneous_ = false;
         three_ = true;
@@ -238,7 +234,6 @@ public:
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         } // add 3D things
     }
-	bool useExtrusion;
 
 private:
 

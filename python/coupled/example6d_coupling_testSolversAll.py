@@ -3,8 +3,9 @@ sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src"
 
 """ CPLantBox tutorial example 6c (see CPlantBox/tutorial/latex/PlantBox_RootSystem/tutorial.tex) """
 """ coupling with DuMux as solver for the soil, run in dumux-rosi """
-from functional.xylem_flux import XylemFluxPython  # Python hybrid solver
-from functional.root_conductivities import *  # hard coded conductivities
+from plantbox.functional.PlantHydraulicModel import HydraulicModel_Doussan
+from plantbox.functional.PlantHydraulicParameters import PlantHydraulicParameters
+#from functional.root_conductivities import *  # hard coded conductivities
 import plantbox as pb
 #import visualisation.vtk_plot as vp
 from richards import RichardsWrapper  # Python part
@@ -65,6 +66,7 @@ def testSolver(solverType, name, SLURM_NTASKS,NODELIST,MEM ):
     s.setTopBC("noFlux")
     s.setBotBC("noFlux")
     s.setVGParameters([loam])
+    s.setParameter("Problem.useExtrusion", "false")
     if False:
         s.setParameter("Newton.MaxSteps", "200")
         s.setParameter("Newton.MaxTimeStepDivisions", "100")
@@ -92,25 +94,31 @@ def testSolver(solverType, name, SLURM_NTASKS,NODELIST,MEM ):
 
         rs = pb.MappedPlant()
         rs.setSeed(1)
+        rs.enableExtraNode()
         rs.readParameters(path + fname + ".xml")
         if not periodic:
             sdf = pb.SDF_PlantBox(0.99 * (max_b[0] - min_b[0]), 0.99 * (max_b[1] - min_b[1]), max_b[2] - min_b[2])
         else:
-            sdf = pb.SDF_PlantBox(np.Inf, np.Inf, max_b[2] - min_b[2])
+            sdf = pb.SDF_PlantBox(np.inf, np.inf, max_b[2] - min_b[2])
         rs.setGeometry(sdf)
         rs.initialize()
         rs.simulate(rs_age, False)
-        r = XylemFluxPython(rs)
-        init_conductivities(r, age_dependent)
+                
+        # Root hydraulic properties
+        params = PlantHydraulicParameters()  # |\label{l72c:hydraulic}|
+        params.read_parameters("../../../CPlantBox/modelparameter/functional/plant_hydraulics/couvreur2012")
+        # params.plot_conductivities(True) # |\label{l72c:plot_conductivities}|
+        r = HydraulicModel_Doussan(rs, params)
+        r.wilting_point = wilting_point  # |\label{l72c:hydraulic_end}|
 
     """ Coupling (map indices) """
     picker = lambda x, y, z: s.pick([x, y, z])
     if extraprint:
         print("created s", flush=True)
-    r.rs.setSoilGrid(picker)  # maps segments
+    r.ms.setSoilGrid(picker)  # maps segments
     if extraprint:
         print("created s", flush=True)
-    r.rs.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number), True)
+    r.ms.setRectangularGrid(pb.Vector3d(min_b), pb.Vector3d(max_b), pb.Vector3d(cell_number), True)
     if extraprint:
         print("created s", flush=True)
     r.test()  # sanity checks
@@ -137,7 +145,7 @@ def testSolver(solverType, name, SLURM_NTASKS,NODELIST,MEM ):
         if extraprint:
             print("created s", flush=True)
 
-        rx = r.solve(rs_age + t, -trans * sinusoidal(t), sx[cci], sx, True, wilting_point)  # xylem_flux.py
+        rx = r.solve(rs_age + t, -trans * sinusoidal(t),  sx, True)  # xylem_flux.py
         if extraprint:
             print("created s", flush=True)
         x_.append(t)
@@ -206,7 +214,7 @@ if __name__ == '__main__':
         df = df.T
         df.to_csv('./results/'+name+'6dallSolvers_rx.csv', index=False)
 
-    if False:
+    if True:
         import numpy as np
         import matplotlib.pyplot as plt
 

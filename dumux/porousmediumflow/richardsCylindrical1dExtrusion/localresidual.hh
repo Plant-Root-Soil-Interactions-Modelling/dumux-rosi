@@ -77,7 +77,6 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
         double operator[] (const Index i) const
         { static_assert(AlwaysFalse<Index>::value, "Solution-dependent material parameters not supported with analytical differentiation"); return 0.0; }
     };
-	
 public:
     using ParentType::ParentType;
 
@@ -92,19 +91,15 @@ public:
      * \note The volVars can be different to allow computing
      *       the implicit euler time derivative here
      */
-	 
     NumEqVector computeStorage(const Problem& problem,
                                const SubControlVolume& scv,
                                const VolumeVariables& volVars) const
     {
         // partial time derivative of the phase mass
-		double pos0 = 1;
-		if(!problem.spatialParams().useExtrusion){pos0 = scv.center()[0];}
-		
         NumEqVector storage(0.0);
         storage[conti0EqIdx] = volVars.porosity()
                                * volVars.density(liquidPhaseIdx)
-                               * volVars.saturation(liquidPhaseIdx)*pos0;
+                               * volVars.saturation(liquidPhaseIdx);
 
         //! The energy storage in the water, air and solid phase
         EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, liquidPhaseIdx);
@@ -131,9 +126,6 @@ public:
                             const SubControlVolumeFace& scvf,
                             const ElementFluxVariablesCache& elemFluxVarsCache) const
     {
-		double pos0 = 1;
-		if(!problem.spatialParams().useExtrusion){pos0 = scvf.center()[0];}
-		
         FluxVariables fluxVars;
         fluxVars.init(problem, element, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
 
@@ -142,7 +134,7 @@ public:
         auto upwindTerm = [](const auto& volVars)
                           { return volVars.density(liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
 
-        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm)*pos0;
+        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm);//*scvf.center()[0];
 
         //! Add advective phase energy fluxes for the water phase only. For isothermal model the contribution is zero.
         EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, liquidPhaseIdx);
@@ -343,33 +335,6 @@ public:
 
         // partial derivative of the wetting phase flux w.r.t. pw
         derivativeMatrices[insideScvIdx][conti0EqIdx][0] += (tij*upwindTerm + rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside);//*scvf.center()[0];
-    }
-
-    /*!
-     * \brief Adds Robin flux derivatives for wetting and nonwetting phase
-     *
-     * \param derivativeMatrices The matrices containing the derivatives
-     * \param problem The problem
-     * \param element The element
-     * \param fvGeometry The finite volume element geometry
-     * \param curElemVolVars The current element volume variables
-     * \param elemFluxVarsCache The element flux variables cache
-     * \param scvf The sub control volume face
-     */
-    template<class PartialDerivativeMatrices>
-    void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
-                                 const Problem& problem,
-                                 const Element& element,
-                                 const FVElementGeometry& fvGeometry,
-                                 const ElementVolumeVariables& curElemVolVars,
-                                 const ElementFluxVariablesCache& elemFluxVarsCache,
-                                 const SubControlVolumeFace& scvf) const
-    {
-        // if constexpr(Detail::hasAddRobinFluxDerivatives<Problem,
-            // PartialDerivativeMatrices&, Element, FVElementGeometry,
-            // ElementVolumeVariables, ElementFluxVariablesCache, SubControlVolumeFace>()
-        // )
-            // problem.addRobinFluxDerivatives(derivativeMatrices, element, fvGeometry, curElemVolVars, elemFluxVarsCache, scvf);
     }
 
 

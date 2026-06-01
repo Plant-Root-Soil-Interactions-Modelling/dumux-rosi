@@ -1,5 +1,5 @@
-#ifndef PYTHON_RICHARDS_CYL_H_
-#define PYTHON_RICHARDS_CYL_H_
+#ifndef PYTHON_RICHARDS_CYL2_H_
+#define PYTHON_RICHARDS_CYL2_H_
 
 #include "../../../external/pybind11/include/pybind11/pybind11.h"
 #include "../../../external/pybind11/include/pybind11/stl.h"
@@ -26,6 +26,7 @@ namespace py = pybind11;
 
 //#include <dumux/multidomain/traits.hh>
 //#include <dumux/multidomain/embedded/couplingmanager1d3d.hh>
+#include "../soil_richards/richardsparams_cyl.hh"
 
 /**
  * create type tags
@@ -66,20 +67,14 @@ struct PrimaryVariables<TypeTag, TTag::RichardsTT>
 using RCFoamTT = Dumux::Properties::TTag::RichardsCylFoamCC;
 using GridGeometryRCFoamTT = Dumux::GetPropType<RCFoamTT, Dumux::Properties::GridGeometry>;
 using RichardsCylFoamAssembler = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::numeric>;
-using RichardsCylFoamAssemblerAna = Dumux::FVAssembler<RCFoamTT, Dumux::DiffMethod::analytic>;
 using RichardsCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRCFoamTT>,//RCFoamTT,
 	Dumux::LinearAlgebraTraitsFromAssembler<RichardsCylFoamAssembler>>;
-using RichardsCylFoamLinearSolverAna = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRCFoamTT>,//RCFoamTT,
-	Dumux::LinearAlgebraTraitsFromAssembler<RichardsCylFoamAssemblerAna>>;
 using RichardsCylFoamProblem = Dumux::RichardsProblem<RCFoamTT>;
 
 
-PYBIND11_MODULE(rosi_richards_cyl, m) {
-    init_solverbase<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichardsCylFoam");
-    init_richards_cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "RichardsCylFoam");
-	
-    init_solverbase<RichardsCylFoamProblem, RichardsCylFoamAssemblerAna, RichardsCylFoamLinearSolverAna, 1 /*dimension*/>(m, "BaseRichardsCylFoamAna");
-    init_richards_cyl<RichardsCylFoamProblem, RichardsCylFoamAssemblerAna, RichardsCylFoamLinearSolverAna, 1 /*dimension*/>(m, "RichardsCylFoamAna");
+PYBIND11_MODULE(rosi_richards_cyl2, m) {
+    init_solverbase<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichardsCylFoam2");
+    init_richards_cyl<RichardsCylFoamProblem, RichardsCylFoamAssembler, RichardsCylFoamLinearSolver, 1 /*dimension*/>(m, "RichardsCylFoam2");
 }
 
 #endif
