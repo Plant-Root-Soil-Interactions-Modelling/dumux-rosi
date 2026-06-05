@@ -32,6 +32,31 @@ public:
         this->setParameter("Soil.Output.File", "false");
     }
 
+	void setComputeDtCSS2(const std::function<double(double,double)>& s)
+    {}
+    
+	double computeDtCSS2(double CSW, double CSS2)
+    {
+        return 0.;
+    }
+    
+	double computeInitCSS2(double CSS1, double CSW)
+    {
+        return 0.;
+    }
+	double computeCSS1(double bulkSoilDensity, double C_S_W, int dofIndex)
+	{	
+		return 0.;
+	}
+	
+	/**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkGridInitialized();
+    	this->problem->verbose = verbose;
+    }
+	
     /**
      * Sets the source term of the problem.
      *
@@ -416,9 +441,14 @@ void init_richards(py::module &m, std::string name) {
    .def("getbcSBotType", &Richards_::getbcSBotType)
    .def("getbcSTopValue", &Richards_::getbcSTopValue)
    .def("getbcSBotValue", &Richards_::getbcSBotValue)
+   .def("computeCSS1",&Richards_::computeCSS1)
+   .def("setComputeDtCSS2",&Richards_::setComputeDtCSS2)
+   .def("computeDtCSS2",&Richards_::computeDtCSS2)
+   .def("computeInitCSS2",&Richards_::computeInitCSS2)
    .def_readwrite("molarMassWat", &Richards_::molarMassWat)
    .def_readwrite("densityWat_m3", &Richards_::densityWat_m3)
-   .def_readwrite("molarDensityWat_m3", &Richards_::molarDensityWat_m3);
+   .def_readwrite("molarDensityWat_m3", &Richards_::molarDensityWat_m3)
+   .def_readonly("dimWorld", &Richards_::dimWorld);
 }
 
 

@@ -655,7 +655,7 @@ public:
                     break;
                 }
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or 
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or mol/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax)*pos0;

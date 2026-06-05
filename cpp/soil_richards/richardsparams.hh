@@ -50,6 +50,7 @@ public:
     RichardsParams(std::shared_ptr<const GridGeometry> fvGridGeometry)
     : ParentType(fvGridGeometry)
     {
+		useExtrusion = getParam<bool>("Problem.useExtrusion", false);
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
@@ -61,7 +62,8 @@ public:
         std::vector<Scalar> alpha = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Alpha");  // [1/cm]
         std::vector<Scalar> n = getParam<std::vector<Scalar>>("Soil.VanGenuchten.N"); // [1]
         kc_ = getParam<std::vector<Scalar>>("Soil.VanGenuchten.Ks"); // hydraulic conductivity [cm/day]
-        std::transform(kc_.begin (), kc_.end (), kc_.begin (), std::bind1st(std::multiplies<Scalar>(), 1./100./24./3600.)); // convert from [cm/day] to [m/s]
+        std::transform(kc_.begin(), kc_.end(), kc_.begin(), [&](auto& value){ return value*1./100./24./3600.; });  // convert from [cm/day] to [m/s]
+
         homogeneous_ = qr.size()==1; // more than one set of VG parameters?
         three_ = false;
 
@@ -96,6 +98,19 @@ public:
         // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
     }
 
+    /*!
+     * \brief Return how much the domain is extruded at a given position.
+     */
+    Scalar extrusionFactorAtPos(const GlobalPosition& globalPos) const
+    {
+        // As a default, i.e. if the user's spatial parameters do not overload
+        // any extrusion factor method, return 1.0
+		if(useExtrusion){//dimWorld == 1){
+			return globalPos[0];
+		}
+		return 1.0;
+    }
+	
     /*!
      * \brief \copydoc GridGeometry::porosity
      */
@@ -202,8 +217,6 @@ public:
         materialLaw_.at(i) = PcKrSwCurve(basicParams_.at(i), effToAbsParams_.at(i), regularizationParams_.at(i)); // update material Law
     }
 
-private:
-
     //! returns the index of the soil layer
     size_t index_(const Element& element) const {
         if (homogeneous_) {
@@ -225,6 +238,10 @@ private:
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         } // add 3D things
     }
+	bool useExtrusion;
+
+private:
+
 
     std::vector<Scalar> phi_; // porosity
     std::vector<std::vector<double>> boxes;

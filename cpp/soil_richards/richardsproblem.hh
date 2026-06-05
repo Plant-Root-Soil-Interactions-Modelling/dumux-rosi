@@ -49,7 +49,8 @@ public:
     using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
 
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+	using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
+    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
 
@@ -64,20 +65,22 @@ public:
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
 	// using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
+
+	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
+    static constexpr bool useMoles = true;
+    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    static constexpr int numFluidComps = ModelTraits::numFluidComponents();
+
 	enum {
 		// copy some indices for convenience
 		pressureIdx = Indices::pressureIdx,
 		conti0EqIdx = Indices::conti0EqIdx,
+		h2OIdx = FluidSystem::liquidPhaseIdx, // fluid index
 		// world dimension
 		dimWorld = GridView::dimensionworld
 		// discretization method
 	};
-
-	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
-    static constexpr bool useMoles = false;
-    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
-    static constexpr int numFluidComps = FluidSystem::numComponents;
-
+	
 	enum BCTypes {
 		constantPressure = 1,
 		constantFlux = 2,
@@ -98,6 +101,8 @@ public:
 	: ParentType(gridGeometry) {
 
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", true);
+		temperatureK = Dumux::getParam<double>("Problem.temperatureK", 273.15+10);
+		 verbose =  getParam<int>("Problem.verbose", 0);
 
 		// BC
 		bcTopType_ = getParam<int>("Soil.BC.Top.Type");
@@ -112,7 +117,12 @@ public:
 		if (bcTopType_==atmospheric) {
 			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
-			precipitation_.setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+			if(useMoles){
+				Scalar m2_2_cm2 = 10000;
+				precipitation_.setFunctionScale(m2_2_cm2/(24.*60.*60.)); // cm/(cm2 day) -> mol/(m²*s)
+			} else {
+				precipitation_.setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+			}
 		}
 		// IC
 		initialSoil_ = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
@@ -122,9 +132,21 @@ public:
 		if (writeFile_) {
 			myfile_.open(filestr.c_str());
 		}
-		std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
-				<<  bcBotType_ << ", " << bcBotValues_.at(0) << ",  Output File " << writeFile_
-				<< ", Critical pressure " << criticalPressure_ << " gravity " << gravityOn_ << "\n" << std::flush;
+		if(verbose){
+			std::cout << "RichardsProblem constructed: bcTopType " << bcTopType_ << ", " << bcTopValues_.at(0) << "; bcBotType "
+					<<  bcBotType_ << ", " << bcBotValues_.at(0) << ",  Output File " << writeFile_
+					<< ", Critical pressure " << criticalPressure_ << " gravity " << gravityOn_ << "\n" << std::flush;
+		}
+		computedCellVolumesCyl = false;
+		if(dimWorld == 1)
+		{
+			segLength  = Dumux::getParam<double>("Problem.segLength")/100;
+			this->setVolumesCyl(computeCellVolumesCyl_());
+			computedCellVolumesCyl = true;
+		}else{
+			segLength  = -1.;
+		}
+	
 	}
 
 	/**
@@ -137,15 +159,150 @@ public:
 		}
 	}
 
+	double getCellVolumesCyl(int dofIndex) const
+	{
+		
+		if(!computedCellVolumesCyl) // if we want to change the segLEngth without recreating the object?
+		{
+			DUNE_THROW(Dune::InvalidStateException, "getCellVolumesCyl: cellVolumesCyl not set");
+		}
+		return cellVolumesCyl.at(dofIndex);
+	}
+
+    void setVolumesCyl(std::vector<double> cellvoles) const
+	{
+		const_cast<std::vector<double>&>(cellVolumesCyl) = cellvoles;
+    }
+    /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    std::vector<double> computeCellVolumesCyl_() const
+	{
+        std::vector<double> vols;
+		auto points = this->getPoints_();//get the vertices == faces of 1D domain
+        for (int i = 0; i < (points.size()-1); i++) {
+			double rIn = points.at(i).at(0);
+			double rOut = points.at(i + 1).at(0);
+            vols.push_back((rOut*rOut - rIn*rIn)* M_PI * segLength);
+        }
+        return vols;
+    }
+
+    /**
+     * Returns the Dune vertices (vtk points) of the grid for a single mpi process.
+     * Gathering and mapping is done in Python.
+     */
+    std::vector<std::array<double,1>> getPoints_() const
+	{
+		//auto eIdx = this->gridGeometry().elementMapper().index(entity);
+		//Scalar z = entity.geometry().center()[dimWorld - 1];
+		
+        std::vector<std::array<double,1>> points;
+        points.reserve(this->gridGeometry().gridView().size(dimWorld));
+        for (const auto& v : vertices(this->gridGeometry().gridView())) {
+            auto p = v.geometry().center();
+            std::array<double,1> vp;
+            for (int i=0; i<dimWorld; i++) { // found no better way
+                vp[i] = p[i];
+            }
+            points.push_back(vp);
+        }
+        return points;
+    }
+	
+	/*!
+	 * \brief Temperature [K] within a finite volume. This problem assumes a temperature of 10 degrees Celsius.
+	 *
+	 * called EnergyVolumeVariablesImplementation::updateTemperature(...) in porousmediumflow/nonisothermal/volumevariables.hh,
+	 * included by porousmediumflow/volumevariables.hh,
+	 *
+	 * todo this makes very little sense for isothermal!
+	 *
+	 * overwrites PorousMediumFlowProblem::temperature (compiles without, throws exception of base class)
+	 */
+	Scalar temperature() const {
+		return temperatureK; //273.15 + 10; // -> 10°C
+	}
+	
 	/*!
 	 * \brief Reference pressure [Pa] of the non-wetting. This problem assumes a constant reference pressure of 1 bar.
 	 *
 	 * called by porousmediumflow/richards/volumevariables.hh
 	 */
-	Scalar nonwettingReferencePressure() const {
+	Scalar nonWettingReferencePressure() const {
 		return pRef_;
 	}
+	Scalar nonwettingReferencePressure() const {
+		return nonWettingReferencePressure();
+	}
 
+	Scalar massOrMoleDensity(const auto& volVars, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+				(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
+	}
+
+	Scalar massOrMoleFraction(const auto& volVars, const int phaseIdx, const int compIdx, const bool isFluid) const
+	{
+		return isFluid ?( useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx) ): 
+				(useMoles ? volVars.solidMoleFraction(compIdx) : volVars.solidMassFraction(compIdx)); 
+	}
+	
+	/**
+	 * The buffer power for a scv for a volVar (linear in this implementation), equals $\rho_b K_d$ in Eqn (4) in phosphate draft
+	 *
+	 * used by my the modified localresidual.hh (see dumux-rosi/dumux/porousmediumflow/compositional)
+	 */
+	Scalar bufferPower(const VolumeVariables& volVars, int compIdx, int dofIndex) const {
+		
+		switch(compIdx)
+		{
+			case h2OIdx:{
+				DUNE_THROW(Dune::InvalidStateException, "bufferPower used for water");
+				break;
+			}
+			default:
+			{
+				return 0.;
+			}
+		}
+		
+	}
+	
+	double getFreundlichK_(const VolumeVariables& volVars, int dofIndex) const 
+	{
+		return 0.;
+	}
+	
+	double getB_(const VolumeVariables& volVars, int dofIndex) const 
+	{
+		return 0.;
+	}
+
+	double computeB(const VolumeVariables& volVars, double C_S_W, int dofIndex) const
+	{
+		return 0.;
+	}
+	
+	double computeCSS1(double bulkSoilDensity, double C_S_W, int dofIndex) const
+	{// mol		
+	
+		return 0.;
+	}
+
+    std::function<double(double,double)> computeDtCSS2 =
+        std::bind(&RichardsProblem::computeDtCSS2_, this, std::placeholders::_1, std::placeholders::_2); 
+        
+    double computeInitCSS2_(double CSS1, double CSW) // mol/m3
+    {
+        return 0.;
+    }
+    double computeDtCSS2_(double CSW, double CSS2) // mol/m3/s
+    {
+        return 0.;
+    }
 	/*!
 	 * \copydoc FVProblem::initial
 	 *
@@ -224,10 +381,10 @@ public:
 	}
 
 	/*!
-	 * \copydoc FVProblem::neumann // [kg/(m²*s)]
+	 * \copydoc FVProblem::neumann // [mol/(m²*s)]
 	 *
 	 * called by BoxLocalResidual::evalFlux,
-	 * mass flux in \f$ [ kg / (m^2 \cdot s)] \f$
+	 * mass flux in \f$ [ mol / (m^2 \cdot s)] \f$
 	 * Negative values mean influx.
 	 */
 	NumEqVector neumann(const Element& element,
@@ -239,10 +396,15 @@ public:
 		NumEqVector flux;
 		double f = 0.; // return value
 		GlobalPosition pos = scvf.center();
+		double pos0 = 1;
+		if((dimWorld == 1)&&(!this->spatialParams().useExtrusion)){
+			pos0 = pos[0]; 
+		}
+		auto& volVars = elemVolVars[scvf.insideScvIdx()];
 
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
-			Scalar s = elemVolVars[scvf.insideScvIdx()].saturation(0);
+			Scalar s = volVars.saturation(0);
 			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
 
 			PcKrSwCurve materialLaw_ = materialLaw(element);
@@ -251,29 +413,31 @@ public:
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
 			Scalar krw = materialLaw_.krw(s); // [1]
+			// kg / m^3  or mol / m3
+			Scalar rhoW = useMoles ? volVars.fluidState().molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+					f = -bcTopValues_[0]*rhoW/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 //						 std::cout << "in:" << f <<", " << imax <<"\n";
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rhoW *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f*1.e6 << ", " << omax*1.e6 << " krw " << krw*1.e6 << "\n";
 						f = std::min(f, omax);
 					}
 					break;
 				}
 				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
-					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
+					f = -bcTopValues_[0]*rhoW/(24.*60.*60.)/100 * pos0;  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos0; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos0; // maximal outflow (evaporation)
 						f = std::min(f, omax);
 					}
 					break;
@@ -282,7 +446,7 @@ public:
 					Scalar prec = -precipitation_.f(time_);
 					if (prec < 0.) { // precipitation
 						// std::cout << "in" << "\n";
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
 					} else { // evaporation
 						// std::cout << "out" << ", at " << h << " cm \n";
@@ -296,7 +460,7 @@ public:
 					    // Scalar krw3 = MaterialLaw::krw(params, s3);
                         Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
 					    // Scalar harmonic = 2*krw2*krw/(krw2+krw);
-						Scalar emax = rho_ * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
+						Scalar emax = rhoW * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
 						f = std::min(prec, emax);
 					}
 					break;
@@ -306,13 +470,13 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
+					f = -bcBotValues_[0]*rhoW/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rhoW * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f << ", " << omax << "\n";
 						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
@@ -320,13 +484,13 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
+					f = -bcBotValues_[0]*rhoW/(24.*60.*60.)/100. * pos0; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - (-10.)) / dz - gravityOn_)* pos0; // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos0; // maximal outflow (evaporation)
 //						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValues_.at(0)
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						omax = std::max(omax, 0.); // must stay positive
@@ -350,22 +514,22 @@ public:
 					double d = std::exp(-tau * l) - std::exp(tau * l);  //  det
 					double fExact = f_ * (1. / (tau * d)) * (x0 - h0 + x1 - h0) * (2. - std::exp(-tau * l) - std::exp(tau * l)); // h or h0?
 					f =  fExact / (2 * a * M_PI * l);  // [cm3 / cm2 / day]
-					f *= (rho_*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
+					f *= (rhoW*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
 					f *= -pos[0]; // cylindrical coordinates
 
-					Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+					Scalar omax = rhoW * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
 					f = std::min(f, omax);
 
 					// classical approximation
 //					f = kr*(0.5*(x0+x1)-h); // [cm/day]
-//					f *= (rho_*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
+//					f *= (rhoW*1.e-2) / (24.*3600.); // [cm3 / cm2 / day] -> [kg/(m2*s)]
 //					f = std::min(f, 0.);
 //					f *= -pos[0]; // cylindrical coordinates
 
 					break; // [kg/(m²*s)]
 				}
 				case freeDrainage: {
-					f = krw * kc * rho_; // * 1 [m]
+					f = krw * kc * rhoW; // * 1 [m]
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
@@ -385,10 +549,23 @@ public:
 	 */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
+		NumEqVector source;
+		GlobalPosition pos = scv.center();
+		double pos0 = 1.; 
+        double svc_volume = scv.volume();
+        int dofIndex = scv.dofIndex();
+		if (dimWorld == 1)
+		{
+            svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+                            // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
+			if(!this->spatialParams().useExtrusion){
+				pos0 = pos[0];
+			}
+		}
 		if ((source_ != nullptr)) {
 			if (sourceSlope_<0.) {
 				auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
-				return source_->at(eIdx)/scv.volume();
+				return source_->at(eIdx)/svc_volume * pos0;
 			} else {
 			    Scalar s = elemVolVars[scv].saturation();
 	            Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
@@ -399,16 +576,15 @@ public:
 	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
 	                double theta = (h - criticalPressure_)/sourceSlope_;
 	                // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
-	                return theta* source_->at(eIdx)/scv.volume();
+	                return theta* source_->at(eIdx)/svc_volume * pos0;
 	            } else  {
-	                return source_->at(eIdx)/scv.volume();
+	                return source_->at(eIdx)/svc_volume * pos0;
 	            }
 			}
 		} else {
 			return 0.;
 		}
 	}
-
 	
 		/*!
 	 *
@@ -600,6 +776,10 @@ public:
         this->spatialParams().changeVanGenuchtenSet(vgIndex, qr, qs, alpha, n, ks);
     }
 
+	void setFaceGlobalIndexSet(std::map<int,int>  faceIdx_)
+	{
+		faceIdx = faceIdx_;											   
+	}
 	// BC, direct access for Python binding (setBcTop, setBcBot)
 	int bcTopType_;
 	int bcBotType_;
@@ -613,6 +793,15 @@ public:
 	std::vector<double> bcSTopValue_ = std::vector<double>(0);
 	std::vector<double> bcSBotValue_= std::vector<double>(0);
 
+	double segLength;//m
+	std::vector<double> cellVolumesCyl;
+	int nCells_all;
+	int nFaces;
+	bool computedCellVolumesCyl = false;
+	std::map<int,int>  faceIdx;
+    int dzScaling;
+	int verbose;
+    
 private:
 
 	//! cm pressure head -> Pascal
@@ -635,6 +824,14 @@ private:
 		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
 	}
 
+	//! true if on the point lies on the left boundary
+	bool onLeftBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[0] > this->gridGeometry().bBoxMin()[0] - eps_;
+	}
+	//! true if on the point lies on the right boundary
+	bool onRightBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[0] > this->gridGeometry().bBoxMax()[0] - eps_;
+	}
 	// Initial
 	InputFileFunction initialSoil_;
 	bool gravityOn_;
@@ -654,6 +851,7 @@ private:
 	Scalar bc_flux_upper = 0.;
 	Scalar bc_flux_lower = 0.;
 
+	double temperatureK;
 	static constexpr Scalar eps_ = 1.e-7;
 	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
 	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)

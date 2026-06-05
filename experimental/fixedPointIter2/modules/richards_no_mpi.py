@@ -169,7 +169,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
     def getAllNeumann(self, eqIdx=0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""
         verbose = False
-        if not self.useMoles:
+        if not self.useMoles():
             assert  eqIdx == 0
             unitConversion = 1/  1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
         else:
@@ -205,7 +205,7 @@ class RichardsNoMPIWrapper(RichardsWrapper):
 
     def getNetFlux(self, eqIdx=0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
-        assert not self.useMoles
+        assert not self.useMoles()()
         self.checkGridInitialized()
         return self._map((self.base.getNetFlux(eqIdx)), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 

@@ -159,13 +159,20 @@ def printDiff1d3d(perirhizalModel, s, dt):
 
     scv = s.getCellVolumes()
     scv_water = np.array(s.getWaterVolumes()) #cm^3 water per cell    
-    
-    Exud_tot = np.sum(np.array(s.getTotCContent()).flatten()) #mol / scv 
-    Exud_liq = np.sum(np.array(s.getTotCContent_each()[0]).flatten()) #np.sum(np.array(s.getSolution(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) #mol/m^3 --> mol/cm^3 W-->mol/ scv) 
-    Exud_ads =np.sum(np.array(s.getTotCContent_each()[1]).flatten()) # np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
-    Exud_ads_soil = np.sum(np.array(s.getCss1()).flatten()*scv) #mol /scv
-    Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
-    Exud_decay =np.sum(np.array(s.getTotCContent_each()[2]).flatten()) #np.sum(np.array(s.getSolution(3)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) 
+    if(s.numSoluteComp>0):
+        Exud_tot = np.sum(np.array(s.getTotCContent()).flatten()) #mol / scv 
+        Exud_liq = np.sum(np.array(s.getTotCContent_each()[0]).flatten()) #np.sum(np.array(s.getSolution(1)).flatten()* perirhizalModel.molarDensityWat_m3/1e6*scv_water) #mol/m^3 --> mol/cm^3 W-->mol/ scv) 
+        Exud_ads =np.sum(np.array(s.getTotCContent_each()[1]).flatten()) # np.sum(np.array(s.getCss1()).flatten()*scv)+ np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
+        Exud_ads_soil = np.sum(np.array(s.getCss1()).flatten()*scv) #mol /scv
+        Exud_ads_roots = np.sum(np.array(s.getSolution(2)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) #mol /scv
+        Exud_decay =np.sum(np.array(s.getTotCContent_each()[2]).flatten()) #np.sum(np.array(s.getSolution(3)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 *scv) 
+    else:
+        Exud_tot = 0. #mol / scv 
+        Exud_liq = 0.
+        Exud_ads = 0.
+        Exud_ads_soil = 0.
+        Exud_ads_roots = 0.
+        Exud_decay = 0.
     
     if not (np.around((Exud_ads+Exud_liq+Exud_decay),5) == np.around(Exud_tot,5)):
         print('issue exudate balance')
@@ -182,13 +189,14 @@ def printDiff1d3d(perirhizalModel, s, dt):
                          directory_ =results_dir, fileType = '.csv') 
     
     #save TotC and water content of macroscale cells only 
-    TotC = np.array(s.getTotCContent()).flatten()    
-    WaterC = np.array(s.getWaterContent()).flatten()   
-    RootCells = perirhizalModel.cellWithRoots # only id of cells with roots
-    TotC_macro = np.delete(TotC, RootCells)
-    WaterC_macro = np.delete(WaterC, RootCells)
-    write_file_array('TotC_macro', np.array(TotC_macro), directory_ =results_dir, fileType = '.csv' )
-    write_file_array('WaterC_macro', np.array(WaterC_macro), directory_ =results_dir, fileType = '.csv' )
+    if(s.numSoluteComp>0):
+        TotC = np.array(s.getTotCContent()).flatten()    
+        WaterC = np.array(s.getWaterContent()).flatten()   
+        RootCells = perirhizalModel.cellWithRoots # only id of cells with roots
+        TotC_macro = np.delete(TotC, RootCells)
+        WaterC_macro = np.delete(WaterC, RootCells)
+        write_file_array('TotC_macro', np.array(TotC_macro), directory_ =results_dir, fileType = '.csv' )
+        write_file_array('WaterC_macro', np.array(WaterC_macro), directory_ =results_dir, fileType = '.csv' )
         
 def printTimeAndError(rs, rs_age):
     """

@@ -58,10 +58,9 @@ struct SpatialParams<TypeTag, TTag::Richards2CTT> {
 
 /*
  * Define whether mole (true) or mass (false) fractions are used
- * TODO I only understand false...
  */
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::Richards2CTT> { static constexpr bool value = false; };
+struct UseMoles<TypeTag, TTag::Richards2CTT> { static constexpr bool value = true; };
 
 } // end namespace properties
 } // end namespace DUMUX

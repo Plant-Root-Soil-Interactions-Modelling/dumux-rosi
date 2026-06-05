@@ -80,6 +80,8 @@ struct PrimaryVariables<TypeTag, TTag::RichardsTT>
 /*
  * pick assembler, linear solver and problem
  */
+ 
+ 
  using RSPTT = Dumux::Properties::TTag::RichardsSPCC; // choose CC or Box
  using GridGeometryRSPTT = Dumux::GetPropType<RSPTT, Dumux::Properties::GridGeometry>;
  using RichardsSPAssembler = Dumux::FVAssembler<RSPTT, Dumux::DiffMethod::analytic>;
