@@ -100,7 +100,7 @@ public:
 		std::vector<double> RFs(C_S_fr.size());// - 
 		for(int rfIdx = 0; rfIdx < RFs.size(); rfIdx ++)
 		{
-			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3(), // [mol/m3]
 													theta.at(rfIdx), 
 													svc_volume.at(rfIdx));//m3
 		}
@@ -114,7 +114,7 @@ public:
 		std::vector<double> CSS1s(C_S_fr.size());// - 
 		for(int rfIdx = 0; rfIdx < CSS1s.size(); rfIdx ++)
 		{
-			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3(), // [mol/m3]
 													theta.at(rfIdx), 
 													svc_volume.at(rfIdx));//m3
 		}

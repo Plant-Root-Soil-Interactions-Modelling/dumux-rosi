@@ -979,7 +979,7 @@ public:
 				{
 					const auto& bcTypes = problem->boundaryTypes(e, scvf);
 					if (bcTypes.hasNeumann()){
-						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf)*problem->spatialParams().extrusionFactorAtPos(scvf.center());	
+						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);//*;	
 					}	
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
@@ -987,7 +987,7 @@ public:
 					}
 				}
 				else{
-					scvfFlux_ = assembler->localResidual().computeFlux(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
+					scvfFlux_ = assembler->localResidual().computeFlux(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache)/problem->spatialParams().extrusionFactorAtPos(scvf.center());
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
 						scvfInnerFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;

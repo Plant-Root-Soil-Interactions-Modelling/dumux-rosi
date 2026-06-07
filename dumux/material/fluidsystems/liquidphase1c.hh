@@ -9,8 +9,8 @@
  * \ingroup FluidSystems
  * \copybrief Dumux::FluidSystems::LiquidPhaseTwoC
  */
-#ifndef DUMUX_LIQUID_TWOC_PHASE_HH
-#define DUMUX_LIQUID_TWOC_PHASE_HH
+#ifndef DUMUX_LIQUID_ONEC_PHASE_HH
+#define DUMUX_LIQUID_ONEC_PHASE_HH
 
 #include <cassert>
 #include <limits>
@@ -27,7 +27,7 @@ namespace FluidSystems {
  * \brief Policy for the H2O-N2 fluid system
  */
 template<bool fastButSimplifiedRelations = true>
-struct liquidp2cDefaultPolicy
+struct liquidp1cDefaultPolicy
 {
     static constexpr  bool useH2ODensityAsLiquidMixtureDensity() { return fastButSimplifiedRelations; }
 };
@@ -37,27 +37,25 @@ struct liquidp2cDefaultPolicy
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent, class Policy = liquidp2cDefaultPolicy<>>
-class LiquidPhaseTwoC
-: public Base<Scalar, LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent> >
+template <class Scalar, class MainComponent, class Policy = liquidp1cDefaultPolicy<>>
+class LiquidPhaseOneC
+: public Base<Scalar, LiquidPhaseOneC<Scalar, MainComponent> >
 {
-    using ThisType = LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent>;
-    using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;
+    using ThisType = LiquidPhaseOneC<Scalar, MainComponent>;
+    using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar>;
 
 public:
     using H2O = MainComponent;
     using ParameterCache = NullParameterCache;
 
     static constexpr int numPhases = 1; //!< Number of phases in the fluid system
-    static constexpr int numComponents = 2; //!< Number of components in the fluid system
+    static constexpr int numComponents = 1; //!< Number of components in the fluid system
 
     static constexpr int liquidPhaseIdx = 0; //!< index of the liquid phase
     static constexpr int phase0Idx = liquidPhaseIdx; //!< index of the only phase
 
     static constexpr int comp0Idx = 0; //!< index of the first component
-    static constexpr int comp1Idx = 1; //!< index of the second component
     static constexpr int mainCompIdx = comp0Idx; //!< index of the main component
-    static constexpr int secondCompIdx = comp1Idx; //!< index of the secondary component
 
     /*!
     * \brief Initialize the fluid system's static parameters generically
@@ -88,13 +86,13 @@ public:
      * \param compIdx The index of the component to consider
      */
     static std::string componentName(int compIdx)
-    { return compIdx ? SecondComponent::name() : MainComponent::name(); }
+    { return MainComponent::name(); }
 
     /*!
      * \brief A human readable name for the fluid system.
      */
     static std::string name()
-    { return "LiquidPhaseTwoC"; }
+    { return "LiquidPhaseOneC"; }
 
     /*!
      * \brief Returns whether the fluid is gaseous
@@ -135,7 +133,7 @@ public:
      * \brief The mass in \f$\mathrm{[kg]}\f$ of one mole of the component.
      */
     static Scalar molarMass(int compIdx)
-    {  return compIdx ? SecondComponent::molarMass() : MainComponent::molarMass(); }
+    {  return MainComponent::molarMass(); }
 
     /*!
      * \brief Returns the critical temperature \f$\mathrm{[K]}\f$ of the main component
@@ -196,8 +194,7 @@ public:
 			const Scalar pureComponentMolarDensity = MainComponent::liquidMolarDensity(T, p);
 
 			return pureComponentMolarDensity
-				   * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
-					  + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx));
+				   * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx));
 		}
     }
 
@@ -256,8 +253,6 @@ public:
 
         if (componentIdx == mainCompIdx)
             return MainComponent::liquidEnthalpy(T, p);
-        else if (componentIdx == secondCompIdx)
-            return SecondComponent::liquidEnthalpy(T, p);
         else
             DUNE_THROW(Dune::InvalidStateException, "Invalid component index " << componentIdx);
     }

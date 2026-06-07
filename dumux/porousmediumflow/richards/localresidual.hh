@@ -105,6 +105,8 @@ public:
                                const SubControlVolume& scv,
                                const VolumeVariables& volVars) const
     {
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");
         // partial time derivative of the phase mass
         NumEqVector storage(0.0);
         const auto massOrMoleDensity = [](const auto& volVars, const int phaseIdx)
@@ -143,6 +145,8 @@ public:
                             const SubControlVolumeFace& scvf,
                             const ElementFluxVariablesCache& elemFluxVarsCache) const
     {
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");
         FluxVariables fluxVars;
         fluxVars.init(problem, element, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
 
@@ -189,6 +193,8 @@ public:
     {
         static_assert(!FluidSystem::isCompressible(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");
 
         const auto poreVolume = Extrusion::volume(fvGeometry, scv)*curVolVars.porosity()*curVolVars.extrusionFactor();
         static const auto rho = useMoles ? curVolVars.molarDensity(0) : curVolVars.density(0);
@@ -248,6 +254,8 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");
 
         // get references to the two participating vol vars & parameters
         const auto insideScvIdx = scvf.insideScvIdx();
@@ -322,6 +330,8 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");
 
         // get references to the two participating vol vars & parameters
         const auto insideScvIdx = scvf.insideScvIdx();

@@ -963,7 +963,9 @@ class fixedPointIterationHelper():
             s.bulkMassErrorWater_absLim = sum(abs(perirhizalModel.soil_water3dAfter - perirhizalModel.soil_water3dBefore  -self.sources_wat_from3d-self.outer_R_bc_wat))
 
             s.bulkMassErrorWater_abs = sum(abs(perirhizalModel.soil_water3dAfter -  perirhizalModel.soil_water3dBefore-self.net_PWU*dt-self.outer_R_bc_wat))
-            print('massBalanceError3d',s.bulkMassErrorWater_abs, perirhizalModel.soil_water3dAfter ,perirhizalModel.soil_water3dBefore,self.net_PWU*dt,self.outer_R_bc_wat)
+            print('bulkMassErrorWater_abs',s.bulkMassErrorWater_abs,'soil_water3dAfter', perirhizalModel.soil_water3dAfter ,
+                   'soil_water3dBefore',perirhizalModel.soil_water3dBefore,'delta W',perirhizalModel.soil_water3dAfter - perirhizalModel.soil_water3dBefore,
+                    'net_PWU*dt',self.net_PWU*dt,'outer_R_bc_wat',self.outer_R_bc_wat)
             
             assert s.bulkMassErrorWater_abs - s.bulkMassErrorWater_absLim >= -1e-13
             
@@ -992,7 +994,7 @@ class fixedPointIterationHelper():
                 )
             if perirhizalModel.debugMode:
                 print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i) + sum(self.Q_mucil_i)",sum(self.Q_Exud_i) + sum(self.Q_mucil_i)," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
-            raise Exception
+            # raise Exception
             ### for each voxel
             s.bulkMassErrorWaterAll_abs = abs(perirhizalModel.soil_water3dAfter - (perirhizalModel.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
             s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /perirhizalModel.soil_water3dAfter )*100

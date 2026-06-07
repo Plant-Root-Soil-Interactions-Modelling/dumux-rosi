@@ -116,10 +116,9 @@ public:
 		// precipitation
 		if (bcTopType_==atmospheric) {
 			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
-			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
+			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day for time
 			if(useMoles){
-				Scalar m2_2_cm2 = 10000;
-				precipitation_.setFunctionScale(m2_2_cm2/(24.*60.*60.)); // cm/(cm2 day) -> mol/(m²*s)
+				precipitation_.setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
 			} else {
 				precipitation_.setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 			}
@@ -240,7 +239,7 @@ public:
 
 	Scalar massOrMoleDensity(const auto& volVars, const int compIdx, const bool isFluid) const
 	{
-		return isFluid ? (useMoles ? volVars.molarDensity(compIdx) : volVars.density(compIdx) ):
+		return isFluid ? (useMoles ? rho_molar : volVars.density(compIdx) ):
 				(useMoles ? volVars.solidComponentMolarDensity(compIdx) : volVars.solidComponentDensity(compIdx) ); 
 	}
 
@@ -404,17 +403,18 @@ public:
 
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
-			Scalar s = volVars.saturation(0);
-			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s]
+			// kg / m^3  or mol / m3
+			Scalar rhoW = useMoles ? rho_molar : rho_ ;
+			
+			//Scalar s = volVars.saturation(0);
+			Scalar kc = this->spatialParams().hydraulicConductivity(element); //  [m/s] // volVars.permeability() * rho_ * g_/volVars.viscosity(h2OIdx);//
 
-			PcKrSwCurve materialLaw_ = materialLaw(element);
-			Scalar p = materialLaw_.pc(s) + pRef_; // [Pa]
-			Scalar h = -toHead_(p); // cm
+			//PcKrSwCurve materialLaw_ = materialLaw(element);
+			//Scalar p = materialLaw_.pc(s) + pRef_; // [Pa]
+			Scalar h = volVars.pressureHead(0);//-toHead_(p); // cm
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
-			Scalar krw = materialLaw_.krw(s); // [1]
-			// kg / m^3  or mol / m3
-			Scalar rhoW = useMoles ? volVars.fluidState().molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
+			Scalar krw = volVars.relativePermeability();//Scalar krw = materialLaw_.krw(s); // [1]
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -449,18 +449,21 @@ public:
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
 						f = std::max(prec, imax);
 					} else { // evaporation
-						// std::cout << "out" << ", at " << h << " cm \n";
-					    Scalar p2 = toPa_(-10000);
-					    // Scalar h3 = 0.5*(h + criticalPressure_);
-					    // Scalar p3 = toPa_(h);
-					    Scalar s2 = materialLaw_.sw(-(p2- pRef_));
-                        // Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
-					    // std::cout << s2 << "\n";
-					    Scalar krw2 = materialLaw_.krw(s2);
-					    // Scalar krw3 = MaterialLaw::krw(params, s3);
-                        Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
-					    // Scalar harmonic = 2*krw2*krw/(krw2+krw);
-						Scalar emax = rhoW * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
+						Scalar emax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
+
+						
+						// // std::cout << "out" << ", at " << h << " cm \n";
+					    // Scalar p2 = toPa_(-10000);
+					    // // Scalar h3 = 0.5*(h + criticalPressure_);
+					    // // Scalar p3 = toPa_(h);
+					    // Scalar s2 = materialLaw_.sw(-(p2- pRef_));
+                        // // Scalar s3 = MaterialLaw::sw(params, -(p3- pRef_)) ;
+					    // // std::cout << s2 << "\n";
+					    // Scalar krw2 = materialLaw_.krw(s2);
+					    // // Scalar krw3 = MaterialLaw::krw(params, s3);
+                        // Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
+					    // // Scalar harmonic = 2*krw2*krw/(krw2+krw);
+						// Scalar emax = rhoW * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
 						f = std::min(prec, emax);
 					}
 					break;
@@ -470,13 +473,13 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rhoW/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]
+					f = -bcBotValues_[0]*rhoW/(24.*60.*60.)/100. * pos0; // [cm /day] * [mol water / m^3] * [d/s] * [m/cm] -> [kg/(m²*s)]
 					if (f < 0.) { // inflow
-						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_) * pos0; // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rhoW * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						Scalar omax = rhoW * kc * krw *((h - criticalPressure_) / dz - gravityOn_) * pos0; // maximal outflow (evaporation)
 						// std::cout << "outflow " << f << ", " << omax << "\n";
 						omax = std::max(omax, 0.); // must stay positive
 						f = std::min(f, omax);
@@ -529,7 +532,7 @@ public:
 					break; // [kg/(m²*s)]
 				}
 				case freeDrainage: {
-					f = krw * kc * rhoW; // * 1 [m]
+					f = krw * kc * rhoW  *pos0; // [m/s] * [1] * [mol / m3] = [mol / (m2 * s)]  //* 1 [m]
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
@@ -801,7 +804,12 @@ public:
 	std::map<int,int>  faceIdx;
     int dzScaling;
 	int verbose;
-    
+    static constexpr Scalar eps_ = 1.e-7;
+	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	Scalar rho_ = FluidSystem::H2O::liquidDensity(0,0); // 1.e3; // kg water / m^3 (for type conversions)
+	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
+	static constexpr Scalar pRef_ = 1.e5; // Pa
+
 private:
 
 	//! cm pressure head -> Pascal
@@ -852,11 +860,7 @@ private:
 	Scalar bc_flux_lower = 0.;
 
 	double temperatureK;
-	static constexpr Scalar eps_ = 1.e-7;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
-	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 1.e5; // Pa
-
+	
 };
 
 } //end namespace Dumux

@@ -60,6 +60,7 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
     using Element = typename GridView::template Codim<0>::Entity;
     using EnergyLocalResidual = GetPropType<TypeTag, Properties::EnergyLocalResidual>;
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+	using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 
     enum { conti0EqIdx = Indices::conti0EqIdx }; // first index for the mass balance
@@ -70,6 +71,7 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
            liquidCompIdx = FluidSystem::liquidCompIdx
     };
 
+    static constexpr bool useMoles = ModelTraits::useMoles(); 
     //! An element solution that does not compile if the [] operator is used
     struct InvalidElemSol
     {
@@ -97,13 +99,20 @@ public:
                                const SubControlVolume& scv,
                                const VolumeVariables& volVars) const
     {
+        static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");	   
         // partial time derivative of the phase mass
 		double pos0 = 1;
 		if(!problem.spatialParams().useExtrusion){pos0 = scv.center()[0];}
 		
         NumEqVector storage(0.0);
+        const auto massOrMoleDensity = [](const auto& volVars, const int phaseIdx)
+        { return useMoles ? volVars.molarDensity(phaseIdx) : volVars.density(phaseIdx); };
+
+        const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx)
+        { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };														 
         storage[conti0EqIdx] = volVars.porosity()
-                               * volVars.density(liquidPhaseIdx)
+                               * massOrMoleDensity(volVars, 0)
                                * volVars.saturation(liquidPhaseIdx)*pos0;
 
         //! The energy storage in the water, air and solid phase
@@ -137,10 +146,15 @@ public:
         FluxVariables fluxVars;
         fluxVars.init(problem, element, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
 
+        const auto massOrMoleDensity = [](const auto& volVars, const int phaseIdx)
+        { return useMoles ? volVars.molarDensity(phaseIdx) : volVars.density(phaseIdx); };
+
+        const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx)
+        { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };
         NumEqVector flux(0.0);
         // the physical quantities for which we perform upwinding
-        auto upwindTerm = [](const auto& volVars)
-                          { return volVars.density(liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
+        auto upwindTerm = [&massOrMoleDensity](const auto& volVars)
+                          { return massOrMoleDensity(volVars, liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
 
         flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm)*pos0;
 
@@ -174,9 +188,11 @@ public:
     {
         static_assert(!FluidSystem::isCompressible(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
+		static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");			   
 
         const auto poreVolume = Extrusion::volume(fvGeometry, scv)*curVolVars.porosity()*curVolVars.extrusionFactor();//*scvf.center()[0];//
-        static const auto rho = curVolVars.density(0);
+        static const auto rho = useMoles ? curVolVars.molarDensity(0) : curVolVars.density(0);
 
         // partial derivative of storage term w.r.t. p_w
         // d(Sw*rho*phi*V/dt)/dpw = rho*phi*V/dt*dsw/dpw = rho*phi*V/dt*dsw/dpc*dpc/dpw = -rho*phi*V/dt*dsw/dpc
@@ -233,6 +249,8 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
+		static_assert(useMoles,
+                      "richards/localresidual.hh: need to use moles!");								   
 
         // get references to the two participating vol vars & parameters
         const auto insideScvIdx = scvf.insideScvIdx();
@@ -244,7 +262,7 @@ public:
         const auto& outsideVolVars = curElemVolVars[outsideScvIdx];
 
         // some quantities to be reused (rho & mu are constant and thus equal for all cells)
-        static const auto rho = insideVolVars.density(0);
+        static const auto rho = useMoles ? insideVolVars.molarDensity(0) : insideVolVars.density(0); //insideVolVars.density(0);
         static const auto mu = insideVolVars.viscosity(0);
         static const auto rho_mu = rho/mu;
 
@@ -309,6 +327,7 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
+		static_assert(useMoles, "should use useMoles");										 
 
 
         // get references to the two participating vol vars & parameters
@@ -319,7 +338,7 @@ public:
         const auto insideFluidMatrixInteraction = problem.spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
 
         // some quantities to be reused (rho & mu are constant and thus equal for all cells)
-        static const auto rho = insideVolVars.density(0);
+        static const auto rho =  useMoles ? insideVolVars.molarDensity(0) : insideVolVars.density(0); //insideVolVars.density(0);
         static const auto mu = insideVolVars.viscosity(0);
         static const auto rho_mu = rho/mu;
 

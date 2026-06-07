@@ -152,10 +152,10 @@ class RichardsWrapper(SolverWrapper):
             assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
         else:
             raise Exception('richards.setTopBC(): Top type should be "constantPressure", "constantFlux", constantCyl", "noFlux", or "atmospheric" unknown top type {}'.format(type_top))
-
+        
         self.setParameter(self.param_group + "BC.Top.Type", str(t))
         self.setParameter(self.param_group + "BC.Top.Value", str(value_top))
-
+        
         if t == 4:  # atmospheric
             if climate:
                 assert(len(climate[0]) == len(climate[1]))  # sample points

@@ -418,7 +418,7 @@ def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age,
             if rank == 0:
                 fpit_Helper.outer_R_bc_wat = outer_R_bc[0]# [cm3] 
                 fpit_Helper.sources_wat_from3d =  bulkSoil_sources[0]# cm3
-
+                
                 fpit_Helper.outer_R_bc_sol = outer_R_bc[1:] # mol
                 fpit_Helper.sources_sol_from3d =  bulkSoil_sources[1:] # mol
                 assert fpit_Helper.outer_R_bc_sol.shape == (perirhizalModel.numSoluteComp, s.numberOfCellsTot)

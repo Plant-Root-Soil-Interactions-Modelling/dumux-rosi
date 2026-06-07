@@ -63,6 +63,7 @@ class LiquidPhaseThreeC
     using BinaryCoefficientsThirdComponent  = BinaryCoeff::H2O_Component<Scalar, ThirdComponent>;
 
 public:
+    using H2O = MainComponent;
     using ParameterCache = NullParameterCache;
 
     static constexpr int numPhases = 1; //!< Number of phases in the fluid system

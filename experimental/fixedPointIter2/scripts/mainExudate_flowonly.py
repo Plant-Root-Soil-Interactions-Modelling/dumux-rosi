@@ -48,7 +48,7 @@ def XcGrowth(scenarioData):
     soil_type = scenarioData['soil_type']
     initsim = 0#initial simulation time 
     simMax = 60
-    res = 2
+    res = -1
     ifexu = False
     sorption_type = 'low'   
     diffusion = 'low'    

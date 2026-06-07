@@ -747,7 +747,12 @@ public:
     // factor by which to multiply the distance between the center of the inner cell
     // see @neumann()
     Scalar k_dz = 2;// [-]
-    
+    static constexpr Scalar eps_ = 1.e-7;
+	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	Scalar rho_ = FluidSystem::H2O::liquidDensity(0,0); //1.e3; // kg / m^3 (for type conversions)
+	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
+	static constexpr Scalar pRef_ = 1.e5; // Pa
+
 private:
 
 	//! cm pressure head -> Pascal
@@ -790,11 +795,7 @@ private:
 	NumEqVector bc_flux_upper = NumEqVector(0.);
 	NumEqVector bc_flux_lower = NumEqVector(0.);
 
-	static constexpr Scalar eps_ = 1.e-7;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
-	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 1.e5; // Pa
-
+	
 	// Uptake params
 	Scalar vMax_; // Michaelis Menten Parameter [kg m-2 s-1]
 	Scalar km_;  // Michaelis Menten Parameter  [kg m-3]

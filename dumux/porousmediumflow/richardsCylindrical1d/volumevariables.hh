@@ -152,6 +152,7 @@ public:
         fluidState.setDensity(gasPhaseIdx,
                               FluidSystem::density(fluidState, paramCache, gasPhaseIdx));
 
+        fluidState.setMolarDensity(0, FluidSystem::molarDensity(fluidState, paramCache, 0));		
         fluidState.setViscosity(liquidPhaseIdx,
                                 FluidSystem::viscosity(fluidState, paramCache, liquidPhaseIdx));
 
@@ -310,6 +311,13 @@ public:
     Scalar waterContent(const int phaseIdx = liquidPhaseIdx) const
     { return saturation(phaseIdx) * solidState_.porosity(); }
 
+    /*!
+     * \brief Returns the molar density \f$\mathrm{[mol/m^3]}\f$ the of the fluid phase.
+     *
+     * We always forward to the fluid state with the phaseIdx property (see class description).
+     */
+    Scalar molarDensity(const int phaseIdx = 0) const
+    { return phaseIdx == 0 ? this->fluidState_.molarDensity(phaseIdx) : 0.0; }
 protected:
     FluidState fluidState_; //!< the fluid state
     SolidState solidState_;

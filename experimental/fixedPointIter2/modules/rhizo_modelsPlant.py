@@ -2130,7 +2130,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
         redoSolve = True
         n_iter_solve = 0
-        verbose = True
+        verbose = False
         if verbose:
             oldWaterContent = cyl.getWaterContent()
             print('start solve, water in ',inner_fluxes_water_temp,'water out', outer_fluxes_water_temp, 

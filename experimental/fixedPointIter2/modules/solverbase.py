@@ -27,8 +27,6 @@ class SolverWrapper():
         self.solidMolarMass=0
         self.solidMolDensity=0
         self.bulkDensity_m3 =0 # mol soil minerals / m3 bulk soil density
-        self.molarMassWat = 18. # [g/mol] same value/precision as the simpleh2o
-        self.densityWat_m3 = 1e6 #[g/m3]
         self.m3_per_cm3 = 1e-6 #m3/cm3
         self.cm3_per_m3 = 1e6 #cm3/m3
         # [mol/m3] = [g/m3] /  [g/mol] 
@@ -747,4 +745,20 @@ class SolverWrapper():
     def useMoles(self):
         """ model uses moles (True) or grammes (False) """
         return self.base.useMoles
+    
+    @property
+    def molarMassWat(self):
+        """ water molar mass [g/mol] """
+        try:
+            return self.base.molarMassWat()
+        except:
+            return 18. # [g/mol] same value/precision as the simpleh2o
+        
+    @property
+    def densityWat_m3(self):
+        """ water density [g/m3]"""
+        try:
+            return self.base.densityWat_m3()
+        except:
+            return 1e6
     
