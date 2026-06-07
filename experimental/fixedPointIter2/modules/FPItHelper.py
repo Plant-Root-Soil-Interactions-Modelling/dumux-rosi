@@ -963,9 +963,6 @@ class fixedPointIterationHelper():
             s.bulkMassErrorWater_absLim = sum(abs(perirhizalModel.soil_water3dAfter - perirhizalModel.soil_water3dBefore  -self.sources_wat_from3d-self.outer_R_bc_wat))
 
             s.bulkMassErrorWater_abs = sum(abs(perirhizalModel.soil_water3dAfter -  perirhizalModel.soil_water3dBefore-self.net_PWU*dt-self.outer_R_bc_wat))
-            print('bulkMassErrorWater_abs',s.bulkMassErrorWater_abs,'soil_water3dAfter', perirhizalModel.soil_water3dAfter ,
-                   'soil_water3dBefore',perirhizalModel.soil_water3dBefore,'delta W',perirhizalModel.soil_water3dAfter - perirhizalModel.soil_water3dBefore,
-                    'net_PWU*dt',self.net_PWU*dt,'outer_R_bc_wat',self.outer_R_bc_wat)
             
             assert s.bulkMassErrorWater_abs - s.bulkMassErrorWater_absLim >= -1e-13
             

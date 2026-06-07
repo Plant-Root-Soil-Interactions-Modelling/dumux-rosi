@@ -487,8 +487,8 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
             s.setTopBC("atmospheric", 0.5, [times, net_inf ])  # 0.5 is dummy value
         else:
             s.setTopBC("noFlux")
-        print('att set to noFlux instead of freeDrainage')
-        s.setBotBC("noFlux") #"freeDrainage") #
+        #print('att set to noFlux instead of freeDrainage')
+        s.setBotBC("freeDrainage") #"noFlux") #
     
         for i in range(1, s.numComp):# no flux
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))

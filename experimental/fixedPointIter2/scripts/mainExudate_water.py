@@ -179,6 +179,8 @@ def XcGrowth(scenarioData):
         phloemData = phloemDataStorage(perirhizalModel, plantModel) # to store data and run phloem simulation
     elif perirhizalModel.doExudation:
         exudateData = exudateDataStorage(perirhizalModel, plantModel, s) # to store data and define exudation rates
+    else:
+        exudateData = None
     """ prints """
     printData.initialPrint(perirhizalModel)
     
@@ -338,9 +340,14 @@ def XcGrowth(scenarioData):
         print('for now, remove some printing to make the troubleshooting faster')
         if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
-                datas = [
-                         plantModel.psiXyl, exudateData.Q_Exud]
-                datasName = [ "psiXyl","Q_Exud"]
+                if doExudation:
+                    datas = [
+                             plantModel.psiXyl, exudateData.Q_Exud]
+                    datasName = [ "psiXyl","Q_Exud"]
+                else:
+                    datas = [
+                             plantModel.psiXyl]
+                    datasName = [ "psiXyl"]
             else:
                 datas = []
                 datasName = []

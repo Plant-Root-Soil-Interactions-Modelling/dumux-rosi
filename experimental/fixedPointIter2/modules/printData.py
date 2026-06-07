@@ -340,7 +340,7 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
     CellVolumes = s.getCellVolumes()  
 
     if rank == 0:
-        totC3dAfter = sum(totC3dAfter_) 
+        
         soil_water3dAfter = sum(np.multiply(WaterContent, CellVolumes))
         write_file_array("endFpitLoop_error", perirhizalModel.errs, 
                          directory_ =results_dir, fileType = '.csv') 
@@ -350,6 +350,7 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
                                    perirhizalModel.dt_inner]), 
                          directory_ =results_dir, fileType = '.csv')
         if perirhizalModel.doSoluteFlow:
+            totC3dAfter = sum(totC3dAfter_) 
             s.bulkMassErrorCumul_abs = abs((totC3dAfter - ( s.totC3dInit + 
                                         sum(phloemData.Q_Exud) + 
                                         sum(phloemData.Q_Mucil))))

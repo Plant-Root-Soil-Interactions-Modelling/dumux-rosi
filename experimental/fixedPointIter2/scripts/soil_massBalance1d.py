@@ -33,14 +33,15 @@ def solve(simtimes, N, analytical = True):
     s.createGrid1d(np.linspace(r_in, r_out, N))  # [cm]
     s.setVGParameters([loam])
 
-    s.setHomogeneousIC(-100.)  # cm pressure head
+    s.setHomogeneousIC(-15000.)  # cm pressure head
+    s.setParameter("Soil.CriticalPressure", str(-13000.))
     s.setParameter("Problem.segLength", str(length))
     s.setParameter("Newton.Verbosity", "0") 
     s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
     s.setParameter("Soil.BC.dzScaling", "1")
     s.setParameter("Flux.UpwindWeight", "1")
     if analytical:
-        s.setOuterBC("constantFlux",0.1)  #  [cm/day] "noFlux")#
+        s.setOuterBC("constantFlux",0.)  #  [cm/day] "noFlux")#
         s.setInnerBC("constantFlux", -0.2) # "noFlux")#
         s.setParameter("Problem.useExtrusion", "true")
     else:

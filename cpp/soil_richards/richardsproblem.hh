@@ -542,6 +542,52 @@ public:
 		flux[conti0EqIdx] = f;
 		return flux;
 	}
+	struct InvalidElemSol
+    {
+        template<class Index>
+        double operator[] (const Index i) const
+        { static_assert(AlwaysFalse<Index>::value, "Solution-dependent material parameters not supported with analytical differentiation"); return 0.0; }
+    };
+	
+	template<class PartialDerivativeMatrices>
+	void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
+                             const Element& element,
+                             const FVElementGeometry& fvGeometry,
+                             const ElementVolumeVariables& curElemVolVars,
+                             const ElementFluxVariablesCache& elemFluxVarsCache,
+                             const SubControlVolumeFace& scvf) const
+{
+    const auto insideScvIdx = scvf.insideScvIdx();
+    const auto& insideScv = fvGeometry.scv(insideScvIdx);
+    const auto& insideVolVars = curElemVolVars[insideScvIdx];
+
+    GlobalPosition pos = scvf.center();
+    double pos0 = 1.;
+    if ((dimWorld == 1) && (!this->spatialParams().useExtrusion))
+        pos0 = pos[0];
+
+    // only free drainage has a nonzero derivative w.r.t. pw . TODO: add derivatives for the other BCs
+    if (onLowerBoundary_(pos) && bcBotType_ == freeDrainage) {
+
+        static const auto rhoW = useMoles
+            ? insideVolVars.molarDensity(0)
+            : insideVolVars.density(0);
+
+        const auto kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
+
+        // material law derivatives: dkrw/dsw * dsw/dpw
+        const auto insideFluidMatrixInteraction =
+            this->spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+
+        const auto sw  = insideVolVars.saturation(0);
+        const auto pc  = insideVolVars.capillaryPressure();
+        const auto dkrw_dsw = insideFluidMatrixInteraction.dkrw_dsw(sw);
+        const auto dsw_dpw  = -insideFluidMatrixInteraction.dsw_dpc(pc); // dsw/dpc * dpc/dpw, dpc/dpw = -1
+
+        // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw) * pos0
+        derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dsw * dsw_dpw * pos0;
+    }
+}
 
 	/*!
 	 * \copydoc FVProblem::source
