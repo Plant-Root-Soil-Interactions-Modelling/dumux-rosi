@@ -856,6 +856,10 @@ public:
 	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
 	static constexpr Scalar pRef_ = 1.e5; // Pa
 
+	//! true if on the point lies on the upper boundary
+	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
+		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
+	}
 private:
 
 	//! cm pressure head -> Pascal
@@ -873,10 +877,6 @@ private:
 		return globalPos[dimWorld - 1] > this->gridGeometry().bBoxMax()[dimWorld - 1] - eps_;
 	}
 
-	//! true if on the point lies on the upper boundary
-	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
-		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
-	}
 
 	//! true if on the point lies on the left boundary
 	bool onLeftBoundary_(const GlobalPosition &globalPos) const {

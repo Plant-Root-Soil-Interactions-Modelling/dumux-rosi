@@ -485,12 +485,32 @@ public:
                                  const ElementFluxVariablesCache& elemFluxVarsCache,
                                  const SubControlVolumeFace& scvf) const
     {
-        if constexpr(Detail::hasAddRobinFluxDerivatives<Problem,
-            PartialDerivativeMatrices&, Element, FVElementGeometry,
-            ElementVolumeVariables, ElementFluxVariablesCache, SubControlVolumeFace>()
-        )
-		
-            problem.addRobinFluxDerivatives(derivativeMatrices, element, fvGeometry, curElemVolVars, elemFluxVarsCache, scvf);
+        // const auto insideScvIdx = scvf.insideScvIdx();
+		// const auto& insideScv = fvGeometry.scv(insideScvIdx);
+		// const auto& insideVolVars = curElemVolVars[insideScvIdx];
+
+
+		// // only free drainage has a nonzero derivative w.r.t. pw
+		// if (problem.onLowerBoundary_(scvf.center()) && problem.bcBotType_ == 5) {
+
+			// static const auto rhoW = useMoles
+				// ? insideVolVars.molarDensity(0)
+				// : insideVolVars.density(0);
+
+			// const auto kc = problem.spatialParams().hydraulicConductivity(element); // [m/s]
+
+			// // material law derivatives: dkrw/dsw * dsw/dpw
+			// const auto insideFluidMatrixInteraction =
+				// problem.spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+
+			// const auto sw  = insideVolVars.saturation(0);
+			// const auto pc  = insideVolVars.capillaryPressure();
+			// const auto dkrw_dsw = insideFluidMatrixInteraction.dkrw_dsw(sw);
+			// const auto dsw_dpw  = -insideFluidMatrixInteraction.dsw_dpc(pc); // dsw/dpc * dpc/dpw, dpc/dpw = -1
+
+			// // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw) 
+			// derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dsw * dsw_dpw;
+		// }
     }
 
 private:
