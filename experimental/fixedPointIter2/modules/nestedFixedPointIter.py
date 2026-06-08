@@ -250,7 +250,10 @@ def simulate_const(s, plantModel, initsim, sim_time, dt, rs_age,
 
 
     # first loop: create array of 0
-    if(len(outer_R_bc_sol[0]) == 0):
+    if perirhizalModel.numSoluteComp > 0:
+        if (len(outer_R_bc_sol[0]) == 0):
+            outer_R_bc_sol = np.full((perirhizalModel.numSoluteComp,s.numberOfCellsTot), 0.)  
+    else:
         outer_R_bc_sol = np.full((perirhizalModel.numSoluteComp,s.numberOfCellsTot), 0.)  
     if(len(outer_R_bc_wat) == 0):
         outer_R_bc_wat = np.full(cell_volumes.shape, 0.)     

@@ -575,7 +575,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                               'conc_leftover', conc_leftover[self.seg2cell[cyl.gId]],'volumes', self.cyls[i].CellVolumes.sum())
                             verbose_update = True
                         volOld = self.cyls[i].CellVolumes.sum()
-                        ctotOld = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                        if cyl.numComp > 1:
+                            ctotOld = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                        else:
+                            ctotOld = 0.
                         self.updateOld(i, cyl,smaller = False, 
                                        thetaLeftOver = theta_leftover[self.seg2cell[cyl.gId]],
                                        konzLeftOver = conc_leftover[self.seg2cell[cyl.gId]], verbose = verbose_update)

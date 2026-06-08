@@ -759,9 +759,14 @@ class fixedPointIterationHelper():
         if rank == 0:
             # convergence plant wat. pot
             rx = np.array(plantModel.psiXyl)
-            rx_divide = np.where(rx != 0, rx, 1.)
-            self.errRxPlant = max(abs((rx - self.rx_old) / rx_divide) * 100.)
-            self.rx_old = rx.copy()
+            has_nan = np.isnan(rx).any()
+            if has_nan:
+                print('nan found in the plant xylem potential array. plantModel.psiXyl ignored for error computation')
+                self.errRxPlant = 0
+            else:
+                rx_divide = np.where(rx != 0, rx, 1.)
+                self.errRxPlant = max(abs((rx - self.rx_old) / rx_divide) * 100.)
+                self.rx_old = rx.copy()
 
             
             rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
@@ -787,12 +792,15 @@ class fixedPointIterationHelper():
                 diffBCS1dsFluxIn/ np.where(np.array(self.seg_fluxes),
                                            np.array(self.seg_fluxes),1.))*100))
 
-
-            perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds, perirhizalModel.errC1ds,
-                                                 perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
-                                   perirhizalModel.rhizoMassWError_rel,
-                                   perirhizalModel.rhizoMassCError_rel)
-                            
+            if s.numComp > 1:
+                perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds, perirhizalModel.errC1ds,
+                                                     perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
+                                       perirhizalModel.rhizoMassWError_rel,
+                                       perirhizalModel.rhizoMassCError_rel)
+            else:
+                perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds,
+                                                     perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
+                                       perirhizalModel.rhizoMassWError_rel)             
 
     def computeConvergence(self):
         """
@@ -859,11 +867,15 @@ class fixedPointIterationHelper():
 
             
             # one metric to decide if we stay in the iteration loop or not
-            
-            perirhizalModel.err = max(perirhizalModel.err2,
-                                    s.bulkMassErrorWater_rel, 
-                                   s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
-                            )
+            if s.numComp > 1:
+                perirhizalModel.err = max(perirhizalModel.err2,
+                                        s.bulkMassErrorWater_rel, 
+                                       s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
+                                )
+            else:
+                perirhizalModel.err = max(perirhizalModel.err2,
+                                        s.bulkMassErrorWater_rel
+                                )
             # one array to do printing
             perirhizalModel.errs =np.array([
                             # non-convergence metrics
