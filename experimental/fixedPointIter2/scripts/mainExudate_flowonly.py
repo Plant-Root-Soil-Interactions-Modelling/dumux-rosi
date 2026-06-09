@@ -48,7 +48,7 @@ def XcGrowth(scenarioData):
     soil_type = scenarioData['soil_type']
     initsim = 0#initial simulation time 
     simMax = 60
-    res = -1
+    res = 2
     ifexu = False
     sorption_type = 'low'   
     diffusion = 'low'    
@@ -203,7 +203,6 @@ def XcGrowth(scenarioData):
             perirhizalModel.ms.simulate(dt, verbose = False)
             helpfull.checkseg2cellMapping(seg2cell_old, perirhizalModel.ms)
             
-                
         if (rank == 0):
             # print plant shape data for post-processing
             if plant_or_RS == 0: 
@@ -214,11 +213,12 @@ def XcGrowth(scenarioData):
         _maxDiff1d3dCW_relbefore = perirhizalModel.maxDiff1d3dCW_rel
         _maxDiff1d3dCW_absbefore = perirhizalModel.maxDiff1d3dCW_abs
         
+        
         perirhizalModel.update() # update shape data in the rhizosphere model
         
         print('error before vs after update,\n\trel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel)
         print('\tabs',_maxDiff1d3dCW_absbefore,perirhizalModel.maxDiff1d3dCW_abs)
-        
+ 
         # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
             raise Exception

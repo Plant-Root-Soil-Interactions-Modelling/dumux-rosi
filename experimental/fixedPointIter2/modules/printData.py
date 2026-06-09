@@ -187,11 +187,11 @@ def printDiff1d3d(perirhizalModel, s, dt):
         write_file_array("scv_Soil_solute_conc"+str(i+1), 
                          np.array(s.getSolution(i+1)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 , 
                          directory_ =results_dir, fileType = '.csv') 
-    
+
+    TotC = np.array(s.getTotCContent()).flatten()    
+    WaterC = np.array(s.getWaterContent()).flatten()   
     #save TotC and water content of macroscale cells only 
-    if(s.numSoluteComp>0):
-        TotC = np.array(s.getTotCContent()).flatten()    
-        WaterC = np.array(s.getWaterContent()).flatten()   
+    if(s.numSoluteComp>0) and (rank == 0):
         RootCells = perirhizalModel.cellWithRoots # only id of cells with roots
         TotC_macro = np.delete(TotC, RootCells)
         WaterC_macro = np.delete(WaterC, RootCells)

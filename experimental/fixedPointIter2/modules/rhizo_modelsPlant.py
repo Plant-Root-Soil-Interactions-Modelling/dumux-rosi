@@ -463,7 +463,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         except:
             maxlim1d3d = self.limErr1d3dAbs
             
-        print("Adding manual fix of concentration before the update of the 1d models")
         if len(self.eidx_all_) > 0:
             self.set3Dfrom1Ddata(self.getCellIds())
         
@@ -472,7 +471,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         self.finishedUpdate = False
         
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64) # 1d model global id on this thread
-        self.eidx_all_ = self._flat0(comm.gather(self.eidx, root=0))# all segs
+        self.eidx_all_ = comm.bcast(self._flat0(comm.gather(self.eidx, root=0)), root=0)# all segs
         
         if rank==0:
             assert len(self.eidx_all_) == len(list(set(list(self.eidx_all_))))
