@@ -41,8 +41,7 @@ def XcGrowth(scenarioData):
         at each shape change of the RS, we need to update manually the soil
         csw and css content, increases the risk of missing systematic errors occuring at each time step.
     '''
-    
-    
+
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
@@ -95,9 +94,9 @@ def XcGrowth(scenarioData):
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
-    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
+    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
 
-    results_dir="./results_flowonly/"+soil_type+"/"
+    results_dir="./results_flowonly_transpitest/"+soil_type+"/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -123,8 +122,8 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
-                                            path, soil_type,res,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, dt, s, soilTextureAndShape, xml_name,
+                                            path, soil_type,
                                             limErr1d3d = 5e-12)  
 
     # store parameters
@@ -184,11 +183,11 @@ def XcGrowth(scenarioData):
     
     printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
                             datas=[], datasName=[],initPrint=True)
-    
-    nnn = 0
-    while rs_age < simMax:
 
-        rs_age += dt
+    N = int(simMax / dt)
+    for n in range(N):
+
+        rs_age = (n+1)*dt
         print('RS_age = ', rs_age, 'days')
 
         
@@ -335,7 +334,7 @@ def XcGrowth(scenarioData):
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
         print('for now, remove some printing to make the troubleshooting faster')
-        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if np.isclose(rs_age % 1, 0.5, atol=dt/2): # midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]

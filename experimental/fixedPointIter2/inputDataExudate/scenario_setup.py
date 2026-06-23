@@ -276,12 +276,14 @@ def vg_SPP(i = int(1)):
     # theta_r, theta_s, alpha, n, Ks                    
     #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
     soil[0] = [0.1, 0.411, 0.05, 1.267, 441]   
-    soil[1] = [0.062, 0.337, 0.0182, 2.733, 5]
+    # soil[0] = [0.03, 0.411, 0.05, 1.173, 441]
+    # soil[1] = [0.062, 0.337, 0.0182, 2.733, 5]
+    soil[1] = [0.062, 0.337, 0.0182, 2.733, 1174]
                
     return soil[i]
     
 
-def getSoilTextureAndShape(soil_= 'loam', res = 1):  
+def getSoilTextureAndShape(res, soil_= 'loam'):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
@@ -316,6 +318,7 @@ def getSoilTextureAndShape(soil_= 'loam', res = 1):
     solidDensity = 2650 # [kg/m^3 solid] #taken from google docs TraiRhizo
     solidMolarMass = 60.08e-3 # [kg/mol] 
     # theta_r, theta_s, alpha, n, Ks
+   
     
     if soil_ == "loam":
         i = 0
@@ -463,7 +466,12 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     cell_number = soilTextureAndShape['cell_number']
     min_b = soilTextureAndShape['min_b']     
     times, net_inf = evap.net_infiltration(soil_type, simMax, soilTextureAndShape['Kc'])
-    
+    net_inf = net_inf*s.molarDensityWat #cm^3/(cm^2*d) --> mol/(cm^2*d)
+    plt.plot(times, net_inf)
+    if rank == 0:
+        plt.xlabel('Time (d)') 
+        plt.ylabel('net infiltration (cm^3/(cm^2 day))')
+        plt.savefig("../plots_flowonly/plots/inf.png")
     s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step?
     
     # BC
@@ -491,12 +499,14 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     s.maxDt =  250./(3600.*24.)
     s.maxDt_1DS = s.maxDt # [s], lower maxDt for 1D models
     s.initializeProblem(s.maxDt)
-    
-    if soil_type == "sand":
-        s.eps_regularization = 1e-10 
-        s.setRegularisation(s.eps_regularization, s.eps_regularization) 
-    else:
-        s.eps_regularization = None # pcEps, krEps
+ 
+    s.eps_regularization = 1e-10 
+    s.setRegularisation(s.eps_regularization, s.eps_regularization)  
+    # if soil_type == "sand":
+        # s.eps_regularization = 1e-10 
+        # s.setRegularisation(s.eps_regularization, s.eps_regularization) 
+    # else:
+        # s.eps_regularization = None # pcEps, krEps
     # s.eps_regularization = None # pcEps, krEps
     #s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be l
      
@@ -530,7 +540,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndShape, fname, path, soil_type,res , stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, ifexu, dt, soil_model, soilTextureAndShape, fname, path, soil_type, stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -572,9 +582,21 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     plantModel.exudf = plantParameters.prescribed_exudation(soil_type, ifexu)
     plantModel.exudation_rates = plantParameters.exudation_rates
     plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
-    # set kr and kx for root system or plant
+    testtrans = []
+    testtime = []
+    testage = 0.1
+    while testage < simMax:
+        testtrans.append(plantModel.transpiration(testage,dt)/(20*44))
+        testtime.append(testage)
+        testage += dt
+    plt.plot(np.array(testtime),np.array(testtrans))
+    plt.xlabel('Time (d)')
+    plt.ylabel('Transpiration (cm/d)')
+    if rank == 0:
+        plt.savefig("../plots_flowonly/plots/trans.png")
     
-    plantParameters.init_conductivities(r = plantModel)
+    # set kr and kx for root system or plant
+    plantParameters.init_conductivities(soil_type, r = plantModel)
     perirhizalModel.set_plantModel(plantModel)
     perirhizalModel.rhizoMassWError_rel = 0.
     perirhizalModel.rhizoMassWError_relLim = 0.

@@ -261,6 +261,7 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
                          directory_ = results_dir)
 
         # stop if converged or gave up
+        print('iterations', n_iter, perirhizalModel.k_iter) 
         if FPIT_id ==2:
             cL = ((np.floor(perirhizalModel.err) > perirhizalModel.max_err) or
                    perirhizalModel.solve_gave_up or failedLoop
@@ -273,7 +274,6 @@ def continueLoop(perirhizalModel,n_iter, dt_inner: float,failedLoop: bool,
                    perirhizalModel.solve_gave_up or failedLoop
                     or ((n_iter < perirhizalModel.minIter)
                         and (isInner)))  and (n_iter < perirhizalModel.k_iter)
-
 
         if (rank == 0) and isInner:
             if FPIT_id == 2:

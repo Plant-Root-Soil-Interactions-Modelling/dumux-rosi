@@ -16,7 +16,7 @@ sys.path.append("../inputDataExudate/data/");
 sys.path.append("../../../../CPlantBox/");
 sys.path.append("../../../../CPlantBox/src")
 
-sys.path.append("../../../../build-cmake/cpp/python_binding/");
+sys.path.append("../../../build-cmake/cpp/python_binding/");
 import plantbox as pb  # CPlantBox
 import vtk_plot_adapted as vp
 
@@ -42,13 +42,12 @@ def XcGrowth(scenarioData):
         csw and css content, increases the risk of missing systematic errors occuring at each time step.
     '''
     
-    
     doNestedFixedPointIter = False 
     path = "../../../../CPlantBox/modelparameter/structural/rootsystem/"
     soil_type = scenarioData['soil_type']
     initsim = 0 #initial simulation time 
     simMax = 60 #maximal simulation time 
-    res = 2
+    res = 4
     ifexu = True
     sorption_type = scenarioData['sorption']               
     diffusion = scenarioData['diffusion']                
@@ -63,8 +62,8 @@ def XcGrowth(scenarioData):
     # min, max, objective number of iteration for the fixed-point iteration
     minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 10 # max num of iteration for loops
-    targetIter= 9 # target n_iter for adjusting time step of inner loop
+    k_iter = 200 #10 # max num of iteration for loops
+    targetIter= 40 #9 # target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = True # only water (False) or with solutes (True)
     doBioChemicalReaction = True
@@ -95,7 +94,7 @@ def XcGrowth(scenarioData):
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
-    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
+    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
     results_dir="./results_field/"+soil_type+'_diffusion'+diffusion+"_sorption"+sorption_type+"/"
 
     # to get printing directory/simulaiton type in the slurm.out file
@@ -122,8 +121,8 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
-                                            path, soil_type,res,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, dt, s, soilTextureAndShape, xml_name,
+                                            path, soil_type,
                                             limErr1d3d = 5e-12)  
 
     # store parameters
@@ -161,7 +160,7 @@ def XcGrowth(scenarioData):
     perirhizalModel.mpiVerbose = mpiVerbose
     perirhizalModel.mpiVerboseInner = mpiVerboseInner
     perirhizalModel.results_dir = results_dir
-    
+
     
     """ define initial value for loop"""
     # initial time step for the fixed-point iteration loop
@@ -172,7 +171,7 @@ def XcGrowth(scenarioData):
     net_flux = np.array([])
     # plant-soil water exchange
     seg_Wfluxes = np.array([])
-    
+
     """ phloem variable """
     if perirhizalModel.doPhloemFlow:
         phloemData = phloemDataStorage(perirhizalModel, plantModel) # to store data and run phloem simulation
@@ -180,22 +179,23 @@ def XcGrowth(scenarioData):
         exudateData = exudateDataStorage(perirhizalModel, plantModel, s) # to store data and define exudation rates
     """ prints """
     printData.initialPrint(perirhizalModel)
-    
+
     printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
                             datas=[], datasName=[],initPrint=True)
-    
-    nnn = 0
-    while rs_age < simMax:
+ 
+    N = int(simMax / dt)
+    for n in range(N):
+                                          
 
-        rs_age += dt
+        rs_age = (n+1)*dt
         print('RS_age = ', rs_age, 'days')
 
-        
+
         if perirhizalModel.doPhloemFlow:
             phloemData.setNtbu()
         elif perirhizalModel.doExudation:
             exudateData.setNcbu()
-        
+
         if (rank == 0) and (not static_plant) :
             
             seg2cell_old = perirhizalModel.ms.seg2cell
@@ -217,12 +217,12 @@ def XcGrowth(scenarioData):
         
         print('error before vs after update,\n\trel',_maxDiff1d3dCW_relbefore,perirhizalModel.maxDiff1d3dCW_rel)
         print('\tabs',_maxDiff1d3dCW_absbefore,perirhizalModel.maxDiff1d3dCW_abs)
-        
+
         # check that the update worked as it should have
         if (_maxDiff1d3dCW_relbefore[2] < perirhizalModel.maxDiff1d3dCW_rel[2] + _maxDiff1d3dCW_relbefore[2]*0.01): 
             raise Exception
             
-        
+       
         if start: # for first loop, do extra printing to have initial error
             #fpit_Helper
             FPItHelper.storeNewMassData1d(perirhizalModel)
@@ -241,7 +241,7 @@ def XcGrowth(scenarioData):
             exudateData.Q_Mucil_cumul += sum(exudateData.Q_Mucil_i_seg)
 
         perirhizalModel.n_iter, keepGoing = helpfull.resetAndSaveData(perirhizalModel)
-        
+
         while keepGoing:
             
             helpfull.saveData(plantModel, perirhizalModel, s)
@@ -296,7 +296,7 @@ def XcGrowth(scenarioData):
                 
         # manually set n_iter to 0 to see if continueLoop() still yields fales.
         # if continueLoop() = True, we had a non-convergence error 
-        
+
 
         if failedLoop:
             print("convergence error: only left the loop because reached the max number of iteration.")
@@ -309,7 +309,6 @@ def XcGrowth(scenarioData):
         printData.getAndPrintErrorRates(perirhizalModel, plantModel, s, exudateData)
         
         printData.printCylData(perirhizalModel,rs_age )
-        
                     
         plantModel.time_start_plant = timeit.default_timer()
         if ((not static_plant) or (rs_age == dt)) and doPhloemFlow:
@@ -321,7 +320,8 @@ def XcGrowth(scenarioData):
             print('sum tot C Content', sum(s.getTotCContent()))
             
         plantModel.time_plant_cumulS += (timeit.default_timer() - plantModel.time_start_plant)
-            
+
+
         if doPhloemFlow:
             phloemData.bcastData()
             
@@ -333,8 +333,9 @@ def XcGrowth(scenarioData):
                 printData.printOutput(rs_age, perirhizalModel, phloemData, plantModel)
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
+
         print('for now, remove some printing to make the troubleshooting faster')
-        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
+        if np.isclose(rs_age % 1, 0.5, atol=dt/2):# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 datas = [
                          plantModel.psiXyl, exudateData.Q_Exud]
@@ -352,11 +353,8 @@ def XcGrowth(scenarioData):
 
     """ wrap up """
     
-    
     perirhizalModel.check1d3dDiff()
-    
-    
-    
+
     print("finished simulation :D", rank,"(parting is such sweet sorrow)")
     # for some reason, we get an error when the program stops
     # memory leak?
@@ -377,6 +375,6 @@ if __name__ == "__main__":
     scenarioData = {'soil_type': args.soil_type, 'diffusion' : args.diffusion, 'sorption': args.sorption}
     XcGrowth(scenarioData)
    
-    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam low low
-    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam medium low
-    #mpiexec -n 1 python3 mainExudate_scenarios_field.py loam high low
+    #mpiexec -n 1 python3 mainExudate_field.py loam low low
+    #mpiexec -n 1 python3 mainExudate_field.py loam medium low
+    #mpiexec -n 1 python3 mainExudate_field.py loam high low

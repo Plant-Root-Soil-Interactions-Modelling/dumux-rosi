@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 5 0 11 0 18" Origin="-10 -22 -72" Spacing="4 4 4" Direction="1 0 0 0 1 0 0 0 1">
+    <Piece Extent="0 5 0 11 0 18"                                                     >
+      <PointData>
+      </PointData>
+      <CellData Scalars="theta (cm3/cm3)">
+        <DataArray type="Float64" Name="water content" format="appended" RangeMin="0.11059412463"        RangeMax="0.13049161027"        offset="0"                   />
+        <DataArray type="Float64" Name="pressure head" format="appended" RangeMin="-145.75081861"        RangeMax="-117.34486484"        offset="400"                 />
+        <DataArray type="Float64" Name="theta (cm3/cm3)" format="appended" RangeMin="0.11059412463"        RangeMax="0.13049161027"        offset="800"                 >
+        </DataArray>
+      </CellData>
+    </Piece>
+  </ImageData>
+  <AppendedData encoding="base64">
+   _AQAAAACAAADwHgAAGAEAAA==eJybsdTp+6fNB+xnjNJDimZ78OBO09pReqjROlvzlvUuPGCvgUbrEKDR1ePSR665hNQNd5pQOLz0yC8+NWGUHmr09wmvrY9XI+jPOGhS1RFrDiH1pJpPrLvJ9S+57idXHS593/gndX5IGqWHGj1hgR3rdLdReqjRpyQexH5WG6WHGr0loPumBguC3oBGo8ujqyNVP7o8ujpK7SfVnMFO4/LHrjdXSnv37B+lhxi93y2cY2LWKD3U6OYi5r+aQqP0UKPnBJ9q+b5p3yg9xOipE/zLEn1G6aFG90108em8u3eUHmI0i6PbS4PUUXqo0eKVC272PNwzSg8x+odXastTf9z0JzSakDpqmTfQNLo76UUT6x4AA+UecA==AQAAAACAAADwHgAAGAEAAA==eJzTvv7LWSgs9oD2KD2k6Mt7b0tLpIzSQ43+cHz+M++62AO/0OgPBGh09bj0kWsuIXXDnSYUDut+P2mLXzxKDzU6veHe8bxLCLoQB02qOmLNIaSeVPOJdTe5/iXX/eSqw6XvqNra56+44kbpIUa3G75k6PMZpYcaPe/n8ciQ6aP0UKO1BMwXVb1G0KZoNLo8ujpS9aPLo6uj1H5SzRnsNC5/aNt1vm3wjB+lhxhdsPHUa6NNo/RQo+2FPydECyeM0kOM1hA53hcUMkoPNdpH/vJM8bmj9FCj/38sm6P7fpQeavRuq3SxLT6Jo/QQox81vzXfv2OUHmr0leb9W9gsknDSt9BoQuqoZd5A0+jupBdNrHsAJGt2+Q==AQAAAACAAADwHgAAGAEAAA==eJybsdTp+6fNB+xnjNJDimZ78OBO09pReqjROlvzlvUuPGCvgUbrEKDR1ePSR665hNQNd5pQOLz0yC8+NWGUHmr09wmvrY9XI+jPOGhS1RFrDiH1pJpPrLvJ9S+57idXHS593/gndX5IGqWHGj1hgR3rdLdReqjRpyQexH5WG6WHGr0loPumBguC3oBGo8ujqyNVP7o8ujpK7SfVnMFO4/LHrjdXSnv37B+lhxi93y2cY2LWKD3U6OYi5r+aQqP0UKPnBJ9q+b5p3yg9xOipE/zLEn1G6aFG90108em8u3eUHmI0i6PbS4PUUXqo0eKVC272PNwzSg8x+odXastTf9z0JzSakDpqmTfQNLo76UUT6x4AA+UecA==
+  </AppendedData>
+</VTKFile>

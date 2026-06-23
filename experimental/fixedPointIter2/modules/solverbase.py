@@ -657,7 +657,7 @@ class SolverWrapper():
             indices =  self.getCellIndices() 
         else:
             raise Exception('PySolverBase._map: type_ must be 0, 1, or 2.')
-            
+        
         if rank == 0:
             try:
                 assert len(indices) == len(x), "_map: indices and values have different length"

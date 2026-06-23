@@ -96,7 +96,7 @@ def XcGrowth(scenarioData):
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
-    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
+    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
    
     doDecay = True    
     doAds = True
@@ -133,7 +133,7 @@ def XcGrowth(scenarioData):
 
     # all thread need a plant object, but only thread 0 will make it grow
     perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, single_trans, s, soilTextureAndShape, xml_name,
-                                            path, soil_type,res,
+                                            path, soil_type,
                                             limErr1d3d = 5e-12)  
 
     # store parameters
@@ -373,8 +373,8 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser(description = 'Simulation options')
     parser.add_argument('soil_type', type = str, help = 'loam or sand')
-    parser.add_argument('diffusion', type = str, help = 'low, medium, high')
-    parser.add_argument('sorption', type = str, help = 'None, low, medium, mediumhigh, high')
+    parser.add_argument('diffusion', type = str, help = 'low, medium, mediumhigh, high')
+    parser.add_argument('sorption', type = str, help = 'low, medium, high')
     parser.add_argument('decay', type = str, help = 'True, False')
     args = parser.parse_args()
     

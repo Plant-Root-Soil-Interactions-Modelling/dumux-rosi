@@ -334,28 +334,28 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             else:
                 self.maxDiff1d3dCW_abs[0] = self.allDiff1d3dCW_abs[0].max()
 
+            if self.numSoluteComp> 0:        
+                self.allDiff1d3dCW_abs[1:] = np.array([abs(
+                    self.totC3dAfter_eachVoxeleachComp[idComp][cellIds] - self.soil_solute1d_perVoxelAfter[idComp]
+                ) for idComp in range(0, self.numComp-1)])
+                
+                self.allDiff1d3dCW_rel[1:] = np.array([ (
+                    self.allDiff1d3dCW_abs[idComp+1]/np.where(
+                    self.totC3dAfter_eachVoxeleachComp[idComp][cellIds]>0.,
+                    self.totC3dAfter_eachVoxeleachComp[idComp][cellIds],1.))*100. for idComp in range(0, self.numSoluteComp)])
+            
+            
+                
+                self.sumDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].sum() for idComp in range(1, self.numComp)])
 
-            self.allDiff1d3dCW_abs[1:] = np.array([abs(
-                self.totC3dAfter_eachVoxeleachComp[idComp][cellIds] - self.soil_solute1d_perVoxelAfter[idComp]
-            ) for idComp in range(0, self.numComp-1)])
-            
-            self.allDiff1d3dCW_rel[1:] = np.array([ (
-                self.allDiff1d3dCW_abs[idComp+1]/np.where(
-                self.totC3dAfter_eachVoxeleachComp[idComp][cellIds]>0.,
-                self.totC3dAfter_eachVoxeleachComp[idComp][cellIds],1.))*100. for idComp in range(0, self.numSoluteComp)])
-            
-            
-            self.sumDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].sum() for idComp in range(1, self.numComp)])
+                self.maxDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].max() for idComp in range(1, self.numComp)])
 
-            self.maxDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].max() for idComp in range(1, self.numComp)])
-
-            divideTemp_ =  np.array([ sum(self.soil_solute1d_perVoxelAfter[idComp]) for idComp in range(0, self.numComp-1)])
-            divideTemp = np.array([ divideTemp_[idComp] if divideTemp_[idComp] != 0. else 1. for idComp in range(0, self.numComp-1)])
-            
-            self.sumDiff1d3dCW_rel[1:] = np.array([self.sumDiff1d3dCW_abs[idComp]/divideTemp[idComp-1] for idComp in range(1, self.numComp)])
-            
-            self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
-
+                divideTemp_ =  np.array([ sum(self.soil_solute1d_perVoxelAfter[idComp]) for idComp in range(0, self.numComp-1)])
+                divideTemp = np.array([ divideTemp_[idComp] if divideTemp_[idComp] != 0. else 1. for idComp in range(0, self.numComp-1)])
+                
+                self.sumDiff1d3dCW_rel[1:] = np.array([self.sumDiff1d3dCW_abs[idComp]/divideTemp[idComp-1] for idComp in range(1, self.numComp)])
+                
+                self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
 
             issueWater = ((self.maxDiff1d3dCW_abs[0].max() > diff1d3dCW_abs_lim) and 
                 (self.maxDiff1d3dCW_rel[0] > diff1d3dCW_rel_lim[0]))
@@ -463,16 +463,17 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         except:
             maxlim1d3d = self.limErr1d3dAbs
             
-        print("Adding manual fix of concentration before the update of the 1d models")
+
+
         if len(self.eidx_all_) > 0:
             self.set3Dfrom1Ddata(self.getCellIds())
-        
+
         self.broadcastPlantShape() # compute and share plant data from thread 0 
         
         self.finishedUpdate = False
         
         self.eidx = np.concatenate((self.eidx,np.array(self.newEidx, dtype = np.int64)), dtype = np.int64) # 1d model global id on this thread
-        self.eidx_all_ = self._flat0(comm.gather(self.eidx, root=0))# all segs
+        self.eidx_all_ = comm.bcast(self._flat0(comm.gather(self.eidx, root=0)), root=0)# all segs
         
         if rank==0:
             assert len(self.eidx_all_) == len(list(set(list(self.eidx_all_))))
@@ -484,7 +485,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 FPItHelper.storeNewMassData1d(self)
                 FPItHelper.storeNewMassData3d(self.soilModel,self)
                 self.check1d3dDiff( diff1d3dCW_abs_lim = maxlim1d3d) # check mass balance before updating size
-            
+   
         cellIds = self.getCellIds()
         
         wat_total = self.soilModel.getWaterContent()  # m3/m3 #self.soilWatVol_old
@@ -575,7 +576,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                               'conc_leftover', conc_leftover[self.seg2cell[cyl.gId]],'volumes', self.cyls[i].CellVolumes.sum())
                             verbose_update = True
                         volOld = self.cyls[i].CellVolumes.sum()
-                        ctotOld = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                        if cyl.numComp > 1:
+                            ctotOld = self.cyls[i].getTotCContent_each().sum(axis=1).sum()
+                        else:
+                            ctotOld = 0.
                         self.updateOld(i, cyl,smaller = False, 
                                        thetaLeftOver = theta_leftover[self.seg2cell[cyl.gId]],
                                        konzLeftOver = conc_leftover[self.seg2cell[cyl.gId]], verbose = verbose_update)
@@ -682,7 +686,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
     def set3Dfrom1Ddata(self,cellsWithRoot):
         assert self.soilModel.css1Function != 5 # todo: update so that it workes if we do isntantaneous adsorption
-        
+
         if rank == 0:
             watVol = self.soil_W1d_perVoxelAfter # cm3 W
             soilVol = self.soilModel.CellVolumes[cellsWithRoot] # cm3 scv
@@ -693,6 +697,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         else:
             watMol = None
             soilMol = None            
+
         # water
         phead_Pa = self.soilModel.getSolution(0) # Pa
         
@@ -701,6 +706,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             phead_Pa1d = self.soilModel.to_pa( np.array([vg.pressure_head( wc, self.vg_soil) for wc in watCont])) # cm to Pa
             phead_Pa[cellsWithRoot] = phead_Pa1d
             
+
         phead_Pa = comm.bcast(phead_Pa, root = 0)
         self.soilModel.base.setSolution(phead_Pa,0 )
         
@@ -955,9 +961,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
         
     def getContentCyl(self,idCyls=None, idComp=1, doSum = True, reOrder = True, verbose=False):#mol
-        localIdCyls =   self.getLocalIdCyls(idCyls)      
-        mol_rhizo = np.array([self.cyls[i].getContent( idComp).sum() for i in localIdCyls ]) #cm3
-        
+        localIdCyls =   self.getLocalIdCyls(idCyls)    
+        if self.numSoluteComp > 0:
+            mol_rhizo = np.array([self.cyls[i].getContent( idComp).sum() for i in localIdCyls ]) #cm3
+        else:
+            mol_rhizo = np.array([0. for i in localIdCyls ]) 
         try:
             assert mol_rhizo.shape == (len(localIdCyls),)
         except:
@@ -969,10 +977,12 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         return self.getXcyl(data2share=mol_rhizo, idCyll_ = idCyls,doSum=doSum, reOrder=reOrder)
         
     def getTotCContentAll(self,idCyls=None, doSum = True, reOrder = True):#mol
-        localIdCyls =   self.getLocalIdCyls(idCyls)                      
-        # sum over all cells for each solute
-        mol_rhizo = np.array([ self.cyls[i].getTotCContent_each().sum(axis=1) for i in localIdCyls ]) #mol
-                                                 
+        localIdCyls =   self.getLocalIdCyls(idCyls) 
+        if self.numSoluteComp > 0:
+            # sum over all cells for each solute
+            mol_rhizo = np.array([ self.cyls[i].getTotCContent_each().sum(axis=1) for i in localIdCyls ]) #mol
+        else:
+            mol_rhizo = np.array([ 0. for i in localIdCyls ]) #mol              
         return self.getXcyl(data2share=mol_rhizo,idCyll_ = idCyls, doSum=doSum, reOrder=reOrder)
         
     def getThetaCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
@@ -1529,8 +1539,8 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                          0.05 * 1e6/(2700/ 60.08e-3* (1. - 0.43)),      # mol/mol scv
                                          0./(2700/ 60.08e-3* (1. - 0.43)),              # mol/mol scv
                                          0./(2700/ 60.08e-3* (1. - 0.43))],             # mol/mol scv
-                                         Cells = []):                                   # cm
-        verbose = False#gId == 569#self.mpiVerboseInner # (self.seg2cell[gId]==916)
+                                         Cells = []):    
+        verbose = False
         a_in = self.radii[gId]
         a_out = self.outer_radii[gId]
         lId =int( np.where(self.eidx == gId)[0])
@@ -1554,7 +1564,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 self.dx2[lId] = 0.5 * (points[1] - points[0]) #when updating
             else:
                 self.dx2.append(0.5 * (points[1] - points[0]))
-
+            cyl.setParameter("Problem.useExtrusion", "true")
             cyl.setParameter("Problem.segLength", str(self.seg_length[gId]))  # cm
             cyl.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step
             cyl.setParameter("Soil.BC.dzScaling", "1")
@@ -2138,7 +2148,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         inner_fluxes_real = np.full(self.numFluidComp, np.nan)
         outer_fluxes_real = np.full(self.numFluidComp, np.nan)
         errorWOnly = np.nan; errorCOnly = np.nan
-        cOld =  cyl.getTotCContent_each().sum(1)
+        if self.numSoluteComp == 0:
+            cOld = 0.
+        else:
+            cOld =  cyl.getTotCContent_each().sum(1)
         while redoSolve:
         
             try:

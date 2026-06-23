@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<VTKFile type="ImageData" version="0.1" byte_order="LittleEndian" header_type="UInt32" compressor="vtkZLibDataCompressor">
+  <ImageData WholeExtent="0 5 0 11 0 18" Origin="-10 -22 -72" Spacing="4 4 4" Direction="1 0 0 0 1 0 0 0 1">
+    <Piece Extent="0 5 0 11 0 18"                                                     >
+      <PointData>
+      </PointData>
+      <CellData Scalars="theta (cm3/cm3)">
+        <DataArray type="Float64" Name="water content" format="appended" RangeMin="0.085236255914"       RangeMax="0.1077619393"         offset="0"                   />
+        <DataArray type="Float64" Name="pressure head" format="appended" RangeMin="-226.94603078"        RangeMax="-151.23581316"        offset="660"                 />
+        <DataArray type="Float64" Name="theta (cm3/cm3)" format="appended" RangeMin="0.085236255914"       RangeMax="0.1077619393"         offset="1336"                >
+        </DataArray>
+      </CellData>
+    </Piece>
+  </ImageData>
+  <AppendedData encoding="base64">
+   _AQAAAACAAADwHgAA3QEAAA==eJzt0L9LQlEUB/CWoB9DYENDU0NL2SIFtbxnhGAZ0VB/QEstFZRQW1GUQ0jQYEOREEJRgWBg5SsogiJDEQuekqEGLRJEQ0M4tdyHcOJw79Wnz0dv+nDP+d5zfwgtTeOD25eioLF9QLVytH2wzjpfa/2Tn6cfm9p7CKT1i7Vc8yrt/FRouW5FO6cRaf1iVXsuNq/c/3Z3svfYP1M93nDW/6uBe8tI/Zih3my/dvj3ewz15kt+19xqMtSbwa7Z3FBOMtSZtZ6FHUkq2IBIy8E+r2rP06vYP8B65rbT5V431Jver6zZYZdEH9ELhHUfJc8rNr/UuZWS9b6876Lll0RnZqvGsFpcBWL94bxLmDgOGZboKGMdy2H7sPxG2n0wZ/3rGrKGddb9WB+T9R5qq9b7y6307lx8u7qouGfAYvexzoF9LM86B5vHew7r+2GuO3UUCJkKWoC8fVZZ9/Pm1L4/Lcc6T61/6yXaf77TbR3noo04ANZYH+ZofVjnFTvHyrjfynkfO+M9sH+j1eG/8s5J2jzNjU9B8ZmorGViihglRohhYoIYB/0ImKv0Y0guDpRBPwrqyvoBnAPPk0EuQZkrgxysZ5FcBNSVd4aR+ym5VzAnCfbHQF7Z/wtJjpdcAQAAAACAAADwHgAA5wEAAA==eJzt0D1IQlEUB3BwicIhLLC1paEhqCVIEBJEgoYaFKfoQysjdLCCoJraaijaHBoKCcrhOfRBWD4XaQmyKDJoyAgdUshBCRIauq/o5OHeq8+PR2/68c4593/Pu4Kh6WItOS4KNfYQKNcc7Ryss+bX2sjK0nQ8U3ujQFq/VCuVV2110dWF4EftbEOk9UtV7lwsr9LvNifYz7eaJ+rGRc76f/Vh03/a16mqNGPDYbtvQFVpHrj2Uy9uVaXZHnvKbPtUleZ8z1VSuPzRg0ibg31e5c5Tqtg7wHrXmdm50+hQVZiW14gxPeQQTUQLENZNlHlesfxyc6sl6768/0Wbzy2fJPx7qvXiGxDr33ta+u9anaples1Yx+awc9i8O2wc7Nr9qxf5hnXW81gfk3UPuZXr/ytt0NLb/T42WXWPgKWeY82BfWyeNQfL472H9f/h3IwvN7runfrWA+Tts8p6nndO7v1pc6x5cr2bkxi43YgbOlxikHgMvrE+nKP1YZ1X7J4Q4/kQ5z4Bxj2wd6PV4bvy5qSstoR5ZFbME6XvLPGZ2GD7UkvUEdOkX7D+7kvmQV9jKz5XAHNZkCfdnwX76ME98D5pXg/2xXIl09bi9RtkTgtyNOCd4H7S3CPISYHzGpArnf8ESvgRVw==AQAAAACAAADwHgAA3QEAAA==eJzt0L9LQlEUB/CWoB9DYENDU0NL2SIFtbxnhGAZ0VB/QEstFZRQW1GUQ0jQYEOREEJRgWBg5SsogiJDEQuekqEGLRJEQ0M4tdyHcOJw79Wnz0dv+nDP+d5zfwgtTeOD25eioLF9QLVytH2wzjpfa/2Tn6cfm9p7CKT1i7Vc8yrt/FRouW5FO6cRaf1iVXsuNq/c/3Z3svfYP1M93nDW/6uBe8tI/Zih3my/dvj3ewz15kt+19xqMtSbwa7Z3FBOMtSZtZ6FHUkq2IBIy8E+r2rP06vYP8B65rbT5V431Jver6zZYZdEH9ELhHUfJc8rNr/UuZWS9b6876Lll0RnZqvGsFpcBWL94bxLmDgOGZboKGMdy2H7sPxG2n0wZ/3rGrKGddb9WB+T9R5qq9b7y6307lx8u7qouGfAYvexzoF9LM86B5vHew7r+2GuO3UUCJkKWoC8fVZZ9/Pm1L4/Lcc6T61/6yXaf77TbR3noo04ANZYH+ZofVjnFTvHyrjfynkfO+M9sH+j1eG/8s5J2jzNjU9B8ZmorGViihglRohhYoIYB/0ImKv0Y0guDpRBPwrqyvoBnAPPk0EuQZkrgxysZ5FcBNSVd4aR+ym5VzAnCfbHQF7Z/wtJjpdc
+  </AppendedData>
+</VTKFile>

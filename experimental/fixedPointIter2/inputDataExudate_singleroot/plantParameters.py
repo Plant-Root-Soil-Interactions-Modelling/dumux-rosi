@@ -20,7 +20,7 @@ import functional.van_genuchten as vg
     # r.setKr([kr_const, kr_const, kr_const, kr_const, kr_const, kr_const])
     # r.setKx([1.e3, kx_const, kx_const, kx_const, kx_const, kx_const])
 
-def init_conductivities(r, skr = 1., skx = 1.):
+def init_conductivities_orig(r, skr = 1., skx = 1.):
     """ Hydraulic conductivities for maize modified from Couvreur et al. (2012), originally from Doussan et al. (1998) """ #[age, value]
 
     #kr00 = np.array([[0., 0.]])  # artificial shoot
@@ -57,6 +57,35 @@ def init_conductivities(r, skr = 1., skx = 1.):
 
     return r
     
+def init_conductivities(soil_type, r, skr = 1., skx = 1.):
+    """ Hydraulic conductivities for maize modified from Koch et al. (2025) and Couvreur et al. (2012), originally from Doussan et al. (1998) """ #[age, value]
+
+    if soil_type == 'loam':
+        kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 7e-4], [12,1e-5],[300, 1e-5]])
+        kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 1e-4], [12,1e-5],[300, 1e-5]])
+    else: 
+        kr0 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 1e-3], [8., 1e-5], [300, 1e-5]])
+        kr1 = np.array([[-1e4, 0.], [-0.1, 0.], [0., 7e-4], [10., 1e-5],[300, 1e-5]])
+
+    kx0 = np.array([[0., 0.000864], [5., 0.00173], [12., 0.0295], [15., 0.0295], [20., 0.432], [300., 0.432]])
+    kx1 = np.array([[0., 0.0000864], [5., 0.0000864], [10., 0.0000864], [12., 0.0006048], [20., 0.0006048], [23., 0.00173], [300., 0.00173]])
+
+
+    kr01 = np.minimum(skr * kr0[:, 1], 1.)
+    kr11 = np.minimum(skr * kr1[:, 1], 1.)
+    
+    # r.setKr([kr001, kr01, kr11, kr11, kr01, kr01],
+                  # [kr00[:, 0], kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    r.setKr([kr01, kr11, kr11, kr01, kr01],
+                  [kr0[:, 0], kr1[:, 0], kr1[:, 0], kr0[:, 0], kr0[:, 0]])
+    kx01 = np.minimum(skx * kx0[:, 1], 1.)
+    kx11 = np.minimum(skx * kx1[:, 1], 1.)
+
+    r.setKx([kx01, kx11, kx11, kx01, kx01],
+                  [kx0[:, 0], kx1[:, 0], kx1[:, 0], kx0[:, 0], kx0[:, 0]])    
+
+    return r
+
     
 def prescribed_exudation(soil_type, ifexu):
     
@@ -85,8 +114,10 @@ def exudation_rates(f, t):
     return kex
 
 def SorptionParams(soil_type, sorp): 
-    kads = [[0.16,0.73,15.1],[0.03,0.12, 2.51]]
-    kdes = [[205.7,14.4,96],[205.7, 14.4, 96]]
+    # kads = [[0.16,0.73,15.1],[0.03,0.12, 2.51]]
+    # kdes = [[205.7,14.4,96],[205.7, 14.4, 96]]
+    kads = [[5100,581,185],[867,98.77, 31.45]] #cm^3/mol/d
+    kdes = [[74.5, 6.79, 0.12],[74.5, 6.79, 0.12]]  #1/d
     kads_ = kads[soil_type][sorp]
     kdes_ = kdes[soil_type][sorp]
     kd_values = {'kads': kads_, 'kdes': kdes_}
@@ -94,8 +125,8 @@ def SorptionParams(soil_type, sorp):
     return kd_values
     
 def DecayParams(doDecay): 
-    Vmax = 8.2e-5 #mol C / m^3 scv / s,0.73,15.1]
-    Km = 13.5 #mol C / m^3
+    Vmax = 2.28e-4 #mol C / m^3 water/ s,0.73,15.1]
+    Km = 20.6 #mol C / m^3 water
     if doDecay == False: 
         Vmax = 0
     decay_params =  {'Vmax': Vmax, 'Km': Km}

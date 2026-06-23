@@ -4,7 +4,7 @@
 not_used/
 plots/not_used/
 scripts/old/
-scripts/test_results/
+scripts/test_cluster/*
 jobs_field.py
 scripts/results_field/*
 !scripts/results_field/.gitkeep
@@ -14,6 +14,12 @@ scripts/results_field_smalldomain
 !scripts/results_field_smalldomain/.gitkeep
 scripts/results_singleroot_all
 !scripts/results_singleroot_all/.gitkeep
-plot_singleroot/
-plots_fieldstudy/
-
+plot_singleroot/*
+plots_fieldstudy/*
+plots_flowonly/*
+scripts/results_flowonly_4cm/*
+scripts/results_field_4iter/*
+old/*
+modules/old/*
+inputDataExudate/old/*
+not_used/*
