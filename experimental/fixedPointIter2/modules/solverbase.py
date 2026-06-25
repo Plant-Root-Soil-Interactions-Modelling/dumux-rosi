@@ -27,8 +27,6 @@ class SolverWrapper():
         self.solidMolarMass=0
         self.solidMolDensity=0
         self.bulkDensity_m3 =0 # mol soil minerals / m3 bulk soil density
-        self.molarMassWat = 18. # [g/mol] same value/precision as the simpleh2o
-        self.densityWat_m3 = 1e6 #[g/m3]
         self.m3_per_cm3 = 1e-6 #m3/cm3
         self.cm3_per_m3 = 1e6 #cm3/m3
         # [mol/m3] = [g/m3] /  [g/mol] 
@@ -464,14 +462,14 @@ class SolverWrapper():
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]
             ATT: only gives the current flux, NOT the mean flux computed by dumux during the last solve() call
         """
-        assert not self.useMoles
+        assert not self.useMoles()
         return self.base.getNeumann(gIdx, eqIdx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def getAllNeumann(self, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]
             ATT: only gives the current flux, NOT the mean flux computed by dumux during the last solve() call
         """
-        assert not self.useMoles # need the update the unit change before using when useMoles==True
+        assert not self.useMoles() # need the update the unit change before using when useMoles==True
         dics = self.gather(self.base.getAllNeumann(eqIdx))
         flat_dic = {}
         for d in dics:
@@ -482,7 +480,7 @@ class SolverWrapper():
 
     def getAllNeumann_(self, eqIdx = 0):
         """nompi version of (TODO is that working?)"""
-        assert not self.useMoles
+        assert not self.useMoles()
         dics = self.base.getAllNeumann(eqIdx)
         flat_dic = {}
         for d in dics:
@@ -493,13 +491,13 @@ class SolverWrapper():
 
     def getNetFlux(self, eqIdx = 0):
         """ Gathers the net fluxes fir each cell into rank 0 as a map with global index as key [cm3 / day]"""
-        assert not self.useMoles
+        assert not self.useMoles()
         self.checkGridInitialized()
         return self._map(self._flat0(self.gather(self.base.getNetFlux(eqIdx))), 0) * 1000. *24 * 3600  # kg/s -> cm3/day
 
     def getNetFlux_(self, eqIdx = 0):
         """nompi version of """
-        assert not self.useMoles
+        assert not self.useMoles()
         self.checkGridInitialized()
         return np.array(self.base.getNetFlux(eqIdx)) * 1000. *24 * 3600  # kg/s -> cm3/day
 
@@ -747,4 +745,20 @@ class SolverWrapper():
     def useMoles(self):
         """ model uses moles (True) or grammes (False) """
         return self.base.useMoles
+    
+    @property
+    def molarMassWat(self):
+        """ water molar mass [g/mol] """
+        try:
+            return self.base.molarMassWat()
+        except:
+            return 18. # [g/mol] same value/precision as the simpleh2o
+        
+    @property
+    def densityWat_m3(self):
+        """ water density [g/m3]"""
+        try:
+            return self.base.densityWat_m3()
+        except:
+            return 1e6
     

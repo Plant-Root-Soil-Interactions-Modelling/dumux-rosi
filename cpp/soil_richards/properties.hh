@@ -68,6 +68,12 @@ struct SpatialParams<TypeTag, TTag::RichardsTT>
     using type = RichardsParams<GridGeometry, Scalar>;
 };
 
+/*
+ * Define whether mole (true) or mass (false) fractions are used
+ */
+template<class TypeTag>
+struct UseMoles<TypeTag, TTag::RootsOnePTwoC> { static constexpr bool value = true; };
+
 // Set the fluid system
 // -> this is mainly to test that the Richards model also works with
 // the immiscible two-phase fluid system. The default fluid system (H2OAir)

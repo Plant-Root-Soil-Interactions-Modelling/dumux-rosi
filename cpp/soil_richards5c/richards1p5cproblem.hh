@@ -655,7 +655,7 @@ public:
                     break;
                 }
 				case constantFlux: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or 
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or mol/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						f = std::max(f, imax)*pos0;
@@ -1271,7 +1271,11 @@ public:
 	int nFaces;
 	bool computedCellVolumesCyl = false;
 	std::map<int,int>  faceIdx;
-    
+    static constexpr Scalar g_ = 9.81; // m / s^2 (for type conversions)
+	Scalar rho_ = FluidSystem::H2O::liquidDensity(0,0); //1.e3; // kg / m^3 (for type conversions)
+	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
+	static constexpr Scalar pRef_ = 1.e5; // Pa
+
     
 private:
 
@@ -1331,10 +1335,7 @@ private:
 	
 	static constexpr Scalar eps_ = 1.e-7;
 	double temperatureK;
-	static constexpr Scalar g_ = 9.81; // m / s^2 (for type conversions)
-	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 1.e5; // Pa
-
+	
 	
 	// default value in CPB units
 	double  v_maxL = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]

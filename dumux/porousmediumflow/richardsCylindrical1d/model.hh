@@ -113,6 +113,7 @@ struct RichardsModelTraits
     static constexpr bool enableAdvection() { return true; }
     static constexpr bool enableMolecularDiffusion() { return false; }
     static constexpr bool enableEnergyBalance() { return false; }
+    static constexpr bool useMoles() { return true;}
 
     //! The Richards model has some assumptions on the fluid systems
     //! that can be verified with this trait
@@ -182,6 +183,9 @@ struct RichardsNI { using InheritsFrom = std::tuple<Richards>; };
 //! The local residual operator
 template<class TypeTag>
 struct LocalResidual<TypeTag, TTag::Richards> { using type = RichardsLocalResidual<TypeTag>; };
+//! Define that per default mole fractions are used in the balance equations
+template<class TypeTag>
+struct UseMoles<TypeTag, TTag::Richards> { static constexpr bool value = true; };
 
 //! Set the vtk output fields specific to this model
 template<class TypeTag>

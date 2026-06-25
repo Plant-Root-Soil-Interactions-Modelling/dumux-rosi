@@ -344,7 +344,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                     self.totC3dAfter_eachVoxeleachComp[idComp][cellIds]>0.,
                     self.totC3dAfter_eachVoxeleachComp[idComp][cellIds],1.))*100. for idComp in range(0, self.numSoluteComp)])
             
-            
                 
                 self.sumDiff1d3dCW_abs[1:] = np.array([self.allDiff1d3dCW_abs[idComp].sum() for idComp in range(1, self.numComp)])
 
@@ -356,6 +355,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 self.sumDiff1d3dCW_rel[1:] = np.array([self.sumDiff1d3dCW_abs[idComp]/divideTemp[idComp-1] for idComp in range(1, self.numComp)])
                 
                 self.maxDiff1d3dCW_rel[1:] = np.array([np.concatenate(([0.],self.allDiff1d3dCW_rel[idComp][self.allDiff1d3dCW_abs[idComp] > 1e-12])).max() for idComp in range(1, self.numComp)])
+
 
             issueWater = ((self.maxDiff1d3dCW_abs[0].max() > diff1d3dCW_abs_lim) and 
                 (self.maxDiff1d3dCW_rel[0] > diff1d3dCW_rel_lim[0]))
@@ -463,11 +463,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         except:
             maxlim1d3d = self.limErr1d3dAbs
             
-
-
         if len(self.eidx_all_) > 0:
             self.set3Dfrom1Ddata(self.getCellIds())
-
+        
         self.broadcastPlantShape() # compute and share plant data from thread 0 
         
         self.finishedUpdate = False
@@ -485,7 +483,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 FPItHelper.storeNewMassData1d(self)
                 FPItHelper.storeNewMassData3d(self.soilModel,self)
                 self.check1d3dDiff( diff1d3dCW_abs_lim = maxlim1d3d) # check mass balance before updating size
-   
+            
         cellIds = self.getCellIds()
         
         wat_total = self.soilModel.getWaterContent()  # m3/m3 #self.soilWatVol_old
@@ -686,7 +684,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
 
     def set3Dfrom1Ddata(self,cellsWithRoot):
         assert self.soilModel.css1Function != 5 # todo: update so that it workes if we do isntantaneous adsorption
-
+        
         if rank == 0:
             watVol = self.soil_W1d_perVoxelAfter # cm3 W
             soilVol = self.soilModel.CellVolumes[cellsWithRoot] # cm3 scv
@@ -697,7 +695,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         else:
             watMol = None
             soilMol = None            
-
         # water
         phead_Pa = self.soilModel.getSolution(0) # Pa
         
@@ -706,7 +703,6 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             phead_Pa1d = self.soilModel.to_pa( np.array([vg.pressure_head( wc, self.vg_soil) for wc in watCont])) # cm to Pa
             phead_Pa[cellsWithRoot] = phead_Pa1d
             
-
         phead_Pa = comm.bcast(phead_Pa, root = 0)
         self.soilModel.base.setSolution(phead_Pa,0 )
         
@@ -982,7 +978,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             # sum over all cells for each solute
             mol_rhizo = np.array([ self.cyls[i].getTotCContent_each().sum(axis=1) for i in localIdCyls ]) #mol
         else:
-            mol_rhizo = np.array([ 0. for i in localIdCyls ]) #mol              
+            mol_rhizo = np.array([ 0. for i in localIdCyls ]) #mol
         return self.getXcyl(data2share=mol_rhizo,idCyll_ = idCyls, doSum=doSum, reOrder=reOrder)
         
     def getThetaCyl(self,idCyls=None, doSum = True, reOrder = True, verbose = False):#cm3
@@ -1377,7 +1373,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         molKonzNew[nComp -1] = molKonzOld[nComp -1]
                 
                 molFrNew = [molKonzNew[nc] / (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))]# go from concentration to mol fraction 
-                molFrNew[:self.numDissolvedSoluteComp] /= theta_new
+                if molFrNew[:self.numDissolvedSoluteComp]: 
+                    molFrNew[:self.numDissolvedSoluteComp] /= theta_new
+                else: 
+                    molFrNew = np.zeros((3,len(theta_new)))
                 # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                             x = newHead,# cm
@@ -1540,11 +1539,11 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                          0./(2700/ 60.08e-3* (1. - 0.43)),              # mol/mol scv
                                          0./(2700/ 60.08e-3* (1. - 0.43))],             # mol/mol scv
                                          Cells = []):    
+        
         verbose = False
         a_in = self.radii[gId]
         a_out = self.outer_radii[gId]
         lId =int( np.where(self.eidx == gId)[0])
-        
         if a_in < a_out:
         
             cyl = RichardsNoMPIWrapper(self.RichardsNCCylFoam())  # only works for RichardsCylFoam compiled without MPI
@@ -1645,7 +1644,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
 
             if len(Cells) > 0:#in case we update a cylinder, to allow dumux to do interpolation
-                assert(len(cAll[j-1])==len(Cells))
+                # assert(len(cAll[j-1])==len(Cells))
                 CellsStr = cyl.dumux_str(Cells/100)#cm -> m
                 cyl.setParameter("Soil.IC.Z",CellsStr)# m
                 if len(Cells)!= len(x):

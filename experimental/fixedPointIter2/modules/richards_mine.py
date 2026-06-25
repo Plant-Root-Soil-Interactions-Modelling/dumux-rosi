@@ -265,7 +265,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getInnerFlux(self, eq_idx = 0):
         """ [cm3 / cm2 / day] """
-        assert not self.useMoles
+        assert not self.useMoles()
         return self.base.getInnerFlux(eq_idx) * 24 * 3600 * 10.  # [kg m-2 s-1] = g / cm2 / day
 
     def setOuterFluxCyl(self, flux):
@@ -277,7 +277,7 @@ class RichardsWrapper(SolverWrapper):
 
     def getOuterFlux(self, eq_idx = 0):
         """ [cm / day]"""
-        assert not self.useMoles
+        assert not self.useMoles()
         return self.base.getOuterFlux(eq_idx) / 1000 * 24 * 3600 * 100.  # [kg m-2 s-1] / rho = [m s-1] -> cm / day
 
     def setOuterPressure(self, value_top = 0.):
@@ -338,7 +338,7 @@ class RichardsWrapper(SolverWrapper):
         """Gets the concentration at the inner boundary [mol/cm3] """    
         CC = np.array(self.getSolution_(compId)).flatten()[0] #mol/mol
         isDissolved = compId <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
-        if self.useMoles:
+        if self.useMoles():
             if isDissolved:
                 CC *= self.molarDensityWat_m3/1e6 #mol/cm3 scv
             else:
@@ -349,7 +349,7 @@ class RichardsWrapper(SolverWrapper):
         """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
         self.checkGridInitialized()
         # useMole fraction or mass fraction? 
-        if not self.useMoles:
+        if not self.useMoles():
             if eq_idx == 0:
                 unitConversion = 1/ 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
             else:
@@ -373,7 +373,7 @@ class RichardsWrapper(SolverWrapper):
     # def applySource(self, dt, source_map, crit_p):
     #     """Sets the source term as map with global cell index as key, and source as value [cm3/day] """
     #     self.checkGridInitialized()
-    #     assert not self.useMoles
+    #     assert not self.useMoles()
     #     for key, value in source_map.items():
     #         source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s]
     #     self.base.applySource(dt * 24.*3600., source_map, self.to_pa(crit_p))
@@ -549,7 +549,7 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         unitChange = 24 * 3600 / 1e6 # [ kgOrmol/m3/s -> kgOrmol/cm3/day]
         if eqIdx == 0:
-            if self.useMoles:
+            if self.useMoles():
                 unitChange *=  self.molarMassWat # [mol/cm3/day -> cm3/cm3/day]
             else:
                 unitChange *= 1e3  # [kg/cm3/day -> cm3/cm3/day]
@@ -584,7 +584,7 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         unitChange = 24 * 3600 / 1e4 # [ kgOrmol/m2/s -> kgOrmol/cm2/day]
         if eqIdx == 0:
-            if self.useMoles:
+            if self.useMoles():
                 unitChange *=  self.molarMassWat # [mol/cm2/day -> cm3/cm2/day]
             else:
                 unitChange *= 1e3  # [kg/cm2/day -> cm3/cm2/day]
@@ -597,7 +597,7 @@ class RichardsWrapper(SolverWrapper):
         self.checkGridInitialized()
         unitChange = 24 * 3600 # [ kgOrmol/s -> kgOrmol/day]
         if eqIdx == 0:
-            if self.useMoles:
+            if self.useMoles():
                 unitChange *=  self.molarMassWat # [mol/day -> cm3/day]
             else:
                 unitChange *= 1e3  # [kg/day -> cm3/day]
@@ -626,10 +626,10 @@ class RichardsWrapper(SolverWrapper):
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution_(idComp) # mol/mol wat or mol/mol scv
         if not isDissolved:
-            if self.useMoles:
+            if self.useMoles():
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return C_  /1e6  #mol/cm3 scv
-        if self.useMoles:
+        if self.useMoles():
             C_ *= self.molarDensityWat_m3 # mol/m3 wat            
         return C_ /1e6 #mol/cm3 scv
         
@@ -640,10 +640,10 @@ class RichardsWrapper(SolverWrapper):
         isDissolved = idComp <= self.numDissolvedSoluteComp # is the component in the water phase (True) [bool]
         C_ = self.getSolution(idComp) # mol/mol wat or mol/mol scv
         if not isDissolved:
-            if self.useMoles:
+            if self.useMoles():
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return C_  /1e6  #mol/cm3 scv
-        if self.useMoles:
+        if self.useMoles():
             C_ *= self.molarDensityWat_m3 # mol/m3 wat            
         return C_ /1e6 #mol/cm3 scv
         
@@ -668,12 +668,12 @@ class RichardsWrapper(SolverWrapper):
             raise Exception
             
         if not isDissolved:
-            if self.useMoles:
+            if self.useMoles():
                 C_ *= self.bulkDensity_m3 #mol/m3 scv
             return self._map(self._flat0(self.gather(np.multiply(vols , C_  ))),0)
         
         watCont = self.getWaterContent_()#.flatten() # m3 wat/m3 scv
-        if self.useMoles:
+        if self.useMoles():
             C_ *= self.molarDensityWat_m3 # mol/m3 wat
             
         return self._map(self._flat0(self.gather(np.multiply(np.multiply(vols , watCont) , C_ ))),0)
@@ -688,7 +688,7 @@ class RichardsWrapper(SolverWrapper):
     def getVeclocity1D(self):
         """Returns the Darcy velocities [cm/day] TODO not working! """
         self.checkGridInitialized()
-        assert not self.useMoles
+        assert not self.useMoles()
         return np.array(self.base.getVelocity1D()) * 100.*24 * 3600  # m/s -> cm/day
 
     def setRegularisation(self, pcEps, krEps):

@@ -32,6 +32,31 @@ public:
         this->setParameter("Soil.Output.File", "false");
     }
 
+	void setComputeDtCSS2(const std::function<double(double,double)>& s)
+    {}
+    
+	double computeDtCSS2(double CSW, double CSS2)
+    {
+        return 0.;
+    }
+    
+	double computeInitCSS2(double CSS1, double CSW)
+    {
+        return 0.;
+    }
+	double computeCSS1(double bulkSoilDensity, double C_S_W, int dofIndex)
+	{	
+		return 0.;
+	}
+	
+	/**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkGridInitialized();
+    	this->problem->verbose = verbose;
+    }
+	
     /**
      * Sets the source term of the problem.
      *
@@ -316,11 +341,19 @@ public:
     }
 	
 	
+    double densityWat_m3() {
+    	this->checkGridInitialized();
+    	return this->problem->rho_ * 1e3; //[g/m3] 
+    }
+    double molarDensityWat_m3() { //[mol/m3] 
+    	this->checkGridInitialized();
+    	return this->problem->rho_molar; 
+    }
+    double molarMassWat() {
+    	this->checkGridInitialized();
+    	return  this->densityWat_m3() / this->molarDensityWat_m3();// [g/mol]
+    }
 	
-    double molarMassWat = 18.; // [g/mol]
-    double densityWat_m3 = 1e6 ;//[g/m3]
-    //[mol/m3] = [g/m3] /  [g/mol] 
-    double molarDensityWat_m3 =  densityWat_m3 / molarMassWat;
 
 
     int getbcTopType() {
@@ -416,9 +449,14 @@ void init_richards(py::module &m, std::string name) {
    .def("getbcSBotType", &Richards_::getbcSBotType)
    .def("getbcSTopValue", &Richards_::getbcSTopValue)
    .def("getbcSBotValue", &Richards_::getbcSBotValue)
-   .def_readwrite("molarMassWat", &Richards_::molarMassWat)
-   .def_readwrite("densityWat_m3", &Richards_::densityWat_m3)
-   .def_readwrite("molarDensityWat_m3", &Richards_::molarDensityWat_m3);
+   .def("computeCSS1",&Richards_::computeCSS1)
+   .def("setComputeDtCSS2",&Richards_::setComputeDtCSS2)
+   .def("computeDtCSS2",&Richards_::computeDtCSS2)
+   .def("computeInitCSS2",&Richards_::computeInitCSS2)
+   .def("molarMassWat", &Richards_::molarMassWat)
+   .def("densityWat_m3", &Richards_::densityWat_m3)
+   .def("molarDensityWat_m3", &Richards_::molarDensityWat_m3)
+   .def_readonly("dimWorld", &Richards_::dimWorld);
 }
 
 

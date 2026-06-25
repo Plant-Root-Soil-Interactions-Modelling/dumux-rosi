@@ -58,9 +58,9 @@ pybind11_add_module(rosi_richards_cyl SHARED py_richards_cyl.cc)
 target_link_dune_default_libraries(rosi_richards_cyl)  
 target_link_libraries(rosi_richards_cyl PUBLIC ${DUNE_LIBS}) 
 
-pybind11_add_module(rosi_richardsnc_cyl SHARED py_richardsnc_cyl.cc)
-target_link_dune_default_libraries(rosi_richardsnc_cyl)  
-target_link_libraries(rosi_richardsnc_cyl PUBLIC ${DUNE_LIBS}) 
+# pybind11_add_module(rosi_richardsnc_cyl SHARED py_richardsnc_cyl.cc)
+# target_link_dune_default_libraries(rosi_richardsnc_cyl)  
+# target_link_libraries(rosi_richardsnc_cyl PUBLIC ${DUNE_LIBS}) 
 
 pybind11_add_module(rosi_richards10c_cyl SHARED py_richards10c_cyl.cc)
 target_link_dune_default_libraries(rosi_richards10c_cyl)  

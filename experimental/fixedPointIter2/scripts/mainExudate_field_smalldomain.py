@@ -186,7 +186,7 @@ def XcGrowth(scenarioData):
     
     nnn = 0
     while rs_age < simMax:
-
+ 
         rs_age += dt
         print('RS_age = ', rs_age, 'days')
 

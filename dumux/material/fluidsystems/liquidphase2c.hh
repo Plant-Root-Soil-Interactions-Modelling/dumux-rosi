@@ -45,6 +45,7 @@ class LiquidPhaseTwoC
     using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;
 
 public:
+    using H2O = MainComponent;
     using ParameterCache = NullParameterCache;
 
     static constexpr int numPhases = 1; //!< Number of phases in the fluid system

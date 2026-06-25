@@ -187,10 +187,10 @@ def printDiff1d3d(perirhizalModel, s, dt):
         write_file_array("scv_Soil_solute_conc"+str(i+1), 
                          np.array(s.getSolution(i+1)).flatten()* perirhizalModel.bulkDensity_m3 /1e6 , 
                          directory_ =results_dir, fileType = '.csv') 
-    
-    #save TotC and water content of macroscale cells only 
+
     TotC = np.array(s.getTotCContent()).flatten()    
     WaterC = np.array(s.getWaterContent()).flatten()   
+    #save TotC and water content of macroscale cells only 
     if(s.numSoluteComp>0) and (rank == 0):
         RootCells = perirhizalModel.cellWithRoots # only id of cells with roots
         TotC_macro = np.delete(TotC, RootCells)
@@ -340,6 +340,7 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
     CellVolumes = s.getCellVolumes()  
 
     if rank == 0:
+        
         soil_water3dAfter = sum(np.multiply(WaterContent, CellVolumes))
         write_file_array("endFpitLoop_error", perirhizalModel.errs, 
                          directory_ =results_dir, fileType = '.csv') 
@@ -349,7 +350,7 @@ def getAndPrintErrorRates(perirhizalModel, plantModel, s, phloemData):
                                    perirhizalModel.dt_inner]), 
                          directory_ =results_dir, fileType = '.csv')
         if perirhizalModel.doSoluteFlow:
-            totC3dAfter = sum(totC3dAfter_)
+            totC3dAfter = sum(totC3dAfter_) 
             s.bulkMassErrorCumul_abs = abs((totC3dAfter - ( s.totC3dInit + 
                                         sum(phloemData.Q_Exud) + 
                                         sum(phloemData.Q_Mucil))))
@@ -391,7 +392,6 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                             vals =datas, 
                             filename =results_dir+"vtpvti/plantAt"+ str(vtpindx), 
                       range_ = [0,5000])
-
     if not initPrint:
         cell_volumes = s.getCellVolumes()
         # otherwise the shoot looks weird
@@ -440,10 +440,8 @@ def doVTPplots(vtpindx, perirhizalModel, plantModel, s,
                                        extraArray = extraArray_, 
                         extraArrayName = extraArrayName_,
                     interactiveImage=False)  # VTK vizualisation
-
     if rank == 0:
         print('did VTP print in file',results_dir+"vtpvti/plantAt"+ str(vtpindx) )
-
         
 def map_exudates_pHead(rs, r, s, minB, maxB, cell_number, perirhizalModel, rs_age, ifexu): 
     #map exudates / SWP to a 1mm soil grid 

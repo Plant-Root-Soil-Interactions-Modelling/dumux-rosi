@@ -106,7 +106,7 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 		for(int rfIdx = 0; rfIdx < RFs.size(); rfIdx ++)
 		{
 			double svc_volume =  this->problem->getCellVolumesCyl(rfIdx);
-			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+			RFs.at(rfIdx) = this->problem->computeRF(C_S_fr.at(rfIdx)*this->molarDensityWat_m3(), // [mol/m3]
 													theta.at(rfIdx), 
 													svc_volume);//m3
 		}
@@ -121,7 +121,7 @@ class Richards10Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 		for(int rfIdx = 0; rfIdx < CSS1s.size(); rfIdx ++)
 		{
 			double svc_volume =  this->problem->getCellVolumesCyl(rfIdx);
-			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3, // [mol/m3]
+			CSS1s.at(rfIdx) = this->problem->computeCSS1(C_S_fr.at(rfIdx)*this->molarDensityWat_m3(), // [mol/m3]
 													theta.at(rfIdx), 
 													svc_volume);//m3
 		}

@@ -235,7 +235,7 @@ def sinusoidal3(t, dt):
  
 
 def getPsiAir(RH, TairC):#constants are within photosynthesys.h
-    Mh2o = 18 #molar weight, g mol-1, mg mmol-1
+    Mh2o = 18.01518 #molar weight, g mol-1, mg mmol-1
     rho_h2o = 1000 #water density mg cm-3
     return np.log(RH) * rho_h2o * R_ph * (TairC + 237.3)/Mh2o * (1/0.9806806)  ; #in cm
  

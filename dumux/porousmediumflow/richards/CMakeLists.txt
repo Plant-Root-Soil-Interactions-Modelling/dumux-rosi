@@ -1,3 +1,9 @@
-install(FILES
-newtonsolver.hh
-DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/porousmediumflow/richards)
+# install(FILES
+# newtonsolver.hh
+# localresidual.hh
+# DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/porousmediumflow/richards)
+
+
+file(GLOB DUMUX_POROUSMEDIUMFLOW_RICHARDS_HEADERS *.hh *.inc)
+install(FILES ${DUMUX_POROUSMEDIUMFLOW_RICHARDS_HEADERS}
+        DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/dumux/porousmediumflow/richards)

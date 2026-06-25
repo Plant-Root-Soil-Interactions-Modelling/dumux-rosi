@@ -1648,7 +1648,11 @@ public:
         DUNE_THROW(Dune::InvalidStateException, "css1Function not recognised (0, 1, or 2)"+ std::to_string(css1Function));
         return 0.;
     }
-    
+    static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
+	Scalar rho_ = FluidSystem::H2O::liquidDensity(0,0); //1.e3; // kg / m^3 (for type conversions)
+	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
+	static constexpr Scalar pRef_ = 1.e5; // Pa
+
 private:
 
 
@@ -1705,10 +1709,7 @@ private:
 	
 	static constexpr Scalar eps_ = 1.e-7;
 	double temperatureK;
-	static constexpr Scalar g_ = 9.81; // cm / s^2 (for type conversions)
-	static constexpr Scalar rho_ = 1.e3; // kg / m^3 (for type conversions)
-	static constexpr Scalar pRef_ = 1.e5; // Pa
-
+	
 	
 	// default value in CPB units
 	double  v_maxL_ = 5e5; //Maximum reaction rate of enzymes targeting large polymers [d-1]

@@ -31,16 +31,32 @@ def storeOldMassData1d(perirhizalModel):
 
         cellIds= perirhizalModel.getCellIds()
         # total carbon content per 1d model
-        perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore.sum(axis=1) 
+        if perirhizalModel.numSoluteComp == 0:
+            perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore
+        else:
+            perirhizalModel.rhizoTotCBefore_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolBefore.sum(axis=1) 
+        
         perirhizalModel.rhizoWBefore = sum(perirhizalModel.rhizoWBefore_eachCyl) 
         
         perirhizalModel.rhizoTotCBefore = sum(perirhizalModel.rhizoTotCBefore_eachCyl) 
 
         # return component content per voxel according to 1d model data 
         # used to compute 3d sink
-        perirhizalModel.soil_solute1d_perVoxelBefore = np.array([
-            perirhizalModel.soil_solute1d_eachCylechSolBefore[perirhizalModel.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
-        ]).T
+        
+        
+        if perirhizalModel.numSoluteComp == 0:
+            perirhizalModel.soil_solute1d_perVoxelBefore = np.array([
+                0. for cellId in cellIds
+            ]).T
+            assert perirhizalModel.soil_solute1d_perVoxelBefore.shape[0] == len(cellIds)
+        else:
+            perirhizalModel.soil_solute1d_perVoxelBefore = np.array([
+                perirhizalModel.soil_solute1d_eachCylechSolBefore[perirhizalModel.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
+            ]).T
+        
+            assert perirhizalModel.soil_solute1d_perVoxelBefore.shape == (perirhizalModel.numSoluteComp, len(cellIds))
+
+        
         
         if perirhizalModel.debugMode:
             write_file_array("fpit_soil_solute1d_eachCylechSolBefore1", perirhizalModel.soil_solute1d_eachCylechSolBefore[1], 
@@ -68,22 +84,32 @@ def storeNewMassData1d(perirhizalModel):
                         perirhizalModel.getIdCyllMPI(cellId)[0]
                     ].sum()
                     for cellId in cellIds])
-       
-        assert ((perirhizalModel.soil_solute1d_eachCylechSolAfter.shape == (len(perirhizalModel.eidx_all),perirhizalModel.numSoluteComp))|(perirhizalModel.soil_solute1d_eachCylechSolAfter.shape[0] == len(perirhizalModel.eidx_all) == 0)) 
+        assert ((perirhizalModel.soil_solute1d_eachCylechSolAfter.shape == (len(perirhizalModel.eidx_all),perirhizalModel.numSoluteComp))|
+                (perirhizalModel.soil_solute1d_eachCylechSolAfter.shape[0] == len(perirhizalModel.eidx_all) == 0)|
+                ((perirhizalModel.soil_solute1d_eachCylechSolAfter.shape[0] == len(perirhizalModel.eidx_all))&(perirhizalModel.numSoluteComp == 0))) 
 
         # total carbon content per 1d model
-        perirhizalModel.rhizoTotCAfter_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolAfter.sum(axis=1)
+        if perirhizalModel.numSoluteComp == 0:
+            perirhizalModel.rhizoTotCAfter_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolAfter
+        else:
+            perirhizalModel.rhizoTotCAfter_eachCyl = perirhizalModel.soil_solute1d_eachCylechSolAfter.sum(axis=1)
 
-        perirhizalModel.rhizoWAfter = sum(perirhizalModel.rhizoTotCAfter_eachCyl) 
+        perirhizalModel.rhizoWAfter = sum(perirhizalModel.rhizoWAfter_eachCyl) 
         perirhizalModel.rhizoTotCAfter = sum(perirhizalModel.rhizoTotCAfter_eachCyl) 
         
         # return component content per voxel according to 1d model data 
         # used to compute 3d sink
-        perirhizalModel.soil_solute1d_perVoxelAfter = np.array([
-            perirhizalModel.soil_solute1d_eachCylechSolAfter[perirhizalModel.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
-        ]).T
+        if perirhizalModel.numSoluteComp == 0:
+            perirhizalModel.soil_solute1d_perVoxelAfter = np.array([
+                0. for cellId in cellIds
+            ]).T
+            assert perirhizalModel.soil_solute1d_perVoxelAfter.shape[0] == len(cellIds)
+        else:
+            perirhizalModel.soil_solute1d_perVoxelAfter = np.array([
+                perirhizalModel.soil_solute1d_eachCylechSolAfter[perirhizalModel.getIdCyllMPI(cellId)[0]].sum(axis=0) for cellId in cellIds
+            ]).T
         
-        assert perirhizalModel.soil_solute1d_perVoxelAfter.shape == (perirhizalModel.numSoluteComp, len(cellIds))
+            assert perirhizalModel.soil_solute1d_perVoxelAfter.shape == (perirhizalModel.numSoluteComp, len(cellIds))
 
     if rank ==0:
         try: # todo: take out?
@@ -655,18 +681,19 @@ class fixedPointIterationHelper():
                 if rank==0:
                     print("solve 3d soil finished")
                 
-                # if we got solute content < 0, throw exception
-                solComp = [s.getSolution(ncom+1) for ncom in range(s.numSoluteComp)]
-                whereError = None
-                if rank == 0:
-                    whereError = [np.where(SC <0.) for SC in solComp]
-                    solComp = [min(SC) for SC in solComp]
-                solComp = comm.bcast(solComp, root = 0)
-                whereError = comm.bcast(whereError, root = 0)
-                if min(solComp) <0.:
-                    print("min(solComp) <0.", rank, solComp, whereError)
-                    decreaseMaxRelShift = True
-                    raise Exception
+                # if we got solute content < 0, throw exception                
+                if(s.numSoluteComp>0):
+                    solComp = [s.getSolution(ncom+1) for ncom in range(s.numSoluteComp)]
+                    whereError = None
+                    if rank == 0:
+                        whereError = [np.where(SC <0.) for SC in solComp]
+                        solComp = [min(SC) for SC in solComp]
+                    solComp = comm.bcast(solComp, root = 0)
+                    whereError = comm.bcast(whereError, root = 0)
+                    if min(solComp) <0.:
+                        print("min(solComp) <0.", rank, solComp, whereError)
+                        decreaseMaxRelShift = True
+                        raise Exception
                     
                 redoSolve = False
                 ## solving succeded, reset solving parameters (in case  they were changed)
@@ -732,9 +759,14 @@ class fixedPointIterationHelper():
         if rank == 0:
             # convergence plant wat. pot
             rx = np.array(plantModel.psiXyl)
-            rx_divide = np.where(rx != 0, rx, 1.)
-            self.errRxPlant = max(abs((rx - self.rx_old) / rx_divide) * 100.)
-            self.rx_old = rx.copy()
+            has_nan = np.isnan(rx).any()
+            if has_nan:
+                print('nan found in the plant xylem potential array. plantModel.psiXyl ignored for error computation')
+                self.errRxPlant = 0
+            else:
+                rx_divide = np.where(rx != 0, rx, 1.)
+                self.errRxPlant = max(abs((rx - self.rx_old) / rx_divide) * 100.)
+                self.rx_old = rx.copy()
 
             
             rsx_divide = np.where(abs(rsx) < abs(self.rsx_input),
@@ -760,12 +792,15 @@ class fixedPointIterationHelper():
                 diffBCS1dsFluxIn/ np.where(np.array(self.seg_fluxes),
                                            np.array(self.seg_fluxes),1.))*100))
 
-
-            perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds, perirhizalModel.errC1ds,
-                                                 perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
-                                   perirhizalModel.rhizoMassWError_rel,
-                                   perirhizalModel.rhizoMassCError_rel)
-                            
+            if s.numComp > 1:
+                perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds, perirhizalModel.errC1ds,
+                                                     perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
+                                       perirhizalModel.rhizoMassWError_rel,
+                                       perirhizalModel.rhizoMassCError_rel)
+            else:
+                perirhizalModel.err2 = max(self.errRxPlant,perirhizalModel.errW1ds,
+                                                     perirhizalModel.errWrsi,perirhizalModel.errWrsiRealInput,
+                                       perirhizalModel.rhizoMassWError_rel)             
 
     def computeConvergence(self):
         """
@@ -780,31 +815,37 @@ class fixedPointIterationHelper():
         
         if rank ==0:
             self.diffBCS1dsFluxOut =   self.proposed_outer_fluxes  - self.proposed_outer_fluxes_old 
-            
-            diffBCS1dsFluxOut_sol = np.array([  self.proposed_outer_sol_fluxes[jj]  - self.proposed_outer_sol_fluxes_old[jj] 
-                                                            for jj in range(self.s.numDissolvedSoluteComp)])
-            
             errBCS1dsFluxOut = max(abs((
                 self.diffBCS1dsFluxOut/ np.where(self.proposed_outer_fluxes,
                                             self.proposed_outer_fluxes,1.))*100))
+            if self.s.numDissolvedSoluteComp > 0:
+                diffBCS1dsFluxOut_sol = np.array([  self.proposed_outer_sol_fluxes[jj]  - self.proposed_outer_sol_fluxes_old[jj] 
+                                                                for jj in range(self.s.numDissolvedSoluteComp)])
+                
+                
+                errBCS1dsFluxOut_sol =  max(np.array([ max(abs((
+                    diffBCS1dsFluxOut_sol[jj]/ np.where(self.proposed_outer_sol_fluxes[jj],
+                                                    self.proposed_outer_sol_fluxes[jj],1.))*100))
+                                                                for jj in range(self.s.numDissolvedSoluteComp)]))
+            else:
+                errBCS1dsFluxOut_sol = 0.
             
-            errBCS1dsFluxOut_sol =  max(np.array([ max(abs((
-                diffBCS1dsFluxOut_sol[jj]/ np.where(self.proposed_outer_sol_fluxes[jj],
-                                                self.proposed_outer_sol_fluxes[jj],1.))*100))
-                                                            for jj in range(self.s.numDissolvedSoluteComp)]))
-                                                  
             self.seg_fluxes_old = np.array(self.seg_fluxes).copy()        
             self.proposed_outer_fluxes_old = self.proposed_outer_fluxes.copy()
             self.proposed_outer_sol_fluxes_old =self.proposed_outer_sol_fluxes.copy()
             
             # convergence inter-cell flow for 3d soil
             diffouter_R_bc_wat =   self.outer_R_bc_wat  - self.outer_R_bc_wat_old 
-            diffouter_R_bc_sol =   self.outer_R_bc_sol  - self.outer_R_bc_sol_old 
-
             errOuter_R_bc_wat = max(abs((diffouter_R_bc_wat/ np.where(self.outer_R_bc_wat,
                                                                       self.outer_R_bc_wat,1.))*100))
-            errOuter_R_bc_sol = max(abs((diffouter_R_bc_sol[:1].reshape(-1)/ np.where(self.outer_R_bc_sol[:1].reshape(-1),
-                                                                                                   self.outer_R_bc_sol[:1].reshape(-1),1.))*100))
+                                                                      
+            if self.s.numDissolvedSoluteComp > 0:                                                          
+                diffouter_R_bc_sol =   self.outer_R_bc_sol  - self.outer_R_bc_sol_old 
+
+                errOuter_R_bc_sol = max(abs((diffouter_R_bc_sol[:1].reshape(-1)/ np.where(self.outer_R_bc_sol[:1].reshape(-1),
+                                                                                                       self.outer_R_bc_sol[:1].reshape(-1),1.))*100))
+            else:
+                errOuter_R_bc_sol = 0.
             
             self.outer_R_bc_wat_old = self.outer_R_bc_wat.copy()
             self.outer_R_bc_sol_old = self.outer_R_bc_sol.copy()
@@ -826,11 +867,15 @@ class fixedPointIterationHelper():
 
             
             # one metric to decide if we stay in the iteration loop or not
-            
-            perirhizalModel.err = max(perirhizalModel.err2,
-                                    s.bulkMassErrorWater_rel, 
-                                   s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
-                            )
+            if s.numComp > 1:
+                perirhizalModel.err = max(perirhizalModel.err2,
+                                        s.bulkMassErrorWater_rel, 
+                                       s.bulkMassCErrorPlant_rel, s.bulkMassCError1ds_rel
+                                )
+            else:
+                perirhizalModel.err = max(perirhizalModel.err2,
+                                        s.bulkMassErrorWater_rel
+                                )
             # one array to do printing
             perirhizalModel.errs =np.array([
                             # non-convergence metrics
@@ -931,7 +976,6 @@ class fixedPointIterationHelper():
 
             s.bulkMassErrorWater_abs = sum(abs(perirhizalModel.soil_water3dAfter -  perirhizalModel.soil_water3dBefore-self.net_PWU*dt-self.outer_R_bc_wat))
             
-            
             assert s.bulkMassErrorWater_abs - s.bulkMassErrorWater_absLim >= -1e-13
             
             s.bulkMassErrorWater_relLim = abs(s.bulkMassErrorWater_absLim /sum(perirhizalModel.soil_water3dAfter) )*100
@@ -959,7 +1003,7 @@ class fixedPointIterationHelper():
                 )
             if perirhizalModel.debugMode:
                 print("s.bulkMassCErrorPlant_abs",s.bulkMassCErrorPlant_abs," s.bulkMassCError1ds_abs", s.bulkMassCError1ds_abs,"sum(self.Q_Exud_i) + sum(self.Q_mucil_i)",sum(self.Q_Exud_i) + sum(self.Q_mucil_i)," sum(self.sources_sol_from1d.flatten())*dt)", sum(self.sources_sol_from1d.flatten())*dt)
-                
+            # raise Exception
             ### for each voxel
             s.bulkMassErrorWaterAll_abs = abs(perirhizalModel.soil_water3dAfter - (perirhizalModel.soil_water3dBefore  + self.sources_wat_from3d + self.outer_R_bc_wat))
             s.bulkMassErrorWaterAll_rel = abs(s.bulkMassErrorWaterAll_abs /perirhizalModel.soil_water3dAfter )*100
@@ -967,20 +1011,23 @@ class fixedPointIterationHelper():
 
 
             ## inner mass balance error 
+            if perirhizalModel.numSoluteComp == 0:
+                s.bulkMassCError1dsAll_abs = 0.
+                s.bulkMassCError1dsAll_rel = 0.
+            else:
+                s.bulkMassCError1dsAll_abs = abs(perirhizalModel.totC3dAfter_eachVoxeleachComp - (perirhizalModel.totC3dBefore_eachVoxeleachComp + 
+                                                            self.sources_sol_from3d + self.outer_R_bc_sol))
 
-            s.bulkMassCError1dsAll_abs = abs(perirhizalModel.totC3dAfter_eachVoxeleachComp - (perirhizalModel.totC3dBefore_eachVoxeleachComp + 
-                                                        self.sources_sol_from3d + self.outer_R_bc_sol))
 
+                totC3dAfter_eachVoxeleachCompTemp = np.where(perirhizalModel.totC3dAfter_eachVoxeleachComp != 0,
+                                                          perirhizalModel.totC3dAfter_eachVoxeleachComp,
+                                                          1)
+                s.bulkMassCError1dsAll_rel = abs(s.bulkMassCError1dsAll_abs*100/totC3dAfter_eachVoxeleachCompTemp)
 
-            totC3dAfter_eachVoxeleachCompTemp = np.where(perirhizalModel.totC3dAfter_eachVoxeleachComp != 0,
-                                                      perirhizalModel.totC3dAfter_eachVoxeleachComp,
-                                                      1)
-            s.bulkMassCError1dsAll_rel = abs(s.bulkMassCError1dsAll_abs*100/totC3dAfter_eachVoxeleachCompTemp)
-
-            try:
-                assert s.bulkMassCError1dsAll_rel.shape == (s.numSoluteComp, s.numberOfCellsTot )
-            except:
-                print(s.bulkMassCError1dsAll_rel.shape , 
-                      (s.numSoluteComp, s.numberOfCellsTot ))
-                raise Exception
+                try:
+                    assert s.bulkMassCError1dsAll_rel.shape == (s.numSoluteComp, s.numberOfCellsTot )
+                except:
+                    print(s.bulkMassCError1dsAll_rel.shape , 
+                          (s.numSoluteComp, s.numberOfCellsTot ))
+                    raise Exception
 

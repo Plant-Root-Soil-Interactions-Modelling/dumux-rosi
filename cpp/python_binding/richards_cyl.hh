@@ -40,6 +40,22 @@ public:
 	}
     
 	
+    /**
+     * Sets the initial conditions, for a MPI process (TODO for more than 1 equation)
+     *
+     *  @param init         globally shared initial data, sorted by global index [Pa]
+     */
+    virtual void setInitialConditionHead(std::vector<double> init) {
+        if (this->isBox) {
+            throw std::invalid_argument("Richards::setInitialCondition: Not implemented yet (sorry)");
+        } else {
+            for (const auto& e : Dune::elements(this->gridGeometry->gridView())) {
+                int eIdx = this->gridGeometry->elementMapper().index(e);
+                int gIdx = this->cellIdx->index(e);
+                this->x[eIdx][0] = toPa(init[gIdx]);
+            }
+        }
+    }
 	
     /**
      * soil conductance at inner face
@@ -147,7 +163,74 @@ public:
     double rIn = 0.;
     double rOut = 0.;
 
+	
 	static constexpr double g_ = 9.81; // cm / s^2 (for type conversions)
+	static constexpr double rho_ = 1.e3; // kg / m^3 (for type conversions)
+	static constexpr double pRef_ = 1.e5; // Pa
+
+	//! cm pressure head -> Pascal
+	static double toPa(double ph) {
+		return pRef_ + ph / 100. * rho_ * g_;
+	}
+	//! Pascal -> cm pressure head
+	static double toHead(double p) {
+		return (p - pRef_) * 100. / rho_ / g_;
+	}
+
+ /**
+     * The volume [m3] of each element (vtk cell)
+     *
+     * This is done for a single process, gathering and mapping is done in Python.
+     */
+    virtual std::vector<double> getCellVolumesCyl() {
+		int numCells = this->checkGridInitialized();
+        std::vector<double> volumes;
+		volumes.resize(numCells);
+        for (int i =0; i<volumes.size(); i++)
+            volumes.at(i) = this->problem->getCellVolumesCyl(i);
+        return volumes;
+    }
+    
+	void setComputeDtCSS2(const std::function<double(double,double)>& s)
+    {}
+    
+	double computeDtCSS2(double CSW, double CSS2)
+    {
+		return 0.;
+	}
+    
+	double computeInitCSS2(double CSS1, double CSW)
+    {
+		return 0.;
+    }
+    
+	std::vector<double> getCellVolumes(){
+		return this->problem->cellVolumesCyl;
+	}
+	
+	double segLength(){
+		return this->problem->segLength;// m
+	}
+	
+	
+	double computeCSS1(double bulkSoilDensity, double C_S_W, int dofIndex)
+	{	
+		return 0.;
+	}
+	
+	/**
+     * set verbose
+     */
+    virtual void setVerbose(int verbose) {
+        this->checkGridInitialized();
+    	this->problem->verbose = verbose;
+    }
+	
+    std::vector<int> getSTopBCType() {}
+    std::vector<int> getSBotBCType() {}
+    std::vector<double> getSTopBCValue() {return {-1};}
+    std::vector<double> getSBotBCValue() {return {-1};}
+
 };
 
 /**
@@ -161,13 +244,15 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("initialize", &RichardsFoam::initialize, py::arg("args_") = std::vector<std::string>(0),
 											py::arg("verbose") = true, py::arg("doMPI") = true)
    .def("initializeProblem", &RichardsFoam::initializeProblem)
-
+	.def("setInitialConditionHead", &RichardsFoam::setInitialConditionHead)
+   
    .def("setSource", &RichardsFoam::setSource, py::arg("sourceMap"), py::arg("eqIdx") = 0)
    .def("setCriticalPressure", &RichardsFoam::setCriticalPressure)
    .def("getSolutionHead", &RichardsFoam::getSolutionHead, py::arg("eqIdx") = 0)
    .def("getSolutionHeadAt", &RichardsFoam::getSolutionHeadAt, py::arg("gIdx"), py::arg("eqIdx") = 0)
    .def("getWaterContent",&RichardsFoam::getWaterContent)
    .def("getWaterVolume",&RichardsFoam::getWaterVolume)
+   .def("segLength", &RichardsFoam::segLength)
    .def("getVelocity1D", &RichardsFoam::getVelocity1D)
    .def("writeDumuxVTK",&RichardsFoam::writeDumuxVTK)
    .def("setRegularisation",&RichardsFoam::setRegularisation)
@@ -182,14 +267,24 @@ void init_richards_cyl(py::module &m, std::string name) {
    .def("getInnerHead",&RichardsFoam::getInnerHead, py::arg("shift") = 0)
    .def("getInnerSolutes",&RichardsFoam::getInnerSolutes, py::arg("shift") = 0, py::arg("compId") = 1)
    .def("setRootSystemBC",&RichardsFoam::setRootSystemBC)
-
+   .def("computeCSS1",&RichardsFoam::computeCSS1)
    .def("numComp",&RichardsFoam::numComp)
 
 
    .def_readonly("innerIdx",&RichardsFoam::innerIdx)
    .def_readonly("outerIdx",&RichardsFoam::outerIdx)
    .def_readonly("rIn",&RichardsFoam::rIn)
-   .def_readonly("rOut",&RichardsFoam::rOut);
+   .def_readonly("rOut",&RichardsFoam::rOut)
+   
+   
+   .def("setComputeDtCSS2",&RichardsFoam::setComputeDtCSS2)
+   .def("computeDtCSS2",&RichardsFoam::computeDtCSS2)
+   .def("computeInitCSS2",&RichardsFoam::computeInitCSS2)
+   .def("setVerbose",&RichardsFoam::setVerbose)
+   .def("getSTopBCType",&RichardsFoam::getSTopBCType)
+   .def("getSBotBCType",&RichardsFoam::getSBotBCType)
+   .def("getSTopBCValue",&RichardsFoam::getSTopBCValue)
+   .def("getSBotBCValue",&RichardsFoam::getSBotBCValue);
 }
 
 

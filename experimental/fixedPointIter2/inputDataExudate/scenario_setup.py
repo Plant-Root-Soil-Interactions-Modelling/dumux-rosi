@@ -297,6 +297,11 @@ def getSoilTextureAndShape(res, soil_= 'loam'):
         max_b =np.array( [20/2, 45/2, 0.]) #  np.array([-5, -5, -5.])
         cell_number = np.array([20,45,74]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
         area = 20 * 45  # cm2 45
+    elif res == -1: 
+        min_b = np.array([-1e3, -1e3, -2.]) # np.array( [5, 5, 0.] )
+        max_b =np.array( [1e3, 1e3, 0.]) #  np.array([-5, -5, -5.])
+        cell_number = np.array([1,1,1]) # np.array( [3,12,40]) #np.array( [1,1,1]) # 1cm3
+        area = (max_b[0] - min_b[0]) * (max_b[1] - min_b[1])   # cm2 
     elif res == 2: 
         min_b = np.array([-20/2, -44/2, -74.])
         max_b =np.array( [20/2, 44/2, 0.]) 
