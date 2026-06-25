@@ -22,9 +22,8 @@ def get_transpiration(sim_time, area, Kc, soil_type):
     sim_time += 1  # root system starts to grow one day earlier (+max dat)
 
     """ 0. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("../inputDataExudate/data//ET0.csv")  # evapotranspiration  in cm / day 
-    yd2 = df2["ET0_"+str(year)].loc[0:sim_time].values # cm / d
-    et0 = yd2
+    df2 = pd.read_csv("../inputDataExudate/data/ET0.csv")  # evapotranspiration  in cm / day 
+    et0 = df2["ET0_"+str(year)].loc[0:sim_time].values # cm / d
     etc = et0 * Kc[0:sim_time+1]
     
     """3. load LAI """
@@ -40,10 +39,10 @@ def get_transpiration(sim_time, area, Kc, soil_type):
     """ 1. ETc -> Tpot, Evap """
     k = 0.45
     t_ = np.linspace(0, len(etc) - 1, len(etc))
-    tpot = np.multiply(etc*10, [(1. - np.exp(-k * f(t_[i]))) for i in range(0, len(etc))])
-    evap = (etc*10 - tpot)
+    tpot = np.multiply(etc, [(1. - np.exp(-k * f(t_[i]))) for i in range(0, len(etc))])
+    evap = (etc - tpot)
     trans = lambda t, dt:-tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
-
+   
     return trans
 
 def net_infiltration(soil_type, sim_time, Kc):
@@ -61,7 +60,7 @@ def net_infiltration(soil_type, sim_time, Kc):
     precip = np.array([ yd1[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
     
     """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("../inputDataExudate/data//ET0.csv")  # evapotranspiration  in cm / day 
+    df2 = pd.read_csv("../inputDataExudate/data/ET0.csv")  # evapotranspiration  in cm^3 / cm^2/ day 
     yd2 = df2["ET0_"+str(year)].loc[0:sim_time].values # cm / d
     et0 = np.array([ yd2[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
 
@@ -78,21 +77,19 @@ def net_infiltration(soil_type, sim_time, Kc):
         
     df3 = pd.read_csv("../inputDataExudate/data/LAI_"+str(year)+".csv")  # LAI
     LAI =  df3[st+"_"+genotype].loc[0:sim_time].values
-    #print('LAI', np.max(LAI),np.min(LAI))
-    #sys.exit()
+
     f = interpolate.interp1d(np.linspace(0,sim_time, int(sim_time+1)), LAI)
 
     """ 4. ETc -> Tpot, Evap """
     k = 0.45
     tpot = np.multiply(etc, [1. - np.exp(-k *f(t)) for t in t_])
     evap = etc - tpot
-    evap = -evap
-    net_inf = precip + evap
+    net_inf = precip - evap #(cm^3/cm^2 d)
  
-    y_ = []
-    x_ = []
+    times = []
+    inf = []
     for i in range(0, t_.shape[0] - 1):
-        x_.extend([t_[i], t_[i + 1]])  # hour -> day
-        y_.extend([net_inf[i], net_inf[i]])
+        times.extend([t_[i], t_[i + 1]])  # hour -> day
+        inf.extend([net_inf[i], net_inf[i]])
 
-    return np.array(x_), np.array(y_)
+    return np.array(times), np.array(inf)

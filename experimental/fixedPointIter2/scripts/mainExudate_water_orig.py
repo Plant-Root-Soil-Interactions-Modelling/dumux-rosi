@@ -48,7 +48,7 @@ def XcGrowth(scenarioData):
     soil_type = scenarioData['soil_type']
     initsim = 0#initial simulation time 
     simMax = 60
-    res = 4
+    res = 2
     ifexu = False
     sorption_type = 'low'   
     diffusion = 'low'    
@@ -61,9 +61,9 @@ def XcGrowth(scenarioData):
     dt_inner_init =  dt # 1/60/24 #
     dt_inner2_init =  dt
     # min, max, objective number of iteration for the fixed-point iteration
-    minIter = 3 # empirical minimum number of loop to reduce error
+    minIter = 4 # empirical minimum number of loop to reduce error
     k_iter_2initVal = 131 # max num of iteration for loops
-    k_iter = 4 # max num of iteration for loops
+    k_iter = 200 # max num of iteration for loops
     targetIter= 40 # target n_iter for adjusting time step of inner loop
     # which functional modules to implement
     doSoluteFlow = False # only water (False) or with solutes (True)
@@ -95,7 +95,7 @@ def XcGrowth(scenarioData):
     # 0 : mean(allvals) after 4 iteration
     # 1: use steady rate
     
-    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
+    soilTextureAndShape = scenario_setup.getSoilTextureAndShape(soil_type, res)
 
     results_dir="./results_flowonly/"+soil_type+"/"
 
@@ -123,8 +123,8 @@ def XcGrowth(scenarioData):
 
 
     # all thread need a plant object, but only thread 0 will make it grow
-    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, dt, s, soilTextureAndShape, xml_name,
-                                            path, soil_type,
+    perirhizalModel, plantModel = scenario_setup.create_mapped_rootsystem(initsim, simMax, ifexu, s, soilTextureAndShape, xml_name,
+                                            path, soil_type,res,
                                             limErr1d3d = 5e-12)  
 
     # store parameters
@@ -187,10 +187,10 @@ def XcGrowth(scenarioData):
     printData.doVTPplots(0, perirhizalModel, plantModel,s, soilTextureAndShape, 
                             datas=[], datasName=[],initPrint=True)
     
-    N = int(simMax / dt)
-    for n in range(N):
+    nnn = 0
+    while rs_age < simMax:
 
-        rs_age = (n+1)*dt
+        rs_age += dt
         print('RS_age = ', rs_age, 'days')
 
         
@@ -271,8 +271,8 @@ def XcGrowth(scenarioData):
                                                    seg_fluxes=seg_Wfluxes,
                                                      doMinimumPrint = doMinimumPrint)
             
-            # keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
-            keepGoing = perirhizalModel.solve_gave_up
+            
+            keepGoing = (failedLoop & (perirhizalModel.n_iter < perirhizalModel.k_iter))
             perirhizalModel.n_iter += 1
 
             
@@ -288,8 +288,8 @@ def XcGrowth(scenarioData):
                 raise Exception
                 
                 
-            # perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, 
-                                                             # failedLoop, perirhizalModel, n_iter_inner_max)
+            perirhizalModel.dt_inner = suggestNumStepsChange(dt, perirhizalModel.dt_inner, 
+                                                             failedLoop, perirhizalModel, n_iter_inner_max)
             
             if keepGoing:
                 
@@ -302,9 +302,9 @@ def XcGrowth(scenarioData):
         # if continueLoop() = True, we had a non-convergence error 
         
 
-        # if failedLoop:
-            # print("convergence error: only left the loop because reached the max number of iteration.")
-            # raise Exception  
+        if failedLoop:
+            print("convergence error: only left the loop because reached the max number of iteration.")
+            raise Exception  
         
         printData.printTimeAndError(perirhizalModel, rs_age)
         
@@ -338,7 +338,7 @@ def XcGrowth(scenarioData):
             elif doExudation:
                 printData.printOutput(rs_age, perirhizalModel, exudateData, plantModel)
         print('for now, remove some printing to make the troubleshooting faster')
-        if np.isclose(rs_age % 1, 0.5, atol=dt/2):#  midday (TODO: change it to make it work for all outer time step)
+        if np.around(int(rs_age *1000)/1000-int(rs_age),2) == 0.5 :# midday (TODO: change it to make it work for all outer time step)
             if rank == 0:
                 if doExudation:
                     datas = [
