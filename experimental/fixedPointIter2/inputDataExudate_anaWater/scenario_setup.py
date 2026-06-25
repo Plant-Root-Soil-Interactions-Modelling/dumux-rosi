@@ -278,12 +278,12 @@ def vg_SPP(i = int(1)):
     # theta_r, theta_s, alpha, n, Ks                    
     #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
     soil[0] = [0.1, 0.411, 0.05, 1.267, 441]   
-    soil[1] = [0.062, 0.337, 0.0182, 2.733, 5]
+    soil[1] = [0.062, 0.337, 0.0182, 2.733, 1174]
                
     return soil[i]
     
 
-def getSoilTextureAndShape(soil_= 'loam', res = 1):  
+def getSoilTextureAndShape(res, soil_= 'loam'):  
     """ soil shape and texture data
         to adapt according to the soil represented
     """
@@ -541,7 +541,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
 
 
     
-def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndShape, fname, path, soil_type,res , stochastic = False, limErr1d3d = 1e-11):
+def create_mapped_rootsystem(initSim, simMax, ifexu, dt, soil_model, soilTextureAndShape, fname, path, soil_type, stochastic = False, limErr1d3d = 1e-11):
     """ loads a rmsl file, or creates a rootsystem opening an xml parameter set,  
         and maps it to the soil_model """
     from rhizo_modelsPlant import RhizoMappedSegments  # Helper class for cylindrical rhizosphere models
@@ -585,7 +585,7 @@ def create_mapped_rootsystem(initSim, simMax, ifexu, soil_model, soilTextureAndS
     plantModel.transpiration = evap.get_transpiration(simMax, soilTextureAndShape['area'], soilTextureAndShape['Kc'], soil_type)
     # set kr and kx for root system or plant
     
-    plantParameters.init_conductivities(r = plantModel)
+    plantParameters.init_conductivities(soil_type, r = plantModel)
     perirhizalModel.set_plantModel(plantModel)
     perirhizalModel.rhizoMassWError_rel = 0.
     perirhizalModel.rhizoMassWError_relLim = 0.

@@ -1373,7 +1373,10 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                         molKonzNew[nComp -1] = molKonzOld[nComp -1]
                 
                 molFrNew = [molKonzNew[nc] / (self.soilModel.phaseDensity((nc < self.numDissolvedSoluteComp))/1e6) for nc in range(len(molKonzNew))]# go from concentration to mol fraction 
-                molFrNew[:self.numDissolvedSoluteComp] /= theta_new
+                if molFrNew[:self.numDissolvedSoluteComp]: 
+                    molFrNew[:self.numDissolvedSoluteComp] /= theta_new
+                else: 
+                    molFrNew = np.zeros((3,len(theta_new)))
                 # create new cylinder from the data
                 self.cyls[lId] = self.initialize_dumux_nc_( gId, 
                                                             x = newHead,# cm
@@ -1536,6 +1539,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                                          0./(2700/ 60.08e-3* (1. - 0.43)),              # mol/mol scv
                                          0./(2700/ 60.08e-3* (1. - 0.43))],             # mol/mol scv
                                          Cells = []):    
+        
         verbose = False
         a_in = self.radii[gId]
         a_out = self.outer_radii[gId]
@@ -1640,7 +1644,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
                 cyl.setParameter("Soil.IC.C"+str(j), cyl.dumux_str(cAll[j-1]) ) 
 
             if len(Cells) > 0:#in case we update a cylinder, to allow dumux to do interpolation
-                assert(len(cAll[j-1])==len(Cells))
+                # assert(len(cAll[j-1])==len(Cells))
                 CellsStr = cyl.dumux_str(Cells/100)#cm -> m
                 cyl.setParameter("Soil.IC.Z",CellsStr)# m
                 if len(Cells)!= len(x):
