@@ -171,10 +171,7 @@ public:
         NumEqVector storage(0.0);
 		if(numSolidComps > numInertSolidComps)
 		{
-                if(problem.verbose_local_residual)
-                {
-                     std::cout<<"solid storage ";
-                }
+                
 			//soil mass or mol density (mol soil C / m3 soil)
 		double massOrMoleDensity =  useMoles ? volVars.solidComponentMolarDensity(soilIdx) : volVars.solidComponentDensity(soilIdx);
 			//component mole fraction (mol comp C/mol soil C)
@@ -191,16 +188,8 @@ public:
 								* massOrMoleDensity	//mol solid / m3 solide
 								* massOrMoleFraction(volVars, sCompIdx) // mol comp / mol solid
 								* pos0); // mol comp / mol solid
-								
-                if(problem.verbose_local_residual)
-                {
-                     std::cout<<", ("<<storage[eqIdx]<<", "<<  massOrMoleFraction(volVars, sCompIdx)<<")";
-                }
+				
 			}
-            if(problem.verbose_local_residual)
-                {
-                     std::cout<<std::endl;
-                }
 		}
 		
         return storage;

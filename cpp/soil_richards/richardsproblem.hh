@@ -860,6 +860,8 @@ public:
 	bool onLowerBoundary_(const GlobalPosition &globalPos) const {
 		return globalPos[dimWorld - 1] < this->gridGeometry().bBoxMin()[dimWorld - 1] + eps_;
 	}
+	
+	bool verbose_assembler = false;
 private:
 
 	//! cm pressure head -> Pascal

@@ -338,7 +338,7 @@ public:
 		
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", (dimWorld > 1));
 		temperatureK = Dumux::getParam<double>("Problem.temperatureK", 273.15+10);
-		verbose_local_residual = Dumux::getParam<bool>("Problem.verbose_local_residual", verbose_local_residual);
+		verbose_assembler = Dumux::getParam<bool>("Problem.verbose_assembler", verbose_assembler);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		
@@ -1605,7 +1605,7 @@ public:
     int dzScaling;
     
     bool RFmethod2 = false;
-	bool verbose_local_residual = false;
+	bool verbose_assembler = false;
 	double segLength;//m
 	std::vector<double> cellVolumesCyl;
 	int nCells_all;

@@ -23,7 +23,7 @@ namespace Dumux {
 
 /*!
  * \ingroup Assembly
- * \ingroup CCDiscretization
+ * \ingroup CCDiscretization 
  * \brief Calculates the element-wise residual for the cell-centered discretization schemes
  */
 template<class TypeTag>

@@ -13,9 +13,9 @@ from mpl_toolkits.axes_grid1 import make_axes_locatable
 import pandas as pd
 from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank(); max_rank = comm.Get_size()
 
-from rosi_richards5c_cyl import Richards5CCylFoam as RichardsNCCylFoam # C++ part (Dumux binding)
+from rosi_richards5c_cyl import Richards5CCylFoamAna as RichardsNCCylFoam # C++ part (Dumux binding)
 from richards_no_mpi import RichardsNoMPIWrapper  # Python part of cylindrcial model (a single cylindrical model is not allowed to run in parallel)
-from rosi_richards5c import Richards5CSPILU as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
+from rosi_richards5c import Richards5CSPILUAna as RichardsNCSP  # C++ part (Dumux binding), macroscopic soil model
 from richards import RichardsWrapper  # Python part, macroscopic soil model
 from functional.phloem_flux import PhloemFluxPython  # root system Python hybrid solver
 

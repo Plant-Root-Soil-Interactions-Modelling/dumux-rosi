@@ -82,6 +82,8 @@ using RichardsSPLinearSolverNum = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolv
 	 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssemblerNum>>;
 
 
+using RichardsILUIstlLinearSolverAna = Dumux::ILUBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
+	 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssembler>>; 
 using RichardsILUIstlLinearSolver = Dumux::ILUBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
 	 Dumux::LinearAlgebraTraitsFromAssembler<RichardsSPAssemblerNum>>; 
 using RichardsSPSSORCGIstlLinearSolver = Dumux::SSORCGIstlSolver<Dumux::LinearSolverTraits<GridGeometryRSPTT>,
@@ -104,6 +106,9 @@ PYBIND11_MODULE(rosi_richards5c, m) {
 	
 	init_solverbase<RichardsNCSPProblem, RichardsSPAssemblerNum, RichardsILUIstlLinearSolver>(m, "BaseRichards5CSPILU");
     init_richards_5<RichardsNCSPProblem, RichardsSPAssemblerNum, RichardsILUIstlLinearSolver>(m, "Richards5CSPILU");
+	
+	init_solverbase<RichardsNCSPProblem, RichardsSPAssembler, RichardsILUIstlLinearSolverAna>(m, "BaseRichards5CSPILUAna");
+    init_richards_5<RichardsNCSPProblem, RichardsSPAssembler, RichardsILUIstlLinearSolverAna>(m, "Richards5CSPILUAna");
 	
 	init_solverbase<RichardsNCSPProblem, RichardsSPAssemblerNum, RichardsSPSSORCGIstlLinearSolver>(m, "BaseRichards5CSPSSORC");
     init_richards_5<RichardsNCSPProblem, RichardsSPAssemblerNum, RichardsSPSSORCGIstlLinearSolver>(m, "Richards5CSPSSORC");

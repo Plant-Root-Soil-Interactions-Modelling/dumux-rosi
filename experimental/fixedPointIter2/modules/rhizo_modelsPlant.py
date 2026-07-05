@@ -1572,6 +1572,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             cyl.setParameter("Problem.reactionExclusive", "0")
             cyl.setParameter("Soil.CriticalPressure", str(self.soilModel.wilting_point))
             cyl.setParameter("Soil.IC.P", cyl.dumux_str(x))# cm
+            cyl.setParameter("Problem.useExtrusion", "true")
             
             #default: no flux
             cyl.setInnerBC("fluxCyl", 0.)  # [cm/day] #Y 0 pressure?
