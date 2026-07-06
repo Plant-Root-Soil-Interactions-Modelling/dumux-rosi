@@ -266,9 +266,9 @@ def setDefault(s):
     return s
 
 
-r_in = 2  # cm
-r_out = 10
-length = 3
+r_in = 0.02  # cm
+r_out = 3.1916009083031205
+length = 0.9999999999999999
     
 def solve(simtimes, N, analytical = False):
 
@@ -298,10 +298,10 @@ def solve(simtimes, N, analytical = False):
     s.setHomogeneousIC(-1000.)  # cm pressure head
     s.setTopBC("constantFlux", 0.1)  #  [cm/day] "noFlux")#
     s.setBotBC("constantFlux", -0.2*0) # "noFlux")#
-
+    cin = 9.8703454e-07 # mol /day
     for i in range(1, 2):#s.numComp):# no flux
         s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
-        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(1)) # mol / cm -2 /day
+        s.setParameter( "Soil.BC.Bot.C"+str(i)+"Value", str(cin / (2 * np.pi * r_in * length))) # mol / cm -2 /day
     s.setParameter( "Soil.IC.C1", str(0 ))
         
     if analytical:

@@ -183,9 +183,16 @@ public:
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
 				// Precipitation & Evaporation, and solute input
 				if (bcTopType_==atmospheric) {
-					componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
-					componentInput_.at(i).setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
+					// componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+					// componentInput_.at(i).setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
 
+					componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+					componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); // s -> day for time
+					if(useMoles){
+						componentInput_.at(i).setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
+					} else {
+						componentInput_.at(i).setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+					}
 				}
 			}else{
 				
@@ -207,10 +214,10 @@ public:
 					
 				}
 				
+			
+				componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			}
 			
-			
-			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			//std::cout<<std::endl;
 		}
 
@@ -672,13 +679,13 @@ public:
 				case constantFluxCyl: { // with switch for maximum in- or outflow
 					//useMoles:  [cm/d] * [mol/m^3] * [d/s] * [m/cm] = [m/s] *  [mol/m^3] = [mol /(m^2 * s)]
 					//useMass:  [cm/d] * [kg/m^3] * [d/s] * [m/cm] = [m/s] *  [kg/m^3] = [kg /(m^2 * s)]
-					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion;
 					if (f < 0) { // inflow
 					//[mol/m^3] * [m/s] * [cm/cm] = mol/(m2 * s)
 					
 					//kg/m3 * m2 
-						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
-						f = std::max(f, imax);
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						f = std::max(f, imax)*pos0;
                         if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onupperBoundary_constantFluxCyl, f: "<<bcTopValues_[pressureIdx]<<" "<<
@@ -687,7 +694,7 @@ public:
 						}
 					} else { // outflow
                     //mol/m3 * [m/s] *[-] *[cm/cm] = mol/m2/s * pos0 for axysimmetric scaling
-						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
                         
 						if ((f!= 0)&&verbose)
 						{
@@ -695,7 +702,7 @@ public:
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
@@ -732,21 +739,21 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
+					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion ;
 					
 					//std::cout<<" water flow "<<f<<" "<<bcBotValues_[pressureIdx]<<" rhoW "<<rhoW<<" useMoles "<<useMoles<<" molarDensity "<<volVars.molarDensity(h2OIdx)
 					//<<" density "<<volVars.density(h2OIdx)<<" unit conversion "<<unitConversion<<" "<<pos[0]<<std::endl;
 					if (f < 0) { // inflow
-						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<bcBotValues_[pressureIdx]<<" "<<
                             f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
-						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						if ((f!= 0)&&verbose)
 						{
@@ -755,7 +762,7 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz
 							<<" criticalPressure_ "<<criticalPressure_<<" gravityOn_ "<<gravityOn_<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
@@ -838,13 +845,13 @@ public:
                         
                     }
                     
-					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+					flux[i] = soluteFlow*pos0; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
 					//std::cout<<"constantfluxCyl "<<flux[i];
 					break;
 				}
 				case outflow: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * massOrMolFraction;//*pos0;
+					flux[i] = f * massOrMolFraction*pos0;//*pos0;
 					break;
 				}
 				case outflowCyl: {
@@ -912,13 +919,13 @@ public:
                         
                     }
                     
-					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+					flux[i] = soluteFlow*pos0; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
                         
 					break;
 				}
 				case outflow: {//?? free outflow??
 					// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * massOrMolFraction;
+					flux[i] = f * massOrMolFraction*pos0;
 					break;
 				}
 				case outflowCyl: {

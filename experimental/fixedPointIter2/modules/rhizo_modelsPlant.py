@@ -1883,9 +1883,9 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         
 
         qIn_solMucil = np.full(self.numSoluteComp, 0.)
-        for jj in range(self.numDissolvedSoluteComp):
+        for jj in range(self.numDissolvedSoluteComp): # mol / day to mol/ cm2 / day
             qIn_solMucil[jj] = inner_fluxes_solMucil[jj] / (2 * np.pi * self.radii[gId] * l)
-        
+        # print('_calculate_and_set_initial_solute_flows','inner',inner_fluxes_solMucil,qIn_solMucil, 'radii',self.radii[gId],self.outer_radii[gId], 'l', l)
         if (not self.doSoluteUptake) :
             cyl.setSoluteBotBC(self.typeBC, qIn_solMucil)
         
@@ -1895,7 +1895,7 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
         QflowOutCellLim = cyl.distributeSources(dt, source = outer_fluxes_solMucil,
                                inner_fluxs=inner_fluxes_solMucil, 
                                eqIdx =  np.array([nc+1 for nc in range(self.numDissolvedSoluteComp)]),plantM=self)
-        
+        # print('_calculate_and_set_initial_solute_flows','outer',outer_fluxes_solMucil, QflowOutCellLim.sum())
         # reset after first limitation in _distribute_source
         outer_fluxes_solMucilbu = outer_fluxes_solMucil
         outer_fluxes_solMucil = np.array([sum(QflowOutCellLim[nc]) for nc in range(self.numDissolvedSoluteComp)])
@@ -2285,13 +2285,20 @@ class RhizoMappedSegments(Perirhizal):#pb.MappedPlant):
             assert self._check_Ccontent(cyl)
             assert self._check_Wcontent(cyl)
         if verbose:
-            print('finished solve 1ds gId', cyl.gId, repr(cyl.getWaterContent()), 
-                    repr(cyl.getSolutionHead()),
-                  'inner_fluxes_real',inner_fluxes_real, 
-                  'inner_fluxes_water_temp', inner_fluxes_water_temp, 
-                  repr(cyl.getCellVolumes()),
-                  'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
-                   cyl.getCellVolumes()))
+            print([cyl.getContent(i) for i in range(1,self.numComp)], np.array([cyl.getContent(i) for i in range(1,self.numComp)]).sum())
+            print('finished solve 1ds gId', cyl.gId, 'dt',dt,
+                  'inner_fluxes_real',inner_fluxes_real[1:], 
+          'cOld',  cOld.sum() , cyl.getTotCContent_each().sum(1).sum(),'each', cyl.getTotCContent_each().sum(1),
+          'delta',- cOld.sum() + cyl.getTotCContent_each().sum(1).sum(),
+                    (- cOld.sum() + cyl.getTotCContent_each().sum(1).sum())/dt
+                  
+                  #'changeW', sum((cyl.getWaterContent() - oldWaterContent )*
+                  # cyl.getCellVolumes())
+                  )
+            print("\tinner_fluxes_solMucil_temp, outer_fluxes_solMucil_temp",'inner', ( inner_fluxes_solMucil_temp.sum()) * dt,
+                                'outer',( outer_fluxes_solMucil_temp.sum()) * dt,
+                                ( inner_fluxes_solMucil_temp.sum()+ outer_fluxes_solMucil_temp.sum()) * dt)
+            print('\tdelta',- cOld.sum() + cyl.getTotCContent_each().sum(1).sum() - ( inner_fluxes_solMucil_temp.sum()+ outer_fluxes_solMucil_temp.sum()) * dt )
 
         def getCSSatEq(s, CSW):
             """ @return concentration of adsobed carbon in the soil
