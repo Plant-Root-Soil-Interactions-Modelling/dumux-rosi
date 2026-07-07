@@ -143,10 +143,11 @@ public:
 		
 		gravityOn_ = Dumux::getParam<bool>("Problem.EnableGravity", (dimWorld > 1));
 		temperatureK = Dumux::getParam<double>("Problem.temperatureK", 273.15+10);
-		verbose_local_residual = Dumux::getParam<bool>("Problem.verbose_local_residual", verbose_local_residual);
+		verbose_assembler = Dumux::getParam<bool>("Problem.verbose_assembler", verbose_assembler);
 
 		source_.resize(numComponents_); // numComponents_ equations (currently hard coded, where can I get the value?)
 		
+		 diffMethod =  getParam<int>("Problem.diffMethod", 0);
 		 verbose =  getParam<int>("Problem.verbose", 0);
 		 toFile =  getParam<bool>("Problem.toFile", false);
 		doSoluteFlow =   getParam<bool>("Problem.doSoluteFlow", doSoluteFlow);
@@ -182,7 +183,16 @@ public:
 				initialSoil_.at(i) = InputFileFunction("Soil.IC", "P", "Z", 0., this->spatialParams().layerIFF()); // [cm]([m]) pressure head, conversions hard coded
 				// Precipitation & Evaporation, and solute input
 				if (bcTopType_==atmospheric) {
+					// componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+					// componentInput_.at(i).setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
+
 					componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+					componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); // s -> day for time
+					if(useMoles){
+						componentInput_.at(i).setFunctionScale(rho_molar/(24.*60.*60.)/100); // cm/day) -> mol/(m²*s)
+					} else {
+						componentInput_.at(i).setFunctionScale(rho_/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+					}
 				}
 			}else{
 				
@@ -197,17 +207,17 @@ public:
 													0., this->spatialParams().layerIFF()); // kg/kg or mol/mol soil
 				if (bcSTopType_.at(i - soluteIdx)==managed) {
 					componentInput_.at(i) = InputFileFunction(std::to_string(i)+".Component.Managed", "Input", "Time", 0.); // cm/day (day)
+					Scalar g2kg = 1/1000 ;
+					Scalar m2_2_cm2 = 10000;
+					Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
+					componentInput_.at(i).setFunctionScale(unitConversion/(24.*60.*60.)); // g/(cm2 day) or mol/(cm2 day)  -> kg/(m²*s) or mol/(m²*s) 
 					
 				}
 				
+			
+				componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			}
 			
-			
-			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
-			Scalar g2kg = 1/1000 ;
-			Scalar m2_2_cm2 = 10000;
-			Scalar unitConversion = useMoles ? m2_2_cm2 : m2_2_cm2 * g2kg; //something else needed? 
-			componentInput_.at(i).setFunctionScale(unitConversion/(24.*60.*60.)); // g/(cm2 day) or mol/(cm2 day)  -> kg/(m²*s) or mol/(m²*s) 
 			//std::cout<<std::endl;
 		}
 
@@ -623,10 +633,10 @@ public:
 		 *  WATER
 		 */
 		double f = 0.; // return value [kg m-2 s-1)] or [mol m-2 s-1]
-		double pos0 = 1;		double scvf_area = scvf.area();
-		if(dimWorld == 1){
+		double pos0 = 1;		//double scvf_area = scvf.area();
+		if((dimWorld == 1)&&(!this->spatialParams().useExtrusion)){
 			pos0 =pos[0]; 
-			scvf_area = 2 * M_PI * pos0 * segLength;//m2
+			//scvf_area = 2 * M_PI * pos0 * segLength;//m2
 		}
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
@@ -669,13 +679,13 @@ public:
 				case constantFluxCyl: { // with switch for maximum in- or outflow
 					//useMoles:  [cm/d] * [mol/m^3] * [d/s] * [m/cm] = [m/s] *  [mol/m^3] = [mol /(m^2 * s)]
 					//useMass:  [cm/d] * [kg/m^3] * [d/s] * [m/cm] = [m/s] *  [kg/m^3] = [kg /(m^2 * s)]
-					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion;
 					if (f < 0) { // inflow
 					//[mol/m^3] * [m/s] * [cm/cm] = mol/(m2 * s)
 					
 					//kg/m3 * m2 
-						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
-						f = std::max(f, imax);
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						f = std::max(f, imax)*pos0;
                         if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onupperBoundary_constantFluxCyl, f: "<<bcTopValues_[pressureIdx]<<" "<<
@@ -684,7 +694,7 @@ public:
 						}
 					} else { // outflow
                     //mol/m3 * [m/s] *[-] *[cm/cm] = mol/m2/s * pos0 for axysimmetric scaling
-						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
                         
 						if ((f!= 0)&&verbose)
 						{
@@ -692,7 +702,7 @@ public:
                             <<", f: "<<f<<", omax: "<<omax<<", std::min(f, omax): "<<(std::min(f, omax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
@@ -729,21 +739,21 @@ public:
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion * pos[0];
+					f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion ;
 					
 					//std::cout<<" water flow "<<f<<" "<<bcBotValues_[pressureIdx]<<" rhoW "<<rhoW<<" useMoles "<<useMoles<<" molarDensity "<<volVars.molarDensity(h2OIdx)
 					//<<" density "<<volVars.density(h2OIdx)<<" unit conversion "<<unitConversion<<" "<<pos[0]<<std::endl;
 					if (f < 0) { // inflow
-						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						if ((f!= 0)&&verbose)
 						{
 							std::cout<<"onLowerBoundary_constantFluxCyl, f: "<<bcBotValues_[pressureIdx]<<" "<<
                             f<<", imax: "<<imax<<", std::max(f, imax): "<<(std::max(f, imax))
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho"<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz<<std::endl;
 						}
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
-						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
 						if ((f!= 0)&&verbose)
 						{
@@ -752,7 +762,7 @@ public:
 							<<", krw: "<<krw<<", kc: "<<kc<<", h: "<<h<<" rho "<<rhoW<<" pos[0] "<<pos[0]<<" dz "<<dz
 							<<" criticalPressure_ "<<criticalPressure_<<" gravityOn_ "<<gravityOn_<<std::endl;
 						}
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
@@ -809,7 +819,7 @@ public:
 					// mol/(cm2 * d)  * [d/s]  * cm2/m2 =  mol/(m2 * s)
 					// use mass:
 					// g/(cm2/d) *[d/s] * [kg/g] * cm2/m2 = kg/(m2 * s)
-					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)* unitConversion; // g/cm2/day || mol/cm2/day  -> kg/(m²*s) || mol/(m²*s)
+					flux[i] = -bcSTopValue_.at(i_s)/(24.*60.*60.)*pos0* unitConversion; // g/cm2/day || mol/cm2/day  -> kg/(m²*s) || mol/(m²*s)
 					break;
 				}
 				case constantFluxCyl: {// massOrMolFraction
@@ -835,13 +845,13 @@ public:
                         
                     }
                     
-					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+					flux[i] = soluteFlow*pos0; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
 					//std::cout<<"constantfluxCyl "<<flux[i];
 					break;
 				}
 				case outflow: {
 					// std::cout << "f " << f << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * massOrMolFraction;//*pos0;
+					flux[i] = f * massOrMolFraction*pos0;//*pos0;
 					break;
 				}
 				case outflowCyl: {
@@ -882,7 +892,7 @@ public:
 				}
 				case constantFlux: {
 					//flux[i] = -bcSBotValue_.at(i_s)*rhoW/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
-					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*unitConversion; // g/cm2/day -> kg/(m²*s)
+					flux[i] = -bcSBotValue_.at(i_s)/(24.*60.*60.)*pos0*unitConversion; // g/cm2/day -> kg/(m²*s)
 					//[kg_solute/(m²*s)] = [cm_solute/day] * (kg_tot / m^3_tot)* s/day * m/cm ??
 					break;
 				}
@@ -909,13 +919,13 @@ public:
                         
                     }
                     
-					flux[i] = soluteFlow*pos[0]; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
+					flux[i] = soluteFlow*pos0; // g/cm2/day || mol/cm2/day -> kg/(m²*s) || mol/(m²*s)
                         
 					break;
 				}
 				case outflow: {//?? free outflow??
 					// std::cout << "f " << f*1.e6 << ", "  << volVars.massFraction(0, i) << "=" << f*volVars.massFraction(0, i) << "\n";
-					flux[i] = f * massOrMolFraction;
+					flux[i] = f * massOrMolFraction*pos0;
 					break;
 				}
 				case outflowCyl: {
@@ -944,7 +954,52 @@ public:
 
 		return flux;
 	}
+struct InvalidElemSol
+    {
+        template<class Index>
+        double operator[] (const Index i) const
+        { static_assert(AlwaysFalse<Index>::value, "Solution-dependent material parameters not supported with analytical differentiation"); return 0.0; }
+    };
+	
+	template<class PartialDerivativeMatrices>
+	void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
+                             const Element& element,
+                             const FVElementGeometry& fvGeometry,
+                             const ElementVolumeVariables& curElemVolVars,
+                             const ElementFluxVariablesCache& elemFluxVarsCache,
+                             const SubControlVolumeFace& scvf) const
+{
+    const auto insideScvIdx = scvf.insideScvIdx();
+    const auto& insideScv = fvGeometry.scv(insideScvIdx);
+    const auto& insideVolVars = curElemVolVars[insideScvIdx];
 
+    GlobalPosition pos = scvf.center();
+    double pos0 = 1.;
+    if ((dimWorld == 1) && (!this->spatialParams().useExtrusion))
+        pos0 = pos[0];
+
+    // only free drainage has a nonzero derivative w.r.t. pw . TODO: add derivatives for the other BCs
+    if (onLowerBoundary_(pos) && bcBotType_ == freeDrainage) {
+
+        static const auto rhoW = useMoles
+            ? insideVolVars.molarDensity(0)
+            : insideVolVars.density(0);
+
+        const auto kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
+
+        // material law derivatives: dkrw/dsw * dsw/dpw
+        const auto insideFluidMatrixInteraction =
+            this->spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+
+        const auto sw  = insideVolVars.saturation(0);
+        const auto pc  = insideVolVars.capillaryPressure();
+        const auto dkrw_dsw = insideFluidMatrixInteraction.dkrw_dsw(sw);
+        const auto dsw_dpw  = -insideFluidMatrixInteraction.dsw_dpc(pc); // dsw/dpc * dpc/dpw, dpc/dpw = -1
+
+        // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw) * pos0
+        derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dsw * dsw_dpw * pos0;
+    }
+}
 	/*!
 	 * \copydoc FVProblem::source
 	 *
@@ -957,18 +1012,17 @@ public:
 		NumEqVector source;
 		GlobalPosition pos = scv.center();
 		bool dobioChemicalReaction = dobioChemicalReaction_; //by default, do biochemical reactions
-		double pos0; 
-        double svc_volume;
+		double pos0 = 1; 
+        double svc_volume = scv.volume();
         int dofIndex = scv.dofIndex();
-		if (dimWorld == 1)//1daxissymmetric model
+		if (dimWorld == 1)
 		{
-			pos0 = pos[0];
             svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
                             // for simplicity, we give directly source as [ mol / (m^3 \cdot s)] for now
-		}else{ // dimWorld == 3
-			pos0 = 1.;
-            svc_volume = scv.volume();
-        }
+			if(!this->spatialParams().useExtrusion){
+				pos0 = pos[0];
+			}
+		}
   
 															  
 		auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
@@ -1264,7 +1318,7 @@ public:
     int dzScaling;
     
     bool RFmethod2 = false;
-	bool verbose_local_residual = false;
+	bool verbose_assembler = false;
 	double segLength;//m
 	std::vector<double> cellVolumesCyl;
 	int nCells_all;
@@ -1275,6 +1329,7 @@ public:
 	Scalar rho_ = FluidSystem::H2O::liquidDensity(0,0); //1.e3; // kg / m^3 (for type conversions)
 	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
 	static constexpr Scalar pRef_ = 1.e5; // Pa
+	int diffMethod = 0; // 0: mixed, 1: numerci
 
     
 private:

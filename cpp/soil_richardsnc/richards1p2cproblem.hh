@@ -753,6 +753,7 @@ public:
 	Scalar rho_molar = FluidSystem::H2O::liquidMolarDensity(0,0); // mol water / m^3 (for type conversions)
 	static constexpr Scalar pRef_ = 1.e5; // Pa
 
+	bool verbose_assembler = false;
 private:
 
 	//! cm pressure head -> Pascal
