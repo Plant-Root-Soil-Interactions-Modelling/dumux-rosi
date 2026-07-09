@@ -25,16 +25,16 @@
 
 #include <dune/foamgrid/foamgrid.hh>
 #include <dune/grid/common/gridfactory.hh>
-#include <RootSystem.h>
+#include <MappedOrganism.h>
 
 namespace Dumux {
 
 namespace GrowthModule {
 
 /**
- * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CPlantBox::RootSystem)
+ * Builds a grid (Dune::FoamGrid<1, 3>) from a root system (CPlantBox::Plant)
  *
- * use static member function: RootSystemGridFactory::makeGrid(RootSystem)
+ * use static member function: RootSystemGridFactory::makeGrid(Plant)
  */
 class RootSystemGridFactory
 {
@@ -47,7 +47,7 @@ public:
     using Grid = Dune::FoamGrid<1, 3>;
 
     //! make the grid from the initial root system
-    static std::shared_ptr<Grid> makeGrid(const CPlantBox::RootSystem& rs, double shootZ = 0., bool verbose = false)
+    static std::shared_ptr<Grid> makeGrid(const CPlantBox::Plant& rs, double shootZ = 0., bool verbose = false)
     {
         // the grid factory creates the grid
         if (verbose) std::cout << "RootSystemGridFactory: " << std::endl;
@@ -62,13 +62,13 @@ public:
             factory.insertVertex(convert_(n));
         }
 
-        const auto shootSegments = rs.getShootSegments();
+        const auto shootSegments = rs.getSegments( CPlantBox::Organism::ot_stem);//getShootSegments();
         for (const auto& s : shootSegments) {
             if (verbose) std::cout << "-- add element with vertices " << s.toString() << std::endl;
             factory.insertElement(line, convert_(s));
         }
 
-        const auto segments = rs.getSegments();
+        const auto segments = rs.getSegments( CPlantBox::Organism::ot_root);
         for (const auto& s : segments) {
             if (verbose) std::cout << "-- add element with vertices " << s.toString() << std::endl;
             factory.insertElement(line, convert_(s));

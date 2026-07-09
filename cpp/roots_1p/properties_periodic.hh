@@ -34,23 +34,25 @@ struct Grid<TypeTag, TTag::Roots> {
 
 // for CC
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
+struct GridGeometry<TypeTag, TTag::RootsCCTpfa> {
 private:
-    using GridView = typename FVGridGeometry::GridView;
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
+    // using GridView = typename GridGeometry::GridView;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-     using type = PeriodicCCTpfaFVGridGeometry<GridView, /*enableCache=*/true>;
+     using type = PeriodicCCTpfaFVGridGeometry<GridView, /*enableCache=*/true, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
 };
 
 // for Box
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsBox> {
+struct GridGeometry<TypeTag, TTag::RootsBox> {
 private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = typename FVGridGeometry::GridView;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
+    // using GridView = typename GridGeometry::GridView;
+    using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
@@ -84,18 +86,18 @@ enum modelType { dgf = 0, rootbox = 1 };
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsCaviationDGF<GridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsRB<GridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif

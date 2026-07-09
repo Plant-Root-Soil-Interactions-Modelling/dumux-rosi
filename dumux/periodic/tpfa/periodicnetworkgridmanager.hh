@@ -111,12 +111,12 @@ class PeriodicNetworkGridManager
         std::shared_ptr<const GridType> grid_;
         Dune::GridFactory<GridType> gridFactory_;
 
-        std::shared_ptr<GridData<GridType>> hostGridData_;
+        std::shared_ptr<GridData> hostGridData_;
     };
 
 public:
     using Grid = GridType;
-    using GridData = GridDataType;
+    using GridData = Dumux::GridData<Grid>;
 
     PeriodicNetworkGridManager(const GlobalCoordinate& lowerLeft,
                                const GlobalCoordinate& upperRight,

@@ -28,22 +28,48 @@ template<class TypeTag>
 class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
 
     using ParentType = PorousMediumFlowProblem<TypeTag>;
-    using GridView = typename FVGridGeometry::GridView;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-    using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
-    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-    using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-    using Element = typename GridView::template Codim<0>::Entity;
-    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	// exports, used by the binding
+	using Grid = GetPropType<TypeTag, Properties::Grid>;
+	using GridGeometry   = GetPropType<TypeTag, Properties::GridGeometry>;
+    // using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
+	// other
+	using GridView = typename GridGeometry::GridView;
+	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+	using NumEqVector = typename Dumux::NumEqVector<PrimaryVariables>;
+	using FVElementGeometry = typename GridGeometry::LocalView;
+	using SubControlVolume = typename GridGeometry::SubControlVolume;
+	using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
+	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
+	//using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using ElementVolumeVariables = typename GridVariables::GridVolumeVariables::LocalView;
+    using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
+
+	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+	using Element = typename GridView::template Codim<0>::Entity;
+	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
+	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
+
+	
+    // using GridView = typename GridGeometry::GridView;
+    // using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+    // using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    // using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    // using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+    // using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
+    // using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
+    // using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+    // using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
+    // using SubControlVolume = typename FVElementGeometry::SubControlVolume;
+    // using Element = typename GridView::template Codim<0>::Entity;
+    // using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+    // using PointSource = GetPropType<TypeTag, Properties::PointSource>;
+    // using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
+    // using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
     enum {
@@ -51,19 +77,19 @@ class RootsProblem: public PorousMediumFlowProblem<TypeTag> {
         pressureIdx = Indices::pressureIdx
     };
     enum {
-        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box
-    };
-    enum {
         bcDirichlet = 0,
         bcNeumann = 1
     };
 
+    enum {
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box
+    };
     static const int dimWorld = GridView::dimensionworld;
 
 public:
 
     //! Constructor
-    RootsProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+    RootsProblem(std::shared_ptr<const GridGeometry> gridGeometry): ParentType(gridGeometry) {
 
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
@@ -229,7 +255,10 @@ public:
      * Negative values mean influx.
      * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
      */
-    NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+    NumEqVector neumann(const Element& element, 
+			const FVElementGeometry& fvGeometry, 
+			const ElementVolumeVariables& elemVolVars,
+			const ElementFluxVariablesCache&  fluxCache,
         const SubControlVolumeFace& scvf) const {
 
         const auto globalPos = scvf.center();
@@ -443,14 +472,17 @@ public:
      * much copy paste from FVProblem::scvPointSources
      * stores the matric potential of the soil cell in userData_
      */
-    void scvSoilMatricPotential_(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) {
+    void scvSoilMatricPotential_(const Element &element, 
+		const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars, const SubControlVolume &scv) {
         auto scvIdx = scv.indexInElement();
         auto key = std::make_pair(this->gridGeometry().elementMapper().index(element), scvIdx);
         if (this->pointSourceMap().count(key)) {
-            auto pointSources = this->pointSourceMap().at(key);
-            for (auto&& pointSource : pointSources) {
+            // auto pointSources = this->pointSourceMap().at(key);
+            for (const PointSource& ps : this->pointSourceMap().at(key)){ //auto&& pointSource : pointSources) {
+                // we make a copy of the local point source here
+                auto pointSource = ps;
                 pointSource.update(this->asImp_(), element, fvGeometry, elemVolVars, scv);
-                    auto eIdx = couplingManager_->pointSourceData(pointSource.id()).lowDimElementIdx();
+                    const auto eIdx = couplingManager_->pointSourceData(pointSource.id()).lowDimElementIdx();
                     Scalar age = this->spatialParams().age(eIdx);
                     if (age>0) {
                         // compute source at every integration point
