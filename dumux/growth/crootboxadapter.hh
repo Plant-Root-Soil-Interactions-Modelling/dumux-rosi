@@ -23,7 +23,7 @@
 #ifndef DUMUX_CROOTBOX_ADAPTER_HH
 #define DUMUX_CROOTBOX_ADAPTER_HH
 
-#include <RootSystem.h>
+#include <Plant.h>
 #include <mymath.h>
 
 #include "growthinterface.hh"
@@ -45,7 +45,7 @@ class CRootBoxAdapter :public GrowthInterface<GlobalPosition> {
 
 public:
 
-    CRootBoxAdapter(CRootBox::RootSystem& rs) :rootsystem_(rs) {
+    CRootBoxAdapter(CRootBox::Plant& rs) :rootsystem_(rs) {
         this->root2dune = std::vector<size_t>(rs.getNumberOfNodes());
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
@@ -58,13 +58,13 @@ public:
 
     void store() override { // currently unused
         std::cout << "store root system at time " << rootsystem_.getSimTime() << "\n";
-        storedRootSystem_ = zRootSystem(rootsystem_); // deep copy
+        storedRootSystem_ = CRootBox::Plant(rootsystem_); // deep copy, TODO: zRootSystem???
         // this was never checked for memory leaks
     }
 
     void restore() override { // currently unused
         std::cout << "restore root system failed at " << storedRootSystem_.getSimTime();
-        rootsystem_ = CRootBox::RootSystem(storedRootSystem_); // deep copy
+        rootsystem_ = CRootBox::Plant(storedRootSystem_); // deep copy
         std::cout << " to " << rootsystem_.getSimTime();
     }
 
@@ -168,8 +168,8 @@ public:
     }
 
 private:
-    CRootBox::RootSystem rootsystem_;
-    CRootBox::RootSystem storedRootSystem_;
+    CRootBox::Plant rootsystem_;
+    CRootBox::Organism storedRootSystem_;
 
 };
 

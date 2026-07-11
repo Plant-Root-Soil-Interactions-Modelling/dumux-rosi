@@ -6,7 +6,7 @@ TEnd = 1.e9 # 1e9 # [s]
 DtInitial = 360 # [s]
 
 [RootSystem.Grid]
-File = singleroot
+File = Anagallis_femina_Leitner_2010.xml 
 InitialT = 50 # days
 MaxTimeStepSize = 3600 # 1 h
 ShootZ = -2.99 # cm

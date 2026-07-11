@@ -34,7 +34,7 @@
 #include <dumux/common/defaultmappertraits.hh>
 
 #include <dumux/discretization/method.hh>
-#include <dumux/discretization/basefvgridgeometry.hh>
+#include <dumux/discretization/basegridgeometry.hh>
 #include <dumux/discretization/checkoverlapsize.hh>
 #include <dumux/discretization/cellcentered/subcontrolvolume.hh>
 #include <dumux/discretization/cellcentered/connectivitymap.hh>
@@ -63,10 +63,10 @@ class PeriodicCCTpfaFVGridGeometry;
  */
 template<class GV, class Traits>
 class PeriodicCCTpfaFVGridGeometry<GV, true, Traits>
-: public BaseFVGridGeometry<PeriodicCCTpfaFVGridGeometry<GV, true, Traits>, GV, Traits>
+: public BaseGridGeometry<GV, Traits>
 {
     using ThisType = PeriodicCCTpfaFVGridGeometry<GV, true, Traits>;
-    using ParentType = BaseFVGridGeometry<ThisType, GV, Traits>;
+    using ParentType = BaseGridGeometry<GV, Traits>;
     using ConnectivityMap = typename Traits::template ConnectivityMap<ThisType>;
     using GridIndexType = typename IndexTraits<GV>::GridIndex;
     using Element = typename GV::template Codim<0>::Entity;
@@ -85,8 +85,8 @@ public:
     using DofMapper = typename Traits::ElementMapper;
 
     //! export the discretization method this geometry belongs to
-    static constexpr DiscretizationMethod discMethod = DiscretizationMethod::cctpfa;
-
+    using DiscretizationMethod = DiscretizationMethods::CCTpfa;
+    static constexpr DiscretizationMethod discMethod = DiscretizationMethod{};
     //! The maximum admissible stencil size (used for static memory allocation during assembly)
     static constexpr int maxElementStencilSize = LocalView::maxNumElementScvfs*Traits::maxNumScvfNeighbors + 1;
 
@@ -98,7 +98,7 @@ public:
     : ParentType(gridView)
     {
         // Check if the overlap size is what we expect
-        if (!CheckOverlapSize<DiscretizationMethod::cctpfa>::isValid(gridView))
+        if (!CheckOverlapSize<DiscretizationMethod>::isValid(gridView))
             DUNE_THROW(Dune::InvalidStateException, "The cctpfa discretization method needs at least an overlap of 1 for parallel computations. "
                                                      << " Set the parameter \"Grid.Overlap\" in the input file.");
     }
@@ -136,11 +136,11 @@ public:
     { extraConnectivity_ = connectivity; }
 
     //! update all fvElementGeometries (do this again after grid adaption)
-    void update()
+    void update(const GridView& gridView)
     {
         static_assert(dim == 1, "Only implemented for one-dimensional network grids");
 
-        ParentType::update();
+        ParentType::update(gridView);
 
         // clear containers (necessary after grid refinement)
         scvs_.clear();

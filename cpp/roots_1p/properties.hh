@@ -38,11 +38,14 @@ struct Grid<TypeTag, TTag::Roots> {
 
 // for CC
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsCCTpfa> {
+struct GridGeometry<TypeTag, TTag::RootsCCTpfa>
+{
 private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = typename FVGridGeometry::GridView;
-    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
+    using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
+	//todo: Y not use the ReorderingDofMapper?
+	//todo: add the extrusion factor here?
+    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;//ReorderingDofMapper<GridView>; // Dune::MultipleCodimMultipleGeomTypeMapper<GridView>?
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
@@ -51,16 +54,23 @@ public:
 
 // for Box
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsBox> {
+struct GridGeometry<TypeTag, TTag::RootsBox> {
 private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = typename FVGridGeometry::GridView;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
+    using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	//todo: Y not use the ReorderingDofMapper?
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
-    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+    // using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+	
+	
+    // We take the default traits as basis and exchange the extrusion type
+    // The first axis (x-axis) is the radial axis, hence the zero. That means we rotate about the second axis (y-axis).
+    // struct GGTraits : public BoxDefaultGridGeometryTraits<GridView>
+    // { using Extrusion = RotationalExtrusion<0>; };
 public:
-    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView>>;
 };
 
 // Set the problem property
@@ -88,18 +98,18 @@ enum modelType { dgf = 0, rootbox = 1 };
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsCaviationDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsCaviationDGF<GridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::Roots> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsRB<GridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif

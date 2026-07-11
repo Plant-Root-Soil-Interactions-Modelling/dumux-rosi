@@ -23,7 +23,7 @@
 #ifndef DUMUX_CPLANTBOX_ADAPTER_HH
 #define DUMUX_CPLANTBOX_ADAPTER_HH
 
-#include <RootSystem.h>
+#include <Plant.h>
 #include <mymath.h>
 
 #include "growthinterface.hh"
@@ -45,7 +45,7 @@ class CPlantBoxAdapter :public GrowthInterface<GlobalPosition> {
 
 public:
 
-    CPlantBoxAdapter(std::shared_ptr<CPlantBox::RootSystem> rs) :rootsystem_(rs) {
+    CPlantBoxAdapter(std::shared_ptr<CPlantBox::Plant> rs) :rootsystem_(rs) {
         this->root2dune = std::vector<size_t>(rs->getNumberOfNodes());
         std::iota(this->root2dune.begin(), this->root2dune.end(), 0);
     };
@@ -63,7 +63,7 @@ public:
 
     void restore() override { // currently unused
         std::cout << "restore root system failed at " << storedRootSystem_->getSimTime();
-        rootsystem_ = std::static_pointer_cast<CPlantBox::RootSystem>(storedRootSystem_); // once I need to cast
+        rootsystem_ = std::static_pointer_cast<CPlantBox::Plant>(storedRootSystem_); // once I need to cast
     }
 
     double simTime() const override {
@@ -166,8 +166,8 @@ public:
     }
 
 private:
-    std::shared_ptr<CPlantBox::RootSystem> rootsystem_;
-    std::shared_ptr<Organism> storedRootSystem_;
+    std::shared_ptr<CPlantBox::Plant> rootsystem_;
+    std::shared_ptr<CPlantBox::Organism> storedRootSystem_; // TODO: why an organism here?
 
 };
 
