@@ -155,7 +155,7 @@ class RichardsWrapper(SolverWrapper):
             elif type_top == "constantFluxCyl" or type_top == "fluxCyl":
                 t = 3
             elif type_top == "atmospheric":
-                t = 4
+                t = 4  
             elif type_top == "noflux" or type_top == "noFlux" or type_top == "no-flux":
                 t = 2
                 assert value_top == 0., "setTopBC: value_top must be zero in case of no flux"
@@ -438,7 +438,10 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     source_map[key] = value / 24. / 3600. / 1.e3;  # [cm3/day] -> [kg/s] (richards.hh)
             else:
-                source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s] or [mol/day] -> [mol/s]
+                if self.useMoles:
+                    source_map[key] = value / 24. / 3600. ;  # [mol/day] -> [mol/s]
+                else:
+                    source_map[key] = value / 24. / 3600. / 1.e3;  # [g/day] -> [kg/s] or [mol/day] -> [mol/s]
         self.base.setSource(source_map, eq_idx)
 
     def applySource(self, dt, source_map, crit_p):

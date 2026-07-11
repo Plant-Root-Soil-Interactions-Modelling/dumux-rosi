@@ -89,7 +89,9 @@ public:
 		outflow = 6,
 		linear = 7,
 		michaelisMenten = 8,
-		managed = 9
+		managed = 9,
+		advectiveflow = 10,
+		dummyDirichlet = 11
 	};
 
 	enum GridParameterIndex {
@@ -377,6 +379,10 @@ public:
 					}
 					break;
 				}
+				case dummyDirichlet: {
+                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos[0]; // maximal inflow
+                    break;
+                }
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
@@ -414,6 +420,10 @@ public:
 					f = krw * kc * rho_; // * 1 [m]
 					break;
 				}
+				case dummyDirichlet: {
+                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos[0]; // maximal inflow
+                    break;
+                }
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
 			}
@@ -461,6 +471,19 @@ public:
                 flux[transportEqIdx] = input;
                 break;
             }
+			case advectiveflow:{
+				// [molw] * [mols / molw]
+				//flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.)*pos[0];
+				flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);
+				break;
+		    }
+			case dummyDirichlet:{
+				GlobalPosition ePos = element.geometry().center();
+				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
+				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				break;
+		    }
 			default:
 				DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (solute) unknown: "+std::to_string(bcSTopType_[0]));
 			}
@@ -495,6 +518,18 @@ public:
 			}
 			case michaelisMenten: {
 				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
+				break;
+			}
+			case advectiveflow:{
+				// [molw] * [mols / molw]
+				flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);
+				break;
+		    }
+			case dummyDirichlet: {
+				GlobalPosition ePos = element.geometry().center();
+				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
+				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
+				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
 				break;
 			}
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
