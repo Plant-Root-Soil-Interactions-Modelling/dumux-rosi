@@ -52,6 +52,14 @@
 
 /**
  * and so it begins...
+ - dgf ok (./rootsystem input/singleroot.input)
+ - static RS ok
+ TODO:
+ - make growth work
+ - select if want MPI or not
+ - make the periodic option compile?
+ run the static plant option:
+ ./rootsystem_rb input/rb_rootsystem.input
  */
 int main(int argc, char** argv) try
 {
@@ -71,7 +79,7 @@ int main(int argc, char** argv) try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-
+	Parameters::print();
     //    using GridView = GetPropType<TypeTag, Properties::GridView>;
     //    using Element = typename GridView::template Codim<0>::Entity;
     //    using GlobalPosition = typename Element::Geometry::GlobalCoordinate; // the beauty (is there a correct & quicker way?)
@@ -83,22 +91,25 @@ int main(int argc, char** argv) try
     GridManager<Grid> gridManager; // only for dgf
     std::shared_ptr<CPlantBox::Plant> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
+	double initialTime = getParam<double>("RootSystem.Grid.InitialT", 1.); // days
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
-        gridManager.init("Plant");
+        gridManager.init("RootSystem");
         grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
         rootSystem = std::make_shared<CPlantBox::Plant>();
-        rootSystem->readParameters(getParam<std::string>("Plant.Grid.File"), "../../../CPlantBox/modelparameter/");
-        if (hasParam("Plant.Grid.Confined")) {
-            auto box = getParam<std::vector<double>>("Plant.Grid.Confined");
+        rootSystem->readParameters(getParam<std::string>("RootSystem.Grid.File"));//, "../../../CPlantBox/modelparameter/");
+        if (hasParam("RootSystem.Grid.Confined")) {
+            auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
             rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(box.at(0)*100, box.at(1)*100, box.at(2)*100));
         } else { // half plane
             rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_HalfPlane>(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         }
         rootSystem->initialize();
-        double shootZ = getParam<double>("Plant.Grid.ShootZ", 0.); // root system initial time
+		
+        rootSystem->simulate(initialTime, true);
+        double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
         //    auto soilLookup = SoilLookUpBBoxTree<GrowthModule::Grid> (soilGridView, soilGridGeoemtry->boundingBoxTree(), saturation);
@@ -113,7 +124,7 @@ int main(int argc, char** argv) try
     // create the finite volume grid geometry
     using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     auto gridGeometry = std::make_shared<GridGeometry>(leafGridView);
-    gridGeometry->update(gridManager.grid().leafGridView()); // TODO: do not think it is needed, unless we do grid refinement (see dumux\examples\1protationsymmetry\main.cc)
+    // gridGeometry->update(gridManager.grid().leafGridView()); // TODO: do not think it is needed, unless we do grid refinement (see dumux\examples\1protationsymmetry\main.cc)
     std::cout << "i have the geometry \n" << std::flush;
 
     ////////////////////////////////////////////////////////////
@@ -126,13 +137,13 @@ int main(int argc, char** argv) try
 
     // root growth
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
-    double initialTime = 0.; // s
-    if (simtype==Properties::rootbox) {
+    bool grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
+    if ((simtype==Properties::rootbox) && grow) {
         gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, gridGeometry, growth, x); // in growth/gridgrowth.hh
-        std::cout << "...grid grower initialized \n" << std::flush;
-        initialTime = getParam<double>("Plant.Grid.InitialT")*24*3600;
-        gridGrowth->grow(initialTime);
-        std::cout << "\ninitial growth performed... \n" << std::flush;
+        // std::cout << "...grid grower initialized \n" << std::flush;
+        // initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
+        // gridGrowth->grow(initialTime);
+        // std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
     // the problem (initial and boundary conditions)
@@ -153,11 +164,9 @@ int main(int argc, char** argv) try
     std::cout << "with variables \n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
-    bool grow = false;
     const auto tEnd = getParam<double>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<double>> timeLoop;
     if (tEnd > 0) { // dynamic problem
-        grow = getParam<bool>("Plant.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
@@ -237,10 +246,13 @@ int main(int argc, char** argv) try
                 if (grow) {
 
                     // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                    while (growth->simTime()+dt<t+initialTime) {
+					double dt_growth = growth->simTime() - t;
+					if(dt_growth > 0.)
+					{
+                    // while (growth->simTime()+dt<t+initialTime) { 
 
                         std::cout << "\n grow ..."<< std::flush;
-                        gridGrowth->grow(dt);
+                        gridGrowth->grow(dt_growth);
                         problem->spatialParams().updateParameters(*growth);
                         problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                         std::cout << "grew \n"<< std::flush;

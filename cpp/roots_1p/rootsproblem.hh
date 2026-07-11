@@ -94,6 +94,7 @@ public:
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
+		verbose = getParam<bool>("Problem.verbose", verbose);
 
         if (Dumux::hasParam("RootSystem.Collar.P")) {
             collar_ = InputFileFunction("RootSystem.Collar", "P", "PT", -1.e4); // [cm]([day])
@@ -271,6 +272,10 @@ public:
             double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
             double actTrans = std::min(collar_.f(time_), criticalTranspiration);
             actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+		if(verbose>1)
+		{
+			std::cout <<"neumann "<<actTrans<<" "<<collar_.f(time_) <<" "<< criticalTranspiration<<" "<<p <<" "<< criticalCollarPressure_<<std::endl;
+		}
             return NumEqVector(actTrans);
         } else {
             return NumEqVector(0.); // no flux at root tips
@@ -305,6 +310,10 @@ public:
             values[conti0EqIdx] = kr * 2 * a * M_PI * (phs - phx); // m^3/s
             values[conti0EqIdx] /= (a * a * M_PI); // 1/s
             values[conti0EqIdx] *= rho_; // (kg/s/m^3)
+			if(verbose>1)
+			{
+				std::cout <<"source "<<values<<" "<<a <<" "<< kr<<" "<<phs <<" "<< phx<<std::endl;
+			}
         }
         return values;
     }
@@ -356,6 +365,11 @@ public:
                 auto density = 1000;
                 Scalar sourceValue = 2* M_PI *krel*rootRadius * kr *(pressure3D - pressure1D)*density;
                 source = sourceValue*source.quadratureWeight()*source.integrationElement();
+				if(verbose>1)
+				{
+					std::cout <<"pointSource "<<sourceValue<<" "<<source.quadratureWeight()<<" "<<source.integrationElement()
+					<<" "<<krel<<" "<<rootRadius <<" "<< kr<<" "<<pressure3D <<" "<< pressure1D<<std::endl;
+				}
             }
         }
     }
@@ -551,7 +565,7 @@ private:
     double potentialTrans_ = 0;
     double maxTrans_ = 0.;
     double collarP_ = 0.;
-
+	bool verbose;
     std::map<std::string, std::vector<Scalar>> userData_;
 
 };

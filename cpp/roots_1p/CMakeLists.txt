@@ -27,4 +27,4 @@ target_include_directories(rootsystem_rb PRIVATE
 )
 
 # optionally set cmake build type (Release / Debug / RelWithDebInfo)
-set(CMAKE_BUILD_TYPE RelWithDebInfo)
+set(CMAKE_BUILD_TYPE Debug)

@@ -173,10 +173,10 @@ public:
             if (segCT[i]<0) { // sanity checks
                 throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
             }
-            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
-                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
-                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
-            }
+            // if (segCT[i]>time_+time0_+dt_+1) {// sanity checks >= remove as we nowneed an initial growth 
+                // throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
+                    // std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
+            // }
         }
 
         // update creation times: when tips move, there segmentCTs need to be updated
