@@ -94,7 +94,7 @@ public:
         InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
         sf.setFunctionScale(1.e-2 * rho_ * g_ ); // [cm] -> [Pa], don't forget to add pRef_
         soil_ = new GrowthModule::SoilLookUpTable(sf); // sf is copied by default copy constructor
-		verbose = getParam<bool>("Problem.verbose", verbose);
+		verbose = getParam<int>("Problem.verbose", verbose);
 
         if (Dumux::hasParam("RootSystem.Collar.P")) {
             collar_ = InputFileFunction("RootSystem.Collar", "P", "PT", -1.e4); // [cm]([day])
@@ -565,7 +565,7 @@ private:
     double potentialTrans_ = 0;
     double maxTrans_ = 0.;
     double collarP_ = 0.;
-	bool verbose;
+	int verbose;
     std::map<std::string, std::vector<Scalar>> userData_;
 
 };

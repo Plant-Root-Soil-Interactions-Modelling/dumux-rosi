@@ -8,8 +8,8 @@ MaxTimeStepSize = 3600 # 10 days [s]
 PeriodicCheckTimes = 3600
 
 [Soil.Grid]
-LowerLeft = -0.04 -0.02 -0.24
-UpperRight = 0.04 0.02 0.
+LowerLeft = -0.05 -0.05 -0.24
+UpperRight = 0.05 0.05 0.
 Cells = 32 16 24
 
 [Soil.BC.Top]
