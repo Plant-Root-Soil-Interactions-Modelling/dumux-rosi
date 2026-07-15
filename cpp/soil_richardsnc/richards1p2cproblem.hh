@@ -85,6 +85,7 @@ public:
 		constantFlux = 2,
 		constantFluxCyl = 3,
 		atmospheric = 4,
+		FixedFlux = 4,
 		freeDrainage = 5,
 		outflow = 6,
 		linear = 7,
@@ -130,14 +131,28 @@ public:
 
 		// Precipitation & Evaporation, and solute input
 		if (bcTopType_==atmospheric) {
-			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+			precipitation_ = InputFileFunction("Bottom", "Waterflux", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
         if (bcSTopType_[0]==managed) {
-            soluteInput_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
+            soluteInput_ = InputFileFunction("ManagedBottom", "Input", "Time", 0.); // cm/day (day)
             soluteInput_.setVariableScale(1./(24.*60.*60.)); // s -> day
             soluteInput_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
+//            for (int i=0; i<27; i++) {
+//                std::cout << soluteInput_.f(i*0.333*24.*60.*60.) << "\n";
+//            }
+        }
+		//FixedFlux Data for the bottom
+		if (bcTopType_==FixedFlux) {
+			bottomflux_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+			bottomflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
+			bottomflux_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
+		}
+		if (bcSTopType_[0]==managed) {
+            bottomsflux_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
+            bottomsflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
+            bottomsflux_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
 //                std::cout << soluteInput_.f(i*0.333*24.*60.*60.) << "\n";
 //            }
@@ -416,6 +431,17 @@ public:
 					}
 					break;
 				}
+				case FixedFlux: { // FixedFlux boundary condition (with surface run-off) // TODO needs testing & improvement
+					Scalar inflow = bottomflux_.f(time_);
+					if (inflow < 0) { // inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+						f = std::max(inflow, imax);
+					} else { // outflow
+						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow
+						f = std::min(inflow, emax);
+					}
+					break;
+				}
 				case freeDrainage: {
 					f = krw * kc * rho_; // * 1 [m]
 					break;
@@ -520,6 +546,11 @@ public:
 				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
 				break;
 			}
+			case managed: {
+                Scalar input = bottomsflux_.f(time_);
+                flux[transportEqIdx] = input;
+                break;
+            }
 			case advectiveflow:{
 				// [molw] * [mols / molw]
 				flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);
@@ -802,8 +833,8 @@ private:
 	std::vector<std::shared_ptr<std::vector<double>>> source_; // [kg/s]
 	CouplingManager* couplingManager_ = nullptr;
 
-	InputFileFunction precipitation_;
-	InputFileFunction soluteInput_;
+	InputFileFunction precipitation_, bottomflux_;
+	InputFileFunction soluteInput_, bottomsflux_;
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;

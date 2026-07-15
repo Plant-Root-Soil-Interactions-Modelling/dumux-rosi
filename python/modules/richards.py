@@ -228,7 +228,7 @@ class RichardsWrapper(SolverWrapper):
                 else:
                     raise Exception('Managed boundary conditions where set, but no managment data were given')
 
-    def setBotBC(self, type_bot, value_bot = 0.):
+    def setBotBC(self, type_bot, value_bot = 0., climate:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem 
         
         @param type_bot:
@@ -236,6 +236,11 @@ class RichardsWrapper(SolverWrapper):
         type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
         type_bot ==  "constantFluxCyl", value_bot is the constant flux [cm/day] for cylindrical coordinates        
         type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
+        type_bot ==  "FixedFlux", value_top is given by climatic data describing evapotranspiration [cm/day], 
+                     Data are given in @param climate, the value of value_top is ignored.  
+                     Minus denotes evaporation, plus transpiraton.                                            
+                     Evaporation stops at a critical pressure of -10000 cm, infiltration is with run off. 
+        
         """
         assert isinstance(type_bot, (str, int))
         if isinstance(type_bot, str):
@@ -247,6 +252,8 @@ class RichardsWrapper(SolverWrapper):
                 b = 3
             elif type_bot == "freeDrainage" or type_bot == "fleeFlow" or type_bot == "free":
                 b = 5
+            elif type_bot == "FixedFlux":
+                b = 4  
             elif type_bot == "rootSystem" or type_bot == "rootSystemExact":
                 b = 6
             elif type_bot == "noflux"  or type_bot == "noFlux" or type_bot == "no-flux":
@@ -263,6 +270,15 @@ class RichardsWrapper(SolverWrapper):
         else:
             self.setParameter(self.param_group + "BC.Bot.Type", str(type_bot))
             self.setParameter(self.param_group + "BC.Bot.Value", str(value_bot))
+            
+            if b == 4:  # fixedFlux
+                if climate:
+                    assert(len(climate[0]) == len(climate[1]))  # sample points
+                    self.setParameter("Bottom.Time", self.dumux_str(climate[0]))
+                    self.setParameter("Bottom.Waterflux", self.dumux_str(climate[1])) 
+
+                else:
+                    raise Exception('richards.setTopBC(): FixedFlux boundary conditions where set, but no climatic data were given')
 
     def setBotBC_solute(self, type_bot:list, value_bot:list = []):
         """ Top boundary conditions are set before creating the problem with SolverBase.initializeProblem                    
@@ -293,6 +309,8 @@ class RichardsWrapper(SolverWrapper):
                     b = 7
                 elif tb == "michaelisMenten":
                     b = 8
+                elif tb == "managed":
+                    b = 9    
                 else:
                     raise Exception('richards.setBotBC_solute(): Bottom type should be "constantConcentration", "constantFlux", "constantFluxCyl", "outflow", "lineaer" or "michaelisMenten", unknown bottom type {}'.format(type_bot))
                 type_bot[id_tb] = b
