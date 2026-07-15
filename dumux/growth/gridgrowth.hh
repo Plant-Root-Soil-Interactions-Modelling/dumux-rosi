@@ -46,10 +46,10 @@ template<class TypeTag>
 class GridGrowth {
 
     using Grid = GetPropType<TypeTag, Properties::Grid>;
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
     using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using GridView = typename FVGridGeometry::GridView;
+    using GridView = typename GridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
     using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
     using PersistentContainer = Dune::PersistentContainer<Grid, PrimaryVariables>;
@@ -58,7 +58,7 @@ class GridGrowth {
 public:
 
     //! constructs the grow
-    GridGrowth(std::shared_ptr<Grid> grid, std::shared_ptr<FVGridGeometry> fvGridGeometry, Growth growth, SolutionVector& sol) :
+    GridGrowth(std::shared_ptr<Grid> grid, std::shared_ptr<GridGeometry> fvGridGeometry, Growth growth, SolutionVector& sol) :
         grid_(grid),
         fvGridGeometry_(fvGridGeometry),
         growth_(growth),
@@ -140,7 +140,7 @@ public:
             grid_->grow();
 
             // update grid geometry (updates the mappers)
-            fvGridGeometry_->update();
+            fvGridGeometry_->update(gv);
 
             // update the index maps
             indexMap_.resize(gv.size(Grid::dimension));
@@ -256,7 +256,7 @@ private:
     }
 
     std::shared_ptr<Grid> grid_; //! the dune-foamgrid
-    std::shared_ptr<FVGridGeometry> fvGridGeometry_; //! fv grid geometry
+    std::shared_ptr<GridGeometry> fvGridGeometry_; //! fv grid geometry
     Growth growth_;
 
     // index mapping stuff

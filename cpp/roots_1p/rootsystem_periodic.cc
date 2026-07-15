@@ -27,10 +27,13 @@
 #include <dumux/common/parameters.hh>
 #include <dumux/common/dumuxmessage.hh>
 #include <dumux/common/defaultusagemessage.hh>
-#include <dumux/common/geometry/boundingboxtree.hh>
-#include <dumux/common/geometry/geometricentityset.hh>
-#include <dumux/common/geometry/intersectingentities.hh>
+#include <dumux/geometry/boundingboxtree.hh>
+#include <dumux/geometry/geometricentityset.hh>
+#include <dumux/geometry/intersectingentities.hh>
 #include <dumux/linear/seqsolverbackend.hh>
+#include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/grid/gridmanager.hh>
@@ -90,11 +93,11 @@ int main(int argc, char** argv) try
     std::cout << "i have the view \n"<< std::flush;
 
     // create the finite volume grid geometry
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(gridManager.grid().leafGridView());
-    const auto periodicConnectivity = gridManager.getGridData()->createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    auto fvGridGeometry = std::make_shared<GridGeometry>(leafGridView);
+    const auto periodicConnectivity = gridManager.getGridData()->periodicVertexMap();//createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
     fvGridGeometry->setExtraConnectivity(periodicConnectivity);
-    fvGridGeometry->update();
+    fvGridGeometry->update(leafGridView);
     std::cout << "i have the geometry \n" << std::flush;
 
     ////////////////////////////////////////////////////////////
@@ -191,13 +194,14 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop, xOld); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
     }
 
     // the linear solver
-    using LinearSolver = AMGBackend<TypeTag>; // how do i choose umfpack
+    using LinearSolver = AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometry>,
+			Dumux::LinearAlgebraTraitsFromAssembler<Assembler>>; // how do i choose umfpack
     auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
 
     // the non-linear solver

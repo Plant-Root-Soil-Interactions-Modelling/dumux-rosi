@@ -20,11 +20,14 @@
 // #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
 // #include <dumux/common/properties/propertysystem.hh>
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
-#include <dumux/common/valgrind.hh> // for debugging
+// #include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a global function)
 
-#include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
+// #include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
+#include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh>
 #include <dumux/nonlinear/newtonsolver.hh> // the only nonlinear solver available
 
 #include <dumux/common/timeloop.hh>
@@ -34,7 +37,8 @@
 #include <dumux/io/grid/gridmanager.hh>
 // #include <dumux/io/loadsolution.hh> // global functions to resume a simulation
 
-#include <RootSystem.h>
+// #include "../../../CPlantBox/src/MappedOrganism.h"
+#include <../CPlantBox/src/structural/MappedOrganism.h>
 
 #include <dumux/growth/rootsystemgridfactory.hh> // dumux-rosi growth ideas (modified from dumux-rootgrowth)
 #include <dumux/growth/growthinterface.hh>
@@ -48,6 +52,14 @@
 
 /**
  * and so it begins...
+ - dgf ok (./rootsystem input/singleroot.input)
+ - static RS ok
+ TODO:
+ - make growth work
+ - select if want MPI or not
+ - make the periodic option compile?
+ run the static plant option:
+ ./rootsystem_rb input/rb_rootsystem.input
  */
 int main(int argc, char** argv) try
 {
@@ -67,7 +79,7 @@ int main(int argc, char** argv) try
 
     // parse command line arguments and input file
     Parameters::init(argc, argv);
-
+	Parameters::print();
     //    using GridView = GetPropType<TypeTag, Properties::GridView>;
     //    using Element = typename GridView::template Codim<0>::Entity;
     //    using GlobalPosition = typename Element::Geometry::GlobalCoordinate; // the beauty (is there a correct & quicker way?)
@@ -77,16 +89,17 @@ int main(int argc, char** argv) try
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> grid;
     GridManager<Grid> gridManager; // only for dgf
-    std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
+    std::shared_ptr<CPlantBox::Plant> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
+	double initialTime = getParam<double>("RootSystem.Grid.InitialT", 1.); // days
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         gridManager.init("RootSystem");
         grid = std::shared_ptr<Grid>(&gridManager.grid(), Properties::empty_delete<Grid>());
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        rootSystem = std::make_shared<CPlantBox::RootSystem>();
-        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "../modelparameter/");
+        rootSystem = std::make_shared<CPlantBox::Plant>();
+        rootSystem->readParameters(getParam<std::string>("RootSystem.Grid.File"));//, "../../../CPlantBox/modelparameter/");
         if (hasParam("RootSystem.Grid.Confined")) {
             auto box = getParam<std::vector<double>>("RootSystem.Grid.Confined");
             rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(box.at(0)*100, box.at(1)*100, box.at(2)*100));
@@ -94,6 +107,8 @@ int main(int argc, char** argv) try
             rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_HalfPlane>(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         }
         rootSystem->initialize();
+		
+        rootSystem->simulate(initialTime, true);
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         grid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
@@ -107,9 +122,9 @@ int main(int argc, char** argv) try
     std::cout << "i have the view \n"<< std::flush;
 
     // create the finite volume grid geometry
-    using FVGridGeometry = GetPropType<TypeTag, Properties::FVGridGeometry>;
-    auto fvGridGeometry = std::make_shared<FVGridGeometry>(leafGridView);
-    fvGridGeometry->update();
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    auto gridGeometry = std::make_shared<GridGeometry>(leafGridView);
+    // gridGeometry->update(gridManager.grid().leafGridView()); // TODO: do not think it is needed, unless we do grid refinement (see dumux\examples\1protationsymmetry\main.cc)
     std::cout << "i have the geometry \n" << std::flush;
 
     ////////////////////////////////////////////////////////////
@@ -118,21 +133,21 @@ int main(int argc, char** argv) try
 
     // the solution vector
     using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>; // defined in discretization/fvproperties.hh, as Dune::BlockVector<GetPropType<TypeTag, Properties::PrimaryVariables>>
-    SolutionVector x(fvGridGeometry->numDofs()); // degrees of freedoms
+    SolutionVector x(gridGeometry->numDofs()); // degrees of freedoms
 
     // root growth
     GrowthModule::GridGrowth<TypeTag>* gridGrowth = nullptr;
-    double initialTime = 0.; // s
-    if (simtype==Properties::rootbox) {
-        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, fvGridGeometry, growth, x); // in growth/gridgrowth.hh
-        std::cout << "...grid grower initialized \n" << std::flush;
-        initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
-        gridGrowth->grow(initialTime);
-        std::cout << "\ninitial growth performed... \n" << std::flush;
+    bool grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
+    if ((simtype==Properties::rootbox) && grow) {
+        gridGrowth = new GrowthModule::GridGrowth<TypeTag>(grid, gridGeometry, growth, x); // in growth/gridgrowth.hh
+        // std::cout << "...grid grower initialized \n" << std::flush;
+        // initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
+        // gridGrowth->grow(initialTime);
+        // std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
     // the problem (initial and boundary conditions)
-    auto problem = std::make_shared<RootsProblem<TypeTag>>(fvGridGeometry);
+    auto problem = std::make_shared<RootsProblem<TypeTag>>(gridGeometry);
     if (simtype==Properties::dgf) {
         problem->spatialParams().initParameters(*gridManager.getGridData());
     } else if (simtype==Properties::rootbox){
@@ -144,16 +159,14 @@ int main(int argc, char** argv) try
 
     // the grid variables
     using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
-    auto gridVariables = std::make_shared<GridVariables>(problem, fvGridGeometry);
+    auto gridVariables = std::make_shared<GridVariables>(problem, gridGeometry);
     gridVariables->init(x);
     std::cout << "with variables \n" << std::flush;
 
     // get some time loop parameters & instantiate time loop
-    bool grow = false;
     const auto tEnd = getParam<double>("TimeLoop.TEnd");
     std::shared_ptr<CheckPointTimeLoop<double>> timeLoop;
     if (tEnd > 0) { // dynamic problem
-        grow = getParam<bool>("RootSystem.Grid.Grow", false); // use grid growth
         auto initialDt = getParam<double>("TimeLoop.DtInitial"); // initial time step
         timeLoop = std::make_shared<CheckPointTimeLoop<double>>(/*start time*/0., initialDt, tEnd);
         timeLoop->setMaxTimeStepSize(getParam<double>("TimeLoop.MaxTimeStepSize"));
@@ -201,14 +214,15 @@ int main(int argc, char** argv) try
     using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables, timeLoop); // dynamic
+        assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, xOld); // dynamic
     } else {
-        assembler = std::make_shared<Assembler>(problem, fvGridGeometry, gridVariables); // static
+        assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables); // static
     }
 
     // the linear solver
-    using LinearSolver = AMGBackend<TypeTag>; // how do i choose umfpack
-    auto linearSolver = std::make_shared<LinearSolver>(leafGridView, fvGridGeometry->dofMapper());
+    using LinearSolver = AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometry>,
+			Dumux::LinearAlgebraTraitsFromAssembler<Assembler>>; // how do i choose umfpack
+    auto linearSolver = std::make_shared<LinearSolver>(leafGridView, gridGeometry->dofMapper());
 
     // the non-linear solver
     using NewtonSolver = Dumux::NewtonSolver<Assembler, LinearSolver>;
@@ -232,25 +246,30 @@ int main(int argc, char** argv) try
                 if (grow) {
 
                     // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                    while (growth->simTime()+dt<t+initialTime) {
+					double dt_growth = growth->simTime() - t;
+					if(dt_growth > 0.)
+					{
+                    // while (growth->simTime()+dt<t+initialTime) { 
 
                         std::cout << "\n grow ..."<< std::flush;
-                        gridGrowth->grow(dt);
+                        gridGrowth->grow(dt_growth);
                         problem->spatialParams().updateParameters(*growth);
                         problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                         std::cout << "grew \n"<< std::flush;
 
-                        // what shall I update?
-                        fvGridGeometry->update();
-                        //gridVariables->update();
+                        // todo: done inside of gridGrowth->grow, why was it done again here?
+                        gridGeometry->update(gridManager.grid().leafGridView()); 
+                        
+						//gridVariables->update();
                         gridVariables->updateAfterGridAdaption(x); // update the secondary variables
 
-                        // todo? what is necessary? no clue what i am doing ...
-                        assembler->setResidualSize(); // resize residual vector
-                        assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                        assembler->setPreviousSolution(x);
-                        assembler->assembleJacobianAndResidual(x);
-
+                        // // todo? what is necessary? no clue what i am doing ...
+                        // assembler->setResidualSize(); // resize residual vector
+                        // assembler->setJacobianPattern(); // resize and set Jacobian pattern
+                        // assembler->setPreviousSolution(x);
+                        // assembler->assembleJacobianAndResidual(x);
+						assembler->updateAfterGridAdaption();
+						x.resize(gridGeometry->numDofs());
                         xOld = x;
                     }
 

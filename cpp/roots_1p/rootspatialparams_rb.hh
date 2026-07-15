@@ -7,7 +7,7 @@
 
 #include <dumux/common/math.hh>
 #include <dumux/common/parameters.hh>
-#include <dumux/material/spatialparams/fv1p.hh>
+#include <dumux/porousmediumflow/fvspatialparams1p.hh>
 #include <dumux/material/components/simpleh2o.hh>
 
 #include <dumux/growth/growthinterface.hh>
@@ -26,9 +26,9 @@ namespace Dumux {
  */
 template<class FVGridGeometry, class Scalar>
 class RootSpatialParamsRB
-    : public FVSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParamsRB<FVGridGeometry, Scalar>> {
+    : public FVPorousMediumFlowSpatialParamsOneP<FVGridGeometry, Scalar, RootSpatialParamsRB<FVGridGeometry, Scalar>> {
     using ThisType = RootSpatialParamsRB<FVGridGeometry, Scalar>;
-    using ParentType = FVSpatialParamsOneP<FVGridGeometry, Scalar, ThisType>;
+    using ParentType = FVPorousMediumFlowSpatialParamsOneP<FVGridGeometry, Scalar, ThisType>;
     using GridView = typename FVGridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
     using SubControlVolume = typename FVGridGeometry::SubControlVolume;
@@ -173,10 +173,10 @@ public:
             if (segCT[i]<0) { // sanity checks
                 throw Dumux::ParameterException("updateParameters: creation time cannot be negative");
             }
-            if (segCT[i]>time_+time0_+dt_+1) {// sanity checks
-                throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
-                    std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
-            }
+            // if (segCT[i]>time_+time0_+dt_+1) {// sanity checks >= remove as we nowneed an initial growth 
+                // throw Dumux::ParameterException("updateParameters: creation time cannot be larger than simulation time, "+
+                    // std::to_string(segCT[i])+">"+std::to_string(time_+time0_));
+            // }
         }
 
         // update creation times: when tips move, there segmentCTs need to be updated
@@ -205,6 +205,15 @@ public:
     void initParameters(const GridData& gridData) {
         DUNE_THROW(Dune::InvalidStateException, "initParameters is called for a root growth model");
     }
+
+    /**
+     * The two parameters of the Weibull function:
+     * b [cm], and
+     * c [1]
+     *
+     * k = exp(-(|psi|/b)^c)
+     */
+    void setParameter(double b, double c) { }
 
 private:
     InputFileFunction kr_;

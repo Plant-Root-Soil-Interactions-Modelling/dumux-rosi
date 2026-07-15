@@ -13,9 +13,10 @@ namespace Properties {
  * no functionality (but Dumux wants its bindings)
  * ugly, but I found no other option...
  */
-// The point source type (not used)
+// // The point source type (not used)
 template<class TypeTag>
 struct PointSource<TypeTag, TTag::Roots> {
+    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
     using type = IntegrationPointSource<Dune::FieldVector<double, 3>, NumEqVector>;
 };
@@ -47,6 +48,8 @@ template<class TypeTag>
 struct CouplingManager<TypeTag, TTag::Roots> {
     using type = DummyCouplingManagerR;
 };
+// template<class TypeTag> struct PointSource<TypeTag, TTag::Roots> { using type = DummyCouplingManagerR::PointSourceTraits::template PointSource<1>; };
+// template<class TypeTag> struct PointSourceHelper<TypeTag, TTag::Roots> { using type = DummyCouplingManagerR::PointSourceTraits::template PointSourceHelper<1>; };
 
 
 } // namespace Properties
