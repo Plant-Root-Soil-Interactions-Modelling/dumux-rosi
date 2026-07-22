@@ -2,15 +2,14 @@
 #
 # compares the dumux solution to the analytical solution (Figure 4abc Vanderborght et al 2005)
 #
-# D. Leitner, 2018
+# D. Leitner, 2018, 2026
 #
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
 import matplotlib.pyplot as plt
-from analytic_b3 import *
-from vtk_tools import *
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 import van_genuchten as vg
 
 # go to the right place

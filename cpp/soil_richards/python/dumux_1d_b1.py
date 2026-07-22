@@ -2,16 +2,17 @@
 #
 # compares the dumux solution to the analytical solution (Figure 2abc Vanderborght et al 2005)
 #
-# D. Leitner, 2018
+# dumux-rosi/build-cmake/cpp/soil_richards$ make richards1d
+# 
+# D. Leitner, 2018, 2026
 #
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
 import matplotlib.pyplot as plt
 from analytic_b1 import *
-from vtk_tools import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 

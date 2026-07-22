@@ -10,8 +10,8 @@ import sys; sys.path.append("../../../python/soil/")  # for the analytical solut
 import os
 import matplotlib.pyplot as plt
 from analytic_b1 import *
-from vtk_tools import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 # fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
 

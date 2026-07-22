@@ -1,10 +1,11 @@
 """ "Benchmark C12 root system part """
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+import numpy as np
 
 import os
 import matplotlib.pyplot as plt
-from vtk_tools import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -39,6 +40,6 @@ ax1.plot(t, d[:, 1] * c, 'g:')  # actual transpiration (neumann)
 ax1.legend(['Potential', 'Actual', 'Actual'], loc = 'upper left')
 ax1.axis((0, t[-1], 0, 0.013))
 ax1.set_xlabel("Time $[d]$")
-ax1.set_ylabel("Transpiration rate $[kg \ d^{-1}]$")
+ax1.set_ylabel("Transpiration rate $[kg \\ d^{-1}]$")
 
 plt.show()
