@@ -3,6 +3,7 @@
 # compares the dumux solution to the analytical solution (Figure 2abc Vanderborght et al 2005)
 #
 # dumux-rosi/build-cmake/cpp/soil_richards$ make richards1d
+# dumux-rosi/bash install_modules.sh
 # 
 # D. Leitner, 2018, 2026
 #
