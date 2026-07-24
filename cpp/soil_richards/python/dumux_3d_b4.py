@@ -2,9 +2,12 @@
 #
 # compares the dumux solution to the analytical solution (Figure 5abcd Vanderborght et al 2005)
 #
-# D. Leitner, 2018
+# FIRST
+# dumux-rosi/build-cmake/cpp/soil_richards$ make richards3d
+# dumux-rosi/bash install_modules.sh
 #
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+# D. Leitner, 2018, 2026
+#
 import sys; sys.path.append("../../../python/soil/")  # for the analytical solutions
 
 import os
@@ -28,19 +31,19 @@ if np_ == 1:
     os.system("./richards3d input/b4b_3d.input")
     os.system("./richards3d input/b4c_3d.input")
     os.system("./richards3d input/b4d_3d.input")
-    os.system("./richards3d input/b4a_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr")
-    os.system("./richards3d input/b4b_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr")
-    os.system("./richards3d input/b4c_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr")
-    os.system("./richards3d input/b4d_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr")
+    # os.system("./richards3d input/b4a_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr")
+    # os.system("./richards3d input/b4b_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr")
+    # os.system("./richards3d input/b4c_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr")
+    # os.system("./richards3d input/b4d_3d.input -Soil.Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr")
 else:
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b4a_3d.input -Grid.Overlap 1")  # CC needs 1 , box 0
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b4b_3d.input -Grid.Overlap 1")
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b4c_3d.input -Grid.Overlap 1")
     os.system("mpirun -n " + str(np_) + " ./richards3d input/b4d_3d.input -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b4a_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b4b_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b4c_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr -Grid.Overlap 1")
-    os.system("mpirun -n " + str(np_) + " ./richards3d input/b4d_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr -Grid.Overlap 1")
+    # os.system("mpirun -n " + str(np_) + " ./richards3d input/b4a_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4a_hr -Grid.Overlap 1")
+    # os.system("mpirun -n " + str(np_) + " ./richards3d input/b4b_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4b_hr -Grid.Overlap 1")
+    # os.system("mpirun -n " + str(np_) + " ./richards3d input/b4c_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4c_hr -Grid.Overlap 1")
+    # os.system("mpirun -n " + str(np_) + " ./richards3d input/b4d_3d.input -Grid.Cells '9 9 399' -Problem.Name benchmark3d_4d_hr -Grid.Overlap 1")
 
 # open results
 num = ['a', 'c', 'b', 'd', 'a_hr', 'c_hr', 'b_hr', 'd_hr']

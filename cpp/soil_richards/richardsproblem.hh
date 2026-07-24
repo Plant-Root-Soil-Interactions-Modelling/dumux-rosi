@@ -510,14 +510,16 @@ public:
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
+			auto elemFluxVarsCache = localView(gridVars.gridFluxVarsCache());
+			// neumann() does not use the flux cache; skip bind to avoid segfault on boundary-only traversal
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				try { // will throw an exception, if boundary type is Dirichlet
 					auto p = scvf.center();
 					if (onUpperBoundary_(p)) { // top
-						//bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
+						bc_flux_upper += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
 						uc++;
 					} else if (onLowerBoundary_(p)) { // bottom
-						//bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
+						bc_flux_lower += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
 						lc++;
 					}
 				} catch (...) {
@@ -527,13 +529,6 @@ public:
 		bc_flux_upper /= uc;
 		bc_flux_lower /= lc;
 	}
-
-//    NumEqVector neumann(const Element& element,
-//            const FVElementGeometry& fvGeometry,
-//            const ElementVolumeVariables& elemVolVars,
-//            const ElementFluxVariablesCache&  fluxCache,
-//            const SubControlVolumeFace& scvf)
-
 
 	/*!
 	 * Writes the actual boundary fluxes (top and bottom) into a text file. Call postTimeStep before using it.
