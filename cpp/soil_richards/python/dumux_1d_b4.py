@@ -19,8 +19,6 @@ import numpy as np
 from math import *
 from scipy.interpolate import interp1d
 
-fig, ((ax1, ax2), (ax3, ax4)) = plt.subplots(2, 2)
-
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
 os.chdir(path)
