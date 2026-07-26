@@ -17,7 +17,7 @@ class Richards22Cyl : public RichardsCyl<Problem, Assembler, LinearSolver, dim>
 	//how many reaction terms will be saved, I need a better place to load this
 	static constexpr int numReactionTermsgeneral = 10; //general reaction terms, such as how much of the solutes were taken up by the microbes
 	static constexpr int numReactionTermsMicrobes = 11; //reaction terms for each microbial species
-	static constexpr int numReactionTerms=numReactionTermsgeneral+numReactionTermsMicrobes;
+	static constexpr int numReactionTerms=5*10;//numReactionTermsgeneral+numReactionTermsMicrobes;
 
     using NumEqVector = typename Problem::NumEqVector;
     virtual ~Richards22Cyl() { }
