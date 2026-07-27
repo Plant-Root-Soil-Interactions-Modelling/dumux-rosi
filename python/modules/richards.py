@@ -236,9 +236,9 @@ class RichardsWrapper(SolverWrapper):
         type_bot ==  "constantFlux", value_bot is the constant flux [cm/day] 
         type_bot ==  "constantFluxCyl", value_bot is the constant flux [cm/day] for cylindrical coordinates        
         type_bot ==  "freeDrainage", free drainage, the value of value_bot is ignored                       
-        type_bot ==  "FixedFlux", value_top is given by climatic data describing evapotranspiration [cm/day], 
-                     Data are given in @param climate, the value of value_top is ignored.  
-                     Minus denotes evaporation, plus transpiraton.                                            
+        type_bot ==  "FixedFlux", value_top is given by climatic data describing fluxes measured by Lysimeters [cm/day], 
+                     Data are given in @param climate, the value of value_bot is ignored.  
+                     Minus denotes influx, plus outflux.                                            
                      Evaporation stops at a critical pressure of -10000 cm, infiltration is with run off. 
         
         """

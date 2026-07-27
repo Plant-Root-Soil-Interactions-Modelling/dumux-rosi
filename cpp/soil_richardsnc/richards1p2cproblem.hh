@@ -131,12 +131,12 @@ public:
 
 		// Precipitation & Evaporation, and solute input
 		if (bcTopType_==atmospheric) {
-			precipitation_ = InputFileFunction("Bottom", "Waterflux", "Time", 0.); // cm/day (day)
+			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
         if (bcSTopType_[0]==managed) {
-            soluteInput_ = InputFileFunction("ManagedBottom", "Input", "Time", 0.); // cm/day (day)
+            soluteInput_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
             soluteInput_.setVariableScale(1./(24.*60.*60.)); // s -> day
             soluteInput_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
@@ -144,13 +144,13 @@ public:
 //            }
         }
 		//FixedFlux Data for the bottom
-		if (bcTopType_==FixedFlux) {
-			bottomflux_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+		if (bcBotType_==FixedFlux) {
+			bottomflux_ = InputFileFunction("Bottom", "Waterflux", "Time", 0.); // cm/day (day)
 			bottomflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			bottomflux_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
-		if (bcSTopType_[0]==managed) {
-            bottomsflux_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
+		if (bcSBotType_[0]==managed) { 
+            bottomsflux_ = InputFileFunction("ManagedB", "Input", "Time", 0.); // cm/day (day)
             bottomsflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
             bottomsflux_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
