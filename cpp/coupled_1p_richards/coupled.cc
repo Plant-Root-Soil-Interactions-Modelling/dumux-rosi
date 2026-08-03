@@ -76,7 +76,8 @@ using SoilTypeTag = Properties::TTag::RichardsCC; // RichardsCC //RichardsBox
 using RootTypeTag = Properties::TTag::RootsCCTpfa; // RootsBox // RootsCCTpfa
 
 /**
- * debugging
+ * debugging ./coupled_rb input/small_rb.input
+ * gdb --args ./coupled_rb input/small_rb.input
  */
 using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::GridGeometry>;
 template<class SoilGridVariables, class SoilSolution>
@@ -85,6 +86,8 @@ void soilControl(std::shared_ptr<const SoilFVGridGeometry> fvGridGeometry, const
     double cVol = 0.;
     double oldVol = 0.;
     const auto& gridView = fvGridGeometry->gridView();  // soil
+
+	double minP = 1.e5; double maxP = -1.e5; double avP = 0.; 
     for (const auto& element : elements(gridView)) { // soil elements
         auto fvGeometry = localView(*fvGridGeometry); // soil solution -> volume variable
         fvGeometry.bindElement(element);
@@ -92,25 +95,31 @@ void soilControl(std::shared_ptr<const SoilFVGridGeometry> fvGridGeometry, const
         elemVolVars.bindElement(element, fvGeometry, sol);
         for (const auto& scv : scvs(fvGeometry)) {
             cVol += elemVolVars[scv].saturation(0)*scv.volume();
+			if(elemVolVars[scv].pressureHead() < minP ){minP = elemVolVars[scv].pressureHead();}
+			if(elemVolVars[scv].pressureHead() > maxP){maxP = elemVolVars[scv].pressureHead();}
+			avP += elemVolVars[scv].pressureHead() /sol.size();
         }
         elemVolVars.bindElement(element, fvGeometry, oldSol);
         for (const auto& scv : scvs(fvGeometry)) {
             oldVol += elemVolVars[scv].saturation(0)*scv.volume();
         }
     }
-    std::cout << "\nWater in domain: " << cVol*1.e6 << " g at day " << t/24/3600 << " \n";
+    std::cout << "\nWater in domain: " << cVol*1.e6 << " g, " << minP <<", "<<avP<<", "<<maxP << " cm, at day " << t/24/3600 << " \n";
     std::cout << "...   a change of: " << (oldVol-cVol)*1.e3 << " kg = " << (oldVol-cVol)*1.e6*24*3600/dt << " g/day \n" ;
 }
 } // namespace Dumux
 
 
-
+#include <cfenv>
 
 /**
  * and so it begins...
  */
 int main(int argc, char** argv) try
 {
+	
+// at the very top of main(), before Dune::MPIHelper::instance(...)
+// feenableexcept(FE_INVALID | FE_DIVBYZERO | FE_OVERFLOW);
     using namespace Dumux;
 
     // initialize MPI, finalize is done automatically on exit
@@ -163,7 +172,7 @@ int main(int argc, char** argv) try
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
         // rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
-        rootSystem->initialize();
+        rootSystem->initialize(3);
 		rootSystem->simulate(initialTime, true);
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh

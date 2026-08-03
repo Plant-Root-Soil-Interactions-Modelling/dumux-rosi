@@ -4,13 +4,13 @@ Name = small
 [TimeLoop]
 TEnd = 604800 # 31536000 # 0 is steady state
 DtInitial =  1 # [s]
-MaxTimeStepSize = 3600 # 10 days [s] 
+MaxTimeStepSize = 20 # 10 days [s] 
 PeriodicCheckTimes = 3600
 
 [Soil.Grid]
 LowerLeft = -0.05 -0.05 -0.24
 UpperRight = 0.05 0.05 0.
-Cells = 32 16 24
+Cells = 2 2 2 #10 10 24
 
 [Soil.BC.Top]
 Type = 2 # constant flux
@@ -21,7 +21,7 @@ Type = 2 # 5 free drainage, 1 constant pressure
 Value = 0 # [cm] pressure head, fully saturated bot
 
 [Soil.IC]
-P = -100 
+P = -1000 
 
 [Soil.VanGenuchten] 
 Qr = 0.067  	
