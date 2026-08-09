@@ -317,7 +317,6 @@ public:
 				
 			}
 			
-			
 			componentInput_.at(i).setVariableScale(1./(24.*60.*60.)); //day-> s  
 			Scalar g2kg = 1/1000 ;
 			Scalar m2_2_cm2 = 10000;
@@ -393,10 +392,11 @@ public:
         
 		//for N
         NH4SFunction = getParam<int>("Soil.NH4SFunction",NH4SFunction);
+		
 		if(NH4SFunction ==1)
 		{
-			kadsN = getParam<double>("Soil.kadsN",kadsN);//[??] => [??]
-			kdesN = getParam<double>("Soil.kdesN",kdesN)/(24.*60.*60.);//[d-1] => [s-1]
+			kadsN = getParam<double>("Soil.kadsN",kadsN)/m3_2_cm3;//[cm3/mol] => [m3/mol]
+		kdesN = getParam<double>("Soil.kdesN",kdesN)/(24.*60.*60.);//[d-1] => [s-1]
 		}else{
 			
         DUNE_THROW(Dune::InvalidStateException, "NH4SFunction not recognised (0 or 1) "+ std::to_string(NH4SFunction));
@@ -841,6 +841,7 @@ public:
 					}
 					break;
 				}
+				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
@@ -895,6 +896,7 @@ public:
 				case freeDrainage: { // holds when useMoles?
 					f = krw * kc * rhoW *pos0; // * 1 [m]
 					break;
+				}
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
