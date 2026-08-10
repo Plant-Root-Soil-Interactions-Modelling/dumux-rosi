@@ -38,7 +38,7 @@ kr = kr / (rho * g) / (24 * 3600)
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
 t0 = -2e-4  # kg / s
-trans = -t0 * 24 * 3600  # kg /day
+trans = 2*1000*1000*0.6 #-t0 * 24 * 3600  # kg /day
 print("tranpsiration ", trans, "[kg/day]")
 
 # Boundary conditions
@@ -124,7 +124,7 @@ print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
 print("potential", d[-1, 2] * c)
 print("actual", d[-1, 1] * c)
-print("actual", d[-1, 5] / 1000)
+# print("actual", d[-1, 5] / 1000)
 print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
 
 if __name__ == "__main__":
