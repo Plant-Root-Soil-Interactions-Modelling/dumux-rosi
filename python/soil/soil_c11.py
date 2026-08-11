@@ -1,37 +1,37 @@
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
-
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
-
-import matplotlib.pyplot as plt
-import numpy as np
-import time
-
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-
-""" 
-Root uptake with the classic sink term (Benchmark C11) with a 3D SPGrid but low resolution z (for speed), 
+"""
+Root uptake with the classic sink term (Benchmark C11) with a 3D SPGrid but low resolution z (for speed),
 
 everything scripted, no input file needed
 
 also works parallel with mpiexec (only slightly faster, due to overhead)
 """
 
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from mpi4py import MPI
+from rosi.richards import RichardsWrapper  # Python part
+from rosi.rosi_richards import RichardsSP  # C++ part (Dumux binding)
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+
 r_root = 0.02  # cm
 r_out = 0.6
 
 
 def solve(soil, simtimes, q_r, N):
-    """ 
+    """
     soil            soil type
     simtimes        simulation output times
-    q_r             root flux [cm/day]   
+    q_r             root flux [cm/day]
     N               spatial resolution
     """
 
     q_r = q_r * 1  # * 1 g/cm3 = g/cm2/day
-    q_r = q_r * 2 * r_root * np.pi * 1.  # g/day
+    q_r = q_r * 2 * r_root * np.pi * 1.0  # g/day
     print("Qr as sink", q_r)
 
     cpp_base = RichardsSP()
@@ -41,13 +41,13 @@ def solve(soil, simtimes, q_r, N):
     s.setTopBC("noflux")
     s.setBotBC("noflux")
     l = np.sqrt((r_out * r_out - r_root * r_root) * np.pi) / 2  # same area as cylindrical
-    s.createGrid([-l, -l, -1.], [l, l, 0.], [N, N, 1])  # [cm]
+    s.createGrid([-l, -l, -1.0], [l, l, 0.0], [N, N, 1])  # [cm]
     s.setVGParameters([soil[0:5]])
     s.initializeProblem()
     s.setCriticalPressure(-15000)
-    idx_top = s.pickCell([0., 0., -.5])  # index for sink
+    idx_top = s.pickCell([0.0, 0.0, -0.5])  # index for sink
 
-    sources = { idx_top:-q_r }  # gIdx: value [ g/day ]
+    sources = {idx_top: -q_r}  # gIdx: value [ g/day ]
     s.setSource(sources)
 
     nsp = N  # number of sample points for output
@@ -56,15 +56,14 @@ def solve(soil, simtimes, q_r, N):
     x_ = np.hstack((np.zeros((nsp, 1)), y_, np.zeros((nsp, 1))))
 
     dt_ = np.diff(simtimes)
-    s.ddt = 1.e-5  # initial Dumux time step [days]
+    s.ddt = 1.0e-5  # initial Dumux time step [days]
 
     for dt in dt_:
 
         vol = s.getWaterVolume()  # don't move to output, needs all ranks
 
         if rank == 0:
-            print("***** external time step {:.3f} d, simulation time {:.3f} d, internal time step {:.3f} d Water volume {:.3f} cm3".
-                  format(dt, s.simTime, s.ddt, vol))
+            print("***** external time step {:.3f} d, simulation time {:.3f} d, internal time step {:.3f} d Water volume {:.3f} cm3".format(dt, s.simTime, s.ddt, vol))
 
         s.solve(dt)
 
@@ -86,7 +85,7 @@ if __name__ == "__main__":
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.01 d
-    fig, ax = plt.subplots(2, 3, figsize = (14, 14))
+    fig, ax = plt.subplots(2, 3, figsize=(14, 14))
 
     if rank == 0:
         t0 = time.time()
@@ -107,4 +106,3 @@ if __name__ == "__main__":
         print("Elapsed time: ", time.time() - t0, "s")
         print(t_)
         plt.show()
-
