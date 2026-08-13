@@ -14,7 +14,7 @@ Converts a DuMux output vtp to a RSML
 """
 
 file_in = "../../grids/RootSystem8.vtp"
-file_out = "../../grids/RootSystem8.rsml"
+file_out = "../../grids/RootSystem8_vtp.rsml"
 
 """ read vtp """
 pd = vt.read_vtp(file_in)
