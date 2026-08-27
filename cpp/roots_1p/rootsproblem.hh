@@ -239,8 +239,8 @@ public:
       double kx = this->spatialParams().kx(eIdx);
       auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
       double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
-      double actTrans = collar_.f(time_); // std::min(collar_.f(time_), criticalTranspiration);
-      // actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+      double actTrans = std::min(collar_.f(time_), criticalTranspiration);
+      actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
       if (verbose > 1) {
 		std::cout << "neumann:  act: " << actTrans << " col: " << collar_.f(time_) << " crit; " << criticalTranspiration << " kx: " << kx <<" " << p << " " << criticalCollarPressure_ << std::endl;
       }
