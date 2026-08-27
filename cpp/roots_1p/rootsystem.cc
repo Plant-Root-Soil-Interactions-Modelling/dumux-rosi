@@ -211,7 +211,7 @@ int main(int argc, char** argv) try
     std::cout << "vtk writer module initialized \n" << std::flush;
 
     // the assembler with time loop for instationary problem
-    using Assembler = FVAssembler<TypeTag, DiffMethod::analytic>;
+    using Assembler = FVAssembler<TypeTag, DiffMethod::numeric>;
     std::shared_ptr<Assembler> assembler;
     if (tEnd > 0) {
         assembler = std::make_shared<Assembler>(problem, gridGeometry, gridVariables, timeLoop, xOld); // dynamic

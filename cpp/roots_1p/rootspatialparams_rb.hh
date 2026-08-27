@@ -82,6 +82,17 @@ public:
         return permeability(element);
     }
 
+
+	/*!
+	* Cross-sectional area of network 
+	*/
+	template <class ElementSolution> 
+	Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution &elemSol) const {
+	const auto eIdx = this->gridGeometry().elementMapper().index(element);
+	const auto r = radius(eIdx);
+	return M_PI * r * r;
+	}
+
     //! simpler interface
     PermeabilityType permeability(const Element& element) const {
         Scalar mu = Water::liquidViscosity(285.15, 1e5); // temperature, pressure

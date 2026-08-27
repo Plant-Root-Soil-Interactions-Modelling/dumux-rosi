@@ -271,11 +271,17 @@ public:
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
             double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
             double actTrans = std::min(collar_.f(time_), criticalTranspiration);
-            actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-		if(verbose>1)
-		{
-			std::cout <<"neumann "<<actTrans<<" "<<collar_.f(time_) <<" "<< criticalTranspiration<<" "<<p <<" "<< criticalCollarPressure_<<std::endl;
-		}
+            //actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+		// if(verbose>1)
+		// {
+			// std::cout <<"neumann "<<actTrans<<" "<<collar_.f(time_) <<" "<< criticalTranspiration<<" "<<p <<" "<< criticalCollarPressure_<<std::endl;
+			
+			
+            std::cout << "neumann:  act: " << actTrans << " col: " << collar_.f(time_) << " crit; " 
+            << criticalTranspiration << " kx: " << kx <<" " << p << " " << criticalCollarPressure_  
+            << " volVars.extrusionFactor(): " << volVars.extrusionFactor() 
+            <<" min " << std::min(collar_.f(time_), criticalTranspiration) << std::endl;
+		// }
             return NumEqVector(actTrans);
         } else {
             return NumEqVector(0.); // no flux at root tips
@@ -416,20 +422,6 @@ public:
         criticalCollarPressure_ = p;
     }
 
-    /*!
-     * \brief Return how much the domain is extruded at a given sub-control volume.
-     *
-     * The extrusion factor here makes extrudes the 1d line to a circular tube with
-     * cross-section area pi*r^2.
-     *
-     * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
-     */
-    template<class ElementSolution>
-    Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
-        const auto eIdx = this->gridGeometry().elementMapper().index(element);
-        const auto radius = this->spatialParams().radius(eIdx);
-        return M_PI*radius*radius;
-    }
 
     /**
      * Sets transpiration according to the last solution

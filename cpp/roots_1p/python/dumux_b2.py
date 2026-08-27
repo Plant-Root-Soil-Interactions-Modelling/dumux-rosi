@@ -3,15 +3,16 @@ Benchmark M32a
 
  Calcultates root system benchmark M32a (static root system, constant conductivities)
 
- D. Leitner, 2019
+ D. Leitner, 2019, 2026
 
 """
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
+                                                                        
 
 import os
+import numpy as np
 import matplotlib.pyplot as plt
-from vtk_tools import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -33,3 +34,5 @@ plt.xlabel("Xylem pressure (cm)")
 np.savetxt("dumux_m32a", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
 # plt.show()
 
+if __name__ == "__main__":
+    plt.show()

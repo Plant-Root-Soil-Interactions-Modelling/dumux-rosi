@@ -6,16 +6,14 @@
  solves Benchmark M31,
  additionally computes case without gravitation, and with transpiration BC
 
- D. Leitner, 2019
+ D. Leitner, 2019, 2026
 """
-import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
-
 import os
-import matplotlib.pyplot as plt
-from vtk_tools import *
-import van_genuchten as vg
 import numpy as np
 from math import *
+import matplotlib.pyplot as plt
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 g = 10 #9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)
@@ -83,7 +81,7 @@ os.system("./rootsystem input/b1.input")
 p_, z_ = read3D_vtp_data("benchmark1-00001.vtp")
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File ../../../grids/singlerootH.dgf -Problem.Name benchmark1b")
 p2_, z_ = read3D_vtp_data("benchmark1b-00001.vtp")
-os.system("./rootsystem input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))
+os.system("./rootsystem input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.verbose 0 -Problem.Name benchmark1c".format(trans))
 p3_, z_ = read3D_vtp_data("benchmark1c-00001.vtp")
 
 # plot
@@ -124,10 +122,10 @@ with open("benchmark1c_actual_transpiration.txt", 'r') as f:
 
 print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
-print("potential", d[-1, 2] * c)
-print("actual", d[-1, 1] * c)
-print("actual", d[-1, 5] / 1000)
-print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
+# print("potential", d[-1, 2] * c)
+# print("actual", d[-1, 1] * c)
+# print("actual", d[-1, 5] / 1000)
+# print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
 
-# if __name__ == "__main__":
-#     plt.show()
+if __name__ == "__main__":
+    plt.show()
