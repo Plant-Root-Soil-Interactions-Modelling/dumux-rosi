@@ -4,6 +4,7 @@
 #define DUMUX_ROOTS_PROPERTIES_HH
 
 #include <dune/foamgrid/foamgrid.hh>
+// #include <dumux/common/reorderingdofmapper.hh>
 
 #include <dune/localfunctions/lagrange/pqkfactory.hh>
 #include <dune/geometry/quadraturerules.hh>
@@ -45,7 +46,7 @@ private:
     using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
 	//todo: Y not use the ReorderingDofMapper?
 	//todo: add the extrusion factor here?
-    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;//ReorderingDofMapper<GridView>; // Dune::MultipleCodimMultipleGeomTypeMapper<GridView>?
+    using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;// Dune::MultipleCodimMultipleGeomTypeMapper<GridView>?
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:

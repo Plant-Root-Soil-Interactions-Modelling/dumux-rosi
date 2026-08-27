@@ -24,11 +24,19 @@ os.system("rm benchmark2-00001.vtp")
 os.system("./rootsystem input/b2.input")
 
 # plot
+# p_, z_ = read3D_vtp_data("benchmark2-00000.vtp")
+# h_ = p_ #vg.pa2head(p_)
+# plt.plot(h_, z_[:, 2], "r+")  # cell data
+# plt.ylabel("Depth (m)")
+# plt.xlabel("Xylem pressure (cm)")
+
+
 p_, z_ = read3D_vtp_data("benchmark2-00001.vtp")
 h_ = vg.pa2head(p_)
 plt.plot(h_, z_[:, 2], "r+")  # cell data
 plt.ylabel("Depth (m)")
 plt.xlabel("Xylem pressure (cm)")
+
 np.savetxt("dumux_m32a", np.vstack((100 * z_[:, 2], h_)), delimiter = ',')
 
 if __name__ == "__main__":

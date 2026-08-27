@@ -64,7 +64,7 @@ public:
     InputFileFunction sf = InputFileFunction("Soil.IC", "P", "Z", 0.); // [cm]([m])
     sf.setFunctionScale(1.e-2 * rho_ * g_);                            // [cm] -> [Pa], don't forget to add pRef_
     soil_ = new GrowthModule::SoilLookUpTable(sf);                     // sf is copied by default copy constructor
-    verbose = getParam<bool>("Problem.verbose", verbose);
+    verbose = getParam<int>("Problem.verbose", verbose);
 
     if (Dumux::hasParam("RootSystem.Collar.P")) {
       collar_ = InputFileFunction("RootSystem.Collar", "P", "PT",
@@ -229,26 +229,39 @@ public:
    * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot
    * s)] \f$.
    */
-  NumEqVector neumann(const Element &element, const FVElementGeometry &fvGeometry, const ElementVolumeVariables &elemVolVars,
-                      const ElementFluxVariablesCache &fluxCache, const SubControlVolumeFace &scvf) const {
-    const auto globalPos = scvf.center();
-    if (onUpperBoundary_(globalPos)) {
-      auto &volVars = elemVolVars[scvf.insideScvIdx()];
-      double p = volVars.pressure();
-      auto eIdx = this->gridGeometry().elementMapper().index(element);
-      double kx = this->spatialParams().kx(eIdx);
-      auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-      double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
-      double actTrans = collar_.f(time_); // std::min(collar_.f(time_), criticalTranspiration);
-      actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
-                                             // if (verbose > 1) {
-      std::cout << "neumann:  act: " << actTrans << " col: " << collar_.f(time_) << " crit; " << criticalTranspiration << " kx: " << kx <<" " << p << " " << criticalCollarPressure_ << std::endl;
-      // }
-      return NumEqVector(actTrans);
-    } else {
-      return NumEqVector(0.); // no flux at root tips
-    }
+  NumEqVector neumann(const Element& element, 
+			const FVElementGeometry& fvGeometry, 
+			const ElementVolumeVariables& elemVolVars,
+			const ElementFluxVariablesCache&  fluxCache,
+        const SubControlVolumeFace& scvf) const {
+
+        const auto globalPos = scvf.center();
+        if (onUpperBoundary_(globalPos)) {
+            auto& volVars = elemVolVars[scvf.insideScvIdx()];
+            double p = volVars.pressure();
+            auto eIdx = this->gridGeometry().elementMapper().index(element);
+            double kx = this->spatialParams().kx(eIdx);
+            auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
+            double criticalTranspiration = volVars.density(0) * kx * (p - criticalCollarPressure_) / dist; // [kg/s]
+            double actTrans = std::min(collar_.f(time_), criticalTranspiration);
+            //actTrans /= volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)]
+		// if(verbose>1)
+		// {
+			// std::cout <<"neumann "<<actTrans<<" "<<collar_.f(time_) <<" "<< criticalTranspiration<<" "<<p <<" "<< criticalCollarPressure_<<std::endl;
+			
+			
+            std::cout << "neumann:  act: " << actTrans << " col: " << collar_.f(time_) << " crit; " 
+            << criticalTranspiration << " kx: " << kx <<" " << p << " " << criticalCollarPressure_  
+            << " volVars.extrusionFactor(): " << volVars.extrusionFactor() 
+													
+            <<" min " << std::min(collar_.f(time_), criticalTranspiration) << std::endl;
+		// }
+            return NumEqVector(actTrans);
+        } else {
+            return NumEqVector(0.); // no flux at root tips
+        }
   }
+
 
   /*!
    * For this method, the return parameter stores the conserved quantity rate
@@ -386,12 +399,14 @@ public:
    *
    * called by volumevariables (why there?), no compilation error if you remove
    * it, just wrong results
+   * needs to be in the spatial parameters
    */
-  template <class ElementSolution> Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution &elemSol) const {
-    const auto eIdx = this->gridGeometry().elementMapper().index(element);
-    const auto radius = this->spatialParams().radius(eIdx);
-    return M_PI * radius * radius;
-  }
+  // template <class ElementSolution> 
+  // Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution &elemSol) const {
+    // const auto eIdx = this->gridGeometry().elementMapper().index(element);
+    // const auto radius = this->spatialParams().radius(eIdx);
+    // return M_PI * radius * radius;
+  // }
 
   /**
    * Sets transpiration according to the last solution
@@ -522,7 +537,7 @@ private:
   double potentialTrans_ = 0;
   double maxTrans_ = 0.;
   double collarP_ = 0.;
-  bool verbose;
+  int verbose;
   std::map<std::string, std::vector<Scalar>> userData_;
 };
 

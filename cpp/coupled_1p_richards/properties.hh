@@ -33,33 +33,33 @@ namespace Properties {
 
 // Coupling Properties for the Soil
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::RichardsBox>
+struct CouplingManager<TypeTag, TTag::RichardsCC>
 {
-    using Traits = MultiDomainTraits<TypeTag, Properties::TTag::RootsBox>;
+    using Traits = MultiDomainTraits<TypeTag, Properties::TTag::RootsCCTpfa>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::RichardsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
+struct PointSource<TypeTag, TTag::RichardsCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<0>; };
 // the point source locater helper class
 template<class TypeTag>
-struct PointSourceHelper<TypeTag, TTag::RichardsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>;  };
+struct PointSourceHelper<TypeTag, TTag::RichardsCC> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>;  };
 
 
 
 // Coupling Properties for Roots
 template<class TypeTag>
-struct CouplingManager<TypeTag, TTag::RootsBox>
+struct CouplingManager<TypeTag, TTag::RootsCCTpfa>
 {
-    using Traits = MultiDomainTraits<Properties::TTag::RichardsBox, TypeTag>;
+    using Traits = MultiDomainTraits<Properties::TTag::RichardsCC, TypeTag>;
     using type = EmbeddedCouplingManager1d3d<Traits, EmbeddedCouplingMode::line>;
 };
 // the point source type
 template<class TypeTag>
-struct PointSource<TypeTag, TTag::RootsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<1>; };
+struct PointSource<TypeTag, TTag::RootsCCTpfa> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSource<1>; };
 // the point source locater helper class
 template<class TypeTag>
-struct PointSourceHelper<TypeTag, TTag::RootsBox> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>; };
+struct PointSourceHelper<TypeTag, TTag::RootsCCTpfa> { using type = typename GetPropType<TypeTag, Properties::CouplingManager>::PointSourceTraits::template PointSourceHelper<1>; };
 
 
 

@@ -37,8 +37,8 @@ kr = kr / (rho * g) / (24 * 3600)
 
 p0 = toPa(-1000)  # dircichlet bc at top (ćm)
 p_s = toPa(-200)  # static soil pressure (cm)
-t0 = -2e-4  # kg / s
-trans = 2*1000*1000*0.6 #-t0 * 24 * 3600  # kg /day
+t0 = -2e-8  # kg / s
+trans = -t0 * 24 * 3600  # kg /day
 print("tranpsiration ", trans, "[kg/day]")
 
 # Boundary conditions
@@ -54,11 +54,14 @@ bb3 = np.array([-rho * g + t0 / rho / kz, -rho * g])  # transpiration as BC
 d = np.linalg.solve(AA, bb)  # compute constants d_1 and d_2 from bc
 d2 = np.linalg.solve(AA, bb2)  # compute constants d_1 and d_2 from bc
 d3 = np.linalg.solve(AA3, bb3)  # compute constants d_1 and d_2 from bc
+print('d3',d3)
 
 # Analytical solution
 p_r = lambda z: toHead(p_s + d[0] * exp(sqrt(c) * z) + d[1] * exp(-sqrt(c) * z))
 p_r2 = lambda z: toHead(p_s + d2[0] * exp(sqrt(c) * z) + d2[1] * exp(-sqrt(c) * z))  # neglecting gravitation
 p_r3 = lambda z: toHead(p_s + d3[0] * exp(sqrt(c) * z) + d3[1] * exp(-sqrt(c) * z))  # transpiration
+print('p_r3',p_r3(0),p_s + d3[0] * exp(sqrt(c) * 0) + d3[1] * exp(-sqrt(c) * 0), 
+            toHead(p_s + d3[0] * exp(sqrt(c) * 0) + d3[1] * exp(-sqrt(c) * 0)) )
 
 # Prepare plot
 za_ = np.linspace(0, -L, 100)
@@ -76,7 +79,7 @@ os.system("rm benchmark1-00001.vtp")
 os.system("rm benchmark1b-00001.vtp")
 os.system("rm benchmark1c-00001.vtp")
 
-# run dumux
+# # run dumux
 os.system("./rootsystem input/b1.input")
 p_, z_ = read3D_vtp_data("benchmark1-00001.vtp")
 os.system("./rootsystem input/b1.input -RootSystem.Grid.File ../../../grids/singlerootH.dgf -Problem.Name benchmark1b")
@@ -85,7 +88,7 @@ os.system("./rootsystem input/b1_trans.input -Problem.verbose 2 -RootSystem.Coll
 p3_, z_ = read3D_vtp_data("benchmark1c-00001.vtp")
 
 # plot
-fig, (ax1, ax2, ax3) = plt.subplots(1, 3)
+fig, (ax1, ax2, ax3) = plt.subplots(1, 3) # (ax1, ax2, ax3)
 
 # benchmark 1
 h_ = vg.pa2head(p_)
@@ -112,20 +115,20 @@ ax3.set_ylabel("Depth (m)")
 ax3.set_xlabel("Xylem pressure (cm)")
 ax3.set_title("Predescribed transpiration")
 
-# save benchmark M31
-z_ = z_[:, 2]
-h_ = vg.pa2head(p_)
-np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter = ',')
+# # save benchmark M31
+# z_ = z_[:, 2]
+# h_ = vg.pa2head(p_)
+# np.savetxt("dumux_m31", np.vstack((100 * z_, h_)), delimiter = ',')
 
-with open("benchmark1c_actual_transpiration.txt", 'r') as f:
-    d = np.loadtxt(f, delimiter = ',')
+# with open("benchmark1c_actual_transpiration.txt", 'r') as f:
+    # d = np.loadtxt(f, delimiter = ',')
 
 print()
 c = 24 * 3600  #  [kg/s] -> [kg/per day]
-print("potential", d[-1, 2] * c)
-print("actual", d[-1, 1] * c)
+# print("potential", d[-1, 2] * c)
+# print("actual", d[-1, 1] * c)
 # print("actual", d[-1, 5] / 1000)
-print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
+# print("pressure", toHead(d[-1, 4]), pr3[0])  # root collar pressures do not perfectly agree
 
 if __name__ == "__main__":
     plt.show()
