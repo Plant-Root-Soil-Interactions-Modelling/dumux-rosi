@@ -338,7 +338,7 @@ public:
 		NumEqVector flux;
 		GlobalPosition pos = scvf.center();
 		auto& volVars = elemVolVars[scvf.insideScvIdx()];
-		int pos0 = 1;
+		double pos0 = 1;
 		if(dimWorld == 1){pos0 = pos[0]; }
 
 		/*
