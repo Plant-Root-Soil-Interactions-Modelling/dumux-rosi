@@ -584,7 +584,9 @@ public:
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
+		GlobalPosition pos = scv.center();
 		double svc_volume = 1.;
+		double pos0 = 1.;
 		if (dimWorld == 1)//1daxissymmetric model
 		{
 			pos0 = pos[0];
@@ -592,7 +594,6 @@ public:
 			//currently, this has to be done on the python level
             //svc_volume = getCellVolumesCyl(dofIndex); 
 		}else{ // dimWorld == 3
-			pos0 = 1.;
             svc_volume = scv.volume();
         }
 		auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
