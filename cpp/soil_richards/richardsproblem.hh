@@ -251,7 +251,7 @@ public:
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
 			Scalar krw = materialLaw_.krw(s); // [1]
-			int pos0 = 1;
+			double pos0 = 1;
 			if(dimWorld == 1){pos0 = pos[0]; }
 
 			if (onUpperBoundary_(pos)) { // top bc
