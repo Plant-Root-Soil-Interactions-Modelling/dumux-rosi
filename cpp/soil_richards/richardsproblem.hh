@@ -49,6 +49,7 @@ public:
     using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
 
 	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;   
 	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
 	using Element = typename GridView::template Codim<0>::Entity;
 	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
@@ -75,9 +76,9 @@ public:
 
 	enum { isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box };
     static constexpr bool useMoles = false;
+	using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
+    static constexpr int numFluidComps = ModelTraits::numFluidComponents();
 
-    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
-    static constexpr int numFluidComps = FluidSystem::numComponents;
 	enum BCTypes {
 		constantPressure = 1,
 		constantFlux = 2,
@@ -239,6 +240,10 @@ public:
 		NumEqVector flux;
 		double f = 0.; // return value
 		GlobalPosition pos = scvf.center();
+		double pos0 = 1;
+		if((dimWorld == 1)&&(!this->spatialParams().useExtrusion)){
+			pos0 = pos[0]; 
+		}
 
 		if ( onUpperBoundary_(pos) || onLowerBoundary_(pos) ) {
 
@@ -259,22 +264,22 @@ public:
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 //						 std::cout << "in:" << f <<", " << imax <<"\n";
-						f = std::max(f, imax);
+						f = std::max(f, imax) * pos0;
 					} else { // outflow
 						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f*1.e6 << ", " << omax*1.e6 << " krw " << krw*1.e6 << "\n";
-						f = std::min(f, omax);
+						f = std::min(f, omax) * pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
-					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100;  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
-						f = std::max(f, imax);
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+						f = std::max(f, imax) * pos0;
 					} else { // outflow
-						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
-						f = std::min(f, omax);
+						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+						f = std::min(f, omax) * pos0;
 					}
 					break;
 				}
@@ -282,7 +287,7 @@ public:
 					Scalar prec = -precipitation_.f(time_);
 					if (prec < 0.) { // precipitation
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
-						f = std::max(prec, imax);
+						f = std::max(prec, imax) * pos0;
 						// std::cout << "in: " << prec << ", " << imax << "\n" << std::flush;
 					} else { // evaporation
 						// std::cout << "out" << ", at " << h << " cm \n";
@@ -297,7 +302,7 @@ public:
                         Scalar arithmetic = 0.5*(krw2+krw); // arithmetic currently best
 					    // Scalar harmonic = 2*krw2*krw/(krw2+krw);
 						Scalar emax = rho_ * kc * arithmetic *((h - criticalPressure_) / dz + gravityOn_); // maximal evaporation KRW???
-						f = std::min(prec, emax);
+						f = std::min(prec, emax) * pos0;
 					}
 					break;
 				}
@@ -310,27 +315,27 @@ public:
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
-						f = std::max(f, imax);
+						f = std::max(f, imax) * pos0;
 					} else { // outflow
 						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f << ", " << omax << "\n";
 						omax = std::max(omax, 0.); // must stay positive
-						f = std::min(f, omax);
+						f = std::min(f, omax) * pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100.; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
-						f = std::max(f, imax);
+						f = std::max(f, imax) * pos0;
 					} else { // outflow
-						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 //						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValues_.at(0)
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						omax = std::max(omax, 0.); // must stay positive
-						f = std::min(f, omax);
+						f = std::min(f, omax) * pos0;
 					}
 					break;
 				}
@@ -365,7 +370,7 @@ public:
 					break; // [kg/(m²*s)]
 				}
 				case freeDrainage: {
-					f = krw * kc * rho_; // * 1 [m]
+					f = krw * kc * rho_ * pos0; // * 1 [m]
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
@@ -374,6 +379,53 @@ public:
 		}
 		flux[conti0EqIdx] = f;
 		return flux;
+	}
+	
+		struct InvalidElemSol
+    {
+        template<class Index>
+        double operator[] (const Index i) const
+        { static_assert(AlwaysFalse<Index>::value, "Solution-dependent material parameters not supported with analytical differentiation"); return 0.0; }
+    };
+
+	template<class PartialDerivativeMatrices>
+	void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
+                             const Element& element,
+                             const FVElementGeometry& fvGeometry,
+                             const ElementVolumeVariables& curElemVolVars,
+                             const ElementFluxVariablesCache& elemFluxVarsCache,
+                             const SubControlVolumeFace& scvf) const
+	{
+		const auto insideScvIdx = scvf.insideScvIdx();
+		const auto& insideScv = fvGeometry.scv(insideScvIdx);
+		const auto& insideVolVars = curElemVolVars[insideScvIdx];
+
+		GlobalPosition pos = scvf.center();
+		double pos0 = 1.;
+		if ((dimWorld == 1) && (!this->spatialParams().useExtrusion))
+			pos0 = pos[0];
+
+		// only free drainage has a nonzero derivative w.r.t. pw . TODO: add derivatives for the other BCs
+		if (onLowerBoundary_(pos) && bcBotType_ == freeDrainage) {
+
+			static const auto rhoW = useMoles
+				? insideVolVars.molarDensity(0)
+				: insideVolVars.density(0);
+
+			const auto kc = this->spatialParams().hydraulicConductivity(element); // [m/s]
+
+			// material law derivatives: dkrw/dsw * dsw/dpw
+			const auto insideFluidMatrixInteraction =
+				this->spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+
+			const auto sw  = insideVolVars.saturation(0);
+			const auto pc  = insideVolVars.capillaryPressure();
+			const auto dkrw_dsw = insideFluidMatrixInteraction.dkrw_dsw(sw);
+			const auto dsw_dpw  = -insideFluidMatrixInteraction.dsw_dpc(pc); // dsw/dpc * dpc/dpw, dpc/dpw = -1
+
+			// df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw) * pos0
+			derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dsw * dsw_dpw * pos0;
+		}
 	}
 
 	/*!
@@ -385,10 +437,24 @@ public:
 	 */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
+				
+		GlobalPosition pos = scv.center();
+		double pos0 = 1.; 
+        double svc_volume = scv.volume();
+        int dofIndex = scv.dofIndex();
+		if (dimWorld == 1)
+		{
+			// to do for next update
+            // svc_volume = getCellVolumesCyl(dofIndex);//with 1d model, need to evaluate manually the volume of the cell.
+			if(!this->spatialParams().useExtrusion){
+				pos0 = pos[0];
+			}
+		}
+				
 		if ((source_ != nullptr)) {
 			if (sourceSlope_<0.) {
 				auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
-				return source_->at(eIdx)/scv.volume();
+				return source_->at(eIdx)/svc_volume * pos0;
 			} else {
 			    Scalar s = elemVolVars[scv].saturation();
 	            Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
@@ -399,9 +465,9 @@ public:
 	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
 	                double theta = (h - criticalPressure_)/sourceSlope_;
 	                // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
-	                return theta* source_->at(eIdx)/scv.volume();
+	                return theta* source_->at(eIdx)/svc_volume * pos0;
 	            } else  {
-	                return source_->at(eIdx)/scv.volume();
+	                return source_->at(eIdx)/svc_volume * pos0;
 	            }
 			}
 		} else {

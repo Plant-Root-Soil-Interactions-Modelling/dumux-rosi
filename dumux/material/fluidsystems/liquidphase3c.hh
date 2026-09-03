@@ -342,6 +342,15 @@ public:
      */
     static const Scalar internalEnergy(Scalar temperature, Scalar pressure)
     { return MainComponent::liquidInternalEnergy(temperature, pressure); }
+	
+	/*!
+     * \brief Returns true if and only if a fluid phase is assumed to
+     *        have a constant viscosity.
+     *
+     * \param phaseIdx The index of the fluid phase to consider
+     */
+    static constexpr bool viscosityIsConstant(int phaseIdx)
+    { return MainComponent::liquidViscosityIsConstant(); }
 
     /*!
      * \brief The dynamic liquid viscosity \f$\mathrm{[N/m^3*s]}\f$ of the pure component.

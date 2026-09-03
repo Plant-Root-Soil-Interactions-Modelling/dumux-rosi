@@ -1,21 +1,9 @@
 // -*- mode: C++; tab-width: 4; indent-tabs-mode: nil; c-basic-offset: 4 -*-
 // vi: set et ts=4 sw=4 sts=4:
-/*****************************************************************************
- *   See the file COPYING for full copying permissions.                      *
- *                                                                           *
- *   This program is free software: you can redistribute it and/or modify    *
- *   it under the terms of the GNU General Public License as published by    *
- *   the Free Software Foundation, either version 3 of the License, or       *
- *   (at your option) any later version.                                     *
- *                                                                           *
- *   This program is distributed in the hope that it will be useful,         *
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of          *
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the            *
- *   GNU General Public License for more details.                            *
- *                                                                           *
- *   You should have received a copy of the GNU General Public License       *
- *   along with this program.  If not, see <http://www.gnu.org/licenses/>.   *
- *****************************************************************************/
+//
+// SPDX-FileCopyrightInfo: Copyright © DuMux Project contributors, see AUTHORS.md in root folder
+// SPDX-License-Identifier: GPL-3.0-or-later
+//
 /*!
  * \file
  * \ingroup RichardsModel
@@ -23,11 +11,28 @@
  *        using the Richards fully implicit models.
  */
 
-#ifndef DUMUX_RICHARDS_CYL_LOCAL_RESIDUAL_HH
-#define DUMUX_RICHARDS_CYL_LOCAL_RESIDUAL_HH
+#ifndef DUMUX_RICHARDS_LOCAL_RESIDUAL_HH
+#define DUMUX_RICHARDS_LOCAL_RESIDUAL_HH
 
 #include <dumux/common/properties.hh>
+#include <dumux/common/parameters.hh>
+#include <dumux/common/typetraits/typetraits.hh>
+#include <dumux/common/numeqvector.hh>
+#include <dumux/discretization/method.hh>
 #include <dumux/discretization/extrusion.hh>
+#include <dumux/flux/referencesystemformulation.hh>
+
+namespace Dumux::Detail {
+// helper structs and functions detecting if the user-defined problem class
+// implements addRobinFluxDerivatives
+template <typename T, typename ...Ts>
+using RobinDerivDetector = decltype(std::declval<T>().addRobinFluxDerivatives(std::declval<Ts>()...));
+
+template<class T, typename ...Args>
+static constexpr bool hasAddRobinFluxDerivatives()
+{ return Dune::Std::is_detected<RobinDerivDetector, T, Args...>::value; }
+
+} // end namespace Dumux::Detail
 
 namespace Dumux {
 
@@ -44,41 +49,44 @@ class RichardsLocalResidual : public GetPropType<TypeTag, Properties::BaseLocalR
     using ParentType = GetPropType<TypeTag, Properties::BaseLocalResidual>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using Problem = GetPropType<TypeTag, Properties::Problem>;
-	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
     using NumEqVector = Dumux::NumEqVector<GetPropType<TypeTag, Properties::PrimaryVariables>>;
     using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
     using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
     using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
     using ElementFluxVariablesCache = typename GetPropType<TypeTag, Properties::GridFluxVariablesCache>::LocalView;
     using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
+    using FVElementGeometry = typename GridGeometry::LocalView;
     using Extrusion = Extrusion_t<GridGeometry>;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-	using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    using GridView = typename FVGridGeometry::GridView;
+    using SubControlVolume = typename GridGeometry::SubControlVolume;
+    using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
+    using GridView = typename GridGeometry::GridView;
     using Element = typename GridView::template Codim<0>::Entity;
     using EnergyLocalResidual = GetPropType<TypeTag, Properties::EnergyLocalResidual>;
     using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
-	using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
+    using ModelTraits = GetPropType<TypeTag, Properties::ModelTraits>;
     using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+    // first index for the mass balance
+    enum { conti0EqIdx = Indices::conti0EqIdx };
 
-    enum { conti0EqIdx = Indices::conti0EqIdx }; // first index for the mass balance
+    // checks if the fluid system uses the Richards model index convention
+    static constexpr auto fsCheck = GetPropType<TypeTag, Properties::ModelTraits>::checkFluidSystem(FluidSystem{});
 
-    enum { // phase indices
-           liquidPhaseIdx = FluidSystem::liquidPhaseIdx,
-           gasPhaseIdx = FluidSystem::gasPhaseIdx,
-           liquidCompIdx = FluidSystem::liquidCompIdx
-    };
+    // phase & component indices
+    static constexpr auto liquidPhaseIdx = FluidSystem::phase0Idx;
+    static constexpr auto gasPhaseIdx = FluidSystem::phase1Idx;
+    static constexpr auto liquidCompIdx = FluidSystem::comp0Idx;
 
-    static constexpr bool useMoles = ModelTraits::useMoles(); 					  
-	 //! An element solution that does not compile if the [] operator is used
+    static constexpr bool useMoles = ModelTraits::useMoles();
+    //! An element solution that does not compile if the [] operator is used
     struct InvalidElemSol
     {
         template<class Index>
         double operator[] (const Index i) const
         { static_assert(AlwaysFalse<Index>::value, "Solution-dependent material parameters not supported with analytical differentiation"); return 0.0; }
     };
+
+    // static_assert(useMoles,
+                  // "should use useMoles");
 public:
     using ParentType::ParentType;
 
@@ -97,19 +105,19 @@ public:
                                const SubControlVolume& scv,
                                const VolumeVariables& volVars) const
     {
-		// partial time derivative of the phase mass
-		double pos0 = 1;
-		if(!problem.spatialParams().useExtrusion){pos0 = scv.center()[0];}
-		
+        // static_assert(useMoles,
+                      // "richards/localresidual.hh: need to use moles!");
+        // partial time derivative of the phase mass
         NumEqVector storage(0.0);
         const auto massOrMoleDensity = [](const auto& volVars, const int phaseIdx)
         { return useMoles ? volVars.molarDensity(phaseIdx) : volVars.density(phaseIdx); };
 
         const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx)
-        { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };														 
-        storage[conti0EqIdx] = volVars.porosity()
+        { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };
+        
+		storage[conti0EqIdx] = volVars.porosity()
                                * massOrMoleDensity(volVars, 0)
-                               * volVars.saturation(liquidPhaseIdx)*pos0;
+                               * volVars.saturation(liquidPhaseIdx);
 
         //! The energy storage in the water, air and solid phase
         EnergyLocalResidual::fluidPhaseStorage(storage, scv, volVars, liquidPhaseIdx);
@@ -128,7 +136,7 @@ public:
      * \param fvGeometry The finite-volume geometry
      * \param elemVolVars The volume variables of the current element
      * \param scvf The sub control volume face to compute the flux on
-     * \param elemFluxVarsCache The cache related to flux compuation
+     * \param elemFluxVarsCache The cache related to flux computation
      */
     NumEqVector computeFlux(const Problem& problem,
                             const Element& element,
@@ -137,9 +145,8 @@ public:
                             const SubControlVolumeFace& scvf,
                             const ElementFluxVariablesCache& elemFluxVarsCache) const
     {
-		double pos0 = 1;
-		if(!problem.spatialParams().useExtrusion){pos0 = scvf.center()[0];}
-		
+        // static_assert(useMoles,
+                      // "richards/localresidual.hh: need to use moles!");
         FluxVariables fluxVars;
         fluxVars.init(problem, element, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
 
@@ -148,12 +155,13 @@ public:
 
         const auto massOrMoleFraction= [](const auto& volVars, const int phaseIdx, const int compIdx)
         { return useMoles ? volVars.moleFraction(phaseIdx, compIdx) : volVars.massFraction(phaseIdx, compIdx); };
+		
         NumEqVector flux(0.0);
         // the physical quantities for which we perform upwinding
         auto upwindTerm = [&massOrMoleDensity](const auto& volVars)
                           { return massOrMoleDensity(volVars, liquidPhaseIdx)*volVars.mobility(liquidPhaseIdx); };
 
-        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm)*pos0;
+        flux[conti0EqIdx] = fluxVars.advectiveFlux(liquidPhaseIdx, upwindTerm);
 
         //! Add advective phase energy fluxes for the water phase only. For isothermal model the contribution is zero.
         EnergyLocalResidual::heatConvectionFlux(flux, fluxVars, liquidPhaseIdx);
@@ -164,8 +172,7 @@ public:
 
         return flux;
     }
-	
-	
+
     /*!
      * \brief Adds the storage derivative
      *
@@ -186,10 +193,10 @@ public:
     {
         static_assert(!FluidSystem::isCompressible(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
-		// static_assert(useMoles,
-                      // "richards/localresidual.hh: need to use moles!");			   
+        // static_assert(useMoles,
+                      // "richards/localresidual.hh: need to use moles!");
 
-        const auto poreVolume = Extrusion::volume(fvGeometry, scv)*curVolVars.porosity()*curVolVars.extrusionFactor();//*scvf.center()[0];//
+        const auto poreVolume = Extrusion::volume(fvGeometry, scv)*curVolVars.porosity()*curVolVars.extrusionFactor();
         static const auto rho = useMoles ? curVolVars.molarDensity(0) : curVolVars.density(0);
 
         // partial derivative of storage term w.r.t. p_w
@@ -247,8 +254,8 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
-		// static_assert(useMoles,
-                      // "richards/localresidual.hh: need to use moles!");								   
+        // static_assert(useMoles,
+                      // "richards/localresidual.hh: need to use moles!");
 
         // get references to the two participating vol vars & parameters
         const auto insideScvIdx = scvf.insideScvIdx();
@@ -294,8 +301,104 @@ public:
         auto& dI_dJ = derivativeMatrices[outsideScvIdx];
 
         // partial derivative of the wetting phase flux w.r.t. pw
-        dI_dI[conti0EqIdx][0] += tij*upwindTerm + rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside;//*scvf.center()[0];
-        dI_dJ[conti0EqIdx][0] += -tij*upwindTerm + rho_mu*flux*outsideWeight*dkrw_dsw_outside*dsw_dpw_outside;//*scvf.center()[0];
+        dI_dI[conti0EqIdx][0] += tij*upwindTerm + rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside;
+        dI_dJ[conti0EqIdx][0] += -tij*upwindTerm + rho_mu*flux*outsideWeight*dkrw_dsw_outside*dsw_dpw_outside;
+    }
+
+    /*!
+     * \brief Adds flux derivatives for box method
+     *
+     * \param A The Jacobian Matrix
+     * \param problem The problem
+     * \param element The element
+     * \param fvGeometry The finite volume element geometry
+     * \param curElemVolVars The current element volume variables
+     * \param elemFluxVarsCache The element flux variables cache
+     * \param scvf The sub control volume face
+     */
+    template<class JacobianMatrix, class T = TypeTag>
+    std::enable_if_t<GetPropType<T, Properties::GridGeometry>::discMethod == DiscretizationMethods::box, void>
+    addFluxDerivatives(JacobianMatrix& A,
+                       const Problem& problem,
+                       const Element& element,
+                       const FVElementGeometry& fvGeometry,
+                       const ElementVolumeVariables& curElemVolVars,
+                       const ElementFluxVariablesCache& elemFluxVarsCache,
+                       const SubControlVolumeFace& scvf) const
+    {
+        static_assert(!FluidSystem::isCompressible(0),
+                      "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
+        static_assert(FluidSystem::viscosityIsConstant(0),
+                      "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
+        // static_assert(useMoles,
+                      // "richards/localresidual.hh: need to use moles!");
+
+        // get references to the two participating vol vars & parameters
+        const auto insideScvIdx = scvf.insideScvIdx();
+        const auto outsideScvIdx = scvf.outsideScvIdx();
+        const auto& insideScv = fvGeometry.scv(insideScvIdx);
+        const auto& outsideScv = fvGeometry.scv(outsideScvIdx);
+        const auto& insideVolVars = curElemVolVars[insideScvIdx];
+        const auto& outsideVolVars = curElemVolVars[outsideScvIdx];
+
+        // some quantities to be reused (rho & mu are constant and thus equal for all cells)
+        static const auto rho =  useMoles ? insideVolVars.molarDensity(0) : insideVolVars.density(0); //insideVolVars.density(0);
+        static const auto mu = insideVolVars.viscosity(0);
+        static const auto rho_mu = rho/mu;
+
+        // upwind term
+        // evaluate the current wetting phase Darcy flux and resulting upwind weights
+        using AdvectionType = GetPropType<TypeTag, Properties::AdvectionType>;
+        static const Scalar upwindWeight = getParamFromGroup<Scalar>(problem.paramGroup(), "Flux.UpwindWeight");
+        const auto flux = AdvectionType::flux(problem, element, fvGeometry, curElemVolVars, scvf, 0, elemFluxVarsCache);
+        const auto insideWeight = std::signbit(flux) ? (1.0 - upwindWeight) : upwindWeight;
+        const auto outsideWeight = 1.0 - insideWeight;
+        const auto upwindTerm = rho*insideVolVars.mobility(0)*insideWeight + rho*outsideVolVars.mobility(0)*outsideWeight;
+
+        const auto insideFluidMatrixInteraction = problem.spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+        const auto outsideFluidMatrixInteraction = problem.spatialParams().fluidMatrixInteraction(element, outsideScv, InvalidElemSol{});
+
+        // material law derivatives
+        const auto insideSw = insideVolVars.saturation(0);
+        const auto outsideSw = outsideVolVars.saturation(0);
+        const auto insidePc = insideVolVars.capillaryPressure();
+        const auto outsidePc = outsideVolVars.capillaryPressure();
+        const auto dkrw_dsw_inside = insideFluidMatrixInteraction.dkrw_dsw(insideSw);
+        const auto dkrw_dsw_outside = outsideFluidMatrixInteraction.dkrw_dsw(outsideSw);
+        const auto dsw_dpw_inside = -insideFluidMatrixInteraction.dsw_dpc(insidePc);
+        const auto dsw_dpw_outside = -outsideFluidMatrixInteraction.dsw_dpc(outsidePc);
+
+        // so far it was the same as for tpfa
+        // the transmissibilities (flux derivatives with respect to all pw-dofs on the element)
+        const auto ti = AdvectionType::calculateTransmissibilities(
+            problem, element, fvGeometry, curElemVolVars, scvf, elemFluxVarsCache[scvf]
+        );
+
+        // get the rows of the jacobian matrix for the inside/outside scv
+        auto& dI_dJ_inside = A[insideScv.dofIndex()];
+        auto& dI_dJ_outside = A[outsideScv.dofIndex()];
+
+        // add the partial derivatives w.r.t all scvs in the element
+        for (const auto& scvJ : scvs(fvGeometry))
+        {
+            // the transmissibily associated with the scvJ
+            const auto& tj = ti[scvJ.indexInElement()];
+            const auto globalJ = scvJ.dofIndex();
+
+            // partial derivative of the wetting phase flux w.r.t. p_w
+            dI_dJ_inside[globalJ][conti0EqIdx][0] += tj*upwindTerm;
+            dI_dJ_outside[globalJ][conti0EqIdx][0] += -tj*upwindTerm;
+        }
+
+        const auto upwindContributionInside = rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside;
+        const auto upwindContributionOutside = rho_mu*flux*outsideWeight*dkrw_dsw_outside*dsw_dpw_outside;
+
+        // additional contribution of the upwind term only for inside and outside dof
+        A[insideScv.dofIndex()][insideScv.dofIndex()][conti0EqIdx][0] += upwindContributionInside;
+        A[insideScv.dofIndex()][outsideScv.dofIndex()][conti0EqIdx][0] += upwindContributionOutside;
+
+        A[outsideScv.dofIndex()][insideScv.dofIndex()][conti0EqIdx][0] -= upwindContributionInside;
+        A[outsideScv.dofIndex()][outsideScv.dofIndex()][conti0EqIdx][0] -= upwindContributionOutside;
     }
 
     /*!
@@ -325,7 +428,7 @@ public:
                       "richards/localresidual.hh: Analytic Jacobian only supports incompressible fluids!");
         static_assert(FluidSystem::viscosityIsConstant(0),
                       "richards/localresidual.hh: Analytic Jacobian only supports fluids with constant viscosity!");
-		// static_assert(useMoles, "should use useMoles");										 
+		// static_assert(useMoles, "should use useMoles");
 
 
         // get references to the two participating vol vars & parameters
@@ -359,7 +462,7 @@ public:
         const auto tij = elemFluxVarsCache[scvf].advectionTij();
 
         // partial derivative of the wetting phase flux w.r.t. pw
-        derivativeMatrices[insideScvIdx][conti0EqIdx][0] += (tij*upwindTerm + rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside);//*scvf.center()[0];
+        derivativeMatrices[insideScvIdx][conti0EqIdx][0] += tij*upwindTerm + rho_mu*flux*insideWeight*dkrw_dsw_inside*dsw_dpw_inside;
     }
 
     /*!
@@ -382,11 +485,32 @@ public:
                                  const ElementFluxVariablesCache& elemFluxVarsCache,
                                  const SubControlVolumeFace& scvf) const
     {
-        // if constexpr(Detail::hasAddRobinFluxDerivatives<Problem,
-            // PartialDerivativeMatrices&, Element, FVElementGeometry,
-            // ElementVolumeVariables, ElementFluxVariablesCache, SubControlVolumeFace>()
-        // )
-            // problem.addRobinFluxDerivatives(derivativeMatrices, element, fvGeometry, curElemVolVars, elemFluxVarsCache, scvf);
+        // const auto insideScvIdx = scvf.insideScvIdx();
+		// const auto& insideScv = fvGeometry.scv(insideScvIdx);
+		// const auto& insideVolVars = curElemVolVars[insideScvIdx];
+
+
+		// // only free drainage has a nonzero derivative w.r.t. pw
+		// if (problem.onLowerBoundary_(scvf.center()) && problem.bcBotType_ == 5) {
+
+			// static const auto rhoW = useMoles
+				// ? insideVolVars.molarDensity(0)
+				// : insideVolVars.density(0);
+
+			// const auto kc = problem.spatialParams().hydraulicConductivity(element); // [m/s]
+
+			// // material law derivatives: dkrw/dsw * dsw/dpw
+			// const auto insideFluidMatrixInteraction =
+				// problem.spatialParams().fluidMatrixInteraction(element, insideScv, InvalidElemSol{});
+
+			// const auto sw  = insideVolVars.saturation(0);
+			// const auto pc  = insideVolVars.capillaryPressure();
+			// const auto dkrw_dsw = insideFluidMatrixInteraction.dkrw_dsw(sw);
+			// const auto dsw_dpw  = -insideFluidMatrixInteraction.dsw_dpc(pc); // dsw/dpc * dpc/dpw, dpc/dpw = -1
+
+			// // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw) 
+			// derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dsw * dsw_dpw;
+		// }
     }
 
 private:

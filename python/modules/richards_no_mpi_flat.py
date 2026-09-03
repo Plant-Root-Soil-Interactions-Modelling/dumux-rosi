@@ -6,7 +6,7 @@ import numpy as np
 
 class RichardsNoMPIFlatWrapper(RichardsNoMPIWrapper):
     """ 
-    get the outputs as flattened arrays for 1D models, without re-writing RichardsNoMPIWrapper
+    get the outputs as flattened arrays for 1D models, without re-writing RichardsWrapper
     """
 
     def __init__(self, base):
@@ -46,3 +46,7 @@ class RichardsNoMPIFlatWrapper(RichardsNoMPIWrapper):
 
     def getContent(self, eqIdx):
         return super().getContent(eqIdx).flatten()
+        
+    def getCellSurfacesCyl(self):
+        """ Gathers element volumes (Nc, 1) [cm3] """
+        return self._map(self._flat0(self.gather(self.base.getCellSurfacesCyl(), root = 0)), 2).flatten() * 1.e4  # m2 -> cm2

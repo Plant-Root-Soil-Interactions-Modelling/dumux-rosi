@@ -13,7 +13,7 @@
 //#include <dumux/material/fluidsystems/1pliquid.hh>
 
 #include <dumux/io/inputfilefunction.hh>
-
+#include <dumux/assembly/diffmethod.hh>
 
 namespace Dumux {
 
@@ -50,6 +50,10 @@ public:
     RichardsParams(std::shared_ptr<const GridGeometry> fvGridGeometry)
     : ParentType(fvGridGeometry)
     {
+		int numDiffMethod = getParam<int>("Assembly.NumericDifferenceMethod");
+		// the analytic method (for the cylinder model) needs the extrusion factor.
+		// att assume that 1D directly means cylidrincal model
+		useExtrusion = getParam<bool>("Problem.useExtrusion", (numDiffMethod == int(DiffMethod::analytic)) && (dimWorld == 1)); 
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
@@ -95,6 +99,19 @@ public:
         layer_ = InputFileFunction("Soil.Layer", "Number", "Z", layerIdx_, 0); // [1]([m])
 
         // std::cout << "RichardsParams created: homogeneous " << homogeneous_ << " " << "\n" << std::endl;
+    }
+	
+	/*!
+     * \brief Return how much the domain is extruded at a given position.
+     */
+    Scalar extrusionFactorAtPos(const GlobalPosition& globalPos) const
+    {
+        // As a default, i.e. if the user's spatial parameters do not overload
+        // any extrusion factor method, return 1.0
+		if(useExtrusion){//dimWorld == 1){
+			return globalPos[0];
+		}
+		return 1.0;
     }
 
     /*!
@@ -224,6 +241,7 @@ public:
             return size_t(layer_.f(z, eIdx)-1); // layer number starts with 1 in the input file
         } // add 3D things
     }
+	bool useExtrusion;
 
 private:
 

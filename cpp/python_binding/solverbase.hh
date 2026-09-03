@@ -75,7 +75,7 @@ public:
 	using GlobalPosition = typename Problem::GlobalPosition; 
 	
     int numComp(){return nEV.size();}    
-	int numFluidComp(){return Problem::FluidSystem::numComponents;}
+    int numFluidComp(){return Problem::numFluidComps;}
     NumEqVector nEV;
     bool isBox = Problem::isBox; // numerical method
     int dimWorld = dim;
@@ -875,7 +875,7 @@ public:
 			for (const auto& scv : scvs(fvGeometry))
             {
 				double pos0 = 1;
-				if(dimWorld == 1){
+				if((dimWorld == 1)&&(!problem->spatialParams().useExtrusion)){
 					pos0 = scv.center()[0];
 				}
 				NumEqVector scvfSource_(0.0);
@@ -924,7 +924,7 @@ public:
             {
 				double pos0 = 1;
 				//double scvf_area = scvf.area();
-				if(dimWorld == 1){
+				if((dimWorld == 1)&&(!problem->spatialParams().useExtrusion)){
 					pos0 = scvf.center()[0];
 					//scvf_area = 2 * M_PI * pos0 * segLength;//m2 TODO handle 1D area?
 				}
@@ -933,7 +933,7 @@ public:
 				{
 					const auto& bcTypes = problem->boundaryTypes(e, scvf);
 					if (bcTypes.hasNeumann()){
-						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+						scvfFlux_ = problem->neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);	
 					}
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
@@ -941,7 +941,7 @@ public:
 					}
 				}
 				else{
-					scvfFlux_ = assembler->localResidual().computeFlux(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache);
+					scvfFlux_ = assembler->localResidual().computeFlux(*problem, e, fvGeometry, elemVolVars, scvf, elemFluxVarsCache)/problem->spatialParams().extrusionFactorAtPos(scvf.center());
 					for(int eqIdx = 0; eqIdx < nEV.size(); eqIdx ++)
 					{
 						scvfInnerFluxes[eqIdx][scvf.index()] += scvfFlux_[eqIdx]/pos0*dt/outer_dt;

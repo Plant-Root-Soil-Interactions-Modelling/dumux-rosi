@@ -77,8 +77,10 @@
 #include <dumux/porousmediumflow/immiscible/localresidual.hh>
 #include <dumux/porousmediumflow/compositional/switchableprimaryvariables.hh>
 #include <dumux/material/fluidmatrixinteractions/diffusivitymillingtonquirk.hh>
+//#include <dumux/material/fluidmatrixinteractions/1p/thermalconductivityaverage.hh>
 #include <dumux/material/fluidmatrixinteractions/2p/thermalconductivity/somerton.hh>
 #include <dumux/material/components/simpleh2o.hh>
+//#include <dumux/material/fluidsystems/liquidphase1c.hh>
 #include <dumux/material/fluidsystems/h2oair.hh>
 #include <dumux/material/fluidstates/immiscible.hh>
 
@@ -113,8 +115,8 @@ struct RichardsModelTraits
     static constexpr bool enableAdvection() { return true; }
     static constexpr bool enableMolecularDiffusion() { return false; }
     static constexpr bool enableEnergyBalance() { return false; }
-    static constexpr bool useMoles() { return false;} // todo, switch to false?	
 
+    static constexpr bool useMoles() { return false; }
     //! The Richards model has some assumptions on the fluid systems
     //! that can be verified with this trait
     template<class FluidSystem>
@@ -185,7 +187,7 @@ template<class TypeTag>
 struct LocalResidual<TypeTag, TTag::Richards> { using type = RichardsLocalResidual<TypeTag>; };
 //! Define that per default mole fractions are used in the balance equations
 template<class TypeTag>
-struct UseMoles<TypeTag, TTag::Richards> { static constexpr bool value = false; }; // todo, switch to true?														 
+struct UseMoles<TypeTag, TTag::Richards> { static constexpr bool value = false; }; // todo, switch to true?										   
 
 //! Set the vtk output fields specific to this model
 template<class TypeTag>
