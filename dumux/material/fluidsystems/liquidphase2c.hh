@@ -24,13 +24,24 @@ namespace Dumux {
 namespace FluidSystems {
 
 /*!
+ * \ingroup Fluidsystems
+ * \brief Policy for the H2O-N2 fluid system
+ */
+template<bool fastButSimplifiedRelations = true>
+struct liquidp2cDefaultPolicy
+{
+    static constexpr  bool useH2ODensityAsLiquidMixtureDensity() { return fastButSimplifiedRelations; }
+};
+
+
+/*!
  * \ingroup FluidSystems
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent>
+template <class Scalar, class MainComponent, class SecondComponent, class Policy = liquidp2cDefaultPolicy<>>
 class LiquidPhaseTwoC
-: public Base<Scalar, LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent> >
+: public Base<Scalar, LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent,Policy> >
 {
     using ThisType = LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent>;
     using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;
@@ -174,22 +185,25 @@ public:
     {
         const Scalar T = fluidState.temperature(phaseIdx);
         const Scalar p = fluidState.pressure(phaseIdx);
-        const bool constantPhaseDensity = getParam<bool>("liquidPhase.constantDensity", false);// use constant // use constant density for liquid phase
-		
-		if(constantPhaseDensity)
-		{
-			// assume pure water
-			return MainComponent::liquidDensity(T, p);
-		}else{
-			// See: Eq. (7) in Class et al. (2002a)
-			// This assumes each gas molecule displaces exactly one
-			// molecule in the liquid.
-			const Scalar pureComponentMolarDensity = MainComponent::liquidMolarDensity(T, p);
 
-			return pureComponentMolarDensity
-				   * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
-					  + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx));
-		}
+        // See: Eq. (7) in Class et al. (2002a)
+        // This assumes each gas molecule displaces exactly one
+        // molecule in the liquid.
+        const Scalar pureComponentMolarDensity = MainComponent::liquidMolarDensity(T, p);
+		//return pureComponentMolarDensity *fluidState.moleFraction(phase0Idx, mainCompIdx);
+		// assume pure water
+		
+            if (Policy::useH2ODensityAsLiquidMixtureDensity())
+			{
+                // assume pure water
+                return MainComponent::liquidDensity(T, p);
+			}
+            else
+            {
+        return pureComponentMolarDensity
+               * (MainComponent::molarMass()*fluidState.moleFraction(phase0Idx, mainCompIdx)
+                  + SecondComponent::molarMass()*fluidState.moleFraction(phase0Idx, secondCompIdx));
+			}
     }
 
     using Base<Scalar, ThisType>::molarDensity;

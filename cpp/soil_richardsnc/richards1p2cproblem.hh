@@ -128,6 +128,7 @@ public:
 
 		criticalPressure_ = getParam<double>("Soil.CriticalPressure", -1.e4); // cm
 		criticalPressure_ = getParam<double>("Climate.CriticalPressure", criticalPressure_); // cm
+		sourceSlope_ = getParam<double>("Soil.SourceSlope", -1.); // cm, negative value disables regularisation
 
 		// Precipitation & Evaporation, and solute input
 		if (bcTopType_==atmospheric) {
@@ -337,6 +338,8 @@ public:
 		NumEqVector flux;
 		GlobalPosition pos = scvf.center();
 		auto& volVars = elemVolVars[scvf.insideScvIdx()];
+		double pos0 = 1;
+		if(dimWorld == 1){pos0 = pos[0]; }
 
 		/*
 		 *  WATER
@@ -357,7 +360,7 @@ public:
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
                 case constantPressure: {
-                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos[0]; // maximal inflow
+                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos0; // maximal inflow
                     std::cout << "!";
                     break;
                 }
@@ -365,20 +368,20 @@ public:
 					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos0;
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)*pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)*pos0; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos0; // maximal outflow (evaporation)
 						f = std::min(f, omax);
 					}
 					break;
@@ -395,7 +398,7 @@ public:
 					break;
 				}
 				case dummyDirichlet: {
-                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos[0]; // maximal inflow
+                    f = rho_ * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos0; // maximal inflow
                     break;
                 }
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
@@ -403,7 +406,7 @@ public:
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
                 case constantPressure: {
-                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos[0]; // maximal inflow
+                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos0; // maximal inflow
 //                    Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 //                    f = std::min(f, omax);
                     break;
@@ -412,21 +415,21 @@ public:
 					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
 					if (f < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
 						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100 * pos0;
 					if (f < 0) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos0; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
-						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos[0] << "\n";
+						Scalar omax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_)* pos0; // maximal outflow (evaporation)
+						// std::cout << " f " << f*1.e9  << ", omax "<< omax << ", value " << bcBotValue_.at(0) << ", crit "  << criticalPressure_ << ", " << pos0 << "\n";
 						f = std::min(f, omax);
 					}
 					break;
@@ -435,19 +438,19 @@ public:
 					Scalar inflow = bottomflux_.f(time_);
 					if (inflow < 0) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
-						f = std::max(inflow, imax);
+						f = std::max(inflow, imax)*pos0;
 					} else { // outflow
 						Scalar emax = rho_ * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow
-						f = std::min(inflow, emax);
+						f = std::min(inflow, emax)*pos0;
 					}
 					break;
 				}
 				case freeDrainage: {
-					f = krw * kc * rho_; // * 1 [m]
+					f = krw * kc * rho_*pos0; // * 1 [m]
 					break;
 				}
 				case dummyDirichlet: {
-                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos[0]; // maximal inflow
+                    f = rho_ * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos0; // maximal inflow
                     break;
                 }
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
@@ -467,47 +470,47 @@ public:
                 //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				//Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
-				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx)*pos0;
 				break;
 
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
 				break;
 			}
 			case constantFluxCyl: {
-                flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+                flux[transportEqIdx] = -bcSTopValue_[0]*rho_/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
                 break;
 			}
 			case outflow: {
 				// std::cout << "f " << f << ", "  << volVars.massFraction(0, soluteIdx) << "=" << f*volVars.massFraction(0, soluteIdx) << "\n";
-				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = f * volVars.massFraction(0, soluteIdx); // pos0 already in f if needed
 				break;
 			}
 			case linear: {
-				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx)*pos0;
 				break;
 			}
 			case michaelisMenten: {
-				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
+				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)*pos0;
 				break;
 			}
             case managed: {
                 Scalar input = soluteInput_.f(time_);
-                flux[transportEqIdx] = input;
+                flux[transportEqIdx] = input*pos0;
                 break;
             }
 			case advectiveflow:{
 				// [molw] * [mols / molw]
-				//flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.)*pos[0];
-				flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);
+				//flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);
+				flux[transportEqIdx] = flux[h2OIdx] * std::max(volVars.massFraction(0, soluteIdx),0.);// pos0 already in f if needed
 				break;
 		    }
 			case dummyDirichlet:{
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = 2 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
-				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = de * (volVars.massFraction(0, soluteIdx)*rho_-bcSTopValue_[0]*rho_) / dz * pos0 + f * volVars.massFraction(0, soluteIdx);
 				break;
 		    }
 			default:
@@ -521,16 +524,16 @@ public:
                 //static const Scalar d = getParam<Scalar>("Component.LiquidDiffusionCoefficient"); // m2 / s
 				//Scalar porosity = this->spatialParams().porosity(element);
 				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
-				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz * pos0 + f * volVars.massFraction(0, soluteIdx);
 				// std::cout << d*1.e9 << ", "<< de*1.e9 << ", " << volVars.massFraction(0, soluteIdx) << ", " << bcSBotValue_ << ", " << flux[transportEqIdx]*1.e9  << "\n";
 				break;
 			}
 			case constantFlux: {
-				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100; // cm/day -> kg/(m²*s)
+				flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100* pos0; // cm/day -> kg/(m²*s)
 				break;
 			}
             case constantFluxCyl: {
-                flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100*pos[0]; // cm/day -> kg/(m²*s)
+                flux[transportEqIdx] = -bcSBotValue_[0]*rho_/(24.*60.*60.)/100*pos0; // cm/day -> kg/(m²*s)
                 break;
             }
 			case outflow: {
@@ -539,16 +542,16 @@ public:
 				break;
 			}
 			case linear: {
-				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] = vMax_ * volVars.massFraction(0, soluteIdx)* pos0;
 				break;
 			}
 			case michaelisMenten: {
-				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_);
+				flux[transportEqIdx] = vMax_ * (std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)/(km_ + std::max(volVars.massFraction(0, soluteIdx),0.)*rho_)* pos0;
 				break;
 			}
 			case managed: {
                 Scalar input = bottomsflux_.f(time_);
-                flux[transportEqIdx] = input;
+                flux[transportEqIdx] = input* pos0;
                 break;
             }
 			case advectiveflow:{
@@ -560,7 +563,7 @@ public:
 				GlobalPosition ePos = element.geometry().center();
 				Scalar dz = std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]);
 				Scalar de = volVars.effectiveDiffusionCoefficient(conti0EqIdx,soluteIdx,0);
-				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz + f * volVars.massFraction(0, soluteIdx);
+				flux[transportEqIdx] =de * (volVars.massFraction(0, soluteIdx)*rho_-bcSBotValue_[0]*rho_) / dz * pos0 + f * volVars.massFraction(0, soluteIdx);
 				break;
 			}
 			default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (solute): unknown error");
@@ -581,17 +584,44 @@ public:
      */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
-
+		GlobalPosition pos = scv.center();
+		double svc_volume = 1.;
+		double pos0 = 1.;
+		if (dimWorld == 1)//1daxissymmetric model
+		{
+			pos0 = pos[0];
+			//todo for next update: make the 1d model store the cell volume
+			//currently, this has to be done on the python level
+            //svc_volume = getCellVolumesCyl(dofIndex); 
+		}else{ // dimWorld == 3
+            svc_volume = scv.volume();
+        }
 		auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
 		double h = 0.;
 		if (source_[h2OIdx] != nullptr) {
-			h = source_[h2OIdx]->at(eIdx)/scv.volume();
+			if (sourceSlope_<0.) {
+				h = source_[h2OIdx]->at(eIdx)/svc_volume;
+			} else {
+				Scalar s = elemVolVars[scv].saturation();
+				Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
+				Scalar h = -toHead_(p); // cm
+				auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
+			if (h<criticalPressure_) {
+				h =  0.;
+			} else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
+				double theta = (h - criticalPressure_)/sourceSlope_;
+				// std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
+				h = theta* source_[h2OIdx]->at(eIdx)/svc_volume;
+			} else  {
+				h = source_[h2OIdx]->at(eIdx)/svc_volume;
+			}
+		}
 		}
 		double s = 0.;
 		if (source_[soluteIdx] != nullptr) {
-			s = source_[soluteIdx]->at(eIdx)/scv.volume();
+			s = source_[soluteIdx]->at(eIdx)/svc_volume;
 		}
-		return NumEqVector({ h, s });
+		return NumEqVector({ h * pos0, s * pos0});
 	}
 
 	/*!
@@ -838,6 +868,7 @@ private:
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;
+	Scalar sourceSlope_ = -1.; // slope for regularization, negative values disables regularisation
 
 	std::ofstream myfile_;
 	NumEqVector bc_flux_upper = NumEqVector(0.);
