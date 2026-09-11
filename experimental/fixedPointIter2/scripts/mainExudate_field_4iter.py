@@ -95,7 +95,7 @@ def XcGrowth(scenarioData):
     # 1: use steady rate
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
-    results_dir="./results_field_4iter_loamlowlow/"+soil_type+'_diffusion'+diffusion+"_sorption"+sorption_type+"/"
+    results_dir="./results_field/"+soil_type+'_diffusion'+diffusion+"_sorption"+sorption_type+"/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -377,5 +377,3 @@ if __name__ == "__main__":
     XcGrowth(scenarioData)
    
     #mpiexec -n 1 python3 mainExudate_field_4iter.py loam low low
-    #mpiexec -n 1 python3 mainExudate_field.py loam medium low
-    #mpiexec -n 1 python3 mainExudate_field.py loam high low

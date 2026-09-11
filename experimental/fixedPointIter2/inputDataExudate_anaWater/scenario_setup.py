@@ -51,23 +51,16 @@ def getBiochemParam(s,soil_type, sorp, diff):
     
     if s.doAds:
         # kads = 1e1 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
+        # kads = 1e1 #2.86e-04 #7.07e+02 # m3/kgC/yr, see 10.1016/j.soilbio.2020.107912, A.3
         # kdes =  1e3 #1.67e-01 #1.63e+03 # [1/yr] see 10.1016/j.soilbio.2020.107912, A.3
         kd_values = plantParameters.SorptionParams(soil_type, sorp)
-        kads = kd_values['kads']*s.molarMassC/s.bulkMassDensity_gpercm3 #[cm^3/mol/d] optimized from doi: 10.1111/j.1365-2389.2010.01244.x
+        kads = kd_values['kads']  #[cm^3 water/mol C/d] optimized from doi: 10.1111/j.1365-2389.2010.01244.x
         kdes = kd_values['kdes']  #[1/d]             
         k_clay_silt = {}
         k_clay_silt[0] = 0.67
-        k_clay_silt[1] = 0.082
-        
-        yr_per_d = 1/365 # [yr/d]
-        m3_per_cm3 = 1e-6; # m3/cm3
-        cm3_per_m3 = 1e6; # cm3/m3
-        
-        # [kg/g] * [g/mol] = kg/mol
-        kgC_per_mol = (1/1000) * s.molarMassC
-        # [m3/kgC/yr] * [yr/d] * [cm3/m3] * [kgC/mol] = [cm3/mol/d]
-        s.kads = kads * yr_per_d * cm3_per_m3 * kgC_per_mol # [cm3/mol/d]
-        s.kdes = kdes * yr_per_d # [1/d]
+        k_clay_silt[1] = 0.082        
+        s.kads = kads # [cm3 water/mol C/d]
+        s.kdes = kdes  # [1/d]
         s.Qmmax = k_clay_silt[soil_type] * 0.079 # max ratio gOC-gmineral soil, see 10.1016/j.soilbio.2020.107912
         # [g OC / g mineral soil] * [g mineral soil/ cm3 bulk soil] *[ mol C/g C]
         CSSmax_ = s.Qmmax * s.bulkMassDensity_gpercm3*(1/s.molarMassC)
@@ -276,9 +269,19 @@ def vg_SPP(i = int(1)):
     """ Van Genuchten parameter, called by maize()  """  
     soil = {}
     # theta_r, theta_s, alpha, n, Ks                    
-    #soil[0] = [0.08, 0.43, 0.04, 1.6, 50] #Mona
-    soil[0] = [0.1, 0.411, 0.05, 1.267, 441]   
-    soil[1] = [0.062, 0.337, 0.0182, 2.733, 1174]
+    # soil[0] = [0.03, 0.411, 0.05, 1.173, 441]
+    # soil[1] = [0.062, 0.337, 0.0182, 2.733, 1174]
+    # soil[1] = [0.001, 0.337, 0.5, 1.2124, 1174] 
+
+    #soil[0] = [0.1, 0.411, 0.05, 1.267, 441]   
+    #soil[1] = [0.073, 0.337, 0.0148, 3.1386, 1174]
+    #soil[1] = [0.062, 0.337, 0.0182, 2.733, 1174] 
+    #soil[0] = [0.1, 0.411, 0.05, 1.3315, 441]   #fit to the upper 2 soil layers
+    #soil[1] = [0.038, 0.337, 0.1357, 1.442, 1174] #fit to the upper 2 soil layers
+    soil[0] = [0.1, 0.411, 0.05, 1.389, 441]   #fit to 50 day data only
+    soil[1] = [0.038, 0.337, 0.1, 1.459, 1174] #fit to 50 day data only
+
+
                
     return soil[i]
     
@@ -331,19 +334,18 @@ def getSoilTextureAndShape(res, soil_= 'loam'):
         
     soilVG = vg_SPP(i)
     
-    Kc_value = np.array([1,1,1,1.2,1.2,1.2])
-    Kc_days = np.array([1,42,63,98,154,288])
+    Kc_value = np.array([1,1,1,1.2,1.2])
+    Kc_days = np.array([0,42,63,98,154])
     
-    Kc = np.zeros((Kc_days[-1]))
-    dummy = 0
-    for i in range(0,len(Kc)):
-        if i+1 in Kc_days:
-            Kc[i] = Kc_value[np.where(Kc_days == (i + 1))[0][0]]
-            dummy = dummy+1
-        else:
-            slope = (Kc_value[dummy]-Kc_value[dummy-1])/(Kc_days[dummy]-Kc_days[dummy-1])
-            Kc[i] = Kc_value[dummy-1]+slope*((i+1)-Kc_days[dummy-1])
-    
+    # Daily values: day 0 to day 154        
+    days = np.arange(0, Kc_days[-1]+1)
+                              
+                          
+    Kc_daily = np.interp(days, Kc_days, Kc_value)
+
+    # Hourly values: 24 hours per day
+    hours = np.arange(0, Kc_days[-1] * 24) / 24
+    Kc_hourly = np.interp(hours, Kc_days, Kc_value)
     
     soilTextureAndShape = {'min_b' : min_b,'max_b' : max_b,
                             'area':area,
@@ -351,7 +353,7 @@ def getSoilTextureAndShape(res, soil_= 'loam'):
                             "solidDensity":solidDensity,
                             'solidMolarMass': solidMolarMass,
                             'soilVG':soilVG,
-                            'Kc':Kc}
+                            'Kc':Kc_hourly}
     
     return soilTextureAndShape
 
@@ -471,6 +473,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     cell_number = soilTextureAndShape['cell_number']
     min_b = soilTextureAndShape['min_b']     
     times, net_inf = evap.net_infiltration(soil_type, simMax, soilTextureAndShape['Kc'])
+    # net_inf = net_inf*s.molarDensityWat #cm^3/(cm^2*d) --> mol/(cm^2*d)
     
     s.setParameter("SpatialParams.Temperature","293.15") # todo: redefine at each time step?
     
@@ -484,12 +487,11 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
 
         if times is not None:
             print('setupOther',"atmospheric", 0.5, 'times',times, 'net_inf',net_inf)
-            s.setTopBC("atmospheric", 0.5, [times, net_inf ])  # 0.5 is dummy value
+            s.setTopBC("atmospheric", 0.5, [times, net_inf])  # 0.5 is dummy value
         else:
             s.setTopBC("noFlux")
         #print('att set to noFlux instead of freeDrainage')
-        s.setBotBC("freeDrainage") #"noFlux") #
-    
+        s.setBotBC("noFlux") #"noFlux") #    
         for i in range(1, s.numComp):# no flux
             s.setParameter( "Soil.BC.Bot.C"+str(i)+"Type", str(2))
             s.setParameter( "Soil.BC.Top.C"+str(i)+"Type", str(2))
@@ -510,7 +512,7 @@ def setupOther(s, soil_type, initsim, simMax,soilTextureAndShape):
     # s.eps_regularization = None # pcEps, krEps
     #s.setRegularisation(s.eps_regularization, s.eps_regularization) # needs to be l
      
-    df = pd.read_csv("../inputDataExudate/data/init_pot_"+soil_type+"_2019.csv")  # initial potential
+    df = pd.read_csv("../inputDataExudate_anaWater/data/WPfromWC_"+soil_type+".csv")  # initial potential
     time = df['time'].loc[:].values
     idx_time = (np.abs(time - initsim)).argmin()
     h_raw = df.iloc[idx_time].values[1:]

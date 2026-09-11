@@ -15,16 +15,15 @@ import os
 
 
 
-def get_transpiration(sim_time, area, Kc, soil_type):
-    """ calculates transpiration with Beer's law from start_date from a pickle file"""
-
+def get_transpiration(simtime, area, Kc, soil_type):
+    """ calculates transpiration with Beer's law"""
     year = 2019
-    sim_time += 1  # root system starts to grow one day earlier (+max dat)
+    hours_per_day = 24
+    k = 0.45
 
-    """ 0. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("../inputDataExudate/data/ET0.csv")  # evapotranspiration  in cm / day 
-    et0 = df2["ET0_"+str(year)].loc[0:sim_time].values # cm / d
-    etc = et0 * Kc[0:sim_time+1]
+    lai_data = pd.read_csv("../inputDataExudate/data/LAI.csv") 
+    et0_hourly = pd.read_csv("../inputDataExudate/data/ET0.csv")[f"ET0_{year}"].values[:simtime * hours_per_day]  # cm/d
+    etc_hourly = et0_hourly * Kc[:len(et0_hourly)]
     
     """3. load LAI """
     if soil_type == 'loam':
@@ -32,64 +31,52 @@ def get_transpiration(sim_time, area, Kc, soil_type):
     else:
         st = 'S'
     
-    df3 = pd.read_csv("../inputDataExudate/data/LAI_"+str(year)+".csv")  # LAI
-    LAI =  df3[st+"_WT"].loc[0:sim_time].values
-    f = interpolate.interp1d(np.linspace(0,sim_time, int(sim_time+1)), LAI)
+    lai_daily = lai_data[st+"_WT"].values[:simtime]
+    lai_hourly = np.repeat(lai_daily, hours_per_day)
+    
+    tpot_hourly = etc_hourly * (1 - np.exp(-k * lai_hourly))
+    evap_hourly = etc_hourly - tpot_hourly
+    
+    # Convert hourly values back to daily mean rates
+    tpot_daily = tpot_hourly.reshape(-1, hours_per_day).mean(axis=1)
+    evap_daily = evap_hourly.reshape(-1, hours_per_day).mean(axis=1)
 
-    """ 1. ETc -> Tpot, Evap """
-    k = 0.45
-    t_ = np.linspace(0, len(etc) - 1, len(etc))
-    tpot = np.multiply(etc, [(1. - np.exp(-k * f(t_[i]))) for i in range(0, len(etc))])
-    evap = (etc - tpot)
-    trans = lambda t, dt:-tpot[int((t + dt / 2))] * area * sinusoidal2(t, dt)
+    #transpiration function 
+    trans = lambda t, dt:-tpot_daily[int((t + dt / 2))] * area * sinusoidal2(t, dt)
    
     return trans
 
-def net_infiltration(soil_type, sim_time, Kc):
-    """ calculates net infiltration with Beer's law from start_date from csv file"""
-
+def net_infiltration(soil_type, simtime, Kc):
+    """ calculates net infiltration with Beer's law"""
     year = 2019
-    genotype = 'WT'
-    sim_time += 1
+    hours_per_day = 24
+    k = 0.45
 
-    """ 0. load infiltration (precipitation + irrigation) """
-    print(os.getcwd()) 
-    df = pd.read_csv("../inputDataExudate/data/Inf.csv")  # precipitation data
-    yd1  = df["Inf_"+str(year)].loc[0: sim_time].values*0.1 #nmm/d - cm/d
-    t_ = np.linspace(0, sim_time, yd1.shape[0] * 24)  # relative time in hours
-    precip = np.array([ yd1[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
+    days = np.arange(simtime)
+    hours = np.arange(simtime * hours_per_day) / hours_per_day
+
+    precip_daily = pd.read_csv("../inputDataExudate/data/Inf.csv")["Inf"].values[:simtime] * 0.1  # mm/d --> cm/d
+    t_ = np.linspace(0, simtime-1, precip_daily.shape[0] * 24)  # relative time in hours
+    precip_hourly = np.array([ precip_daily[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
+    lai_data = pd.read_csv("../inputDataExudate/data/LAI.csv") 
+    et0_hourly = pd.read_csv("../inputDataExudate/data/ET0.csv")[f"ET0_{year}"].values[:simtime * hours_per_day]  # cm/d
+    etc_hourly = et0_hourly * Kc[:len(et0_hourly)]
     
-    """ 1. load ET, ET0 -> ETc """
-    df2 = pd.read_csv("../inputDataExudate/data/ET0.csv")  # evapotranspiration  in cm^3 / cm^2/ day 
-    yd2 = df2["ET0_"+str(year)].loc[0:sim_time].values # cm / d
-    et0 = np.array([ yd2[int(t)] * sinusoidal2(t, 0.) for t in t_ ])
-
-    """2. interpolate Kc """
-    f_Kc = interpolate.interp1d(np.linspace(0,sim_time, int(sim_time+1)), Kc[0:int(sim_time+1)])
-    Kc_hours = f_Kc(t_)
-    etc = et0 * Kc_hours
-
-    """3. load LAI """
     if soil_type == 'loam':
         st = 'L'
     else:
         st = 'S'
-        
-    df3 = pd.read_csv("../inputDataExudate/data/LAI_"+str(year)+".csv")  # LAI
-    LAI =  df3[st+"_"+genotype].loc[0:sim_time].values
+    
+    lai_daily = lai_data[st+"_WT"].values[:simtime]
+    lai_hourly = np.repeat(lai_daily, hours_per_day)
 
-    f = interpolate.interp1d(np.linspace(0,sim_time, int(sim_time+1)), LAI)
-
-    """ 4. ETc -> Tpot, Evap """
-    k = 0.45
-    tpot = np.multiply(etc, [1. - np.exp(-k *f(t)) for t in t_])
-    evap = etc - tpot
-    net_inf = precip - evap #(cm^3/cm^2 d)
- 
-    times = []
-    inf = []
-    for i in range(0, t_.shape[0] - 1):
-        times.extend([t_[i], t_[i + 1]])  # hour -> day
-        inf.extend([net_inf[i], net_inf[i]])
-
-    return np.array(times), np.array(inf)
+    tpot_hourly = etc_hourly * (1 - np.exp(-k * lai_hourly))
+    evap_hourly = etc_hourly - tpot_hourly
+    net_inf_hourly = precip_hourly - evap_hourly
+    
+    # Convert hourly values back to daily mean rates
+    tpot_daily = tpot_hourly.reshape(-1, hours_per_day).mean(axis=1)
+    evap_daily = evap_hourly.reshape(-1, hours_per_day).mean(axis=1)
+    net_inf_daily = net_inf_hourly.reshape(-1, hours_per_day).mean(axis=1)
+    
+    return np.array(hours), np.array(net_inf_hourly)

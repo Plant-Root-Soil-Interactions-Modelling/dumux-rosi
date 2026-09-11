@@ -53,7 +53,6 @@ def XcGrowth(scenarioData):
     sorption_type = 'low'   
     diffusion = 'low'    
     xml_name = "RS_optimized_field_"+soil_type+".xml"  # root growth model parameter file
-    # xml_name = "Faba_synMRI.xml"
     plant_or_RS = 1 # 0 if whole plant, 1 if root system only 
     MaxRelativeShift = 1e-8 #if paramIndx_ != 44 else 1e-10
     # outer time step (outside of fixed-point iteration loop)
@@ -97,7 +96,7 @@ def XcGrowth(scenarioData):
     
     soilTextureAndShape = scenario_setup.getSoilTextureAndShape(res, soil_type)
 
-    results_dir="./results_flowonly/"+soil_type+"/"
+    results_dir="./results_flowonly/"+soil_type+"_WPfromWC_50d/"
 
     # to get printing directory/simulaiton type in the slurm.out file
     if rank == 0:
@@ -386,5 +385,4 @@ if __name__ == "__main__":
     XcGrowth(scenarioData)
    
     #mpiexec -n 1 python3 mainExudate_water.py loam 
-    #mpiexec -n 1 python3 mainExudate_water.py sand
 
