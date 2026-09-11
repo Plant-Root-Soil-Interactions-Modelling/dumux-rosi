@@ -292,9 +292,9 @@ public:
 				if (bcTopType_==atmospheric) {
 					componentInput_.at(i) = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 				}
-				if (bcTopType_==xylempotential) {
-					xylempotential_.at(i) = InputFileFunction("root", "xylempotential", "Time", 0.); // cm (day)
-					conductivity_.at(i) = InputFileFunction("root", "conductivity", "Time", 0.); // 1/day (day)
+				if (bcBotType_==xylempotential) {
+					xylempotential_.at(i) = InputFileFunction("root", "xylempotential", "Time2", 0.); // cm (day)
+					conductivity_.at(i) = InputFileFunction("root", "conductivity", "Time2", 0.); // 1/day (day)
 				}
 				
 			}else{
@@ -841,7 +841,6 @@ public:
 					}
 					break;
 				}
-				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
@@ -895,6 +894,13 @@ public:
 				}
 				case freeDrainage: { // holds when useMoles?
 					f = krw * kc * rhoW *pos0; // * 1 [m]
+					break;
+				}
+				case xylempotential: { // BC by the root with prescribed conductance and xylem matrix potential
+					Scalar conductivity = conductivity_[h2OIdx].f(time_); //conductivity of the root depending on time [1/day]
+					Scalar xyl_mp = xylempotential_[h2OIdx].f(time_); //xylem matrix potential [cm]
+					
+					f = rhoW * conductivity * (h - xyl_mp) * pos0 * unitConversion; 
 					break;
 				}
 				}
