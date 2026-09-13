@@ -841,6 +841,7 @@ public:
 					}
 					break;
 				}
+				//}
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
@@ -903,7 +904,7 @@ public:
 					f = rhoW * conductivity * (h - xyl_mp) * pos0 * unitConversion; 
 					break;
 				}
-				}
+				//}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
 			}
@@ -1496,7 +1497,7 @@ public:
 							+ (1. - k_decay2)*F_Ndecay 
 							- (F[uptake] ) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
 							- F_growth_N
-							- F_CSS2*CtoN_CSS2)* pos0 ;
+							- F_NSS2*CtoN_CSS2)* pos0 ;
 		q[NCH_Idx]  += (-F[depolyCH] * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx])  
 								+  k_decay2 * F_Ndecay) * pos0;
 		q[NH4Idx]  += (-F[ImMin] - F[NH4_cons] - F_NH4S)* pos0;
@@ -1529,7 +1530,7 @@ public:
 						) * pos0;
 		
 		q[CSS2Idx] +=  F_CSS2 * pos0 ;
-		q[NSS2Idx] +=  F_CSS2 * CtoN_CSS2 * pos0 ;
+		q[NSS2Idx] +=  F_NSS2 * pos0 ;
 		q[NH4SIdx] +=  F_NH4S * pos0 ;
 			
 		// gas emitted
