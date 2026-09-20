@@ -507,7 +507,7 @@ private:
   double potentialTrans_ = 0;
   double maxTrans_ = 0.;
   double collarP_ = 0.;
-  int verbose;
+  int verbose = 0;
   std::map<std::string, std::vector<Scalar>> userData_;
 };
 
