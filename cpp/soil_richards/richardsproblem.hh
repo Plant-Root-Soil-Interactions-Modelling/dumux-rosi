@@ -62,7 +62,7 @@ public:
 	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
 
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-	// using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
+	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
 	enum {
 		// copy some indices for convenience
@@ -436,9 +436,9 @@ public:
 	 */
 	template<class PointSource>
 	void addPointSources(std::vector<PointSource>& pointSources) const {
-//		if (couplingManager_!=nullptr) {
-//			pointSources = couplingManager_->bulkPointSources();
-//		}
+		if (couplingManager_!=nullptr) {
+			pointSources = couplingManager_->bulkPointSources();
+		}
 	}
 
 	/*!
@@ -459,24 +459,24 @@ public:
 			const FVElementGeometry& fvGeometry,
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
-//		if (couplingManager_!=nullptr) {
-//			// compute source at every integration point
-//			const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
-//			const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
-//			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
-//			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-//			const Scalar kr = spatialParams.kr(lowDimElementIdx);
-//			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
-//			// relative soil permeability
-//			const auto krel = 1.0;
-//			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-//			const auto density = 1000;
-//			const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
-//			source = sourceValue*source.quadratureWeight()*source.integrationElement();
-//			//std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
-//		} else {
-//			source = 0;
-//		}
+		if (couplingManager_!=nullptr) {
+			// compute source at every integration point
+			const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
+			const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
+			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+			const Scalar kr = spatialParams.kr(lowDimElementIdx);
+			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
+			// relative soil permeability
+			const auto krel = 1.0;
+			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+			const auto density = 1000;
+			const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
+			source = sourceValue*source.quadratureWeight()*source.integrationElement();
+			//std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
+		} else {
+			source = 0;
+		}
 	}
 
 	/*!
@@ -508,9 +508,9 @@ public:
 	}
 
 	//! Set the coupling manager
-//	void setCouplingManager(CouplingManager* cm) {
-//		couplingManager_ = cm;
-//	}
+	void setCouplingManager(CouplingManager* cm) {
+		couplingManager_ = cm;
+	}
 	/**
 	 * Sets boundary fluxes according to the last solution
 	 */
@@ -524,16 +524,16 @@ public:
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
-			auto elemFluxVarsCache = localView(gridVars.gridFluxVarsCache());
+			// auto elemFluxVarsCache = localView(gridVars.gridFluxVarsCache());
 			// neumann() does not use the flux cache; skip bind to avoid segfault on boundary-only traversal
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				try { // will throw an exception, if boundary type is Dirichlet
 					auto p = scvf.center();
 					if (onUpperBoundary_(p)) { // top
-						bc_flux_upper += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+						// bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 						uc++;
 					} else if (onLowerBoundary_(p)) { // bottom
-						bc_flux_lower += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+						// bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 						lc++;
 					}
 				} catch (...) {
@@ -639,7 +639,7 @@ private:
 
 	// Source
 	std::shared_ptr<std::vector<double>> source_; // [kg/s]
-	//CouplingManager* couplingManager_ = nullptr;
+	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;
 	Scalar criticalPressure_; // cm

@@ -70,7 +70,7 @@ public:
         // Qr, Qs, alpha, and n goes to the PcKrSwCurve VanGenuchten
         for (int i=0; i<qr.size(); i++) {
             phi_[i] =  qs.at(i); // Richards equation is independent of phi [1]
-            basicParams_.push_back(BasicParams(0.,0.));
+            basicParams_.push_back(BasicParams(1.,1.));
             effToAbsParams_.push_back(EffToAbsParams());
             regularizationParams_.push_back(RegularizationParams());
 
