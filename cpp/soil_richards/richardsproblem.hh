@@ -62,7 +62,7 @@ public:
 	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
 
 	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-	// using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
+	using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
 
 	enum {
 		// copy some indices for convenience
@@ -251,6 +251,8 @@ public:
 			GlobalPosition ePos = element.geometry().center();
 			Scalar dz = 100 * std::fabs(ePos[dimWorld - 1] - pos[dimWorld - 1]); // m-> cm (*2 ?)
 			Scalar krw = materialLaw_.krw(s); // [1]
+			int pos0 = 1;
+			if(dimWorld == 1){pos0 = pos[0]; }
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
@@ -259,21 +261,21 @@ public:
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 //						 std::cout << "in:" << f <<", " << imax <<"\n";
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
 						Scalar omax = rho_ *  kc * krw * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f*1.e6 << ", " << omax*1.e6 << " krw " << krw*1.e6 << "\n";
-						f = std::min(f, omax);
+						f = std::min(f, omax) *pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // upper = outer, with switch for maximum in- or outflow
-					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos[0];  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
+					f = -bcTopValues_[0]*rho_/(24.*60.*60.)/100 * pos0;  // [cm /day] -> [kg/(m²*s)] (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_)* pos0; // maximal inflow
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rho_ *  kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos0; // maximal outflow (evaporation)
 						f = std::min(f, omax);
 					}
 					break;
@@ -310,23 +312,23 @@ public:
 					if (f < 0.) { // inflow
 						Scalar imax = rho_ * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
-						f = std::max(f, imax);
+						f = std::max(f, imax)*pos0;
 					} else { // outflow
 						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
 						// std::cout << "outflow " << f << ", " << omax << "\n";
 						omax = std::max(omax, 0.); // must stay positive
-						f = std::min(f, omax);
+						f = std::min(f, omax)*pos0;
 					}
 					break;
 				}
 				case constantFluxCyl: { // lower = inner, with switch for maximum in- or outflow
-					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100. * pos[0]; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
+					f = -bcBotValues_[0]*rho_/(24.*60.*60.)/100. * pos0; // [cm /day] -> [kg/(m²*s)]  (Eqns are multiplied by cylindrical radius)
 					if (f < 0.) { // inflow
-						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_)* pos[0]; // maximal inflow
+						Scalar imax = rho_ * kc * ((h - (-10.)) / dz - gravityOn_) * pos0; // maximal inflow
 						imax = std::min(imax, 0.); // must stay negative
 						f = std::max(f, imax);
 					} else { // outflow
-						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_)* pos[0]; // maximal outflow (evaporation)
+						Scalar omax = rho_ * kc * krw *((h - criticalPressure_) / dz - gravityOn_) * pos0; // maximal outflow (evaporation)
 //						std::cout << " f " << f*1.e9 << ", omax "<< omax*1.e9  << ", value " << bcBotValues_.at(0)
 //								<< ", crit "  << criticalPressure_ << ", " << pos[0] << ", krw " << krw <<"\n";
 						omax = std::max(omax, 0.); // must stay positive
@@ -365,7 +367,7 @@ public:
 					break; // [kg/(m²*s)]
 				}
 				case freeDrainage: {
-					f = krw * kc * rho_; // * 1 [m]
+					f = krw * kc * rho_*pos0; // * 1 [m]
 					break;
 				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann: unknown error");
@@ -385,10 +387,22 @@ public:
 	 */
 	NumEqVector source(const Element &element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
+		GlobalPosition pos = scv.center();
+		double svc_volume = 1.;
+		double pos0 = 1.;
+		if (dimWorld == 1)//1daxissymmetric model
+		{
+			pos0 = pos[0];
+			//todo for next update: make the 1d model store the cell volume
+			//currently, this has to be done on the python level
+            //svc_volume = getCellVolumesCyl(dofIndex); 
+		}else{ // dimWorld == 3
+            svc_volume = scv.volume();
+        }
 		if ((source_ != nullptr)) {
 			if (sourceSlope_<0.) {
 				auto eIdx = this->spatialParams().gridGeometry().elementMapper().index(element);
-				return source_->at(eIdx)/scv.volume();
+				return source_->at(eIdx)/svc_volume * pos0;
 			} else {
 			    Scalar s = elemVolVars[scv].saturation();
 	            Scalar p = materialLaw(element).pc(s) + pRef_; // [Pa]
@@ -399,9 +413,9 @@ public:
 	            } else if (h<=criticalPressure_+sourceSlope_) { //  h in [crit, crit+slope]
 	                double theta = (h - criticalPressure_)/sourceSlope_;
 	                // std::cout << "source(): " << h << ", "<< theta << "\n" << std::flush;
-	                return theta* source_->at(eIdx)/scv.volume();
+	                return theta* source_->at(eIdx)/svc_volume * pos0;
 	            } else  {
-	                return source_->at(eIdx)/scv.volume();
+	                return source_->at(eIdx)/svc_volume * pos0;
 	            }
 			}
 		} else {
@@ -422,9 +436,9 @@ public:
 	 */
 	template<class PointSource>
 	void addPointSources(std::vector<PointSource>& pointSources) const {
-//		if (couplingManager_!=nullptr) {
-//			pointSources = couplingManager_->bulkPointSources();
-//		}
+		if (couplingManager_!=nullptr) {
+			pointSources = couplingManager_->bulkPointSources();
+		}
 	}
 
 	/*!
@@ -445,24 +459,24 @@ public:
 			const FVElementGeometry& fvGeometry,
 			const ElementVolumeVariables& elemVolVars,
 			const SubControlVolume &scv) const {
-//		if (couplingManager_!=nullptr) {
-//			// compute source at every integration point
-//			const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
-//			const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
-//			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
-//			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
-//			const Scalar kr = spatialParams.kr(lowDimElementIdx);
-//			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
-//			// relative soil permeability
-//			const auto krel = 1.0;
-//			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
-//			const auto density = 1000;
-//			const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
-//			source = sourceValue*source.quadratureWeight()*source.integrationElement();
-//			//std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
-//		} else {
-//			source = 0;
-//		}
+		if (couplingManager_!=nullptr) {
+			// compute source at every integration point
+			const Scalar pressure3D = couplingManager_->bulkPriVars(source.id())[Indices::pressureIdx];
+			const Scalar pressure1D = couplingManager_->lowDimPriVars(source.id())[Indices::pressureIdx];
+			const auto& spatialParams = couplingManager_->problem(Dune::index_constant<1>{}).spatialParams();
+			const auto lowDimElementIdx = couplingManager_->pointSourceData(source.id()).lowDimElementIdx();
+			const Scalar kr = spatialParams.kr(lowDimElementIdx);
+			const Scalar rootRadius = spatialParams.radius(lowDimElementIdx);
+			// relative soil permeability
+			const auto krel = 1.0;
+			// sink defined as radial flow Jr * density [m^2 s-1]* [kg m-3]
+			const auto density = 1000;
+			const Scalar sourceValue = 2 * M_PI *krel*rootRadius * kr *(pressure1D - pressure3D)*density;
+			source = sourceValue*source.quadratureWeight()*source.integrationElement();
+			//std::cout << "pointSource " << source.id() << ": " << sourceValue << " -> " << sourceValue*source.quadratureWeight()*source.integrationElement() << "\n";
+		} else {
+			source = 0;
+		}
 	}
 
 	/*!
@@ -494,9 +508,9 @@ public:
 	}
 
 	//! Set the coupling manager
-//	void setCouplingManager(CouplingManager* cm) {
-//		couplingManager_ = cm;
-//	}
+	void setCouplingManager(CouplingManager* cm) {
+		couplingManager_ = cm;
+	}
 	/**
 	 * Sets boundary fluxes according to the last solution
 	 */
@@ -510,16 +524,16 @@ public:
 			fvGeometry.bindElement(e);
 			auto elemVolVars = localView(gridVars.curGridVolVars());
 			elemVolVars.bindElement(e, fvGeometry, sol);
-			auto elemFluxVarsCache = localView(gridVars.gridFluxVarsCache());
+			// auto elemFluxVarsCache = localView(gridVars.gridFluxVarsCache());
 			// neumann() does not use the flux cache; skip bind to avoid segfault on boundary-only traversal
 			for (const auto& scvf :scvfs(fvGeometry)) { // evaluate root collar sub control faces
 				try { // will throw an exception, if boundary type is Dirichlet
 					auto p = scvf.center();
 					if (onUpperBoundary_(p)) { // top
-						bc_flux_upper += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+						// bc_flux_upper += neumann(e, fvGeometry, elemVolVars, scvf);
 						uc++;
 					} else if (onLowerBoundary_(p)) { // bottom
-						bc_flux_lower += neumann(e, fvGeometry, elemVolVars, elemFluxVarsCache, scvf);
+						// bc_flux_lower += neumann(e, fvGeometry, elemVolVars, scvf);
 						lc++;
 					}
 				} catch (...) {
@@ -625,7 +639,7 @@ private:
 
 	// Source
 	std::shared_ptr<std::vector<double>> source_; // [kg/s]
-	//CouplingManager* couplingManager_ = nullptr;
+	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_;
 	Scalar criticalPressure_; // cm
