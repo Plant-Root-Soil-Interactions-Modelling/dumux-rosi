@@ -27,7 +27,7 @@
 #include <cassert>
 #include <iomanip>
 
-#include <dumux/common/valgrind.hh>
+//#include <dumux/common/valgrind.hh>
 #include <dumux/common/exceptions.hh>
 
 //#include <dumux/material/idealgas.hh>
