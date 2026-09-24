@@ -22,7 +22,7 @@
 // #include <dumux/common/properties.hh> // creates an undefined TypeTag types, and includes the property system
 // #include <dumux/common/properties/propertysystem.hh>
 #include <dumux/common/parameters.hh> // global parameter tree with defaults and parsed from args and .input file
-#include <dumux/common/valgrind.hh> // for debugging
+// #include <dumux/common/valgrind.hh> // for debugging
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a global function)
 

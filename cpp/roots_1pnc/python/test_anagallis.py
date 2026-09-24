@@ -3,7 +3,7 @@ import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
-from vtk_tools import *
+from plantbox.visualisation.vtk_tools import *
 
 # Go to the right place
 path = os.path.dirname(os.path.realpath(__file__))

@@ -27,19 +27,38 @@ struct Grid<TypeTag, TTag::RootsOnePTwoC> {
     using type = Dune::FoamGrid<1, 3>;
 };
 
+
+// // for CC
+// template<class TypeTag>
+// struct GridGeometry<TypeTag, TTag::RootsOnePTwoCCCTpfa>
+// {
+// private:
+    // static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
+    // using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
+	// //todo: Y not use the ReorderingDofMapper?
+	// //todo: add the extrusion factor here?
+    // using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+	// using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
+    // using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+// public:
+    // using type = CCTpfaFVGridGeometry<GridView, enableCache, CCTpfaDefaultGridGeometryTraits<GridView, MapperTraits>>;
+// };
+
 // for Box (fixed for box, since box cannot be periodic),
-// the type BoxFVGridGeometry is defined in dumux/discretization/box/fvgridgeometry.hh and is included in dumux/discretization/box.hh
+// the type BoxGridGeometry is defined in dumux/discretization/box/fvgridgeometry.hh and is included in dumux/discretization/box.hh
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsOnePTwoCBox> {
+struct GridGeometry<TypeTag, TTag::RootsOnePTwoCBox> {
 private:
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
-    using GridView = typename FVGridGeometry::GridView;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
+	using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	//todo: Y not use the ReorderingDofMapper?
+	//todo: add the extrusion factor here?
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
-    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
-    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+    using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; 
+    // using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView>>;
 };
 
 /**
