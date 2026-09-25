@@ -81,7 +81,7 @@ os.system("rm benchmark1-00001.vtp")
 
 # run dumux
 os.system("./rootsystem_stomata2 input/b1.input")
-p_ = read1D_vtp_data("benchmark1-00001.vtp")
+p_ = read3D_vtp_data("benchmark1-00001.vtp")
 # os.system("./rootsystem_stomata2 input/b1.input -RootSystem.Grid.File grids/singlerootH.dgf -Problem.Name benchmark1b")
 # p2_ = read1D_vtp_data("benchmark1b-00001.vtp")
 # os.system("./rootsystem_stomata2 input/b1_trans.input -RootSystem.Collar.Transpiration {} -Problem.Name benchmark1c".format(trans))

@@ -9,8 +9,8 @@ import os
 from math import *
 import numpy as np
 import matplotlib.pyplot as plt
-from vtk_tools import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 g = 9.81  # gravitational acceleration (m/s^2)
 rho = 1.e3  # density of water, (kg/m^3)
