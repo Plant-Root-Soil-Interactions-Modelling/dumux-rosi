@@ -56,9 +56,9 @@ private:
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; //ReorderingDofMapper
-    using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
+    // using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
 public:
-    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView, MapperTraits>>;
+    using type = BoxFVGridGeometry<Scalar, GridView, enableCache, BoxDefaultGridGeometryTraits<GridView>>;
 };
 
 // Set the problem property
