@@ -266,7 +266,18 @@ public:
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
         BoundaryTypes bcTypes;
         bcTypes.setAllNeumann(); // default
+        if (onUpperBoundary_(pos) && bcType_ == bcDirichlet) {
+            bcTypes.setDirichlet(pressureIdx);
+            bcTypes.setDirichlet(transportEqIdx);
+        }
         return bcTypes;
+    }
+
+    PrimaryVariables dirichletAtPos(const GlobalPosition& pos) const {
+        PrimaryVariables values;
+        values[pressureIdx] = collar_.f(time_) + pRef_;
+        values[soluteIdx] = 0.0;
+        return values;
     }
 
     /*
@@ -291,13 +302,18 @@ public:
             double p = volVars.pressure(); // pressure at the root collar
             double kx = this->spatialParams().kx(eIdx);
             auto dist = (globalPos - fvGeometry.scv(scvf.insideScvIdx()).center()).two_norm();
-            double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
-            double potentialTrans = collar_.f(time_); // [kg/s]
-            double actTrans = std::min(potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
-            flux[conti0EqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
-
             double fraction = useMoles ? volVars.moleFraction(0, soluteIdx) : volVars.massFraction(0, soluteIdx);
-            flux[transportEqIdx] = flux[conti0EqIdx] * fraction; // [kg_aba/(s*m^2)],  convective outflow BC
+            if (bcType_ == bcDirichlet) {
+                double actTrans = volVars.density(0) * kx * (p - (collar_.f(time_) + pRef_)) / dist;
+                flux[conti0EqIdx] = 0.;
+                flux[transportEqIdx] = std::max(actTrans, 0.) / volVars.extrusionFactor() * fraction;
+            } else {
+                double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
+                double potentialTrans = collar_.f(time_); // [kg/s]
+                double actTrans = std::min(potentialTrans, criticalTranspiration);// actual transpiration rate [kg/s]
+                flux[conti0EqIdx] = actTrans/volVars.extrusionFactor(); // [kg/s] -> [kg/(s*m^2)];
+                flux[transportEqIdx] = flux[conti0EqIdx] * fraction; // convective outflow BC
+            }
 
         } else { // root tip
 

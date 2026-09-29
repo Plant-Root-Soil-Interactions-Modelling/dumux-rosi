@@ -24,7 +24,6 @@
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a global function)
 
-// #include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>

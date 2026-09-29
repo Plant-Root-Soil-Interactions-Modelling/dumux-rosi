@@ -5,7 +5,6 @@ import os
 import matplotlib.pyplot as plt
 from plantbox.visualisation.vtk_tools import *
 import plantbox.functional.van_genuchten as vg
-import math
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -13,7 +12,7 @@ os.chdir(path)
 os.chdir("../../../build-cmake/cpp/coupled_1p_richards")
 
 # run simulation
-os.system("./coupled input/benchmarkC12.input")  # benchmarkC12, or benchmarkC12b
+# os.system("./coupled input/benchmarkC12.input")  # benchmarkC12, or benchmarkC12b
 
 # 0 time [s], 1 actual transpiration [kg/s], 2 potential transpiration [kg/s], 3 maximal transpiration [kg/s],
 # 4 collar pressure [Pa], 5 calculated actual transpiration, 6 time [s]
@@ -45,7 +44,7 @@ ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
 ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
 
-# plt.show()
+plt.show()
 
 # trans = interpolate.interp1d(t, d[:, 1] * c)
 # print(t.shape)
