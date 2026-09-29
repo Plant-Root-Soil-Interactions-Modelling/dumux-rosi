@@ -265,11 +265,7 @@ public:
      */
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
         BoundaryTypes bcTypes;
-        bcTypes.setAllNeumann(); // default
-        // if (onUpperBoundary_(pos) && bcType_ == bcDirichlet) {
-        //     bcTypes.setDirichlet(pressureIdx);
-        //     bcTypes.setDirichlet(transportEqIdx);
-        // }
+        bcTypes.setAllNeumann();
         return bcTypes;
     }
 
@@ -306,7 +302,7 @@ public:
             if (bcType_ == bcDirichlet) {
                 double actTrans = volVars.density(0) * kx * (p - (collar_.f(time_) + pRef_)) / dist;
                 flux[conti0EqIdx] = actTrans/volVars.extrusionFactor();
-                flux[transportEqIdx] = 0.; // std::max(actTrans, 0.) / volVars.extrusionFactor() * fraction;
+                flux[transportEqIdx] = std::max(actTrans, 0.) / volVars.extrusionFactor() * fraction;
             } else {
                 double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
                 double potentialTrans = collar_.f(time_); // [kg/s]
