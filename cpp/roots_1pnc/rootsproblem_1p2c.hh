@@ -266,10 +266,10 @@ public:
     BoundaryTypes boundaryTypesAtPos(const GlobalPosition &pos) const {
         BoundaryTypes bcTypes;
         bcTypes.setAllNeumann(); // default
-        if (onUpperBoundary_(pos) && bcType_ == bcDirichlet) {
-            bcTypes.setDirichlet(pressureIdx);
-            bcTypes.setDirichlet(transportEqIdx);
-        }
+        // if (onUpperBoundary_(pos) && bcType_ == bcDirichlet) {
+        //     bcTypes.setDirichlet(pressureIdx);
+        //     bcTypes.setDirichlet(transportEqIdx);
+        // }
         return bcTypes;
     }
 
@@ -282,7 +282,7 @@ public:
 
     /*
      * This is the method for the case where the Neumann condition is
-     * potentially solution dependent
+     * potentially solution depende0.nt
      *
      * Negative values mean influx.
      * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
@@ -305,8 +305,8 @@ public:
             double fraction = useMoles ? volVars.moleFraction(0, soluteIdx) : volVars.massFraction(0, soluteIdx);
             if (bcType_ == bcDirichlet) {
                 double actTrans = volVars.density(0) * kx * (p - (collar_.f(time_) + pRef_)) / dist;
-                flux[conti0EqIdx] = 0.;
-                flux[transportEqIdx] = std::max(actTrans, 0.) / volVars.extrusionFactor() * fraction;
+                flux[conti0EqIdx] = actTrans/volVars.extrusionFactor();
+                flux[transportEqIdx] = 0.; // std::max(actTrans, 0.) / volVars.extrusionFactor() * fraction;
             } else {
                 double criticalTranspiration = volVars.density(0) * kx * (p - critPCollarDirichlet_) / dist; // [kg/s]
                 double potentialTrans = collar_.f(time_); // [kg/s]
