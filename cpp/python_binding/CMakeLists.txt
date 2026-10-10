@@ -5,9 +5,11 @@
 #dune_pybindxi_add_module(rosi_richards_cyl py_richards_cyl.cc)
 #dune_pybindxi_add_module(rosi_richardsnc py_richardsnc.cc) 
 #dune_pybindxi_add_module(rosi_richardsnc_cyl py_richardsnc_cyl.cc) 
+#dune_pybindxi_add_module(rosi_richardsnc_cylMol py_richardsnc_cylMol.cc) 
 #target_link_dune_default_libraries(rosi_richards_cyl)
 #target_link_dune_default_libraries(rosi_richardsnc)
 #target_link_dune_default_libraries(rosi_richardsnc_cyl)
+#target_link_dune_default_libraries(rosi_richardsnc_cylMol)
 
 
 #include(CMakePrintHelpers)
@@ -16,6 +18,7 @@
 #pybind11_add_module(rosi_richardsnc SHARED py_richardsnc.cc)
 #pybind11_add_module(rosi_richardsnc_cyl SHARED py_richardsnc_cyl.cc)
 
+#pybind11_add_module(rosi_richardsnc_cylMol SHARED py_richardsnc_cylMol.cc)
 message("libraries *********************************************************************")
 message(${dune-uggrid_LIBRARIES})
 message(${DUNE_LIBS})
@@ -54,6 +57,10 @@ pybind11_add_module(rosi_richardsnc_cyl SHARED py_richardsnc_cyl.cc)
 target_link_dune_default_libraries(rosi_richardsnc_cyl)  
 target_link_libraries(rosi_richardsnc_cyl PUBLIC ${DUNE_LIBS}) 
 
+pybind11_add_module(rosi_richardsnc_cylMol SHARED py_richardsnc_cylMol.cc)
+target_link_dune_default_libraries(rosi_richardsnc_cylMol)  
+target_link_libraries(rosi_richardsnc_cylMol PUBLIC ${DUNE_LIBS}) 
+
 pybind11_add_module(rosi_richards10c_cyl SHARED py_richards10c_cyl.cc)
 target_link_dune_default_libraries(rosi_richards10c_cyl)  
 
@@ -69,3 +76,4 @@ target_link_dune_default_libraries(rosi_richards10c_cyl)
 #target_link_dune_default_libraries(rosi_richards_cyl)
 #target_link_dune_default_libraries(rosi_richardsnc)
 #target_link_dune_default_libraries(rosi_richardsnc_cyl)
+#target_link_dune_default_libraries(rosi_richardsnc_cylMol)

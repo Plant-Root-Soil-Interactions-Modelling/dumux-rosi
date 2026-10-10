@@ -54,6 +54,8 @@ public:
 		// the analytic method (for the cylinder model) needs the extrusion factor.
 		// att assume that 1D directly means cylidrincal model
 		useExtrusion = getParam<bool>("Problem.useExtrusion", (numDiffMethod == int(DiffMethod::analytic)) && (dimWorld == 1)); 
+        //std::cout << "Problem.useExtrusion " << useExtrusion 
+        //<<" numDiffMethod " << numDiffMethod  <<" " << (numDiffMethod == int(DiffMethod::analytic))<<" " << int(DiffMethod::analytic)  <<" " << dimWorld (dimWorld == 1))<<std::endl;
 
         /* SimpleH2O is constant in regard to temperature and reference pressure */
         Scalar mu = Water::liquidViscosity(0.,0.); // Dynamic viscosity: 1e-3 [Pa s]
