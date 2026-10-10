@@ -148,7 +148,7 @@ public:
                 // advective fluxes
                 flux[compIdx] += fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scv.center()[0];;
                 // diffusive fluxes
-                flux[compIdx] += diffusiveFluxes[compIdx]*FluidSystem::molarMass(compIdx);
+                flux[compIdx] += diffusiveFluxes[compIdx];
             }
         }
 
