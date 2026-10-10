@@ -281,7 +281,7 @@ public:
                 // diffusive fluxes (only for the component balances)
                 if(eqIdx != replaceCompEqIdx)
 				{
-                    flux[eqIdx] += ((  diffusiveFluxes[compIdx]/b);
+                    flux[eqIdx] += ( diffusiveFluxes[compIdx]/b);
 				}
 				
             }
