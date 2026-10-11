@@ -47,7 +47,7 @@ fig, (ax1, ax2) = plt.subplots(1, 2)
 times = [0., 10., 20.]  # days
 s.ddt = 1.e-5
 
-# col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
+col = ["r*", "b*", "g*", "c*", "m*", "y*", ]
 xs = []
 ys = []
 
