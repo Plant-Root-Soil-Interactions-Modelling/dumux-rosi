@@ -1,29 +1,30 @@
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
-
-from rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
-
-import matplotlib.pyplot as plt
-import numpy as np
-import time
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-
-""" 
+"""
 Root uptake with a sink term (Benchmark C11) with a 1D cylindrical model (Dumux Solver)
 
 everything scripted, no input file needed
 """
+
+import time
+
+import matplotlib.pyplot as plt
+import numpy as np
+from mpi4py import MPI
+from rosi.richards import RichardsWrapper  # Python part
+from rosi.rosi_richards_cyl import RichardsCylFoam  # C++ part (Dumux binding)
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
 
 r_root = 0.02  # cm
 r_out = 0.6
 
 
 def solve(soil, simtimes, q_r, N):
-    """ 
+    """
     soil            soil type
     simtimes        simulation output times
-    q_r             root flux [cm/day]   
+    q_r             root flux [cm/day]
     N               spatial resolution
     """
 
@@ -33,7 +34,7 @@ def solve(soil, simtimes, q_r, N):
     s.initialize()
     s.setHomogeneousIC(-100)  # cm pressure head
     s.setOuterBC("fluxCyl")
-    s.setInnerBC("fluxCyl", -qj)
+    s.setInnerBC("fluxCyl", -q_r)
     s.setVGParameters([soil[0:5]])
     s.createGrid1d(np.linspace(r_root, r_out, N))  # [cm]
     # s.createGrid([0.02], [0.6], [N])  # [cm]
@@ -45,7 +46,7 @@ def solve(soil, simtimes, q_r, N):
     # s.setRegularisation(1.e-6, 1.e-6)
 
     dt_ = np.diff(simtimes)
-    s.ddt = 1.e-5  # initial Dumux time step [days]
+    s.ddt = 1.0e-5  # initial Dumux time step [days]
 
     for dt in dt_:
 
@@ -70,7 +71,7 @@ if __name__ == "__main__":
     clay = [0.1, 0.4, 0.01, 1.1, 10, "Clay"]
 
     sim_times = np.linspace(0, 25, 250)  # temporal resolution of 0.1 d
-    fig, ax = plt.subplots(2, 3, figsize = (14, 14))
+    fig, ax = plt.subplots(2, 3, figsize=(14, 14))
 
     if rank == 0:  # measure simulation wall time
         t0 = time.time()
@@ -88,4 +89,3 @@ if __name__ == "__main__":
     if rank == 0:  # measure simulation wall time
         print("Elapsed time: ", time.time() - t0, "s")
         plt.show()
-

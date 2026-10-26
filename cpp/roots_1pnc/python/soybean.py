@@ -3,7 +3,7 @@ import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
-from vtk_tools import *
+from plantbox.visualisation.vtk_tools import *
 
 name = "soybean_2018"  # this name should be unique
 suffix = ""

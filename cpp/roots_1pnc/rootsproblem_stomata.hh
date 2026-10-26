@@ -36,24 +36,32 @@ template<class TypeTag>
 class RootsStomataProblem: public PorousMediumFlowProblem<TypeTag> {
 
     using ParentType = PorousMediumFlowProblem<TypeTag>;
-    using GridView = typename FVGridGeometry::GridView;
-    using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
-    using FluidSystem = GetPropType<TypeTag, Properties::FluidSystem>;
-    using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
-    using BoundaryTypes = GetPropType<TypeTag, Properties::BoundaryTypes>;
-    using NumEqVector = Dumux::NumEqVector<PrimaryVariables>;
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
-    using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
-    using FVElementGeometry = typename GetPropType<TypeTag, Properties::GridGeometry>::LocalView;
-    using SubControlVolume = typename FVElementGeometry::SubControlVolume;
-    using Element = typename GridView::template Codim<0>::Entity;
-    using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
-    using PointSource = GetPropType<TypeTag, Properties::PointSource>;
-    using SubControlVolumeFace = typename FVElementGeometry::SubControlVolumeFace;
-    using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+    // exports, used by the binding
+	using Grid = GetPropType<TypeTag, Properties::Grid>;
+	using GridGeometry   = GetPropType<TypeTag, Properties::GridGeometry>;
+    // using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+	using SolutionVector = GetPropType<TypeTag, Properties::SolutionVector>;
+	using GridVariables = GetPropType<TypeTag, Properties::GridVariables>;
+	using FluxVariables = GetPropType<TypeTag, Properties::FluxVariables>;
+	// other
+	using GridView = typename GridGeometry::GridView;
+	using PrimaryVariables = GetPropType<TypeTag, Properties::PrimaryVariables>;
+	using NumEqVector = typename Dumux::NumEqVector<PrimaryVariables>;
+	using FVElementGeometry = typename GridGeometry::LocalView;
+	using SubControlVolume = typename GridGeometry::SubControlVolume;
+	using SubControlVolumeFace = typename GridGeometry::SubControlVolumeFace;
+	using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
+	//using ElementVolumeVariables = typename GetPropType<TypeTag, Properties::GridVolumeVariables>::LocalView;
+    using ElementVolumeVariables = typename GridVariables::GridVolumeVariables::LocalView;
+    using ElementFluxVariablesCache = typename GridVariables::GridFluxVariablesCache::LocalView;
+
+	using Scalar = GetPropType<TypeTag, Properties::Scalar>;
+	using Indices = typename GetPropType<TypeTag, Properties::ModelTraits>::Indices;
+	using Element = typename GridView::template Codim<0>::Entity;
+	using GlobalPosition = typename Element::Geometry::GlobalCoordinate;
+	using BoundaryTypes = Dumux::BoundaryTypes<PrimaryVariables::size()>;
+	using PointSource = GetPropType<TypeTag, Properties::PointSource>;
     using CouplingManager= GetPropType<TypeTag, Properties::CouplingManager>;
-    using VolumeVariables = GetPropType<TypeTag, Properties::VolumeVariables>;
 
     enum {
         pressureIdx = 0, // indices of primary variables
@@ -62,7 +70,7 @@ class RootsStomataProblem: public PorousMediumFlowProblem<TypeTag> {
         conti0EqIdx = 0,  // indices of the equations
         transportEqIdx = 1, //
 
-        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::Box,
+        isBox = GetPropType<TypeTag, Properties::GridGeometry>::discMethod == DiscretizationMethods::box,
 
         bcDirichlet = 0,
         bcNeumann = 1
@@ -74,10 +82,10 @@ class RootsStomataProblem: public PorousMediumFlowProblem<TypeTag> {
 public:
 
     //! Constructor
-    RootsStomataProblem(std::shared_ptr<const FVGridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
+    RootsStomataProblem(std::shared_ptr<const GridGeometry> fvGridGeometry): ParentType(fvGridGeometry) {
 
         // initialize fluid system
-        FluidSystem::init();
+        //FluidSystem::init();
 
         // stating in the console whether mole or mass fractions are used
         if(useMoles) {
@@ -276,7 +284,10 @@ public:
      * Negative values mean influx.
      * E.g. for the mass balance that would the mass flux in \f$ [ kg / (m^2 \cdot s)] \f$.
      */
-    NumEqVector neumann(const Element& element, const FVElementGeometry& fvGeometry, const ElementVolumeVariables& elemVolVars,
+    NumEqVector neumann(const Element& element, 
+			const FVElementGeometry& fvGeometry, 
+			const ElementVolumeVariables& elemVolVars,
+			const ElementFluxVariablesCache&  fluxCache,
         const SubControlVolumeFace& scvf) const {
 
         NumEqVector flux;
@@ -460,20 +471,6 @@ public:
         critPCollarDirichlet_ = p;
     }
 
-    /*!
-     * \brief Return how much the domain is extruded at a given sub-control volume.
-     *
-     * The extrusion factor here makes extrudes the 1d line to a circular tube with
-     * cross-section area pi*r^2.
-     *
-     * called by volumevariables (why there?), no compilation error if you remove it, just wrong results
-     */
-    template<class ElementSolution>
-    Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution& elemSol) const {
-        auto eIdx = this->gridGeometry().elementMapper().index(element);
-        double radius = this->spatialParams().radius(eIdx);
-        return M_PI*radius*radius;
-    }
 
     /**
      * Sets the cumulative outflow according to the last solution

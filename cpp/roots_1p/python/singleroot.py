@@ -5,9 +5,9 @@ import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
-from vtk_tools import *
 from math import *
-import van_genuchten as vg
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 name = "singleroot"  # this name should be unique
 

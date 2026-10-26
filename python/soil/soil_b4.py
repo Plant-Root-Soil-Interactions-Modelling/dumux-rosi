@@ -1,42 +1,41 @@
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
-
-from rosi_richards import RichardsSP  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
-from analytic_b4 import *  # plots the analytical solutions to ax1, ax2, ax3
-
-import matplotlib.pyplot as plt
-import numpy as np
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-
-""" 
-Dynamic evaporation (Benchmark M2.2) with a 3D SPGrid but low resolution in x and y (for speed), 
+"""
+Dynamic evaporation (Benchmark M2.2) with a 3D SPGrid but low resolution in x and y (for speed),
 
 everything scripted, no input file needed
 
 also works parallel with mpiexec
 """
 
+import matplotlib.pyplot as plt
+import numpy as np
+from analytic_b4 import *  # plots the analytical solutions to ax1, ax2, ax3
+from mpi4py import MPI
+from rosi.richards import RichardsWrapper  # Python part
+from rosi.rosi_richards import RichardsSP  # C++ part (Dumux binding)
 
-def solve(soil, simtime, evap, NZ, ic = -200):
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
+
+
+def solve(soil, simtime, evap, NZ, ic=-200):
 
     s = RichardsWrapper(RichardsSP())
     s.initialize()
 
-    s.setTopBC("atmospheric", 0.5, [[0., 1.e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
+    s.setTopBC("atmospheric", 0.5, [[0.0, 1.0e10], [evap, evap]])  #  [cm/day] atmospheric is with surface run-off
     # s.setTopBC("flux", evap)  #  [cm/day] atmospheric is with surface run-off
     # s.setTopBC("constantPressure", -10000)  #  [cm/day] atmospheric is with surface run-off
     s.setBotBC("freeDrainage")  # BC freeDrainage
 
-    s.createGrid([-5., -5., -100.], [5., 5., 0.], [1, 1, NZ])  # [cm]
-    vols = (100. / NZ) * np.ones((NZ,)) * 100.  # cm3
+    s.createGrid([-5.0, -5.0, -100.0], [5.0, 5.0, 0.0], [1, 1, NZ])  # [cm]
+    vols = (100.0 / NZ) * np.ones((NZ,)) * 100.0  # cm3
 
     s.setVGParameters([soil])
     s.setHomogeneousIC(ic)  # cm pressure head
     # s.setParameter("Problem.EnableGravity", "false")
     s.initializeProblem()
     s.setCriticalPressure(-10000)
-    s.setRegularisation(1.e-6, 0.)
+    s.setRegularisation(1.0e-6, 0.0)
     idx_top = s.pickCell([0.0, 0.0, 0.0])  # index to watch flux
 
     initial_water = s.getWaterVolume()
@@ -44,8 +43,8 @@ def solve(soil, simtime, evap, NZ, ic = -200):
 
     N = 200
     dt = simtime / N
-    s.ddt = 1.e-5  # initial Dumux time step [days]
-    maxDt = 1.  # maximal Dumux time step [days]
+    s.ddt = 1.0e-5  # initial Dumux time step [days]
+    maxDt = 1.0  # maximal Dumux time step [days]
 
     x_, y_ = [], []
     for i in range(0, N):
@@ -58,10 +57,10 @@ def solve(soil, simtime, evap, NZ, ic = -200):
         f = s.getNeumann(idx_top)
         # f = s.getSolutionHeadAt(idx_top)
 
-#         current_water = s.getWaterVolume()
-#         f = (initial_water - current_water) / dt / 1.e2
-#         print(current_water, f)
-#         initial_water = current_water
+        #         current_water = s.getWaterVolume()
+        #         f = (initial_water - current_water) / dt / 1.e2
+        #         print(current_water, f)
+        #         initial_water = current_water
 
         if rank == 0:
             x_.append(s.simTime)
@@ -104,4 +103,3 @@ if __name__ == "__main__":
         ax4.set_ylim(0, 0.31)
 
         plt.show()
-

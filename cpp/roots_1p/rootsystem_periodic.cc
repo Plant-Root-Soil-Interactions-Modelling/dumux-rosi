@@ -95,7 +95,7 @@ int main(int argc, char** argv) try
     // create the finite volume grid geometry
     using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     auto fvGridGeometry = std::make_shared<GridGeometry>(leafGridView);
-    const auto periodicConnectivity = gridManager.getGridData()->periodicVertexMap();//createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
+    const auto periodicConnectivity = gridManager.getGridData()->createPeriodicConnectivity(fvGridGeometry->elementMapper(), fvGridGeometry->vertexMapper());
     fvGridGeometry->setExtraConnectivity(periodicConnectivity);
     fvGridGeometry->update(leafGridView);
     std::cout << "i have the geometry \n" << std::flush;
