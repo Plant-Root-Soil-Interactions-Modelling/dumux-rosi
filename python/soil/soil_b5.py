@@ -1,16 +1,15 @@
-import sys; sys.path.append("../modules"); sys.path.append("../../build-cmake/cpp/python_binding/");
-sys.path.append("../../../CPlantBox");  sys.path.append("../../../CPlantBox/src")
-
-from rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding)
-from richards import RichardsWrapper  # Python part
-
-import matplotlib.pyplot as plt
-from mpi4py import MPI; comm = MPI.COMM_WORLD; rank = comm.Get_rank()
-import numpy as np
-
-""" 
+"""
 Steady state linear solute transport in homogeneous soil profile
 """
+
+import matplotlib.pyplot as plt
+import numpy as np
+from mpi4py import MPI
+from rosi.richards import RichardsWrapper  # Python part
+from rosi.rosi_richardsnc import RichardsNCSP  # C++ part (Dumux binding)
+
+comm = MPI.COMM_WORLD
+rank = comm.Get_rank()
 
 
 def solve(simtimes):
@@ -19,11 +18,11 @@ def solve(simtimes):
     s = RichardsWrapper(RichardsNCSP())
 
     s.initialize()
-    s.createGrid([-5., -5., -200.], [5., 5., 0.], [1, 1, 1990])  # [cm]
+    s.createGrid([-5.0, -5.0, -200.0], [5.0, 5.0, 0.0], [1, 1, 1990])  # [cm]
     s.setVGParameters([loam])
 
     # theta = 0.378, benchmark is set be nearly fully saturated, so we don't care too much about the specific values
-    s.setHomogeneousIC(-5.)  # cm pressure head
+    s.setHomogeneousIC(-5.0)  # cm pressure head
     s.setTopBC("constantFlux", 2)  #  [cm/day]
     s.setBotBC("freeDrainage")
 
@@ -32,7 +31,7 @@ def solve(simtimes):
     s.setParameter("Component.MolarMass", "1.8e-2")  # TODO no idea, where this is neeeded, i don't want to use moles ever
 
     s.setParameter("Component.LiquidDiffusionCoefficient", "1.e-9")  # m2 s-1
-#     s.setParameter("SpatialParams.Tortuosity", "0.001")  # porosity * 0.3
+    #     s.setParameter("SpatialParams.Tortuosity", "0.001")  # porosity * 0.3
 
     # s.setSTopBC([1], [1.e-4])  # 1 == Dirchlet, change for t>1 days
     # s.setSBotBC([6], [0.])  # 6 == outflow
@@ -41,13 +40,13 @@ def solve(simtimes):
     s.setParameter("Soil.BC.Bot.SType", "6")  # michaelisMenten=8 (SType = Solute Type)
     s.setParameter("Soil.BC.Bot.CValue", "0.")
 
-    s.initializeProblem(maxDt = 0.01)
+    s.initializeProblem(maxDt=0.01)
 
     if rank == 0:
         print(s)
 
     x, c = [], []
-    s.ddt = 1.e-3  # days
+    s.ddt = 1.0e-3  # days
 
     simtimes.insert(0, 0)
     dt_ = np.diff(simtimes)
@@ -56,9 +55,9 @@ def solve(simtimes):
         for i in range(0, int(dt)):
 
             time = simtimes[r] + i
-            print('time',time)
+            print("time", time)
 
-            #if time >= 5:
+            # if time >= 5:
             #    s.setSoluteTopBC([1], [0.])
 
             if rank == 0:
@@ -91,4 +90,3 @@ if __name__ == "__main__":
         # plt.plot(RichardsWrapper.to_head(xb), zb[:, 2], "g*")
         # plt.plot(RichardsWrapper.to_head(xc), zc[:, 2], "b*")
         plt.show()
-

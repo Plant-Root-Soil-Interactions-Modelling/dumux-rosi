@@ -18,7 +18,7 @@
         <!--Time delay between the tillers [day]-->
         <parameter name="dx" value="0.25"/>
         <!--Axial resolution [cm] (maximal segment size)-->
-        <parameter name="dxMin" value="1e-06"/>
+        <parameter name="dxMin" value="0.1"/>
         <!--Axial resolution [cm] (minimal segment size)-->
         <parameter name="firstB" value="0"/>
         <!--Emergence of first basal root [day]-->
@@ -50,9 +50,9 @@
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
         <parameter name="a" value="0.050000001"/>
         <!--radius [cm]-->
-        <parameter name="dx" value="1"/>
+        <parameter name="dx" value="0.25"/>
         <!--Axial resolution [cm] (maximal segment size)-->
-        <parameter name="dxMin" value="1e-06"/>
+        <parameter name="dxMin" value="0.1"/>
         <!--Axial resolution [cm] (minimal segment size)-->
         <parameter name="hairsElongation" value="0"/>
         <!--Zone behind the tip without root hairs  [cm]-->
@@ -92,9 +92,9 @@
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
         <parameter name="a" value="0.029999999"/>
         <!--radius [cm]-->
-        <parameter name="dx" value="1"/>
+        <parameter name="dx" value="0.25"/>
         <!--Axial resolution [cm] (maximal segment size)-->
-        <parameter name="dxMin" value="1e-06"/>
+        <parameter name="dxMin" value="0.1"/>
         <!--Axial resolution [cm] (minimal segment size)-->
         <parameter name="hairsElongation" value="0"/>
         <!--Zone behind the tip without root hairs  [cm]-->
@@ -134,9 +134,9 @@
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
         <parameter name="a" value="0.02"/>
         <!--radius [cm]-->
-        <parameter name="dx" value="1"/>
+        <parameter name="dx" value="0.25"/>
         <!--Axial resolution [cm] (maximal segment size)-->
-        <parameter name="dxMin" value="1e-06"/>
+        <parameter name="dxMin" value="0.1"/>
         <!--Axial resolution [cm] (minimal segment size)-->
         <parameter name="hairsElongation" value="0"/>
         <!--Zone behind the tip without root hairs  [cm]-->
@@ -176,9 +176,9 @@
         <!--Type of root tropism (plagio = 0, gravi = 1, exo = 2, hydro, chemo = 3)-->
         <parameter name="a" value="0.02"/>
         <!--radius [cm]-->
-        <parameter name="dx" value="1"/>
+        <parameter name="dx" value="0.25"/>
         <!--Axial resolution [cm] (maximal segment size)-->
-        <parameter name="dxMin" value="1e-06"/>
+        <parameter name="dxMin" value="0.1"/>
         <!--Axial resolution [cm] (minimal segment size)-->
         <parameter name="hairsElongation" value="0"/>
         <!--Zone behind the tip without root hairs  [cm]-->

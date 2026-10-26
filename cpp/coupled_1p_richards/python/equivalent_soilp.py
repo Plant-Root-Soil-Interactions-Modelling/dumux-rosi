@@ -4,7 +4,7 @@
 import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import matplotlib.pyplot as plt
-from vtk_tools import *
+from plantbox.visualisation.vtk_tools import *
 import math
 import numpy as np
 import glob

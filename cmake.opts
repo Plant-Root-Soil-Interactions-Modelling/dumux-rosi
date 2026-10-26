@@ -1,11 +1,4 @@
-GXX_RELEASE_WARNING_OPTS=" \
-    -Wall \
-    -Wunused \
-    -Wmissing-include-dirs \
-    -Wcast-align \
-    -Wno-missing-braces \
-    -Wmissing-field-initializers \
-    -Wno-sign-compare"
+GXX_RELEASE_WARNING_OPTS=""
 
 GXX_RELEASE_OPTS=" \
     -fdiagnostics-color=always \
