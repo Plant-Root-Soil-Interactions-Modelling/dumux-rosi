@@ -182,7 +182,7 @@ public:
     virtual void createGrid(std::string modelParamGroup = "") {
         std::string pstr =  Dumux::getParam<std::string>("Grid.Periodic", " ");
         periodic = ((pstr.at(0)=='t') || (pstr.at(0)=='T')); // always x,y, not z: pstr = "true ..."
-        if ((!periodic) and (pstr.size()>4)) { // y = true
+        if ((dim>=3) and (!periodic) and (pstr.size()>4)) { // y = true
             periodic =  (pstr.at(6)=='t') || (pstr.at(6)=='T'); // pstr = "false true false"
         }
         GridManagerFix<Grid> gridManager;

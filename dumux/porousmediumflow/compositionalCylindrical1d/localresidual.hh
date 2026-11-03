@@ -174,8 +174,7 @@ public:
 
                 // diffusive fluxes (only for the component balances)
                 if(eqIdx != replaceCompEqIdx)
-                    flux[eqIdx] += useMoles ? diffusiveFluxes[compIdx]
-                                            : diffusiveFluxes[compIdx]*FluidSystem::molarMass(compIdx);
+                    flux[eqIdx] += diffusiveFluxes[compIdx];
             }
 
             // in case one balance is substituted by the total mole balance
@@ -188,8 +187,7 @@ public:
                 flux[replaceCompEqIdx] += (fluxVars.advectiveFlux(phaseIdx, upwindTerm)*scvf.center()[0]); // ;
 
                 for(int compIdx = 0; compIdx < numComponents; ++compIdx)
-                    flux[replaceCompEqIdx] += useMoles ? diffusiveFluxes[compIdx]
-                                                       : diffusiveFluxes[compIdx]*FluidSystem::molarMass(compIdx);
+                    flux[replaceCompEqIdx] += diffusiveFluxes[compIdx] ;
             }
 
             //! Add advective phase energy fluxes. For isothermal model the contribution is zero.
