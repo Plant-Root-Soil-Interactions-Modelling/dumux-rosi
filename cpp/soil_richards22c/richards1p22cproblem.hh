@@ -1316,12 +1316,13 @@ public:
 		}else{WorCorN[CSS2Idx] = 0.;}
 		
 		std::vector<double> F(numReactionTerms); //general reaction terms, microbial reaction terms
-		double F_growth_N=0, F_Ndecay=0;  //how much N is taken up by the microbes during growth, how much N is lost by the microbes due to decay
+		double F_growth_N[5]={0};
+		double F_Ndecay=0;  //how much N is taken up by the microbes during growth, how much N is lost by the microbes due to decay
 		//all terms here have the units [mol C/m3 /s]
 		
         //	depolymerisation large polymer to small polymers
 		//	[s-1] * ([mol C/m3 water]/([mol C/m3 water]*[mol C/m3 water])) * [mol C/m3 bulk solid]
-
+        
 		F[depolymucil+actO] += f_A * v_maxL * (WorCorN[mucilIdx]/(K_L+ WorCorN[mucilIdx])) * ( WorCorN[CoAIdx] + C_aLim[0]);// mol C/(m^3 bulk soil *s)
 		F[depolyCH+actO] += f_A * v_maxL * (WorCorN[CH_Idx]/(K_L+ WorCorN[CH_Idx])) *( WorCorN[CoAIdx] + C_aLim[0]);// mol C/(m^3 bulk soil *s)
 	
@@ -1337,11 +1338,24 @@ public:
 		double N_out = WorCorN[NsoluteIdx] + WorCorN[NCH_Idx] + WorCorN[NH4Idx] + WorCorN[NO3Idx];
 		double C_out = WorCorN[soluteIdx] + WorCorN[CH_Idx] + WorCorN[mucilIdx];
 		int CoAIdx_ = 0; int CcAIdx_ = 1;
-		 const auto safeDivision = [](const double nominator, const double denominator, const double defaultVal = 0.)
+		
+		const auto safeDivision = [](const double nominator, const double denominator, const double tol = 1e-10)
         {
-			if(denominator > 0.){
-				return nominator/denominator;
-			}else{return defaultVal;}
+			
+			//double tol = 1e-10;
+			double div;
+			if(denominator<tol)
+			{
+				div = nominator/tol;
+			}
+			else
+			{
+				div = nominator/denominator;
+			}
+			
+			//if(denominator*denominator > 0.){
+			return div;
+			//}else{return defaultVal;}
 		};
 		for(int CxIdx = 0; CxIdx < 2; CxIdx++)// 0 = oligo, 1 = copio
 		{		
@@ -1350,7 +1364,7 @@ public:
 			int NxAIdx = (CxIdx == 0) ? NoAIdx : NcAIdx;
 			int NxDIdx = (CxIdx == 0) ? NoDIdx : NcDIdx;
 			// N-dependent maintenance rate
-			double k_eps = 1e-15;
+			double k_eps = 1e-10;
 			double f_N = 1.;
 			if(doNeffect)
 			{
@@ -1384,6 +1398,7 @@ public:
 			// ([s-1] * [mol C solute / m3 water] * [m3 water / mol C / s])/([s-1] + [mol C solute / m3 water] * [m3 water / mol C soil / s]) * [mol C_oX / m3 space] 
 			// [s-1] *([-])/([-] + [-]) * [mol C_oX / m3 space] = [mol C_oX / m3 space /s]
 			F[growth+actO+2*CxIdx] +=  f_A * (micro_max_ * WorCorN[soluteIdx] * k_S[CxIdx])/(micro_max_ + WorCorN[soluteIdx] * k_S[CxIdx]) * (WorCorN[CxAIdx] + C_aLim[CxIdx]) ;		//mol C/(m^3 bulk soil *s)
+			F_growth_N[actO+2*CxIdx] += 1/k_growth[CxIdx]*F[growth+actO+2*CxIdx] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ;
 			if(verbose==3)//||(massOrMoleFraction(volVars,0, mucilIdx, true)<0.)) CorN_W
 			{
 				std::cout<<"F_growth["<<CxIdx<<"] " << std::scientific<<std::setprecision(20)
@@ -1457,9 +1472,11 @@ public:
 			F[depolyCH] += F[depolyCH+CxIdx];
 			F[NH4_cons] += F[NH4_cons+CxIdx];
 			F[NO3_cons] += F[NO3_cons+CxIdx];
+			F_growth_N[totalM] += F_growth_N[CxIdx];
 		}
 		
-		F_growth_N += F[growth] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ;
+		//F_growth_N[0] += F[growth] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) ; 
+		F[overNResp] = F_growth_N[0]; //TODO: demodify this
 			
 		
 		// double F[Ndecay] =   F_decay_A[CoAIdx_] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
@@ -1467,10 +1484,10 @@ public:
 					// + F_decay_A[CcAIdx_] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
 					// + F_decay_D[CcAIdx_] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);
 					
-		/*F_Ndecay =   F[decay] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
-					+ F[decay_D_O] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx]) 
-					+ F[decay_A_C] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
-					+ F[decay_D_C] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);*/
+		/*F_Ndecay =   F[decay+1] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx]) 
+					+ F[decay+2] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx]) 
+					+ F[decay+3] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
+					+ F[decay+4] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx]);*/
 					
 		// https://www.mdpi.com/2076-3417/6/10/269
 		// https://www.sciencedirect.com/science/article/pii/S0301479717306825?via%3Dihub loess soil
@@ -1490,14 +1507,14 @@ public:
 		
 		//[mol solute / m3 scv/s] 
 		// water phase
-		q[soluteIdx] += ( F[depolymucil] + F[depolyCH] + (1. - k_decay2)*F[decay] - F[uptake] -  F[growth] - F_CSS2)* pos0 ;
+		q[soluteIdx] += ( F[depolymucil] + F[depolyCH] + (1. - k_decay2)*F[decay] - F[uptake] -  (1/k_growth[CoAIdx_]*F[growth+actO]+1/k_growth[CcAIdx_]*F[growth+actC]) - F_CSS2)* pos0 ;
 		q[mucilIdx]  += -F[depolymucil] * pos0;		
 		q[CH_Idx]  += (-F[depolyCH] +  k_decay2 * F[decay]) * pos0;		
 		q[NsoluteIdx] += (F[depolyCH] * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx]) 
 							+ (1. - k_decay2)*F_Ndecay 
 							- (F[uptake] ) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-							- F_growth_N
-							- F_NSS2*CtoN_CSS2)* pos0 ;
+							- F_growth_N[totalM]
+							- F_NSS2)* pos0 ; 
 		q[NCH_Idx]  += (-F[depolyCH] * safeDivision(WorCorN[NCH_Idx],WorCorN[CH_Idx])  
 								+  k_decay2 * F_Ndecay) * pos0;
 		q[NH4Idx]  += (-F[ImMin] - F[NH4_cons] - F_NH4S)* pos0;
@@ -1508,23 +1525,23 @@ public:
 		q[CoDIdx] += ( -(F[reactdeact+actO] + F[reactdeact+dorO]) - (1./k_decay)*F[decay+dorO]) * pos0;		
 		q[CcAIdx] += (  F[growth+actC] + F[reactdeact+actC] + F[reactdeact+dorC] - (1./k_decay)*F[decay+actC]) * pos0;
 		q[CcDIdx] += ( -(F[reactdeact+actC] + F[reactdeact+dorC]) - (1./k_decay)*F[decay+dorC]) * pos0;			
-		q[NoAIdx] += ( (F[growth+actO] + F[uptake+actO]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+		q[NoAIdx] += ( ( F[uptake+actO]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx])+F_growth_N[actO] 
 							+ F[reactdeact+dorO] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
 							+ (F[reactdeact+actO] - F[decay+actO]) * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
 							+ F[ImMin+actO]
 							) * pos0;
 		q[NoDIdx] += ( -F[reactdeact+actO] * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
-						+ F[uptake + dorO] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+						+ F[uptake + dorO] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) + F_growth_N[dorO]
 						- (F[reactdeact+dorO] + F[decay+dorO]) * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
 						+ F[ImMin+dorO]
 						) * pos0;		
-		q[NcAIdx] += ( (F[growth+actC] + F[uptake+actC]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
-							+ F[reactdeact+dorC] * safeDivision(WorCorN[NoDIdx],WorCorN[CoDIdx])
-							+ (F[reactdeact+actC] - F[decay+actC]) * safeDivision(WorCorN[NoAIdx],WorCorN[CoAIdx])
+		q[NcAIdx] += ( ( F[uptake+actC]) * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) + F_growth_N[actC] 
+							+ F[reactdeact+dorC] * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
+							+ (F[reactdeact+actC] - F[decay+actC]) * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
 							+ F[ImMin+actC]
 							) * pos0;
 		q[NcDIdx] += ( -F[reactdeact+actC] * safeDivision(WorCorN[NcAIdx],WorCorN[CcAIdx])
-						+ F[uptake+dorC] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) 
+						+ F[uptake+dorC] * safeDivision(WorCorN[NsoluteIdx],WorCorN[soluteIdx]) + F_growth_N[dorC]
 						- (F[reactdeact+dorC] + F[decay+dorC]) * safeDivision(WorCorN[NcDIdx],WorCorN[CcDIdx])
 						+ F[ImMin+dorC]
 						) * pos0;
@@ -1537,12 +1554,34 @@ public:
 		q[co2Idx] += (((1.-k_growth[CoAIdx_])/k_growth[CoAIdx_])*F[growth+actO] +((1.-k_growth[CcAIdx_])/k_growth[CcAIdx_])*F[growth+actC] +((1.-k_decay)/k_decay)*F[decay]+ F[uptake]) * pos0;
 		q[N2Idx] += F[NO3_cons] * pos0;
 			
-		q = q;//test	
+		q = q;//test
+	    /*for(int Idx=1;Idx<21;Idx++) //make sure things stay nonnegative
+		{
+		    if(WorCorN[Idx]<1e-6) //in the case of very low concentrations there will be no depolimerisation
+		    {
+				if (q[Idx]<0)
+				{
+		    	q[Idx]=WorCorN[Idx]/((2.0e-6)-WorCorN[Idx])*q[Idx];//1e-11 - WorCorN[Idx];
+				}
+			}
+		}*/
+		/*int Idx = 1;
+		if(WorCorN[Idx]<1e-5) //in the case of very low concentrations there will be no depolimerisation
+		{
+			q[Idx]=1e-5-(WorCorN[Idx]);//1e-11 - WorCorN[Idx];
+		}
+		Idx = 4;
+		if(WorCorN[Idx]<1e-5) //in the case of very low concentrations there will be no depolimerisation
+		{
+			q[Idx]=1e-5-(WorCorN[Idx]);//1e-11 - WorCorN[Idx];
+		}*/
 			if(verbose>1)
 			{
                 std::cout<<"biochem Reactions "<<q[soluteIdx]<<" "<<q[mucilIdx]<<" "<<q[CoAIdx] <<" "<<q[CoDIdx]
                 <<" "<<q[CcAIdx] <<" "<<q[CcDIdx]<<" "<<q[CSS2Idx] <<" "<<q[co2Idx] <<std::endl;
             }
+			
+		
 		return F;
 	}
 
