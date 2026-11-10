@@ -173,7 +173,7 @@ int main(int argc, char** argv) try
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
-        // rootSystem->setGeometry(new CPlantBox::SDF_PlantBox(size[0]*100, size[1]*100, size[2]*100));
+        rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(size[0]*100, size[1]*100, size[2]*100));
         rootSystem->initialize(seed);
 		rootSystem->simulate(initialTime, true);//need to have the plant grow befor creating the grid
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
@@ -226,14 +226,14 @@ int main(int argc, char** argv) try
     GrowthModule::GridGrowth<RootTypeTag>* gridGrowth = nullptr;
 	// initial growth was put hugher up
     // double initialTime = 0.; // s
-    // if (simtype==Properties::rootbox) {
-        // gridGrowth = new GrowthModule::GridGrowth<RootTypeTag>(rootGrid, rootGridGeometry, growth, sol[rootDomainIdx]); // in growth/gridgrowth.hh
+    if (simtype==Properties::rootbox) {
+        gridGrowth = new GrowthModule::GridGrowth<RootTypeTag>(rootGrid, rootGridGeometry, growth, sol[rootDomainIdx]); // in growth/gridgrowth.hh
         // std::cout << "...grid grower initialized \n" << std::flush;
         // initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
         // std::cout << "intialT " << initialTime/24/3600 << "\n" << std::flush;
         // gridGrowth->grow(initialTime); ////////////////////////////////////////////////////////////////////
         // std::cout << "\ninitial growth performed... \n" << std::flush;
-    // }
+    }
 
     // obtain parameters from the CPlantBox or dgf
     if (simtype==Properties::dgf) {
@@ -376,46 +376,45 @@ int main(int argc, char** argv) try
         timeLoop->start();
         do {
 
-            double t = timeLoop->time(); // dumux time
+            double t = timeLoop->time() ; // dumux time
             double dt = timeLoop->timeStepSize(); // dumux time step
+
+            if (simtype==Properties::rootbox) { // turn off for now
+                if (grow) {
+
+                    // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+                    double dt_growth = t + initialTime*24*3600 - growth->simTime() ;
+					if (dt_growth > 0.){ //while (growth->simTime()+dt<t+initialTime) {
+
+                        std::cout << "grow "<<dt_growth<<" "<<t <<" "<< growth->simTime() <<"\n"<< std::flush;
+
+                        gridGrowth->grow(dt_growth);
+                        rootProblem->spatialParams().updateParameters(*growth);
+                        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+                        rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
+
+                        couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
+                        couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
+                        couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
+
+                        soilProblem->computePointSourceMap(); // recompute the coupling sources
+                        rootProblem->computePointSourceMap(); // recompute the coupling sources
+
+						assembler->updateAfterGridAdaption();
+                        oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
+
+                        std::cout << "grew \n"<< std::flush;
+						
+                    }
+
+                }
+            }
             rootProblem->setTime(t, dt); // pass current time to the root problem
             rootProblem->postTimeStep(sol[rootDomainIdx], *rootGridVariables);
             rootProblem->writeTranspirationRate(); // add transpiration data into the text file
             soilProblem->setTime(t, dt);
             soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
             soilProblem->writeBoundaryFluxes();
-
-            // if (simtype==Properties::rootbox) { // turn off for now
-                // if (grow) {
-
-                    // // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                    // double dt_growth = growth->simTime() - t;
-					// if (dt_growth > 0.){ //while (growth->simTime()+dt<t+initialTime) {
-
-                        // std::cout << "grow \n"<< std::flush;
-
-                        // gridGrowth->grow(dt_growth);
-                        // rootProblem->spatialParams().updateParameters(*growth);
-                        // rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-                        // rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
-
-                        // couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
-                        // couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
-                        // couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
-
-                        // soilProblem->computePointSourceMap(); // recompute the coupling sources
-                        // rootProblem->computePointSourceMap(); // recompute the coupling sources
-
-                        // assembler->setJacobianPattern_(assembler->jacobian()); // resize and set Jacobian pattern
-                        // assembler->setResidualSize_(assembler->residual()); // resize residual vector
-
-                        // oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
-
-                        // std::cout << "grew \n"<< std::flush;
-                    // }
-
-                // }
-            // }
 
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(oldSol);
