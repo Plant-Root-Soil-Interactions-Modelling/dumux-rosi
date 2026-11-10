@@ -272,7 +272,7 @@ int main(int argc, char** argv) try
                         std::cout << "grew \n"<< std::flush;
 
                         // what shall I update?
-                        gridGeometry->update(gridManager.grid().leafGridView());
+                        // gridGeometry->update(gridManager.grid().leafGridView());
                         //gridVariables->update();
                         gridVariables->updateAfterGridAdaption(x); // update the secondary variables
 
