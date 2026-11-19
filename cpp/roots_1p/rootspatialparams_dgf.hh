@@ -114,6 +114,18 @@ public:
         }
         return o;
     }
+	
+	
+	/*!
+	* need to remove it , should not be used
+	*/
+	template <class ElementSolution> 
+	Scalar extrusionFactor(const Element &element, const SubControlVolume &scv, const ElementSolution &elemSol) const {
+	const auto eIdx = this->gridGeometry().elementMapper().index(element);
+	const auto r = radius(eIdx);
+	return M_PI * r * r;
+	}
+
 
     //! segment radius [m]
     Scalar radius(std::size_t eIdx) const {

@@ -71,6 +71,7 @@ public:
         typeIdx_ = typeIdx;
         nameY_ = nameY;
         sinusoidal_ = (hasParam(groupName +".Sinusoidal")) ? Dumux::getParam<bool>(groupName +".Sinusoidal") : false;
+        int verbose = (hasParam("Problem.verbose")) ? Dumux::getParam<int>("Problem.verbose") : 0;
         if (Dumux::hasParam(nameY)) {
             yy_ = Dumux::getParam<std::vector<double>>(nameY);
             if (yy_.size() == 1) {
@@ -120,7 +121,9 @@ public:
                 }
             }
         }
-        //cout();
+		if (verbose > 1) {
+			cout();
+		}
     }
 
     /**

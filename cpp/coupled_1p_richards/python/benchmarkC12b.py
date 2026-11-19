@@ -3,9 +3,8 @@ import sys; sys.path.append("../../../../CPlantBox/src/python_modules/")
 
 import os
 import matplotlib.pyplot as plt
-from vtk_tools import *
-import van_genuchten as vg
-import math
+from plantbox.visualisation.vtk_tools import *
+import plantbox.functional.van_genuchten as vg
 
 # go to the right place
 path = os.path.dirname(os.path.realpath(__file__))
@@ -45,7 +44,7 @@ ax1.set_xlabel("Time $[d]$")
 ax1.set_ylabel("Transpiration rate $[cm^3 \ d^{-1}]$")
 ax2.set_ylabel("Cumulative transpiration $[cm^3]$")
 
-# plt.show()
+plt.show()
 
 # trans = interpolate.interp1d(t, d[:, 1] * c)
 # print(t.shape)

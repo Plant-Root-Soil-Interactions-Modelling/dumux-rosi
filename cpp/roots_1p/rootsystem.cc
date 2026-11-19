@@ -24,7 +24,6 @@
 #include <dumux/common/dumuxmessage.hh> // for fun (a static class)
 #include <dumux/common/defaultusagemessage.hh> // for information (a global function)
 
-// #include <dumux/linear/amgbackend.hh> // linear solver (currently the only solver available)
 #include <dumux/linear/istlsolvers.hh>
 #include <dumux/linear/linearsolvertraits.hh>
 #include <dumux/linear/linearalgebratraits.hh>
@@ -246,10 +245,9 @@ int main(int argc, char** argv) try
                 if (grow) {
 
                     // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-					double dt_growth = growth->simTime() - t;
+					double dt_growth = t - growth->simTime() ;
 					if(dt_growth > 0.)
 					{
-                    // while (growth->simTime()+dt<t+initialTime) { 
 
                         std::cout << "\n grow ..."<< std::flush;
                         gridGrowth->grow(dt_growth);
@@ -257,19 +255,11 @@ int main(int argc, char** argv) try
                         problem->applyInitialSolution(x); // reset todo (? does this make sense)?
                         std::cout << "grew \n"<< std::flush;
 
-                        // todo: done inside of gridGrowth->grow, why was it done again here?
-                        gridGeometry->update(gridManager.grid().leafGridView()); 
-                        
-						//gridVariables->update();
                         gridVariables->updateAfterGridAdaption(x); // update the secondary variables
 
-                        // // todo? what is necessary? no clue what i am doing ...
-                        // assembler->setResidualSize(); // resize residual vector
-                        // assembler->setJacobianPattern(); // resize and set Jacobian pattern
-                        // assembler->setPreviousSolution(x);
-                        // assembler->assembleJacobianAndResidual(x);
 						assembler->updateAfterGridAdaption();
 						x.resize(gridGeometry->numDofs());
+						// updateAnalyticalSolution(pExact, vExact); // to do if we switch to analytical
                         xOld = x;
                     }
 

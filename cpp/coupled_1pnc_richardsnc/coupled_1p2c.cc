@@ -20,17 +20,20 @@
 
 // Dumux
 #include <dumux/common/parameters.hh>
-#include <dumux/common/valgrind.hh>
+// #include <dumux/common/valgrind.hh>
 #include <dumux/common/dumuxmessage.hh>
 #include <dumux/common/defaultusagemessage.hh>
-#include <dumux/linear/amgbackend.hh>
+#include <dumux/linear/seqsolverbackend.hh> 
+#include <dumux/linear/istlsolvers.hh>
+#include <dumux/linear/linearsolvertraits.hh>
+#include <dumux/linear/linearalgebratraits.hh> 
 #include <dumux/nonlinear/newtonsolver.hh>
 #include <dumux/common/timeloop.hh>
 #include <dumux/assembly/fvassembler.hh>
 #include <dumux/io/vtkoutputmodule.hh>
 #include <dumux/io/grid/gridmanager.hh>
 
-#include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
+// #include <dumux/periodic/tpfa/periodicnetworkgridmanager.hh>
 #include <dumux/periodic/tpfa/fvgridgeometry.hh>
 
 #include <dumux/multidomain/traits.hh>
@@ -38,7 +41,7 @@
 #include <dumux/multidomain/newtonsolver.hh>
 
 // growth model
-#include <RootSystem.h>
+#include <Plant.h>
 
 // dumux-rosi
 #include <dumux/growth/rootsystemgridfactory.hh>
@@ -61,7 +64,7 @@ using RootTypeTag = Properties::TTag::RootsOnePTwoCCCTpfa;
 /**
  * debugging
  */
-using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::GridGeometry>;
 template<class SoilGridVariables, class SoilSolution>
 void soilControl(const SoilFVGridGeometry& gridGeometry, const SoilGridVariables& gridVariables,
     const SoilSolution& sol, const SoilSolution& oldSol, double t, double dt) {
@@ -120,30 +123,33 @@ int main(int argc, char** argv) try
 
     // soil grid geometry
     const auto& soilGridView = soilGridManager.grid().leafGridView();
-    using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::FVGridGeometry>;
+    using SoilFVGridGeometry = GetPropType<SoilTypeTag, Properties::GridGeometry>;
     auto soilGridGeometry = std::make_shared<SoilFVGridGeometry>(soilGridView);
-    soilGridGeometry->update();
+    soilGridGeometry->update(soilGridView);
 
     // root gridmanager and grid
     using GlobalPosition = Dune::FieldVector<double, 3>;
     using Grid = Dune::FoamGrid<1, 3>;
     std::shared_ptr<Grid> rootGrid;
     GridManager<Grid> rootGridManager; // only for dgf
-    std::shared_ptr<CPlantBox::RootSystem> rootSystem; // only for rootbox
+    std::shared_ptr<CPlantBox::Plant> rootSystem; // only for rootbox
     GrowthModule::GrowthInterface<GlobalPosition>* growth = nullptr; // in case of RootBox (or in future PlantBox)
+	double initialTime = getParam<double>("RootSystem.Grid.InitialT", 1.);
+	int seed = getParam<int>("RootSystem.Seed", -1); 	
     if (simtype==Properties::dgf) { // for a static dgf grid
         std::cout << "\nSimulation type is dgf \n\n" << std::flush;
         rootGridManager.init("RootSystem");
         rootGrid = std::shared_ptr<Grid>(&rootGridManager.grid(), Properties::empty_delete<Grid>());
     } else if (simtype==Properties::rootbox) { // for a root model (static or dynamic)
         std::cout << "\nSimulation type is RootBox \n\n" << std::flush;
-        rootSystem = std::make_shared<CPlantBox::RootSystem>();
-        rootSystem->openFile(getParam<std::string>("RootSystem.Grid.File"), "modelparameter/");
+        rootSystem = std::make_shared<CPlantBox::Plant>();
+        rootSystem->readParameters(getParam<std::string>("RootSystem.Grid.File"));//, "modelparameter/");
         // make sure we don't grow above the soil, but allow to grow in x and y because we will do the periodic mapping TODO
         // rootSystem->setGeometry(new CPlantBox::SDF_HalfPlane(CPlantBox::Vector3d(0.,0.,0.5), CPlantBox::Vector3d(0.,0.,1.))); // care, collar needs to be top, make sure plant seed is located below -1 cm
         const auto size = soilGridGeometry->bBoxMax() - soilGridGeometry->bBoxMin();
         rootSystem->setGeometry(std::make_shared<CPlantBox::SDF_PlantBox>(size[0]*100, size[1]*100, size[2]*100));
-        rootSystem->initialize();
+        rootSystem->initialize(seed);
+		rootSystem->simulate(initialTime, true);//need to have the plant grow befor creating the grid
         double shootZ = getParam<double>("RootSystem.Grid.ShootZ", 0.); // root system initial time
         rootGrid = GrowthModule::RootSystemGridFactory::makeGrid(*rootSystem, shootZ, true); // in dumux/growth/rootsystemgridfactory.hh
         //  todo static soil for hydrotropsim ...
@@ -154,9 +160,9 @@ int main(int argc, char** argv) try
 
     // root grid geometry
     const auto& rootGridView = rootGrid->leafGridView();
-    using FVGridGeometry = GetPropType<RootTypeTag, Properties::FVGridGeometry>;
+    using FVGridGeometry = GetPropType<RootTypeTag, Properties::GridGeometry>;
     auto rootGridGeometry = std::make_shared<FVGridGeometry>(rootGridView);
-    rootGridGeometry->update();
+    rootGridGeometry->update(rootGridView);
 
     ////////////////////////////////////////////////////////////
     // run stationary or dynamic problem on this grid
@@ -189,13 +195,12 @@ int main(int argc, char** argv) try
 
     // initial root growth
     GrowthModule::GridGrowth<RootTypeTag>* gridGrowth = nullptr;
-    double initialTime = 0.; // s
     if (simtype==Properties::rootbox) {
         gridGrowth = new GrowthModule::GridGrowth<RootTypeTag>(rootGrid, rootGridGeometry, growth, sol[rootDomainIdx]); // in growth/gridgrowth.hh
-        std::cout << "...grid grower initialized \n" << std::flush;
-        initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
-        gridGrowth->grow(initialTime);
-        std::cout << "\ninitial growth performed... \n" << std::flush;
+        // std::cout << "...grid grower initialized \n" << std::flush;
+        // initialTime = getParam<double>("RootSystem.Grid.InitialT")*24*3600;
+        // gridGrowth->grow(initialTime);
+        // std::cout << "\ninitial growth performed... \n" << std::flush;
     }
 
     // obtain parameters from the cplantbox or dgf
@@ -255,12 +260,12 @@ int main(int argc, char** argv) try
     // intialize the vtk output module
     using SoilSolution = std::decay_t<decltype(sol[soilDomainIdx])>;
     VtkOutputModule<SoilGridVariables, SoilSolution> soilVtkWriter(*soilGridVariables, sol[soilDomainIdx], soilProblem->name());
-    GetPropType<SoilTypeTag, Properties::VtkOutputFields>::initOutputModule(soilVtkWriter);
+    GetPropType<SoilTypeTag, Properties::IOFields>::initOutputModule(soilVtkWriter);
     soilVtkWriter.write(0.0);
 
     using RootSolution = std::decay_t<decltype(sol[rootDomainIdx])>;
     VtkOutputModule<RootGridVariables, RootSolution> rootVtkWriter(*rootGridVariables, sol[rootDomainIdx], rootProblem->name());
-    GetPropType<RootTypeTag, Properties::VtkOutputFields>::initOutputModule(rootVtkWriter);
+    GetPropType<RootTypeTag, Properties::IOFields>::initOutputModule(rootVtkWriter);
 
     rootProblem->userData("pSoil", sol[rootDomainIdx]);
     rootProblem->userData("radius", sol[rootDomainIdx]);
@@ -291,7 +296,7 @@ int main(int argc, char** argv) try
         assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
             std::make_tuple(soilGridGeometry, rootGridGeometry),
             std::make_tuple(soilGridVariables, rootGridVariables),
-            couplingManager, timeLoop); // dynamic
+            couplingManager, timeLoop, oldSol); // dynamic
     } else {
         assembler = std::make_shared<Assembler>(std::make_tuple(soilProblem, rootProblem),
             std::make_tuple(soilGridGeometry, rootGridGeometry),
@@ -323,35 +328,36 @@ int main(int argc, char** argv) try
             soilProblem->postTimeStep(sol[soilDomainIdx], *soilGridVariables);
             soilProblem->writeBoundaryFluxes();
 
-            if (simtype==Properties::rootbox) {
-                if (grow) {
+            // if (simtype==Properties::rootbox) {
+                // if (grow) {
 
-                    // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
-                    while (growth->simTime()+dt<t+initialTime) {
+                    // // std::cout << "time " << growth->simTime()/24/3600 << " < " << (t+initialTime)/24/3600 << "\n";
+					// double dt_growth = growth->simTime() - t;
+                    // if (dt_growth > 0.) {
 
-                        std::cout << "grow \n"<< std::flush;
+                        // std::cout << "grow \n"<< std::flush;
 
-                        gridGrowth->grow(dt);
-                        rootProblem->spatialParams().updateParameters(*growth);
-                        rootProblem->applyInitialSolution(sol[rootDomainIdx]);
-                        rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
+                        // gridGrowth->grow(dt_growth);
+                        // rootProblem->spatialParams().updateParameters(*growth);
+                        // rootProblem->applyInitialSolution(sol[rootDomainIdx]);
+                        // rootGridVariables->updateAfterGridAdaption(sol[rootDomainIdx]); // update the secondary variables
 
-                        couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
-                        couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
-                        couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
+                        // couplingManager->updateAfterGridAdaption(soilGridGeometry, rootGridGeometry);
+                        // couplingManager->init(soilProblem, rootProblem, sol); // recompute coupling maps
+                        // couplingManager->updateSolution(sol); // update the solution vector for the coupling manager
 
-                        soilProblem->computePointSourceMap(); // recompute the coupling sources
-                        rootProblem->computePointSourceMap(); // recompute the coupling sources
+                        // soilProblem->computePointSourceMap(); // recompute the coupling sources
+                        // rootProblem->computePointSourceMap(); // recompute the coupling sources
 
-                        assembler->setJacobianPattern(assembler->jacobian()); // resize and set Jacobian pattern
-                        assembler->setResidualSize(assembler->residual()); // resize residual vector
+                        // assembler->setJacobianPattern_(assembler->jacobian()); // resize and set Jacobian pattern
+                        // assembler->setResidualSize_(assembler->residual()); // resize residual vector
 
-                        oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
+                        // oldSol[rootDomainIdx] = sol[rootDomainIdx]; // // update old solution to new grid
 
-                        std::cout << "grew \n"<< std::flush;
-                    }
-                }
-            }
+                        // std::cout << "grew \n"<< std::flush;
+                    // }
+                // }
+            // }
             // set previous solution for storage evaluations
             assembler->setPreviousSolution(oldSol);
 

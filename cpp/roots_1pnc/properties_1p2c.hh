@@ -28,10 +28,10 @@ struct FluidSystem<TypeTag, TTag::RootsOnePTwoC> {
 
 // for CC (not periodic)
 template<class TypeTag>
-struct FVGridGeometry<TypeTag, TTag::RootsOnePTwoCCCTpfa> {
+struct GridGeometry<TypeTag, TTag::RootsOnePTwoCCCTpfa> {
 private:
-    using GridView = typename FVGridGeometry::GridView;
-    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableFVGridGeometryCache>();
+    using GridView = typename GetPropType<TypeTag, Properties::Grid>::LeafGridView;
+    static constexpr bool enableCache = getPropValue<TypeTag, Properties::EnableGridGeometryCache>();
     using ElementMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>; // ReorderingDofMapper
     using VertexMapper = Dune::MultipleCodimMultipleGeomTypeMapper<GridView>;
     using MapperTraits = DefaultMapperTraits<GridView, ElementMapper, VertexMapper>;
@@ -46,18 +46,18 @@ public:
 #if DGF
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsDGF<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsDGF<GridGeometry, Scalar>;
 };
 int simtype = dgf;
 #endif
 #if ROOTBOX
 template<class TypeTag> // Set the spatial parameters
 struct SpatialParams<TypeTag, TTag::RootsOnePTwoC> {
-    using FVGridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
+    using GridGeometry = GetPropType<TypeTag, Properties::GridGeometry>;
     using Scalar = GetPropType<TypeTag, Properties::Scalar>;
-    using type = RootSpatialParamsRB<FVGridGeometry, Scalar>;
+    using type = RootSpatialParamsRB<GridGeometry, Scalar>;
 };
 int simtype = rootbox;
 #endif
