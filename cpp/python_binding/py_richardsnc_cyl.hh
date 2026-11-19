@@ -59,15 +59,20 @@ struct Grid<TypeTag, TTag::RichardsNCCylFoamTT> { using type = Dune::FoamGrid<1,
  */
 using RNCCFoamTT = Dumux::Properties::TTag::RichardsNCCylFoamCC;
 using GridGeometryRNCCFoamTT = Dumux::GetPropType<RNCCFoamTT, Dumux::Properties::GridGeometry>;						
-using RichardsNCCylFoamAssembler = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::numeric>;
+using RichardsNCCylFoamAssembler = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::numeric>;				
+using RichardsNCCylFoamAssemblerAna = Dumux::FVAssembler<RNCCFoamTT, Dumux::DiffMethod::analytic>;
 using RichardsNCCylFoamLinearSolver = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRNCCFoamTT>,//RCFoamTT, 
 	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCCylFoamAssembler>>;
+using RichardsNCCylFoamLinearSolverAna = Dumux::AMGBiCGSTABIstlSolver<Dumux::LinearSolverTraits<GridGeometryRNCCFoamTT>,//RCFoamTT, 
+	Dumux::LinearAlgebraTraitsFromAssembler<RichardsNCCylFoamAssemblerAna>>;
 using RichardsNCCylFoamProblem = Dumux::Richards1P2CProblem<RNCCFoamTT>;
 
 
 PYBIND11_MODULE(rosi_richardsnc_cyl, m) {
     init_solverbase<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "BaseRichardsNCCylFoam");
     init_richards_cyl<RichardsNCCylFoamProblem, RichardsNCCylFoamAssembler, RichardsNCCylFoamLinearSolver, 1 /*dimension*/>(m, "RichardsNCCylFoam");
+    init_solverbase<RichardsNCCylFoamProblem, RichardsNCCylFoamAssemblerAna, RichardsNCCylFoamLinearSolverAna, 1 /*dimension*/>(m, "BaseRichardsNCCylFoamAna");
+    init_richards_cyl<RichardsNCCylFoamProblem, RichardsNCCylFoamAssemblerAna, RichardsNCCylFoamLinearSolverAna, 1 /*dimension*/>(m, "RichardsNCCylFoamAna");
 }
 
 #endif

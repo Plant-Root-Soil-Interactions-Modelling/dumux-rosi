@@ -82,6 +82,10 @@ def solve(simtimes, N):
         # scvSources = s.getSource(0) * cellVolumes * dt # cm3
         # scvSourcesS = s.getSource(1) * cellVolumes * dt # kg
         
+        print("rootSoilFluxes",rootSoilFluxes, s.getInnerFlow(0, length), dt)
+        print("soilSoilFluxes",soilSoilFluxes, s.getOuterFlow(0, length), dt)
+        print('getBoundaryFluxesPerFace_',s.getBoundaryFluxesPerFace_(0, length)) # mol/day
+        print('getScvfBoundaryFluxes',s.base.getScvfBoundaryFluxes())
         if rank == 0:
             print('\tChange in water volume [cm3] per voxel:',sum(Wvolafter-Wvolbefore))
             print('\tChange in solute mass [g] per voxel:',sum(Smassafter-Smassbefore))
@@ -95,6 +99,6 @@ def solve(simtimes, N):
 if __name__ == "__main__":
 
 
-    simTimes = [0.5,0.78,1]  # days
-    solve(simTimes, 2)
+    simTimes = [0.5]#,0.78,1]  # days
+    solve(simTimes, 10)
 

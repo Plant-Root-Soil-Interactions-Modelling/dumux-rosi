@@ -23,16 +23,22 @@
 namespace Dumux {
 namespace FluidSystems {
 
+// template<bool fastButSimplifiedRelations = false>
+// struct liquidp2cDefaultPolicy
+// {
+    // static constexpr  bool useH2ODensityAsLiquidMixtureDensity() { return fastButSimplifiedRelations; }
+// };
+
 /*!
  * \ingroup FluidSystems
  * \brief A liquid phase consisting of a two components,
  *        a main component and a conservative tracer component
  */
-template <class Scalar, class MainComponent, class SecondComponent>
+template <class Scalar, class MainComponent, class SecondComponent>//, class Policy = liquidp2cDefaultPolicy<>>
 class LiquidPhaseTwoC
 : public Base<Scalar, LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent> >
 {
-    using ThisType = LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent>;
+    using ThisType = LiquidPhaseTwoC<Scalar, MainComponent, SecondComponent>; //, Policy
     using BinaryCoefficients = BinaryCoeff::H2O_Component<Scalar, SecondComponent>;
 
 public:
@@ -261,6 +267,15 @@ public:
     static const Scalar internalEnergy(Scalar temperature, Scalar pressure)
     { return MainComponent::liquidInternalEnergy(temperature, pressure); }
 
+    /*!
+     * \brief Returns true if and only if a fluid phase is assumed to
+     *        have a constant viscosity.
+     *
+     * \param phaseIdx The index of the fluid phase to consider
+     */
+    static constexpr bool viscosityIsConstant(int phaseIdx)
+    { return MainComponent::liquidViscosityIsConstant(); }
+	
     /*!
      * \brief The dynamic liquid viscosity \f$\mathrm{[N/m^3*s]}\f$ of the pure component.
      * \param temperature The temperature at which to evaluate the viscosity

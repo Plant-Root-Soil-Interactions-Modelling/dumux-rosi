@@ -16,12 +16,12 @@ class RichardsNoMPIWrapper(RichardsWrapper):
         """ Writes the Dumux welcome message, and creates the global Dumux parameter tree """
         self.base.initialize(args_, verbose, doMPI = doMPI_)
 
-    def solve(self, dt:float, maxDt = -1.):
+    def solve(self, dt:float, saveInnerFluxes_ = False):
         """ Simulates the problem, the internal Dumux time step ddt is taken from the last time step 
         @param dt      time span [days] 
         @param mxDt    maximal time step [days] 
         """
-        self.base.solveNoMPI(dt * 24.*3600., maxDt * 24.*3600.)  # days -> s
+        self.base.solve(dt * 24.*3600., doMPIsolve = False, saveInnerDumuxValues = saveInnerFluxes_)  # days -> s
 
     def getAllNeumann(self, eqIdx = 0):
         """ Gathers the neuman fluxes into rank 0 as a map with global index as key [cm / day]"""

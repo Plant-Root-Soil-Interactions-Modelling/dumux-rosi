@@ -55,7 +55,7 @@
 #include <dumux/porousmediumflow/nonisothermal/model.hh>
 #include <dumux/porousmediumflow/nonisothermal/indices.hh>
 #include <dumux/porousmediumflow/nonisothermal/iofields.hh>
-#include <dumux/porousmediumflow/compositionalCylindrical1d/localresidual.hh>
+#include <dumux/porousmediumflow/compositional/localresidual.hh>
 
 #include <dumux/porousmediumflow/richardsCylindrical1d/model.hh>
 
