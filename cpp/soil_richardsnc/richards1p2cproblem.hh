@@ -134,12 +134,12 @@ public:
 
 		// Precipitation & Evaporation, and solute input
 		if (bcTopType_==atmospheric) {
-			precipitation_ = InputFileFunction("Bottom", "Waterflux", "Time", 0.); // cm/day (day)
+			precipitation_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
 			precipitation_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			precipitation_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
         if (bcSTopType_[0]==managed) {
-            soluteInput_ = InputFileFunction("ManagedBottom", "Input", "Time", 0.); // cm/day (day)
+            soluteInput_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
             soluteInput_.setVariableScale(1./(24.*60.*60.)); // s -> day
             soluteInput_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
@@ -147,15 +147,15 @@ public:
 //            }
         }
 		//FixedFlux Data for the bottom
-		if (bcTopType_==FixedFlux) {
-			bottomflux_ = InputFileFunction("Climate", "Precipitation", "Time", 0.); // cm/day (day)
+		if (bcBotType_==FixedFlux) {
+			bottomflux_ = InputFileFunction("Bottom", "Waterflux", "Time", 0.); // cm/day (day)
 			bottomflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
 			bottomflux_.setFunctionScale(1.e3/(24.*60.*60.)/100); // cm/day -> kg/(m²*s)
 		}
-		if (bcSTopType_[0]==managed) {
-            bottomsflux_ = InputFileFunction("Managed", "Input", "Time", 0.); // cm/day (day)
-            bottomsflux_.setVariableScale(1./(24.*60.*60.)); // s -> day
-            bottomsflux_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
+		if (bcSBotType_[0]==managed) {
+            bottomfluxS_ = InputFileFunction("ManagedBottom", "Input", "Time", 0.); // cm/day (day)
+            bottomfluxS_.setVariableScale(1./(24.*60.*60.)); // s -> day
+            bottomfluxS_.setFunctionScale(10./(24.*60.*60.)); // g/(cm2 day) -> kg/(m²*s)
 //            for (int i=0; i<27; i++) {
 //                std::cout << soluteInput_.f(i*0.333*24.*60.*60.) << "\n";
 //            }
@@ -377,11 +377,38 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
     static const auto rhoW = useMoles ? volVars.molarDensity(h2OIdx) : volVars.density(h2OIdx) ;
     double cm2m = 1./100. ; //[m/cm]
 	const Scalar unitConversion = cm2m; //something else needed? 
-    if ((onUpperBoundary_(pos) && bcTopType_ == constantFlux) ||
-                        (onLowerBoundary_(pos) && bcBotType_ == constantFlux)) {
-            // --- reproduce f exactly as in neumann() to identify the active branch ---
-            Scalar f = onUpperBoundary_(pos)? -bcTopValues_[pressureIdx] * rhoW / (24. * 60. * 60.) * unitConversion
-                            : -bcBotValues_[pressureIdx] * rhoW / (24. * 60. * 60.) * unitConversion;
+    if ((onUpperBoundary_(pos) && ((bcTopType_ == constantFlux) || (bcTopType_ == constantFluxCyl)|| (bcTopType_ == atmospheric)) ) ||
+                        (onLowerBoundary_(pos) && ((bcBotType_ == constantFlux) || (bcBotType_ == constantFluxCyl)
+						|| (bcBotType_ == FixedFlux)))) {
+            Scalar f;
+			
+			if(onUpperBoundary_(pos))
+			{
+				switch(bcTopType_)
+				{
+					case atmospheric:{
+						
+						f = -precipitation_.f(time_);
+						break;
+					}
+					default :{
+						f = -bcTopValues_[pressureIdx] * rhoW / (24. * 60. * 60.) * unitConversion;
+						
+					}
+				}
+			} else {
+				
+				switch(bcBotType_)
+				{
+					case FixedFlux:{
+						f =  bottomflux_.f(time_);
+						break;
+					}
+					default :{
+						f = -bcBotValues_[pressureIdx] * rhoW / (24. * 60. * 60.) * unitConversion;
+					}
+				}
+			}
 
             Scalar dfdpw = 0.0; // default: unclipped prescribed flux -> no pw-dependence
             
@@ -394,7 +421,7 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
 
             if (f < 0)
             {
-                const Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_);
+                const Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_) ;
                 const Scalar dimax_dpw = rhoW * kc / dz * dh_dpw;
 
                 if (smoothEps <= 0.0)
@@ -435,12 +462,22 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
             auto& dI_dI = derivativeMatrices[insideScvIdx];
             dI_dI[conti0EqIdx][0] += dfdpw * scvf.area() * volVars.extrusionFactor();
         } else{
-            // only free drainage has a nonzero derivative w.r.t. pw . TODO: add derivatives for the other BCs
-            if (onLowerBoundary_(pos) && bcBotType_ == freeDrainage) {
+			
+       if (onUpperBoundary_(pos) && (bcTopType_ == constantPressure || bcTopType_ == dummyDirichlet)) {
+           derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc / dz * dh_dpw * scvf.area() * volVars.extrusionFactor();
+       } else if (onLowerBoundary_(pos)) {
+           if (bcBotType_ == constantPressure || bcBotType_ == dummyDirichlet) {
+               derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc / dz * dh_dpw * scvf.area() * volVars.extrusionFactor();
+           } else if (bcBotType_ == freeDrainage) {
+               derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dpw * scvf.area() * volVars.extrusionFactor();
+           }
+       }
+            // // TODO: do i need to add area = extrusion factor to derivativeMatrices?
+            // if (onLowerBoundary_(pos) && bcBotType_ == freeDrainage) {
 
-                // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw)
-                derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dpw;
-            }
+                // // df/dpw = rhoW * kc * (dkrw/dsw * dsw/dpw)
+                // derivativeMatrices[insideScvIdx][conti0EqIdx][0] += rhoW * kc * dkrw_dpw ;
+            // }
         }
          
 }
@@ -494,7 +531,37 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
 
 			if (onUpperBoundary_(pos)) { // top bc
 				switch (bcTopType_) {
-                
+                case constantFluxCyl: { // with switch for maximum in- or outflow
+					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or mol/(m²*s)
+					if (f < 0) { // inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal inflow
+                        if(verbose >= 2)
+                        {
+                            std::cout << "onUpperBoundary_constantFlux f "<<f<<" imax "<<imax<<std::endl;
+                        }
+                        if (smoothEps <= 0.0)
+                        {
+                            f = std::max(f, imax);
+                        }else{
+                            f = imax + smoothPositivePart( f - imax);
+                        }
+					} else { // outflow
+                    // mol/m2/s = mol/m3 * m/s * - * (cm -cm )/cm
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+                        if(verbose >= 2)
+                        {
+                            std::cout << "onUpperBoundary_constantFlux f "<<f<<" omax "<<omax<<std::endl;
+                        }
+						if (smoothEps <= 0.0)
+                        {
+                            f = std::min(f, omax);
+                        }else{
+                            f = f - smoothPositivePart( f - omax);
+                        }
+					}
+                    f *= pos0;
+					break;
+				}
 				case constantFlux: { // with switch for maximum in- or outflow
 					f = -bcTopValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion; // cm/day -> kg/(m²*s) or mol/(m²*s)
 					if (f < 0) { // inflow
@@ -527,11 +594,54 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
 					break;
 				}
 				
+				case atmospheric: { // atmospheric boundary condition (with surface run-off) // TODO needs testing & improvement
+					Scalar prec = -precipitation_.f(time_);
+					if (prec < 0) { // precipitation
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+						
+                        if (smoothEps <= 0.0)
+                        {
+                            f = std::max(prec, imax);
+                        }else{
+                            f = imax + smoothPositivePart( prec - imax);
+                        }
+					} else { // evaporation
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal evaporation
+						
+						
+						if (smoothEps <= 0.0)
+                        {
+                            f = std::min(prec, omax);
+                        }else{
+                            f = prec - smoothPositivePart( prec - omax);
+                        }
+					}
+                        f *= pos0;
+					break;
+				}
+                case constantPressure: {
+                    f = rhoW * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos0; // maximal inflow
+                    break;
+                }
+				case dummyDirichlet: {
+                    f = rhoW * kc * ((h - bcTopValues_[0]) / dz - gravityOn_)*pos0; // maximal inflow
+                    break;
+                }
 				default: DUNE_THROW(Dune::InvalidStateException, "Top boundary type Neumann (water) unknown type: "+std::to_string(bcTopType_));
 				}
 			} else if (onLowerBoundary_(pos)) { // bot bc
 				switch (bcBotType_) {
                 
+                case constantPressure: {
+                    f = rhoW * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos0; // maximal inflow
+//                    Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow (evaporation)
+//                    f = std::min(f, omax);
+                    break;
+                }
+				case dummyDirichlet: {
+                    f = rhoW * kc * ((h - bcBotValues_[0]) / dz - gravityOn_)* pos0; // maximal inflow
+                    break;
+                }
                   case constantFlux: { // bottom, with switch for maximum in- or outflow
                         f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion;
                         if (f < 0) { // inflow
@@ -563,6 +673,64 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
                         break;
                     }
 				
+                  case constantFluxCyl: { // bottom, with switch for maximum in- or outflow
+                        f = -bcBotValues_[pressureIdx]*rhoW/(24.*60.*60.) * unitConversion;
+                        if (f < 0) { // inflow
+                            Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_);
+                            if(verbose >= 2)
+                        {
+                            std::cout << "onLowerBoundary_constantFlux f "<<f<<" imax "<<imax<< " verbose "<<verbose << " (verbose >= 1) "<< (verbose >= 1)<<std::endl;
+                        }
+                            if (smoothEps <= 0.0)
+                            {
+                                f = std::max(f, imax);
+                            } else {
+                                f = imax + smoothPositivePart(f - imax);
+                            }
+                        } else { // outflow
+                            Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_);
+                             if(verbose >= 2)
+                        {
+                            std::cout << "onLowerBoundary_constantFlux f "<<f<<" omax "<<omax<<std::endl;
+                        }
+                            if (smoothEps <= 0.0)
+                            {
+                                f = std::min(f, omax);
+                            } else {
+                                f = f - smoothPositivePart(f - omax);
+                            }
+                        }
+                        f *= pos0;
+                        break;
+                    }
+				case FixedFlux: { // FixedFlux boundary condition (with surface run-off) // TODO needs testing & improvement
+					Scalar inflow = bottomflux_.f(time_);
+					if (inflow < 0) { // inflow
+						Scalar imax = rhoW * kc * ((h - 0.) / dz - gravityOn_); // maximal infiltration
+					
+						if (smoothEps <= 0.0)
+						{
+							f = std::max(inflow, imax);
+						} else {
+							f = imax + smoothPositivePart(inflow - imax);
+						}
+					} else { // outflow
+						Scalar omax = rhoW * krw * kc * ((h - criticalPressure_) / dz - gravityOn_); // maximal outflow
+						
+                            if (smoothEps <= 0.0)
+                            {
+                                f = std::min(inflow, omax);
+                            } else {
+                                f = inflow - smoothPositivePart(inflow - omax);
+                            }
+					}
+                        f *= pos0;
+					break;
+				}
+				case freeDrainage: {
+					f = krw * kc * rhoW * pos0; // * 1 [m]
+					break;
+				}
 				default: DUNE_THROW(Dune::InvalidStateException, "Bottom boundary type Neumann (water) unknown: "+std::to_string(bcBotType_));
 				}
 			}
@@ -688,7 +856,7 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
 				break;
 			}
 			case managed: {
-                Scalar input = bottomsflux_.f(time_);
+                Scalar input = bottomfluxS_.f(time_);
                 flux[transportEqIdx] = input * pos0;
                 break;
             }
@@ -950,7 +1118,7 @@ void addRobinFluxDerivatives(PartialDerivativeMatrices& derivativeMatrices,
 	std::vector<double> bcSBotValue_= std::vector<double>(1);
 
 
-    int verbose = 1;// level of verbosity
+    int verbose = 0;// level of verbosity
     // for perirhizal model:
     // factor by which to multiply the distance between the center of the inner cell
     // see @neumann()
@@ -1000,7 +1168,7 @@ private:
 	CouplingManager* couplingManager_ = nullptr;
 
 	InputFileFunction precipitation_, bottomflux_;
-	InputFileFunction soluteInput_, bottomsflux_;
+	InputFileFunction soluteInput_, bottomfluxS_;
 	Scalar criticalPressure_; // cm
 	Scalar time_ = 0.;
 	Scalar dt_ = 0.;

@@ -174,8 +174,7 @@ public:
 
                 // diffusive fluxes (only for the component balances)
                 if(eqIdx != replaceCompEqIdx)
-                    flux[eqIdx] += useMoles ? diffusiveFluxes[compIdx]
-                                            : diffusiveFluxes[compIdx]*FluidSystem::molarMass(compIdx);
+                    flux[eqIdx] += diffusiveFluxes[compIdx];
             }
 
             // in case one balance is substituted by the total mole balance
@@ -513,7 +512,10 @@ public:
                                  const ElementVolumeVariables& curElemVolVars,
                                  const ElementFluxVariablesCache& elemFluxVarsCache,
                                  const SubControlVolumeFace& scvf) const
-    {}
+    {
+		
+        problem.addRobinFluxDerivatives(derivativeMatrices, element, fvGeometry, curElemVolVars, elemFluxVarsCache, scvf);
+	}
 
 protected:
 
